@@ -48,6 +48,7 @@
 ## Comercial
 
 - [x] Plan de accion.
+- [x] Memoria profesional tipo TFG en Markdown, HTML imprimible y PDF.
 - [x] One-pager de venta.
 - [x] Memo de inversores.
 - [x] Pitch navegable.

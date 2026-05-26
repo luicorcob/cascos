@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LocalLift Studio - Memoria TFG</title>
+    <style>
+      :root {
+        --ink: #171513;
+        --muted: #625b52;
+        --paper: #fffdf7;
+        --soft: #f4efe6;
+        --line: #ded5c8;
+        --accent: #c94432;
+        --blue: #235f84;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--soft);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        line-height: 1.58;
+      }
+
+      .page {
+        width: min(1080px, calc(100% - 32px));
+        margin: 24px auto;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        box-shadow: 0 18px 60px rgba(23, 21, 19, 0.08);
+      }
+
+      .cover {
+        min-height: 92vh;
+        display: grid;
+        align-content: end;
+        gap: 20px;
+        padding: 88px 78px;
+        color: #fffaf0;
+        background:
+          linear-gradient(135deg, rgba(23, 21, 19, 0.96), rgba(35, 95, 132, 0.88)),
+          radial-gradient(circle at 82% 12%, rgba(201, 68, 50, 0.35), transparent 28%);
+      }
+
+      .cover .label {
+        width: fit-content;
+        padding: 7px 11px;
+        border: 1px solid rgba(255, 250, 240, 0.35);
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .cover h1 {
+        max-width: 860px;
+        margin: 0;
+        font-size: clamp(3rem, 8vw, 6.6rem);
+        line-height: 0.92;
+        letter-spacing: 0;
+      }
+
+      .cover p {
+        max-width: 780px;
+        margin: 0;
+        color: rgba(255, 250, 240, 0.78);
+        font-size: 1.1rem;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 26px;
+      }
+
+      .meta-grid span {
+        display: grid;
+        gap: 4px;
+        min-height: 78px;
+        padding: 12px;
+        border: 1px solid rgba(255, 250, 240, 0.2);
+        border-radius: 8px;
+        background: rgba(255, 250, 240, 0.08);
+      }
+
+      .meta-grid small {
+        color: rgba(255, 250, 240, 0.6);
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .toc {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: auto;
+        padding: 28px 20px;
+        border-right: 1px solid var(--line);
+        background: #faf5ec;
+      }
+
+      .toc strong {
+        display: block;
+        margin-bottom: 12px;
+        color: var(--accent);
+        font-size: 0.8rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .toc a {
+        display: block;
+        padding: 5px 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-decoration: none;
+      }
+
+      .toc a:hover { color: var(--accent); }
+      .toc .l1 { color: var(--ink); font-weight: 900; }
+      .toc .l2 { padding-left: 10px; }
+      .toc .l3 { padding-left: 22px; font-size: 0.78rem; }
+
+      main.content {
+        padding: 48px 72px 80px;
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        letter-spacing: 0;
+        line-height: 1.08;
+      }
+
+      main.content h1 {
+        margin: 0 0 18px;
+        font-size: 2.75rem;
+      }
+
+      main.content h2 {
+        margin: 52px 0 14px;
+        padding-top: 14px;
+        border-top: 2px solid var(--line);
+        color: var(--ink);
+        font-size: 2rem;
+      }
+
+      main.content h3 {
+        margin: 32px 0 10px;
+        color: var(--blue);
+        font-size: 1.35rem;
+      }
+
+      p { margin: 0 0 14px; }
+      ul, ol { margin: 0 0 18px 22px; padding: 0; }
+      li { margin: 4px 0; }
+
+      blockquote {
+        margin: 22px 0;
+        padding: 18px 20px;
+        border-left: 5px solid var(--accent);
+        background: #fff4eb;
+        color: #4d2b22;
+        font-weight: 800;
+      }
+
+      pre {
+        overflow: auto;
+        margin: 18px 0 22px;
+        padding: 16px;
+        border: 1px solid #2a2826;
+        border-radius: 8px;
+        background: #171513;
+        color: #fffaf0;
+        font-size: 0.83rem;
+        line-height: 1.45;
+      }
+
+      code {
+        font-family: "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+      }
+
+      :not(pre) > code {
+        padding: 0.1em 0.32em;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #f7efe4;
+      }
+
+      hr {
+        margin: 30px 0;
+        border: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      a { color: var(--blue); }
+
+      @media print {
+        @page { size: A4; margin: 14mm 15mm; }
+        body { background: #fff; }
+        .page { width: auto; margin: 0; border: 0; box-shadow: none; }
+        .cover { min-height: 260mm; break-after: page; }
+        .layout { display: block; }
+        .toc { position: static; height: auto; border-right: 0; break-after: page; }
+        main.content { padding: 0; }
+        main.content h1 { break-before: page; }
+        main.content h2 { break-after: avoid; }
+        pre, blockquote, li { break-inside: avoid; }
+        a { color: inherit; text-decoration: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="cover">
+        <span class="label">Memoria tecnica y funcional</span>
+        <h1>LocalLift Studio</h1>
+        <p>Documentacion profesional tipo TFG sobre una plataforma de digitalizacion integral para negocios locales: web, CRM, reservas, tienda, chatbot, analitica, despliegue y roadmap.</p>
+        <div class="meta-grid">
+          <span><small>Fecha</small><b>26/05/2026</b></span>
+          <span><small>Estado</small><b>MVP avanzado</b></span>
+          <span><small>Entrega</small><b>Demo vendible</b></span>
+          <span><small>Repo</small><b>GitHub</b></span>
+        </div>
+      </section>
+      <div class="layout">
+        <nav class="toc">
+          <strong>Indice</strong>
+          <a class="l1" href="#locallift-studio">LocalLift Studio</a>
+<a class="l2" href="#memoria-tecnica-funcional-y-comercial-del-proyecto">Memoria tecnica, funcional y comercial del proyecto</a>
+<a class="l2" href="#0-resumen-ejecutivo">0. Resumen ejecutivo</a>
+<a class="l2" href="#1-introduccion">1. Introduccion</a>
+<a class="l3" href="#1-1-contexto-del-problema">1.1 Contexto del problema</a>
+<a class="l3" href="#1-2-motivacion">1.2 Motivacion</a>
+<a class="l3" href="#1-3-enfoque">1.3 Enfoque</a>
+<a class="l2" href="#2-objetivos-del-proyecto">2. Objetivos del proyecto</a>
+<a class="l3" href="#2-1-objetivo-general">2.1 Objetivo general</a>
+<a class="l3" href="#2-2-objetivos-especificos">2.2 Objetivos especificos</a>
+<a class="l3" href="#2-3-criterios-de-exito">2.3 Criterios de exito</a>
+<a class="l2" href="#3-alcance-actual">3. Alcance actual</a>
+<a class="l3" href="#3-1-lo-que-incluye-el-mvp-avanzado">3.1 Lo que incluye el MVP avanzado</a>
+<a class="l3" href="#3-2-lo-que-no-incluye-todavia">3.2 Lo que no incluye todavia</a>
+<a class="l2" href="#4-vision-de-producto">4. Vision de producto</a>
+<a class="l3" href="#4-1-producto-final-deseado">4.1 Producto final deseado</a>
+<a class="l3" href="#4-2-principios-de-diseno-del-producto">4.2 Principios de diseno del producto</a>
+<a class="l3" href="#4-3-propuesta-de-valor">4.3 Propuesta de valor</a>
+<a class="l2" href="#5-analisis-competitivo">5. Analisis competitivo</a>
+<a class="l3" href="#5-1-wix-squarespace-webflow-y-framer">5.1 Wix, Squarespace, Webflow y Framer</a>
+<a class="l3" href="#5-2-shopify-y-square">5.2 Shopify y Square</a>
+<a class="l3" href="#5-3-odoo-y-zoho">5.3 Odoo y Zoho</a>
+<a class="l3" href="#5-4-chatbots-y-helpdesks">5.4 Chatbots y helpdesks</a>
+<a class="l2" href="#6-arquitectura-general">6. Arquitectura general</a>
+<a class="l3" href="#6-1-vista-de-alto-nivel">6.1 Vista de alto nivel</a>
+<a class="l3" href="#6-2-frontend">6.2 Frontend</a>
+<a class="l3" href="#6-3-backend">6.3 Backend</a>
+<a class="l3" href="#6-4-persistencia">6.4 Persistencia</a>
+<a class="l3" href="#6-5-despliegue">6.5 Despliegue</a>
+<a class="l2" href="#7-estructura-de-carpetas">7. Estructura de carpetas</a>
+<a class="l3" href="#7-1-archivos-principales">7.1 Archivos principales</a>
+<a class="l2" href="#8-funcionalidades-del-studio">8. Funcionalidades del Studio</a>
+<a class="l3" href="#8-1-editor-de-datos-del-negocio">8.1 Editor de datos del negocio</a>
+<a class="l3" href="#8-2-vista-previa-responsive">8.2 Vista previa responsive</a>
+<a class="l3" href="#8-3-temas-visuales">8.3 Temas visuales</a>
+<a class="l3" href="#8-4-personalizacion-avanzada">8.4 Personalizacion avanzada</a>
+<a class="l3" href="#8-5-demo-en-vivo">8.5 Demo en vivo</a>
+<a class="l3" href="#8-6-checklist-de-calidad">8.6 Checklist de calidad</a>
+<a class="l3" href="#8-7-exportacion-html">8.7 Exportacion HTML</a>
+<a class="l2" href="#9-web-publica-generada">9. Web publica generada</a>
+<a class="l3" href="#9-1-secciones-principales">9.1 Secciones principales</a>
+<a class="l3" href="#9-2-conversion">9.2 Conversion</a>
+<a class="l3" href="#9-3-fallback-standalone">9.3 Fallback standalone</a>
+<a class="l3" href="#9-4-analitica-de-eventos">9.4 Analitica de eventos</a>
+<a class="l2" href="#10-chatbot">10. Chatbot</a>
+<a class="l3" href="#10-1-chatbot-local">10.1 Chatbot local</a>
+<a class="l3" href="#10-2-configuracion">10.2 Configuracion</a>
+<a class="l3" href="#10-3-captura-de-leads">10.3 Captura de leads</a>
+<a class="l3" href="#10-4-endpoint-ia-opcional">10.4 Endpoint IA opcional</a>
+<a class="l3" href="#10-5-limitaciones-actuales">10.5 Limitaciones actuales</a>
+<a class="l2" href="#11-crm-y-leads">11. CRM y leads</a>
+<a class="l3" href="#11-1-objetivo">11.1 Objetivo</a>
+<a class="l3" href="#11-2-modelo-de-contacto">11.2 Modelo de contacto</a>
+<a class="l3" href="#11-3-estados">11.3 Estados</a>
+<a class="l3" href="#11-4-actividades">11.4 Actividades</a>
+<a class="l3" href="#11-5-endpoints">11.5 Endpoints</a>
+<a class="l3" href="#11-6-portal">11.6 Portal</a>
+<a class="l3" href="#11-7-csv">11.7 CSV</a>
+<a class="l2" href="#12-reservas-y-agenda">12. Reservas y agenda</a>
+<a class="l3" href="#12-1-objetivo">12.1 Objetivo</a>
+<a class="l3" href="#12-2-servicios-reservables">12.2 Servicios reservables</a>
+<a class="l3" href="#12-3-disponibilidad-semanal">12.3 Disponibilidad semanal</a>
+<a class="l3" href="#12-4-bloqueos-manuales">12.4 Bloqueos manuales</a>
+<a class="l3" href="#12-5-validacion-de-reservas">12.5 Validacion de reservas</a>
+<a class="l3" href="#12-6-recordatorios">12.6 Recordatorios</a>
+<a class="l3" href="#12-7-vista-calendario">12.7 Vista calendario</a>
+<a class="l3" href="#12-8-exportacion-csv">12.8 Exportacion CSV</a>
+<a class="l2" href="#13-tienda-pagos-y-pedidos">13. Tienda, pagos y pedidos</a>
+<a class="l3" href="#13-1-tienda-visual-en-la-web">13.1 Tienda visual en la web</a>
+<a class="l3" href="#13-2-backend-de-comercio">13.2 Backend de comercio</a>
+<a class="l3" href="#13-3-seguridad-del-backend-de-comercio">13.3 Seguridad del backend de comercio</a>
+<a class="l3" href="#13-4-limitaciones-actuales">13.4 Limitaciones actuales</a>
+<a class="l2" href="#14-reportes-y-analitica">14. Reportes y analitica</a>
+<a class="l3" href="#14-1-objetivo">14.1 Objetivo</a>
+<a class="l3" href="#14-2-api-de-reporte">14.2 API de reporte</a>
+<a class="l3" href="#14-3-vista-imprimible">14.3 Vista imprimible</a>
+<a class="l3" href="#14-4-recomendaciones-automaticas">14.4 Recomendaciones automaticas</a>
+<a class="l3" href="#14-5-importancia-comercial">14.5 Importancia comercial</a>
+<a class="l2" href="#15-google-ops-y-seo-local">15. Google Ops y SEO local</a>
+<a class="l3" href="#15-1-campos-google-ready">15.1 Campos Google-ready</a>
+<a class="l3" href="#15-2-backend-google-de-ejemplo">15.2 Backend Google de ejemplo</a>
+<a class="l3" href="#15-3-playbook-google">15.3 Playbook Google</a>
+<a class="l3" href="#15-4-pendiente">15.4 Pendiente</a>
+<a class="l2" href="#16-seguridad">16. Seguridad</a>
+<a class="l3" href="#16-1-estado-actual">16.1 Estado actual</a>
+<a class="l3" href="#16-2-validacion-de-entorno">16.2 Validacion de entorno</a>
+<a class="l3" href="#16-3-limitaciones">16.3 Limitaciones</a>
+<a class="l2" href="#17-despliegue">17. Despliegue</a>
+<a class="l3" href="#17-1-local">17.1 Local</a>
+<a class="l3" href="#17-2-produccion">17.2 Produccion</a>
+<a class="l3" href="#17-3-render">17.3 Render</a>
+<a class="l3" href="#17-4-docker">17.4 Docker</a>
+<a class="l3" href="#17-5-frontend-separado">17.5 Frontend separado</a>
+<a class="l2" href="#18-guion-de-defensa-tecnica-tipo-tfg">18. Guion de defensa tecnica tipo TFG</a>
+<a class="l3" href="#18-1-apertura">18.1 Apertura</a>
+<a class="l3" href="#18-2-problema">18.2 Problema</a>
+<a class="l3" href="#18-3-solucion">18.3 Solucion</a>
+<a class="l3" href="#18-4-demo-tecnica">18.4 Demo tecnica</a>
+<a class="l3" href="#18-5-decisiones-de-arquitectura">18.5 Decisiones de arquitectura</a>
+<a class="l3" href="#18-6-seguridad">18.6 Seguridad</a>
+<a class="l3" href="#18-7-resultados">18.7 Resultados</a>
+<a class="l3" href="#18-8-cierre">18.8 Cierre</a>
+<a class="l2" href="#19-guion-comercial-de-demo">19. Guion comercial de demo</a>
+<a class="l3" href="#19-1-entrada">19.1 Entrada</a>
+<a class="l3" href="#19-2-demo-movil-primero">19.2 Demo movil primero</a>
+<a class="l3" href="#19-3-mostrar-operacion">19.3 Mostrar operacion</a>
+<a class="l3" href="#19-4-cierre">19.4 Cierre</a>
+<a class="l3" href="#19-5-objeciones">19.5 Objeciones</a>
+<a class="l2" href="#20-guion-para-inversores">20. Guion para inversores</a>
+<a class="l3" href="#20-1-tesis">20.1 Tesis</a>
+<a class="l3" href="#20-2-mercado">20.2 Mercado</a>
+<a class="l3" href="#20-3-producto">20.3 Producto</a>
+<a class="l3" href="#20-4-modelo-de-negocio">20.4 Modelo de negocio</a>
+<a class="l3" href="#20-5-traccion-tecnica">20.5 Traccion tecnica</a>
+<a class="l3" href="#20-6-siguiente-hito">20.6 Siguiente hito</a>
+<a class="l2" href="#21-modelo-comercial">21. Modelo comercial</a>
+<a class="l3" href="#21-1-paquete-presencia-local">21.1 Paquete Presencia Local</a>
+<a class="l3" href="#21-2-paquete-operacion-local">21.2 Paquete Operacion Local</a>
+<a class="l3" href="#21-3-paquete-comercio-local">21.3 Paquete Comercio Local</a>
+<a class="l3" href="#21-4-paquete-digitalizacion-total">21.4 Paquete Digitalizacion Total</a>
+<a class="l2" href="#22-roadmap-pendiente">22. Roadmap pendiente</a>
+<a class="l3" href="#22-1-prioridad-inmediata">22.1 Prioridad inmediata</a>
+<a class="l3" href="#22-2-prioridad-tecnica-alta">22.2 Prioridad tecnica alta</a>
+<a class="l3" href="#22-3-prioridad-de-producto">22.3 Prioridad de producto</a>
+<a class="l3" href="#22-4-integraciones">22.4 Integraciones</a>
+<a class="l2" href="#23-riesgos">23. Riesgos</a>
+<a class="l3" href="#23-1-riesgo-tecnico-json-en-produccion">23.1 Riesgo tecnico: JSON en produccion</a>
+<a class="l3" href="#23-2-riesgo-comercial-vender-demasiado-pronto">23.2 Riesgo comercial: vender demasiado pronto</a>
+<a class="l3" href="#23-3-riesgo-de-soporte">23.3 Riesgo de soporte</a>
+<a class="l3" href="#23-4-riesgo-de-integraciones">23.4 Riesgo de integraciones</a>
+<a class="l3" href="#23-5-riesgo-de-seguridad">23.5 Riesgo de seguridad</a>
+<a class="l2" href="#24-plan-de-validacion">24. Plan de validacion</a>
+<a class="l3" href="#24-1-pruebas-tecnicas">24.1 Pruebas tecnicas</a>
+<a class="l3" href="#24-2-pruebas-ux">24.2 Pruebas UX</a>
+<a class="l3" href="#24-3-pruebas-comerciales">24.3 Pruebas comerciales</a>
+<a class="l2" href="#25-manual-de-uso-rapido">25. Manual de uso rapido</a>
+<a class="l3" href="#25-1-crear-web">25.1 Crear web</a>
+<a class="l3" href="#25-2-gestionar-negocio">25.2 Gestionar negocio</a>
+<a class="l3" href="#25-3-desplegar">25.3 Desplegar</a>
+<a class="l2" href="#26-estado-actual-por-porcentaje">26. Estado actual por porcentaje</a>
+<a class="l3" href="#26-1-demo-vendible-online">26.1 Demo vendible online</a>
+<a class="l3" href="#26-2-producto-completo-plan-maestro">26.2 Producto completo Plan Maestro</a>
+<a class="l2" href="#27-conclusiones">27. Conclusiones</a>
+<a class="l2" href="#anexo-a-endpoints-principales">Anexo A. Endpoints principales</a>
+<a class="l2" href="#anexo-b-variables-de-entorno">Anexo B. Variables de entorno</a>
+<a class="l2" href="#anexo-c-checklist-de-entrega-a-cliente">Anexo C. Checklist de entrega a cliente</a>
+<a class="l2" href="#anexo-d-glosario">Anexo D. Glosario</a>
+        </nav>
+        <main class="content">
+<h1 id="locallift-studio">LocalLift Studio</h1>
+<h2 id="memoria-tecnica-funcional-y-comercial-del-proyecto">Memoria tecnica, funcional y comercial del proyecto</h2>
+<p><strong>Documento tipo TFG / memoria profesional</strong> <strong>Estado:</strong> version consolidada para demo, piloto y evolucion a producto <strong>Fecha:</strong> 26 de mayo de 2026 <strong>Repositorio:</strong> <code>https://github.com/luicorcob/cascos</code> <strong>Producto:</strong> plataforma de digitalizacion integral para negocios locales</p>
+<hr>
+<h2 id="0-resumen-ejecutivo">0. Resumen ejecutivo</h2>
+<p>LocalLift Studio es una plataforma orientada a digitalizar negocios locales de forma rapida, profesional y operativa. El proyecto parte de una idea sencilla: muchos pequenos negocios necesitan una presencia digital atractiva, pero no quieren aprender herramientas complejas, contratar varios proveedores ni mantener sistemas desconectados. LocalLift resuelve ese problema creando un flujo completo: recogida de datos del negocio, generacion de una web premium, captacion de leads, reservas, CRM ligero, panel operativo, tienda, reportes, despliegue y preparacion para integraciones reales con IA, Google, Stripe y email.</p>
+<p>La solucion no se limita a ser un generador de webs. Su ambicion es convertirse en un sistema operativo sencillo para negocios locales. El usuario interno de LocalLift puede crear y personalizar la web; el negocio puede operar leads, clientes, reservas, reportes y pedidos; y el cliente final puede consultar informacion, contactar, reservar, comprar o iniciar conversacion desde una web movil primero.</p>
+<p>El proyecto actual ya incluye un Studio visual, exportacion HTML, chatbot local, endpoint IA opcional, tienda con backend Stripe de ejemplo, dashboard operativo, CRM, agenda, eventos, reporte mensual, healthcheck, proteccion por token, CORS configurable, despliegue con Docker/Render y exportacion CSV de datos operativos. La base tecnica esta preparada para pilotos online reales, aunque todavia quedan hitos importantes para una plataforma multi-cliente completa: autenticacion por usuarios, base de datos relacional, roles, integraciones productivas con Google, automatizaciones reales de mensajeria, facturacion/presupuestos y escalado operativo.</p>
+<p>La propuesta comercial es clara:</p>
+<blockquote>LocalLift monta y mantiene todo lo digital de un negocio local: web, Google, reservas, clientes, pagos, tienda, mensajes, reputacion y reportes, sin que el cliente tenga que aprender tecnologia.</blockquote>
+<p>El valor diferencial esta en combinar ejecucion tecnica, diseno premium y operacion diaria. Competidores como Wix, Shopify, Odoo, Square o Zoho ofrecen herramientas potentes, pero el pequeno negocio suele necesitar resultado, no software para configurar. LocalLift vende una entrega guiada y mantenida, con una interfaz unica y datos reutilizables.</p>
+<hr>
+<h2 id="1-introduccion">1. Introduccion</h2>
+<h3 id="1-1-contexto-del-problema">1.1 Contexto del problema</h3>
+<p>Los negocios locales siguen dependiendo de canales dispersos: Google Maps, Instagram, WhatsApp, llamadas, formularios, reseñas, reservas externas, hojas de calculo y mensajes manuales. Esta dispersion genera varios problemas:</p>
+<ul><li>Informacion duplicada o desactualizada.</li><li>Perdida de leads por falta de seguimiento.</li><li>Reservas gestionadas manualmente y con riesgo de solapes.</li><li>Webs antiguas, lentas o poco convincentes en movil.</li><li>Falta de metricas para justificar el mantenimiento digital.</li><li>Dependencia de plataformas generalistas que el cliente no sabe configurar.</li><li>Poca capacidad para automatizar preguntas frecuentes, recordatorios o solicitudes de reseña.</li></ul>
+<p>El pequeno negocio no suele tener un equipo tecnico ni tiempo para aprender una suite completa. Por eso, una solucion viable debe reducir configuracion, guiar la entrega y centrarse en resultados medibles: llamadas, WhatsApps, reservas, formularios, pedidos, pagos y reseñas.</p>
+<h3 id="1-2-motivacion">1.2 Motivacion</h3>
+<p>La motivacion principal del proyecto es crear una herramienta que permita entregar digitalizacion real a negocios locales de forma rapida y repetible. La idea no es crear otro constructor web generico, sino una plataforma verticalizada para negocios de barrio, clinicas, restaurantes, tiendas, peluquerias, academias, talleres y servicios profesionales.</p>
+<p>El proyecto busca resolver tres necesidades al mismo tiempo:</p>
+<ol><li>Crear webs premium sin empezar desde cero en cada cliente.</li><li>Gestionar la operacion posterior: leads, reservas, agenda, reportes y datos.</li><li>Convertir esa operacion en un servicio mensual vendible.</li></ol>
+<h3 id="1-3-enfoque">1.3 Enfoque</h3>
+<p>El enfoque tecnico es incremental. En lugar de construir desde el primer dia una arquitectura pesada con usuarios, microservicios y base relacional, se ha optado por una base sencilla, inspeccionable y rapida:</p>
+<ul><li>Frontend estatico en HTML, CSS y JavaScript.</li><li>Servidor Node nativo, sin framework pesado.</li><li>Persistencia JSON atomica para el MVP.</li><li>Backends de ejemplo para Stripe, OpenAI y Google.</li><li>Documentacion comercial y tecnica desde fases tempranas.</li><li>Despliegue preparado con Render, Docker y healthcheck.</li></ul>
+<p>Este enfoque permite validar el producto con pilotos reales antes de hacer inversiones mayores en base de datos, autenticacion avanzada o integraciones complejas.</p>
+<hr>
+<h2 id="2-objetivos-del-proyecto">2. Objetivos del proyecto</h2>
+<h3 id="2-1-objetivo-general">2.1 Objetivo general</h3>
+<p>Desarrollar una plataforma web que permita digitalizar negocios locales mediante un flujo completo de creacion de web, gestion operativa, captacion de clientes, reservas, tienda, analitica, reportes y preparacion para despliegue online.</p>
+<h3 id="2-2-objetivos-especificos">2.2 Objetivos especificos</h3>
+<ul><li>Crear un Studio interno para editar datos, secciones, estilo visual y conversion de una web local.</li><li>Generar una web publica responsive, premium, exportable y lista para hosting.</li><li>Integrar chatbot local configurable con posibilidad de endpoint IA externo.</li><li>Incorporar formulario de lead y captura desde chatbot.</li><li>Registrar eventos de conversion para analitica y reportes.</li><li>Crear una API multi-negocio con persistencia local y backups.</li><li>Crear un portal operativo para el negocio con metricas, leads, clientes, reservas, pedidos, productos, reportes y ajustes.</li><li>Implementar CRM ligero con estados, notas, actividades y exportacion CSV.</li><li>Implementar agenda MVP con servicios, disponibilidad, bloqueos, reservas, validacion de solapes y recordatorios manuales.</li><li>Crear reporte mensual operativo con recomendaciones accionables.</li><li>Preparar despliegue en cloud con healthcheck, token admin, CORS configurable, Docker, Render Blueprint y validacion de entorno.</li><li>Documentar la propuesta comercial, el guion de demo, los paquetes y el roadmap.</li></ul>
+<h3 id="2-3-criterios-de-exito">2.3 Criterios de exito</h3>
+<p>El proyecto se considera exitoso en su fase actual si:</p>
+<ul><li>Un negocio puede tener una web profesional funcional en poco tiempo.</li><li>El visitante puede llamar, abrir mapa, enviar lead, usar chatbot o pedir reserva.</li><li>El lead o reserva puede aparecer en el dashboard.</li><li>El operador puede cambiar estados, guardar notas, preparar recordatorios y exportar datos.</li><li>El reporte mensual puede mostrar valor con metricas comprensibles.</li><li>El backend puede desplegarse online con healthcheck y seguridad minima.</li><li>La solucion puede explicarse y venderse con un guion claro.</li></ul>
+<hr>
+<h2 id="3-alcance-actual">3. Alcance actual</h2>
+<h3 id="3-1-lo-que-incluye-el-mvp-avanzado">3.1 Lo que incluye el MVP avanzado</h3>
+<p>El proyecto actual incluye:</p>
+<ul><li>Studio generador de webs.</li><li>Demos por sector.</li><li>Vista previa desktop, tablet y movil.</li><li>Motor visual con temas, colores, tipografia, densidad, formas e interacciones.</li><li>Panel de cambios rapidos para demos con cliente.</li><li>Undo/redo de variantes.</li><li>Exportacion HTML standalone con CSS y JS integrados.</li><li>Import/export JSON de datos del negocio.</li><li>Chatbot local configurable.</li><li>Endpoint IA opcional.</li><li>Formulario de lead.</li><li>Widget publico de reservas.</li><li>Tienda online visual con carrito.</li><li>Backend de ejemplo Stripe con pedidos, stock, cupones y webhooks.</li><li>Backend de ejemplo Google.</li><li>Backend de ejemplo chatbot IA.</li><li>API multi-negocio.</li><li>CRM con contactos, estados, actividades y notas.</li><li>Reservas con disponibilidad, bloqueos y validacion de solapes.</li><li>Eventos de conversion persistentes.</li><li>Dashboard operativo.</li><li>Reporte mensual HTML imprimible.</li><li>Exportacion CSV de leads, clientes y reservas.</li><li>Healthcheck.</li><li>Token admin opcional para produccion.</li><li>CORS configurable.</li><li>Dockerfile.</li><li>Render Blueprint.</li><li><code>.env.example</code>.</li><li>Guia de despliegue.</li><li>Runbook de piloto online.</li><li>Documentacion comercial e inversores.</li></ul>
+<h3 id="3-2-lo-que-no-incluye-todavia">3.2 Lo que no incluye todavia</h3>
+<p>Aunque el proyecto esta muy avanzado para una demo vendible, todavia no incluye:</p>
+<ul><li>Autenticacion completa por usuarios y contrasenas.</li><li>Roles reales por usuario.</li><li>Base de datos relacional o SQLite.</li><li>Panel interno multi-cliente completo con usuarios.</li><li>Envio automatico real de WhatsApp/email.</li><li>OAuth Google por negocio.</li><li>Conexion productiva a Google Business Profile.</li><li>Facturacion y presupuestos.</li><li>PDF automatico de reportes desde servidor.</li><li>Subida de imagenes a storage externo.</li><li>Notificaciones push o bandeja de mensajes completa.</li><li>Integracion productiva del chatbot IA multi-negocio con base de conocimiento persistente.</li><li>Sistema de facturacion recurrente del propio SaaS.</li></ul>
+<hr>
+<h2 id="4-vision-de-producto">4. Vision de producto</h2>
+<h3 id="4-1-producto-final-deseado">4.1 Producto final deseado</h3>
+<p>LocalLift debe evolucionar hacia una plataforma de digitalizacion total para negocios locales. La version final deberia cubrir tres capas:</p>
+<ol><li><strong>Studio interno:</strong> herramienta usada por LocalLift para crear, editar, publicar y mantener clientes.</li><li><strong>Portal del negocio:</strong> panel usado por el dueño o equipo del negocio para operar su dia a dia.</li><li><strong>Web publica:</strong> experiencia para visitantes finales: contacto, reserva, compra, mapa, chatbot y confianza.</li></ol>
+<h3 id="4-2-principios-de-diseno-del-producto">4.2 Principios de diseno del producto</h3>
+<ul><li><strong>Movil primero:</strong> la mayoria de interacciones locales nacen desde movil.</li><li><strong>Menos configuracion:</strong> presets, plantillas y campos guiados.</li><li><strong>Datos reutilizables:</strong> una vez introducido un dato, debe alimentar web, bot, reportes y CRM.</li><li><strong>Verticalizacion:</strong> no vender software generico, sino soluciones por sector.</li><li><strong>Portabilidad:</strong> exportar web, datos y CSV para evitar dependencia opaca.</li><li><strong>Medicion de valor:</strong> reportes y conversiones como base del mantenimiento mensual.</li><li><strong>Simplicidad operativa:</strong> evitar construir un ERP pesado.</li></ul>
+<h3 id="4-3-propuesta-de-valor">4.3 Propuesta de valor</h3>
+<p>Para el negocio local:</p>
+<ul><li>Web profesional sin aprender una herramienta.</li><li>Mas confianza en Google, movil y redes.</li><li>Menos preguntas repetidas gracias al chatbot.</li><li>Leads y reservas centralizados.</li><li>Reporte mensual con resultados.</li><li>Servicio mantenido y evolucionable.</li></ul>
+<p>Para LocalLift:</p>
+<ul><li>Proceso repetible de entrega.</li><li>Base para mantenimiento mensual.</li><li>Capacidad de gestionar varios negocios.</li><li>Paquetes vendibles por sector.</li><li>Diferenciacion frente a constructores web tradicionales.</li></ul>
+<hr>
+<h2 id="5-analisis-competitivo">5. Analisis competitivo</h2>
+<h3 id="5-1-wix-squarespace-webflow-y-framer">5.1 Wix, Squarespace, Webflow y Framer</h3>
+<p>Estos productos resuelven la creacion visual de webs, pero suelen exigir que el cliente escriba, estructure, configure SEO, conecte formularios, optimice movil, mantenga contenidos y entienda la herramienta. LocalLift no compite solo en editor visual, sino en resultado entregado y gestion posterior.</p>
+<p>Ventaja de LocalLift:</p>
+<ul><li>El cliente no tiene que aprender el editor.</li><li>La web nace con formularios, reservas, chatbot y datos operativos.</li><li>El resultado esta pensado para negocios locales, no para cualquier caso generico.</li><li>El mantenimiento mensual se justifica con reportes.</li></ul>
+<h3 id="5-2-shopify-y-square">5.2 Shopify y Square</h3>
+<p>Shopify y Square son fuertes en comercio y pagos, pero no cubren de forma integrada la presencia local, Google, reputacion, reservas, chatbot y mantenimiento para negocios no puramente ecommerce.</p>
+<p>Ventaja de LocalLift:</p>
+<ul><li>Une web local, tienda ligera, reservas y CRM.</li><li>Prioriza llamadas, WhatsApp, mapa y reservas.</li><li>Puede ser mas simple para restaurantes, clinicas, peluquerias o servicios.</li></ul>
+<h3 id="5-3-odoo-y-zoho">5.3 Odoo y Zoho</h3>
+<p>Odoo y Zoho son suites muy potentes, pero pueden resultar excesivas para negocios pequeños. El coste no esta solo en la licencia, sino en implantacion, configuracion, curva de aprendizaje y soporte.</p>
+<p>Ventaja de LocalLift:</p>
+<ul><li>Interfaz mucho mas acotada.</li><li>Modulos preseleccionados.</li><li>Entrega hecha por el proveedor.</li><li>Menor friccion de adopcion.</li></ul>
+<h3 id="5-4-chatbots-y-helpdesks">5.4 Chatbots y helpdesks</h3>
+<p>Herramientas como Crisp, Intercom o soluciones basadas en WhatsApp Business ofrecen mensajeria y automatizacion, pero no necesariamente crean toda la presencia digital del negocio.</p>
+<p>Ventaja de LocalLift:</p>
+<ul><li>El chatbot utiliza los datos de la web y del negocio.</li><li>La captura de lead se integra con CRM y reportes.</li><li>La automatizacion se enmarca en una entrega completa.</li></ul>
+<hr>
+<h2 id="6-arquitectura-general">6. Arquitectura general</h2>
+<h3 id="6-1-vista-de-alto-nivel">6.1 Vista de alto nivel</h3>
+<p>La arquitectura se divide en:</p>
+<ul><li><strong>Frontend principal:</strong> <code>index.html</code>, <code>src/app.js</code>, <code>src/styles.css</code>.</li><li><strong>Paginas auxiliares:</strong> <code>pages/</code>.</li><li><strong>Servidor Node:</strong> <code>server/server.mjs</code>.</li><li><strong>APIs modulares:</strong> <code>server/api/</code>.</li><li><strong>Librerias de servidor:</strong> <code>server/lib/</code>.</li><li><strong>Ejemplos de integracion:</strong> <code>examples/</code>.</li><li><strong>Datos JSON:</strong> <code>data/</code>.</li><li><strong>Documentacion:</strong> <code>docs/</code>.</li><li><strong>Recursos vendor:</strong> <code>assets/vendor/</code>.</li></ul>
+<h3 id="6-2-frontend">6.2 Frontend</h3>
+<p>El frontend esta construido sin framework pesado. Esto reduce dependencias, facilita abrir el proyecto directamente y simplifica la exportacion HTML. La aplicacion principal maneja:</p>
+<ul><li>Estado del negocio.</li><li>Formularios de edicion.</li><li>Render de vista previa.</li><li>Exportacion.</li><li>Import/export JSON.</li><li>Chatbot local.</li><li>Tienda visual.</li><li>Eventos.</li><li>Integracion con API si el servidor esta activo.</li></ul>
+<h3 id="6-3-backend">6.3 Backend</h3>
+<p>El backend usa Node nativo y modulos <code>.mjs</code>. El servidor sirve archivos estaticos y delega rutas API a modulos especializados:</p>
+<ul><li><code>business-api.mjs</code></li><li><code>contact-api.mjs</code></li><li><code>booking-api.mjs</code></li><li><code>event-api.mjs</code></li><li><code>report-api.mjs</code></li><li><code>health-api.mjs</code></li></ul>
+<p>El diseño es deliberadamente sencillo para facilitar lectura, modificacion y despliegue.</p>
+<h3 id="6-4-persistencia">6.4 Persistencia</h3>
+<p>La persistencia principal del MVP usa <code>data/business-db.json</code>. El acceso se centraliza con <code>server/lib/json-store.mjs</code>, que implementa:</p>
+<ul><li>Lectura con fallback.</li><li>Escritura atomica.</li><li>Creacion de directorios.</li><li>Backups antes de cambios importantes.</li></ul>
+<p>Este enfoque es suficiente para desarrollo, demos y pilotos controlados. Para escalar, se recomienda SQLite primero y Postgres despues.</p>
+<h3 id="6-5-despliegue">6.5 Despliegue</h3>
+<p>El proyecto esta preparado para:</p>
+<ul><li>Ejecucion local con <code>npm.cmd start</code>.</li><li>Produccion con <code>npm run start:prod</code>.</li><li>Validacion de entorno con <code>npm run check:deploy</code>.</li><li>Render Blueprint con <code>render.yaml</code>.</li><li>Contenedor con <code>Dockerfile</code>.</li><li>Healthcheck en <code>/api/health</code>.</li><li>Frontend separado mediante <code>?apiBase=...</code>.</li></ul>
+<hr>
+<h2 id="7-estructura-de-carpetas">7. Estructura de carpetas</h2>
+<pre><code class="language-text">.
+├── index.html
+├── package.json
+├── Dockerfile
+├── render.yaml
+├── .env.example
+├── src/
+│   ├── app.js
+│   ├── styles.css
+│   ├── business/
+│   │   ├── dashboard.js
+│   │   └── monthly-report.js
+│   ├── shared/
+│   │   └── api-config.js
+│   └── styles/
+│       ├── business.css
+│       └── report.css
+├── pages/
+│   ├── business-dashboard.html
+│   ├── monthly-report.html
+│   ├── store-admin.html
+│   ├── onboarding.html
+│   ├── google-ops.html
+│   └── investor.html
+├── server/
+│   ├── server.mjs
+│   ├── api/
+│   ├── lib/
+│   └── scripts/
+├── examples/
+├── assets/vendor/
+├── data/
+└── docs/</code></pre>
+<h3 id="7-1-archivos-principales">7.1 Archivos principales</h3>
+<ul><li><code>index.html</code>: entrada del Studio.</li><li><code>src/app.js</code>: logica principal de edicion, preview, exportacion, chatbot, tienda y sincronizacion.</li><li><code>src/styles.css</code>: estilos del Studio y webs generadas.</li><li><code>pages/business-dashboard.html</code>: portal operativo.</li><li><code>src/business/dashboard.js</code>: logica del portal.</li><li><code>src/styles/business.css</code>: estilos del portal.</li><li><code>pages/monthly-report.html</code>: reporte mensual imprimible.</li><li><code>src/business/monthly-report.js</code>: logica del reporte.</li><li><code>server/server.mjs</code>: servidor estatico y router API.</li><li><code>server/lib/admin-auth.mjs</code>: token admin opcional.</li><li><code>server/lib/cors.mjs</code>: CORS configurable.</li><li><code>server/lib/json-store.mjs</code>: persistencia atomica JSON.</li><li><code>server/scripts/validate-deploy-env.mjs</code>: validacion de entorno productivo.</li></ul>
+<hr>
+<h2 id="8-funcionalidades-del-studio">8. Funcionalidades del Studio</h2>
+<h3 id="8-1-editor-de-datos-del-negocio">8.1 Editor de datos del negocio</h3>
+<p>El Studio permite editar:</p>
+<ul><li>Nombre.</li><li>Categoria.</li><li>Ciudad/ubicacion.</li><li>Descripcion.</li><li>Propuesta de valor.</li><li>Telefono.</li><li>Email.</li><li>Direccion.</li><li>Servicios.</li><li>Diferenciales.</li><li>Horarios.</li><li>Galeria.</li><li>Testimonios.</li><li>FAQ.</li><li>Enlaces.</li><li>CTA principal.</li><li>Objetivo de conversion.</li><li>Datos de Google.</li><li>Datos de tienda.</li><li>Datos de chatbot.</li></ul>
+<p>El formato de entrada esta optimizado para rapidez: listas por linea y estructuras simples como <code>Nombre | Texto</code>.</p>
+<h3 id="8-2-vista-previa-responsive">8.2 Vista previa responsive</h3>
+<p>El Studio permite alternar entre:</p>
+<ul><li>Desktop.</li><li>Tablet.</li><li>Movil.</li></ul>
+<p>La vista movil es especialmente importante porque los negocios locales reciben buena parte de sus visitas desde smartphone.</p>
+<h3 id="8-3-temas-visuales">8.3 Temas visuales</h3>
+<p>Incluye cinco direcciones visuales:</p>
+<ul><li>Aurora.</li><li>Carbon.</li><li>Editorial.</li><li>Neon.</li><li>Luxe.</li></ul>
+<p>Cada tema modifica sensacion visual, color, contraste y estilo de marca, permitiendo adaptar el resultado a diferentes sectores.</p>
+<h3 id="8-4-personalizacion-avanzada">8.4 Personalizacion avanzada</h3>
+<p>El Studio permite cambiar:</p>
+<ul><li>CTA.</li><li>Titulares de seccion.</li><li>Tipografia.</li><li>Densidad.</li><li>Forma visual.</li><li>Color.</li><li>Animacion.</li><li>Secciones visibles.</li></ul>
+<h3 id="8-5-demo-en-vivo">8.5 Demo en vivo</h3>
+<p>El panel de demo en vivo permite aplicar cambios rapidos sin navegar por todos los campos. Incluye:</p>
+<ul><li>Variantes comerciales.</li><li>Comando rapido.</li><li>Toggles de secciones.</li><li>Undo/redo.</li></ul>
+<p>Ejemplos de comandos:</p>
+<ul><li><code>mas premium</code></li><li><code>vender reservas</code></li><li><code>sin mapa</code></li><li><code>sin bot</code></li><li><code>mostrar todo</code></li></ul>
+<p>Esta funcionalidad esta pensada para vender delante del cliente, mostrando transformaciones visibles en segundos.</p>
+<h3 id="8-6-checklist-de-calidad">8.6 Checklist de calidad</h3>
+<p>El Studio calcula un score de entrega y muestra una checklist de calidad. Esto permite saber si la web esta lista para presentar o publicar. La checklist cubre elementos como:</p>
+<ul><li>CTA.</li><li>Servicios.</li><li>Fotos.</li><li>Testimonios.</li><li>FAQ.</li><li>Contacto.</li><li>Google.</li><li>Formulario.</li><li>Chatbot.</li><li>Tienda o reservas si aplica.</li></ul>
+<h3 id="8-7-exportacion-html">8.7 Exportacion HTML</h3>
+<p>La exportacion crea un HTML standalone con:</p>
+<ul><li>Contenido del negocio.</li><li>CSS integrado.</li><li>JavaScript integrado.</li><li>Recursos vendor integrados cuando estan disponibles.</li><li>Schema LocalBusiness.</li><li>Meta title y description.</li><li>Formularios y widgets funcionales.</li><li>Fallback local para leads y reservas.</li></ul>
+<p>Si el Studio tiene configurado <code>apiBase</code>, el HTML exportado incluye:</p>
+<pre><code class="language-html">&lt;meta name=&quot;locallift-api-base&quot; content=&quot;https://tu-api.com&quot;&gt;</code></pre>
+<p>Esto permite que una web estatica publicada en otro hosting envie leads, reservas y eventos al backend online.</p>
+<hr>
+<h2 id="9-web-publica-generada">9. Web publica generada</h2>
+<h3 id="9-1-secciones-principales">9.1 Secciones principales</h3>
+<p>La web generada puede incluir:</p>
+<ul><li>Hero con imagen grande.</li><li>Propuesta de valor.</li><li>Servicios.</li><li>Prueba rapida / confianza.</li><li>Galeria.</li><li>Diferenciales.</li><li>Horario.</li><li>Testimonios.</li><li>FAQ.</li><li>Mapa.</li><li>Formulario de lead.</li><li>Widget de reserva.</li><li>Tienda o catalogo.</li><li>Chatbot.</li><li>Dock flotante de conversion.</li><li>Footer.</li></ul>
+<h3 id="9-2-conversion">9.2 Conversion</h3>
+<p>La web esta orientada a acciones concretas:</p>
+<ul><li>Llamar.</li><li>Abrir WhatsApp.</li><li>Reservar.</li><li>Comprar.</li><li>Ver mapa.</li><li>Enviar formulario.</li><li>Abrir chatbot.</li><li>Solicitar informacion.</li></ul>
+<h3 id="9-3-fallback-standalone">9.3 Fallback standalone</h3>
+<p>Si la web exportada no tiene backend disponible:</p>
+<ul><li>Los leads se guardan en <code>window.localLiftLeads</code>.</li><li>Las reservas se guardan en <code>window.localLiftBookings</code>.</li><li>Los eventos se guardan en <code>window.localLiftEvents</code>.</li></ul>
+<p>Esto evita que la web deje de funcionar por completo y mantiene una experiencia aceptable en demos o contextos sin servidor.</p>
+<h3 id="9-4-analitica-de-eventos">9.4 Analitica de eventos</h3>
+<p>Eventos actuales:</p>
+<ul><li><code>booking_click</code></li><li><code>lead_form_submit</code></li><li><code>store_add_to_cart</code></li><li><code>store_checkout_start</code></li><li><code>chatbot_open</code></li><li><code>chatbot_prompt</code></li><li><code>chatbot_message</code></li><li><code>chatbot_lead_captured</code></li><li><code>public_booking_submit</code></li><li><code>dock_booking_click</code></li><li><code>dock_phone_click</code></li><li><code>dock_maps_click</code></li></ul>
+<p>Si el backend esta activo, estos eventos se sincronizan con la API para alimentar reportes.</p>
+<hr>
+<h2 id="10-chatbot">10. Chatbot</h2>
+<h3 id="10-1-chatbot-local">10.1 Chatbot local</h3>
+<p>El bot local responde usando los datos del negocio:</p>
+<ul><li>Servicios.</li><li>Horarios.</li><li>Ubicacion.</li><li>Telefono.</li><li>Email.</li><li>FAQ.</li><li>Enlaces.</li><li>Reservas.</li></ul>
+<p>No depende de una API externa y funciona incluso en el HTML exportado.</p>
+<h3 id="10-2-configuracion">10.2 Configuracion</h3>
+<p>El usuario puede configurar:</p>
+<ul><li>Nombre del asistente.</li><li>Tono.</li><li>Saludo inicial.</li><li>Preguntas rapidas.</li><li>Texto de traspaso a humano.</li><li>Endpoint IA opcional.</li></ul>
+<h3 id="10-3-captura-de-leads">10.3 Captura de leads</h3>
+<p>Cuando el visitante escribe datos de contacto o expresa una necesidad, el chatbot puede generar un lead. Si hay backend, lo guarda en CRM; si no, lo conserva en memoria local.</p>
+<h3 id="10-4-endpoint-ia-opcional">10.4 Endpoint IA opcional</h3>
+<p>El proyecto incluye <code>examples/chatbot-api.example.mjs</code>, un backend de ejemplo que llama a la API de OpenAI desde servidor. La clave nunca debe exponerse en HTML.</p>
+<p>Variables:</p>
+<pre><code class="language-text">OPENAI_API_KEY
+OPENAI_MODEL</code></pre>
+<h3 id="10-5-limitaciones-actuales">10.5 Limitaciones actuales</h3>
+<ul><li>No existe todavia base de conocimiento persistente por negocio.</li><li>No hay historial de conversaciones productivo.</li><li>No hay agente que ejecute acciones reales con confirmacion.</li><li>No hay panel de entrenamiento de FAQ ampliada.</li></ul>
+<hr>
+<h2 id="11-crm-y-leads">11. CRM y leads</h2>
+<h3 id="11-1-objetivo">11.1 Objetivo</h3>
+<p>El CRM ligero busca que ningun contacto se pierda. Un negocio local no necesita un CRM complejo al principio; necesita saber quien ha preguntado, por que canal, en que estado esta y que tarea queda pendiente.</p>
+<h3 id="11-2-modelo-de-contacto">11.2 Modelo de contacto</h3>
+<p>Campos principales:</p>
+<ul><li><code>id</code></li><li><code>businessId</code></li><li><code>type</code></li><li><code>name</code></li><li><code>phone</code></li><li><code>email</code></li><li><code>source</code></li><li><code>status</code></li><li><code>tags</code></li><li><code>notes</code></li><li><code>valueEstimate</code></li><li><code>lastInteractionAt</code></li><li><code>createdAt</code></li><li><code>updatedAt</code></li></ul>
+<h3 id="11-3-estados">11.3 Estados</h3>
+<p>Estados soportados:</p>
+<ul><li><code>new</code></li><li><code>contacted</code></li><li><code>waiting</code></li><li><code>reserved</code></li><li><code>won</code></li><li><code>lost</code></li><li><code>customer</code></li></ul>
+<h3 id="11-4-actividades">11.4 Actividades</h3>
+<p>Cada contacto puede tener actividades:</p>
+<ul><li>Lead creado.</li><li>Contacto creado manualmente.</li><li>Nota.</li><li>Tarea.</li><li>Cambio de estado.</li><li>Reserva relacionada.</li><li>Recordatorio preparado.</li></ul>
+<h3 id="11-5-endpoints">11.5 Endpoints</h3>
+<pre><code class="language-text">POST  /api/public/{businessSlug}/leads
+GET   /api/businesses/{id}/contacts?includeActivities=true
+POST  /api/businesses/{id}/contacts
+PATCH /api/businesses/{id}/contacts/{contactId}
+POST  /api/businesses/{id}/contacts/{contactId}/activities</code></pre>
+<h3 id="11-6-portal">11.6 Portal</h3>
+<p>El dashboard muestra los leads en pipeline por estado. Permite:</p>
+<ul><li>Ver leads nuevos.</li><li>Cambiar estado.</li><li>Guardar notas/tareas.</li><li>Consultar clientes.</li><li>Exportar leads a CSV.</li><li>Exportar clientes a CSV.</li></ul>
+<h3 id="11-7-csv">11.7 CSV</h3>
+<p>Los CSV incluyen:</p>
+<ul><li>Nombre.</li><li>Telefono.</li><li>Email.</li><li>Estado.</li><li>Fuente.</li><li>Etiquetas.</li><li>Valor.</li><li>Notas.</li><li>Ultima actividad.</li><li>Fecha de creacion.</li></ul>
+<p>Esto refuerza el principio de portabilidad y permite usar los datos en Excel, Google Sheets o herramientas externas.</p>
+<hr>
+<h2 id="12-reservas-y-agenda">12. Reservas y agenda</h2>
+<h3 id="12-1-objetivo">12.1 Objetivo</h3>
+<p>Permitir que negocios con citas puedan recibir reservas desde su web y gestionarlas desde el portal sin una herramienta externa compleja.</p>
+<h3 id="12-2-servicios-reservables">12.2 Servicios reservables</h3>
+<p>Cada servicio puede incluir:</p>
+<ul><li>Nombre.</li><li>Duracion.</li><li>Precio.</li><li>Estado activo/inactivo.</li></ul>
+<p>Si un negocio no tiene servicios reservables, la API puede generar una base inicial desde los servicios ya definidos en la web.</p>
+<h3 id="12-3-disponibilidad-semanal">12.3 Disponibilidad semanal</h3>
+<p>El dashboard permite editar tramos por dia de la semana:</p>
+<ul><li>Dia.</li><li>Activo.</li><li>Hora inicio.</li><li>Hora fin.</li></ul>
+<h3 id="12-4-bloqueos-manuales">12.4 Bloqueos manuales</h3>
+<p>Sirven para cerrar huecos concretos:</p>
+<ul><li>Vacaciones.</li><li>Evento.</li><li>Cierre temporal.</li><li>Descanso.</li><li>Mantenimiento.</li></ul>
+<h3 id="12-5-validacion-de-reservas">12.5 Validacion de reservas</h3>
+<p>La API evita:</p>
+<ul><li>Reservas fuera de horario.</li><li>Solapes con otras reservas.</li><li>Reservas en bloqueos activos.</li><li>Negocios archivados.</li><li>Servicios inactivos.</li></ul>
+<h3 id="12-6-recordatorios">12.6 Recordatorios</h3>
+<p>El sistema permite:</p>
+<ul><li>Preparar recordatorio manual por reserva.</li><li>Generar cola de proximos recordatorios en 48 horas.</li><li>Registrar la accion en CRM.</li><li>Devolver enlaces preparados para WhatsApp/email.</li></ul>
+<p>Todavia no envia automaticamente. El envio automatico real queda como siguiente hito.</p>
+<h3 id="12-7-vista-calendario">12.7 Vista calendario</h3>
+<p>El dashboard incluye calendario semanal:</p>
+<ul><li>Semana anterior.</li><li>Hoy.</li><li>Semana siguiente.</li><li>Reservas por dia.</li><li>Estado.</li><li>Servicio.</li><li>Cliente.</li><li>Recordatorio.</li></ul>
+<h3 id="12-8-exportacion-csv">12.8 Exportacion CSV</h3>
+<p>Las reservas se pueden exportar con:</p>
+<ul><li>Servicio.</li><li>Cliente.</li><li>Telefono.</li><li>Email.</li><li>Contacto.</li><li>Estado.</li><li>Inicio.</li><li>Fin.</li><li>Notas.</li><li>Ultimo recordatorio.</li><li>Creado.</li></ul>
+<hr>
+<h2 id="13-tienda-pagos-y-pedidos">13. Tienda, pagos y pedidos</h2>
+<h3 id="13-1-tienda-visual-en-la-web">13.1 Tienda visual en la web</h3>
+<p>El Studio permite activar tienda con:</p>
+<ul><li>Productos.</li><li>Imagen.</li><li>Precio.</li><li>Descripcion.</li><li>SKU.</li><li>Stock.</li><li>Carrito.</li><li>Checkout.</li></ul>
+<h3 id="13-2-backend-de-comercio">13.2 Backend de comercio</h3>
+<p>El archivo <code>examples/commerce-api.example.mjs</code> implementa una base de backend de tienda con:</p>
+<ul><li>Productos.</li><li>Configuracion.</li><li>Validacion de carrito.</li><li>Checkout Stripe.</li><li>Webhook Stripe.</li><li>Pedidos.</li><li>Admin.</li><li>Cupones.</li><li>Ajustes.</li><li>Stock reservado.</li><li>Emails opcionales con Resend.</li></ul>
+<h3 id="13-3-seguridad-del-backend-de-comercio">13.3 Seguridad del backend de comercio</h3>
+<p>Incluye:</p>
+<ul><li>Libreria oficial <code>stripe</code>.</li><li>Verificacion de webhook con <code>Stripe-Signature</code>.</li><li><code>STORE_ADMIN_TOKEN</code> obligatorio.</li><li>Comparacion en tiempo constante.</li><li>CORS configurable.</li><li>Redirecciones limitadas.</li><li>Rate limit.</li><li>JSON estricto.</li><li>Escritura atomica.</li></ul>
+<h3 id="13-4-limitaciones-actuales">13.4 Limitaciones actuales</h3>
+<p>La tienda aun debe consolidarse con el portal multi-negocio principal. Falta:</p>
+<ul><li>Variantes.</li><li>Categorias.</li><li>Inventario avanzado.</li><li>POS ligero.</li><li>Cierre diario.</li><li>Pedidos unificados en dashboard principal.</li></ul>
+<hr>
+<h2 id="14-reportes-y-analitica">14. Reportes y analitica</h2>
+<h3 id="14-1-objetivo">14.1 Objetivo</h3>
+<p>El reporte mensual debe demostrar valor al cliente de forma comprensible. No debe ser un panel tecnico de analitica, sino un resumen operativo:</p>
+<ul><li>Contactos nuevos.</li><li>Reservas.</li><li>Recordatorios.</li><li>Ingresos.</li><li>Fuentes.</li><li>Conversiones.</li><li>Recomendaciones.</li></ul>
+<h3 id="14-2-api-de-reporte">14.2 API de reporte</h3>
+<p>Endpoint:</p>
+<pre><code class="language-text">GET /api/businesses/{id}/reports/monthly?month=YYYY-MM</code></pre>
+<p>Si no se pasa mes, usa el mes actual.</p>
+<h3 id="14-3-vista-imprimible">14.3 Vista imprimible</h3>
+<p>La vista vive en:</p>
+<pre><code class="language-text">pages/monthly-report.html</code></pre>
+<p>Permite imprimir desde navegador y generar un PDF manual. Falta todavia automatizar PDF desde servidor o pipeline.</p>
+<h3 id="14-4-recomendaciones-automaticas">14.4 Recomendaciones automaticas</h3>
+<p>El reporte genera recomendaciones basicas segun datos:</p>
+<ul><li>Responder leads.</li><li>Activar reservas.</li><li>Revisar conversiones.</li><li>Mejorar fuentes.</li><li>Preparar recordatorios.</li></ul>
+<h3 id="14-5-importancia-comercial">14.5 Importancia comercial</h3>
+<p>El reporte es clave para cobrar mantenimiento mensual. Permite decir:</p>
+<ul><li>&quot;Este mes recibiste X contactos.&quot;</li><li>&quot;La accion mas usada fue WhatsApp.&quot;</li><li>&quot;Tienes reservas sin recordatorio.&quot;</li><li>&quot;Conviene subir fotos o activar promocion.&quot;</li></ul>
+<hr>
+<h2 id="15-google-ops-y-seo-local">15. Google Ops y SEO local</h2>
+<h3 id="15-1-campos-google-ready">15.1 Campos Google-ready</h3>
+<p>El Studio contempla:</p>
+<ul><li>Google Maps URL.</li><li>Mapa embebido.</li><li>Nota de llegada.</li><li>Parking.</li><li>Enlace de reseñas.</li><li>URL de reserva.</li><li>Place ID.</li><li>Datos NAP.</li></ul>
+<h3 id="15-2-backend-google-de-ejemplo">15.2 Backend Google de ejemplo</h3>
+<p><code>examples/google-integration.example.mjs</code> cubre:</p>
+<ul><li>Places API.</li><li>Calendar FreeBusy.</li><li>Calendar Events.</li><li>Business Profile accounts.</li><li>Business Profile locations.</li><li>Business Profile reviews.</li><li>Reply a reseñas.</li><li>Workspace user dry-run.</li><li>Review request.</li></ul>
+<h3 id="15-3-playbook-google">15.3 Playbook Google</h3>
+<p>La documentacion incluye un playbook para vender y operar:</p>
+<ul><li>Google Business Profile.</li><li>Correo profesional.</li><li>Reseñas.</li><li>Reservas.</li><li>Datos de negocio.</li></ul>
+<h3 id="15-4-pendiente">15.4 Pendiente</h3>
+<p>Para produccion falta:</p>
+<ul><li>OAuth persistente por negocio.</li><li>Guardar tokens cifrados.</li><li>Solicitar acceso Business Profile API.</li><li>Gestion de permisos.</li><li>Sincronizacion real de horarios/fotos/reseñas.</li></ul>
+<hr>
+<h2 id="16-seguridad">16. Seguridad</h2>
+<h3 id="16-1-estado-actual">16.1 Estado actual</h3>
+<p>Seguridad implementada:</p>
+<ul><li>Token admin opcional para rutas <code>/api/businesses/*</code>.</li><li>Soporte <code>Authorization: Bearer</code>.</li><li>Soporte <code>X-LocalLift-Admin-Token</code>.</li><li>CORS configurable.</li><li>Healthcheck separado.</li><li>Validacion de entorno productivo.</li><li>Escritura atomica.</li><li>Backups JSON.</li><li>Proteccion basica contra path traversal en servidor estatico.</li><li>Cabeceras base como <code>nosniff</code>, <code>Referrer-Policy</code> y <code>Cache-Control: no-store</code>.</li></ul>
+<h3 id="16-2-validacion-de-entorno">16.2 Validacion de entorno</h3>
+<p><code>server/scripts/validate-deploy-env.mjs</code> impide arrancar <code>start:prod</code> si faltan:</p>
+<ul><li><code>NODE_ENV=production</code></li><li><code>HOST=0.0.0.0</code></li><li>Token admin largo.</li><li><code>CORS_ORIGIN</code> HTTPS.</li><li><code>BUSINESS_DB_FILE</code>.</li></ul>
+<h3 id="16-3-limitaciones">16.3 Limitaciones</h3>
+<p>Falta:</p>
+<ul><li>Usuarios reales.</li><li>Sesiones.</li><li>Hash de contraseñas.</li><li>Roles.</li><li>Permisos por negocio.</li><li>Auditoria avanzada.</li><li>Rate limit general en API principal.</li><li>Proteccion CSRF si se introducen sesiones con cookies.</li><li>Cifrado de tokens Google.</li></ul>
+<hr>
+<h2 id="17-despliegue">17. Despliegue</h2>
+<h3 id="17-1-local">17.1 Local</h3>
+<pre><code class="language-powershell">npm.cmd start</code></pre>
+<p>Servidor:</p>
+<pre><code class="language-text">http://127.0.0.1:5173</code></pre>
+<h3 id="17-2-produccion">17.2 Produccion</h3>
+<pre><code class="language-powershell">npm run start:prod</code></pre>
+<p>Variables minimas:</p>
+<pre><code class="language-text">NODE_ENV=production
+HOST=0.0.0.0
+LOCALLIFT_ADMIN_TOKEN=&lt;token-largo&gt;
+CORS_ORIGIN=https://www.cliente.com,https://cliente.com
+BUSINESS_DB_FILE=/data/business-db.json
+BUSINESS_DB_BACKUP_DIR=/data/backups
+BUSINESS_DB_BACKUPS=true</code></pre>
+<h3 id="17-3-render">17.3 Render</h3>
+<p>El repo incluye <code>render.yaml</code>:</p>
+<ul><li>Servicio web Node.</li><li>Build command <code>npm ci --omit=dev</code>.</li><li>Start command <code>npm run start:prod</code>.</li><li>Healthcheck <code>/api/health</code>.</li><li>Disco persistente <code>/data</code>.</li><li>Variables secretas pendientes de rellenar.</li></ul>
+<h3 id="17-4-docker">17.4 Docker</h3>
+<p>El <code>Dockerfile</code> usa:</p>
+<ul><li><code>node:22-alpine</code></li><li><code>npm ci --omit=dev</code></li><li><code>HOST=0.0.0.0</code></li><li><code>BUSINESS_DB_FILE=/data/business-db.json</code></li><li>Healthcheck con <code>fetch(&#039;/api/health&#039;)</code>.</li></ul>
+<h3 id="17-5-frontend-separado">17.5 Frontend separado</h3>
+<p>Si la web esta en un dominio y la API en otro:</p>
+<pre><code class="language-text">https://www.cliente.com/pages/business-dashboard.html?apiBase=https://tu-api.onrender.com</code></pre>
+<p>La URL API puede resolverse por:</p>
+<ol><li><code>window.LOCALLIFT_API_BASE</code></li><li>Meta <code>locallift-api-base</code></li><li><code>localStorage.locallift_api_base</code></li><li>Mismo dominio</li></ol>
+<hr>
+<h2 id="18-guion-de-defensa-tecnica-tipo-tfg">18. Guion de defensa tecnica tipo TFG</h2>
+<h3 id="18-1-apertura">18.1 Apertura</h3>
+<p>&quot;Este proyecto presenta LocalLift Studio, una plataforma para digitalizar negocios locales mediante una solucion integrada de web, CRM, reservas, tienda, chatbot, analitica y reportes. El objetivo ha sido crear una herramienta capaz de pasar de datos basicos de un negocio a una presencia digital operativa, exportable y preparada para pilotos reales.&quot;</p>
+<h3 id="18-2-problema">18.2 Problema</h3>
+<p>&quot;Los negocios locales suelen tener presencia digital fragmentada: redes sociales, Google Maps, WhatsApp, reservas manuales y webs antiguas. Esto provoca perdida de oportunidades y dificultad para medir resultados. El proyecto aborda este problema simplificando la creacion y gestion digital.&quot;</p>
+<h3 id="18-3-solucion">18.3 Solucion</h3>
+<p>&quot;La solucion se divide en tres capas: un Studio interno para crear y personalizar webs, una web publica orientada a conversion y un portal operativo para gestionar leads, clientes, reservas y reportes. La arquitectura usa frontend estatico, servidor Node modular y persistencia JSON atomica para validar rapidamente.&quot;</p>
+<h3 id="18-4-demo-tecnica">18.4 Demo tecnica</h3>
+<ol><li>Abrir <code>index.html</code>.</li><li>Mostrar editor de negocio.</li><li>Cambiar un dato visible.</li><li>Mostrar preview movil.</li><li>Aplicar una variante de demo en vivo.</li><li>Activar formulario de lead.</li><li>Exportar HTML.</li><li>Abrir dashboard.</li><li>Mostrar leads, reservas y reportes.</li><li>Mostrar <code>/api/health</code>.</li><li>Explicar despliegue con Render y Docker.</li></ol>
+<h3 id="18-5-decisiones-de-arquitectura">18.5 Decisiones de arquitectura</h3>
+<p>&quot;Se eligio JavaScript sin framework pesado para mantener portabilidad y exportacion HTML. Se eligio Node nativo para reducir dependencias. Se eligio JSON atomico para acelerar el MVP, con una ruta clara de migracion a SQLite/Postgres.&quot;</p>
+<h3 id="18-6-seguridad">18.6 Seguridad</h3>
+<p>&quot;La seguridad actual cubre token admin, CORS configurable, validacion de entorno de produccion y separacion basica por negocio. La autenticacion completa por usuarios queda como trabajo futuro.&quot;</p>
+<h3 id="18-7-resultados">18.7 Resultados</h3>
+<p>&quot;El resultado es una plataforma funcional que ya permite crear webs, captar leads, gestionar CRM, recibir reservas, exportar CSV, generar reportes y desplegar backend. Esto cumple una fase avanzada de prototipo/MVP.&quot;</p>
+<h3 id="18-8-cierre">18.8 Cierre</h3>
+<p>&quot;La conclusion es que LocalLift demuestra viabilidad tecnica y comercial. El siguiente paso no es seguir añadiendo funcionalidades aisladas, sino validar con pilotos reales y, a partir de ahi, evolucionar la persistencia, autenticacion e integraciones.&quot;</p>
+<hr>
+<h2 id="19-guion-comercial-de-demo">19. Guion comercial de demo</h2>
+<h3 id="19-1-entrada">19.1 Entrada</h3>
+<p>&quot;Ahora mismo tus clientes te descubren desde Google, Instagram o WhatsApp. Si cuando entran no ven horarios claros, fotos buenas, reserva facil y respuestas rapidas, se van a otro negocio. LocalLift te deja todo eso montado.&quot;</p>
+<h3 id="19-2-demo-movil-primero">19.2 Demo movil primero</h3>
+<ol><li>Mostrar web en movil.</li><li>Enseñar CTA principal.</li><li>Abrir mapa.</li><li>Abrir reserva.</li><li>Abrir chatbot.</li><li>Enviar lead de prueba.</li></ol>
+<h3 id="19-3-mostrar-operacion">19.3 Mostrar operacion</h3>
+<ol><li>Abrir dashboard.</li><li>Ver lead nuevo.</li><li>Cambiar estado.</li><li>Añadir nota.</li><li>Ver calendario de reservas.</li><li>Preparar recordatorio.</li><li>Abrir reporte mensual.</li></ol>
+<h3 id="19-4-cierre">19.4 Cierre</h3>
+<p>&quot;No te vendemos una plantilla. Te entregamos una presencia digital viva: web, captacion, reservas, seguimiento y reporte. Tu negocio no solo se ve mejor; tambien sabe que contactos y reservas ha generado.&quot;</p>
+<h3 id="19-5-objeciones">19.5 Objeciones</h3>
+<p><strong>Ya tengo Instagram.</strong> Instagram ayuda, pero no organiza servicios, horarios, reservas, SEO, FAQ, mapa y reportes en una experiencia controlada.</p>
+<p><strong>Wix es mas barato.</strong> Wix es una herramienta. LocalLift vende resultado implementado, conectado y mantenido.</p>
+<p><strong>No necesito chatbot.</strong> El bot reduce preguntas repetidas y deriva a humano cuando hace falta.</p>
+<p><strong>No quiero depender.</strong> La web se exporta y los datos se pueden sacar en JSON/CSV.</p>
+<hr>
+<h2 id="20-guion-para-inversores">20. Guion para inversores</h2>
+<h3 id="20-1-tesis">20.1 Tesis</h3>
+<p>&quot;Existe una oportunidad en digitalizar negocios locales con una solucion mas simple que un ERP y mas operativa que un constructor web. LocalLift combina entrega de web, CRM, reservas, Google, chatbot, reportes y mantenimiento.&quot;</p>
+<h3 id="20-2-mercado">20.2 Mercado</h3>
+<p>El mercado objetivo inicial son negocios locales que dependen de visitas, llamadas, reservas o confianza:</p>
+<ul><li>Restaurantes.</li><li>Clinicas.</li><li>Peluquerias.</li><li>Barberias.</li><li>Gimnasios.</li><li>Academias.</li><li>Talleres.</li><li>Tiendas locales.</li><li>Servicios profesionales.</li></ul>
+<h3 id="20-3-producto">20.3 Producto</h3>
+<p>Producto en tres capas:</p>
+<ul><li>Studio interno.</li><li>Portal del negocio.</li><li>Web publica.</li></ul>
+<h3 id="20-4-modelo-de-negocio">20.4 Modelo de negocio</h3>
+<p>Paquetes:</p>
+<ul><li>Presencia Local.</li><li>Operacion Local.</li><li>Comercio Local.</li><li>Digitalizacion Total.</li></ul>
+<p>Ingresos:</p>
+<ul><li>Setup inicial.</li><li>Mantenimiento mensual.</li><li>Integraciones premium.</li><li>Cambios mensuales.</li><li>Reportes.</li><li>Servicios Google.</li></ul>
+<h3 id="20-5-traccion-tecnica">20.5 Traccion tecnica</h3>
+<p>Se ha construido:</p>
+<ul><li>Motor web.</li><li>CRM.</li><li>Reservas.</li><li>Reportes.</li><li>Tienda base.</li><li>Despliegue.</li><li>Documentacion.</li></ul>
+<h3 id="20-6-siguiente-hito">20.6 Siguiente hito</h3>
+<p>Cerrar 5 pilotos fundadores, publicar 3 demos reales y medir conversiones utiles por mes.</p>
+<hr>
+<h2 id="21-modelo-comercial">21. Modelo comercial</h2>
+<h3 id="21-1-paquete-presencia-local">21.1 Paquete Presencia Local</h3>
+<p>Para negocios que necesitan verse profesionales.</p>
+<p>Incluye:</p>
+<ul><li>Web premium.</li><li>SEO local basico.</li><li>WhatsApp/telefono/mapa.</li><li>Chatbot local.</li><li>Formulario.</li><li>Reporte simple.</li></ul>
+<h3 id="21-2-paquete-operacion-local">21.2 Paquete Operacion Local</h3>
+<p>Para negocios con leads o reservas.</p>
+<p>Incluye:</p>
+<ul><li>Todo Presencia Local.</li><li>CRM.</li><li>Agenda.</li><li>Reservas.</li><li>Reporte mensual.</li><li>Solicitud de reseñas.</li></ul>
+<h3 id="21-3-paquete-comercio-local">21.3 Paquete Comercio Local</h3>
+<p>Para negocios con productos.</p>
+<p>Incluye:</p>
+<ul><li>Web.</li><li>Tienda.</li><li>Carrito.</li><li>Checkout.</li><li>Pedidos.</li><li>Inventario basico.</li><li>Cupones.</li></ul>
+<h3 id="21-4-paquete-digitalizacion-total">21.4 Paquete Digitalizacion Total</h3>
+<p>Para negocios que quieren delegarlo casi todo.</p>
+<p>Incluye:</p>
+<ul><li>Web.</li><li>CRM.</li><li>Reservas.</li><li>Tienda o presupuestos.</li><li>Google.</li><li>Reportes.</li><li>Marketing.</li><li>Reputacion.</li><li>IA.</li><li>Soporte prioritario.</li></ul>
+<hr>
+<h2 id="22-roadmap-pendiente">22. Roadmap pendiente</h2>
+<h3 id="22-1-prioridad-inmediata">22.1 Prioridad inmediata</h3>
+<ul><li>Desplegar backend real en Render/Railway/VPS.</li><li>Publicar 2-3 demos reales con URL.</li><li>Probar embudo completo con <code>apiBase</code>.</li><li>Cerrar pilotos fundadores.</li><li>Medir conversiones utiles.</li></ul>
+<h3 id="22-2-prioridad-tecnica-alta">22.2 Prioridad tecnica alta</h3>
+<ul><li>Migrar de JSON a SQLite o Supabase/Postgres.</li><li>Crear autenticacion real.</li><li>Crear roles y permisos.</li><li>Crear usuarios por negocio.</li><li>Cifrar tokens externos.</li><li>Mejorar auditoria.</li><li>Añadir pruebas automatizadas.</li></ul>
+<h3 id="22-3-prioridad-de-producto">22.3 Prioridad de producto</h3>
+<ul><li>Bandeja de mensajes.</li><li>Automatizaciones.</li><li>Solicitudes de reseña.</li><li>Marketing local.</li><li>Presupuestos.</li><li>Facturas.</li><li>Exportacion PDF automatica de reportes.</li><li>Subida de imagenes.</li></ul>
+<h3 id="22-4-integraciones">22.4 Integraciones</h3>
+<ul><li>OAuth Google.</li><li>Google Calendar real.</li><li>Google Business Profile.</li><li>Email transaccional.</li><li>WhatsApp Business API.</li><li>Stripe productivo.</li><li>Storage externo.</li></ul>
+<hr>
+<h2 id="23-riesgos">23. Riesgos</h2>
+<h3 id="23-1-riesgo-tecnico-json-en-produccion">23.1 Riesgo tecnico: JSON en produccion</h3>
+<p>El JSON es rapido para MVP, pero no ideal para concurrencia. Mitigacion: pilotos controlados y migracion posterior a SQLite/Postgres.</p>
+<h3 id="23-2-riesgo-comercial-vender-demasiado-pronto">23.2 Riesgo comercial: vender demasiado pronto</h3>
+<p>Mitigacion: vender pilotos fundadores con expectativas claras y alcance limitado.</p>
+<h3 id="23-3-riesgo-de-soporte">23.3 Riesgo de soporte</h3>
+<p>Si cada cliente requiere ajustes manuales infinitos, el margen baja. Mitigacion: plantillas, checklists, procesos y limites por plan.</p>
+<h3 id="23-4-riesgo-de-integraciones">23.4 Riesgo de integraciones</h3>
+<p>Google, WhatsApp y pagos pueden requerir permisos, aprobaciones y configuracion. Mitigacion: empezar con enlaces y dry-run, y activar APIs solo cuando haya necesidad real.</p>
+<h3 id="23-5-riesgo-de-seguridad">23.5 Riesgo de seguridad</h3>
+<p>El MVP no tiene usuarios completos. Mitigacion: token admin, CORS, despliegue controlado y desarrollo de autenticacion antes de escalar.</p>
+<hr>
+<h2 id="24-plan-de-validacion">24. Plan de validacion</h2>
+<h3 id="24-1-pruebas-tecnicas">24.1 Pruebas tecnicas</h3>
+<ul><li><code>npm.cmd run check</code>.</li><li><code>npm.cmd run check:deploy</code>.</li><li><code>GET /api/health</code>.</li><li>Prueba de CORS.</li><li>Prueba de token admin.</li><li>Crear lead publico.</li><li>Crear reserva publica.</li><li>Cambiar estado de lead.</li><li>Crear nota.</li><li>Confirmar/cancelar reserva.</li><li>Exportar CSV.</li><li>Abrir reporte mensual.</li></ul>
+<h3 id="24-2-pruebas-ux">24.2 Pruebas UX</h3>
+<ul><li>Revisar movil 360px.</li><li>Revisar tablet.</li><li>Revisar desktop.</li><li>Comprobar que botones no se solapan.</li><li>Comprobar formularios.</li><li>Comprobar textos largos.</li><li>Comprobar estados vacios.</li></ul>
+<h3 id="24-3-pruebas-comerciales">24.3 Pruebas comerciales</h3>
+<ul><li>Mostrar demo en menos de 10 minutos.</li><li>Explicar precio y paquete.</li><li>Responder objeciones.</li><li>Cerrar siguiente paso.</li></ul>
+<hr>
+<h2 id="25-manual-de-uso-rapido">25. Manual de uso rapido</h2>
+<h3 id="25-1-crear-web">25.1 Crear web</h3>
+<ol><li>Abrir <code>index.html</code>.</li><li>Rellenar datos.</li><li>Elegir tema.</li><li>Activar secciones.</li><li>Revisar preview movil.</li><li>Revisar checklist.</li><li>Exportar HTML.</li></ol>
+<h3 id="25-2-gestionar-negocio">25.2 Gestionar negocio</h3>
+<ol><li>Ejecutar servidor.</li><li>Abrir <code>pages/business-dashboard.html</code>.</li><li>Seleccionar negocio.</li><li>Revisar metricas.</li><li>Gestionar leads.</li><li>Gestionar reservas.</li><li>Abrir reporte.</li></ol>
+<h3 id="25-3-desplegar">25.3 Desplegar</h3>
+<ol><li>Subir repo a GitHub.</li><li>Usar Render Deploy.</li><li>Configurar variables.</li><li>Comprobar <code>/api/health</code>.</li><li>Abrir dashboard con <code>apiBase</code>.</li><li>Probar lead/reserva/reporte.</li></ol>
+<hr>
+<h2 id="26-estado-actual-por-porcentaje">26. Estado actual por porcentaje</h2>
+<h3 id="26-1-demo-vendible-online">26.1 Demo vendible online</h3>
+<p>Estado estimado: 94-95%.</p>
+<p>Falta:</p>
+<ul><li>Crear servicio real en Render/Railway.</li><li>Configurar variables reales.</li><li>Publicar frontend/demo.</li><li>Probar el embudo completo en dominio real.</li><li>Documentar URLs definitivas.</li></ul>
+<h3 id="26-2-producto-completo-plan-maestro">26.2 Producto completo Plan Maestro</h3>
+<p>Estado estimado: 75-76%.</p>
+<p>Falta:</p>
+<ul><li>Autenticacion real.</li><li>Base relacional.</li><li>Integraciones productivas.</li><li>Mensajeria automatica.</li><li>Facturacion/presupuestos.</li><li>Marketing y reputacion.</li><li>Multiusuario.</li><li>Escalado.</li></ul>
+<hr>
+<h2 id="27-conclusiones">27. Conclusiones</h2>
+<p>LocalLift Studio ha evolucionado desde un generador de webs premium hasta una base real de plataforma operativa para negocios locales. El proyecto ya no se limita a mostrar una web bonita: captura leads, gestiona CRM, recibe reservas, registra eventos, genera reportes, exporta datos y se prepara para despliegue en cloud.</p>
+<p>La decision de construir de forma incremental ha permitido avanzar rapido y mantener el sistema comprensible. El uso de JSON, Node nativo y frontend sin framework pesado no pretende ser la arquitectura final, sino una estrategia adecuada para validar producto, vender pilotos y aprender con clientes reales.</p>
+<p>El siguiente gran salto es comercial y operativo: publicar demos reales, cerrar pilotos y medir conversiones utiles. A partir de ahi, la prioridad tecnica debe ser convertir la base MVP en plataforma robusta: autenticacion, base relacional, roles, integraciones y automatizaciones.</p>
+<p>Como memoria de proyecto, LocalLift demuestra:</p>
+<ul><li>Identificacion de un problema real.</li><li>Solucion tecnica funcional.</li><li>Enfoque comercial claro.</li><li>Arquitectura evolutiva.</li><li>Documentacion y despliegue.</li><li>Roadmap realista.</li></ul>
+<p>El proyecto esta en una fase muy cercana a una demo vendible online y con una ruta clara hacia producto SaaS/servicio gestionado para negocios locales.</p>
+<hr>
+<h2 id="anexo-a-endpoints-principales">Anexo A. Endpoints principales</h2>
+<pre><code class="language-text">GET    /api/health
+GET    /api/businesses
+POST   /api/businesses
+GET    /api/businesses/{id}
+PUT    /api/businesses/{id}
+DELETE /api/businesses/{id}/archive
+
+POST   /api/public/{businessSlug}/leads
+GET    /api/businesses/{id}/contacts
+POST   /api/businesses/{id}/contacts
+PATCH  /api/businesses/{id}/contacts/{contactId}
+POST   /api/businesses/{id}/contacts/{contactId}/activities
+
+GET    /api/businesses/{id}/services
+POST   /api/businesses/{id}/services
+PATCH  /api/businesses/{id}/services/{serviceId}
+
+GET    /api/businesses/{id}/bookings
+POST   /api/businesses/{id}/bookings
+PATCH  /api/businesses/{id}/bookings/{bookingId}
+POST   /api/businesses/{id}/bookings/{bookingId}/reminders
+
+GET    /api/businesses/{id}/availability
+PUT    /api/businesses/{id}/availability
+
+GET    /api/businesses/{id}/blocks
+POST   /api/businesses/{id}/blocks
+PATCH  /api/businesses/{id}/blocks/{blockId}
+
+GET    /api/businesses/{id}/reminders
+POST   /api/businesses/{id}/reminders
+
+POST   /api/public/{businessSlug}/bookings
+POST   /api/public/{businessSlug}/events
+GET    /api/businesses/{id}/events
+
+GET    /api/businesses/{id}/reports/monthly</code></pre>
+<hr>
+<h2 id="anexo-b-variables-de-entorno">Anexo B. Variables de entorno</h2>
+<pre><code class="language-text">PORT=5173
+HOST=127.0.0.1
+NODE_ENV=development
+LOCALLIFT_ADMIN_TOKEN=change-me-use-a-long-random-token
+CORS_ORIGIN=http://127.0.0.1:5173,http://localhost:5173
+BUSINESS_DB_FILE=data/business-db.json
+BUSINESS_DB_BACKUPS=true
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5-mini
+STORE_ADMIN_TOKEN=change-me-use-a-long-random-token
+CHECKOUT_ALLOWED_ORIGINS=http://127.0.0.1:5173,http://localhost:5173
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+ORDER_EMAIL_TO=
+RESEND_API_KEY=
+GOOGLE_MAPS_API_KEY=
+GOOGLE_CALENDAR_ACCESS_TOKEN=
+GOOGLE_CALENDAR_ID=primary
+GOOGLE_BUSINESS_PROFILE_ACCESS_TOKEN=
+GOOGLE_WORKSPACE_ADMIN_ACCESS_TOKEN=</code></pre>
+<hr>
+<h2 id="anexo-c-checklist-de-entrega-a-cliente">Anexo C. Checklist de entrega a cliente</h2>
+<ul><li>Web revisada en movil.</li><li>Web revisada en desktop.</li><li>CTA principal visible.</li><li>Telefono correcto.</li><li>WhatsApp correcto.</li><li>Mapa correcto.</li><li>Horario correcto.</li><li>Servicios claros.</li><li>FAQ minima.</li><li>Testimonios o prueba social.</li><li>SEO title.</li><li>SEO description.</li><li>Schema LocalBusiness.</li><li>Formulario probado.</li><li>Chatbot probado.</li><li>Reserva probada si aplica.</li><li>Tienda probada si aplica.</li><li>Dashboard probado.</li><li>Reporte inicial generado.</li><li>Exportacion CSV verificada.</li><li>Backend healthcheck correcto.</li><li>Token admin configurado en produccion.</li><li>CORS configurado en produccion.</li></ul>
+<hr>
+<h2 id="anexo-d-glosario">Anexo D. Glosario</h2>
+<p><strong>CRM:</strong> sistema de gestion de contactos, leads y clientes. <strong>Lead:</strong> persona interesada que deja datos de contacto. <strong>CTA:</strong> llamada a la accion, por ejemplo reservar o llamar. <strong>Healthcheck:</strong> endpoint que indica si el backend esta vivo y la base es accesible. <strong>CORS:</strong> configuracion que controla que dominios pueden llamar a la API desde navegador. <strong>MVP:</strong> producto minimo viable. <strong>Dry-run:</strong> simulacion o preparacion sin ejecutar envio automatico real. <strong>Schema LocalBusiness:</strong> datos estructurados para buscadores. <strong>API base:</strong> URL del backend usada por un frontend desplegado en otro dominio.</p>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

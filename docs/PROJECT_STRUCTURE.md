@@ -55,8 +55,12 @@ LocalLift Studio keeps the simple static entry point at the repository root and 
 - `server/lib/admin-auth.mjs`: optional admin API token guard for production deployments.
 - `server/lib/cors.mjs`: shared CORS headers driven by `CORS_ORIGIN` / `LOCALLIFT_CORS_ORIGIN`.
 - `server/scripts/validate-deploy-env.mjs`: production startup guard for token, CORS and persistent DB env.
+- `server/scripts/build-tfg-doc.mjs`: builds the print-ready HTML version of the full project memory.
 - `.env.example`: environment variable template for local development and production hosting.
 - `Dockerfile`: container deployment entrypoint for production hosting.
 - `render.yaml`: Render Blueprint for the first hosted backend with healthcheck and persistent disk.
 - `docs/DEPLOYMENT.md`: first deployment guide for frontend, backend, environment variables and healthcheck.
 - `docs/PILOT_LAUNCH.md`: operational runbook for the first online pilot.
+- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.md`: full TFG-style project memory.
+- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.html`: print-ready HTML generated from the memory.
+- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.pdf`: exported PDF version for sharing or presentation.

@@ -322,6 +322,9 @@ El panel `Demo en vivo` permite aplicar cambios sin navegar por todas las pestan
 ## Material comercial
 
 - `docs/PLAN_MAESTRO_DIGITALIZACION_TOTAL.md`: plan maestro para convertir LocalLift en plataforma completa de digitalizacion de negocios locales.
+- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.md`: memoria tecnica, funcional y comercial tipo TFG.
+- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.html`: version imprimible profesional de la memoria.
+- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.pdf`: PDF completo de documentacion del proyecto.
 - `docs/PRODUCT_ACTION_PLAN.md`: investigacion, posicionamiento, paquetes, roadmap y guion de venta.
 - `docs/SALES_ONE_PAGER.md`: propuesta corta para enviar a negocios por WhatsApp/email.
 - `docs/INVESTOR_MEMO.md`: memo ejecutivo para inversores.
