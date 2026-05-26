@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+data/business-db.json
+data/store-db.json
+data/backups
+*.local

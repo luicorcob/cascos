@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Brief cliente - LocalLift</title>
+    <meta name="description" content="Formulario de briefing para crear una web LocalLift para negocios locales.">
+    <link rel="stylesheet" href="onboarding.css">
+  </head>
+  <body>
+    <main class="brief-shell">
+      <header class="brief-hero">
+        <a href="../index.html">LocalLift Studio</a>
+        <p class="eyebrow">Brief cliente</p>
+        <h1>Recopila todo lo necesario para entregar una web premium en 7 dias.</h1>
+        <p>
+          Este formulario sirve como guion de onboarding. El cliente puede completarlo en una reunion, por email o copiando las respuestas en un documento compartido.
+        </p>
+        <div class="brief-actions">
+          <button id="copyBriefButton" type="button">Copiar brief</button>
+          <button type="button" onclick="window.print()">Imprimir</button>
+        </div>
+      </header>
+
+      <form class="brief-form">
+        <section>
+          <h2>1. Identidad</h2>
+          <label>Nombre comercial <input type="text" placeholder="Ej: Brasa Norte"></label>
+          <label>Categoria <input type="text" placeholder="Restaurante, clinica, peluqueria..."></label>
+          <label>Ciudad/zona <input type="text" placeholder="Santander, Valencia, Madrid..."></label>
+          <label>Frase principal <textarea rows="3" placeholder="Que deberia entender el cliente en 5 segundos?"></textarea></label>
+        </section>
+
+        <section>
+          <h2>2. Conversion</h2>
+          <label>Objetivo principal <input type="text" placeholder="Reservas, llamadas, WhatsApp, formularios..."></label>
+          <label>URL de reserva o WhatsApp <input type="url" placeholder="https://wa.me/..."></label>
+          <label>Telefono <input type="tel"></label>
+          <label>Email <input type="email"></label>
+          <label>Direccion exacta <input type="text"></label>
+        </section>
+
+        <section>
+          <h2>3. Contenido</h2>
+          <label>Servicios principales <textarea rows="5" placeholder="Uno por linea"></textarea></label>
+          <label>Diferenciales <textarea rows="4" placeholder="Por que deberian elegirte?"></textarea></label>
+          <label>Horario <textarea rows="4"></textarea></label>
+          <label>Preguntas frecuentes <textarea rows="5" placeholder="Pregunta | Respuesta"></textarea></label>
+          <label>Testimonios <textarea rows="4" placeholder="Nombre | Texto"></textarea></label>
+        </section>
+
+        <section>
+          <h2>4. Recursos</h2>
+          <label>Enlaces sociales <textarea rows="4" placeholder="Instagram | URL"></textarea></label>
+          <label>Fotos disponibles <textarea rows="4" placeholder="Drive, Dropbox, Canva, Instagram, web actual..."></textarea></label>
+          <label>Referencias visuales <textarea rows="3" placeholder="Webs que te gustan o marcas de referencia"></textarea></label>
+        </section>
+
+        <section>
+          <h2>5. Chatbot</h2>
+          <label>Nombre del asistente <input type="text" placeholder="Ej: AlbaBot"></label>
+          <label>Tono <input type="text" placeholder="Directo, cercano, premium..."></label>
+          <label>Preguntas que debe responder <textarea rows="5" placeholder="Horarios, reservas, precios orientativos, ubicacion..."></textarea></label>
+          <label>Cuando debe derivar a humano? <textarea rows="3"></textarea></label>
+        </section>
+
+        <section>
+          <h2>6. Entrega y aprobacion</h2>
+          <label>Dominio actual o deseado <input type="text" placeholder="tunegocio.com"></label>
+          <label>Persona que aprueba la web <input type="text" placeholder="Nombre y cargo"></label>
+          <label>Competidores o referencias locales <textarea rows="4" placeholder="Negocios cercanos, webs que conviene superar..."></textarea></label>
+          <label>Restricciones legales o de marca <textarea rows="3" placeholder="Textos obligatorios, logos, colores, privacidad, disclaimers..."></textarea></label>
+        </section>
+
+        <section>
+          <h2>7. Google gestionado</h2>
+          <label>Dominio para correo profesional <input type="text" placeholder="tunegocio.com"></label>
+          <label>Correo profesional deseado <input type="email" placeholder="info@tunegocio.com"></label>
+          <label>Quien sera propietario/admin de Google Workspace? <input type="text" placeholder="Nombre, email y telefono"></label>
+          <label>Google Business Profile existe? <input type="text" placeholder="Si/No, enlace, propietario actual..."></label>
+          <label>Acceso que nos puede dar <textarea rows="3" placeholder="Manager de Business Profile, admin Workspace, Calendar, permisos de reseñas..."></textarea></label>
+          <label>Reglas de reservas/citas <textarea rows="4" placeholder="Duracion por servicio, margen entre citas, horarios, quien confirma..."></textarea></label>
+          <label>Mensaje para pedir resenas <textarea rows="3" placeholder="Gracias por venir. Nos ayudas dejando una resena aqui: {reviewUrl}"></textarea></label>
+        </section>
+      </form>
+    </main>
+    <script>
+      document.querySelector("#copyBriefButton")?.addEventListener("click", async () => {
+        const sections = Array.from(document.querySelectorAll(".brief-form section")).map((section) => {
+          const title = section.querySelector("h2")?.textContent?.trim() || "Seccion";
+          const rows = Array.from(section.querySelectorAll("label")).map((label) => {
+            const field = label.querySelector("input, textarea");
+            const labelText = Array.from(label.childNodes)
+              .filter((node) => node.nodeType === Node.TEXT_NODE)
+              .map((node) => node.textContent.trim())
+              .filter(Boolean)
+              .join(" ");
+            return `- ${labelText}: ${field?.value?.trim() || "[pendiente]"}`;
+          });
+          return `${title}\n${rows.join("\n")}`;
+        });
+        await navigator.clipboard.writeText(sections.join("\n\n"));
+        document.querySelector("#copyBriefButton").textContent = "Brief copiado";
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-25T00:00:00.000Z",
+  "businesses": [
+    {
+      "id": "biz_demo_brasa_norte",
+      "slug": "brasa-norte",
+      "name": "Brasa Norte",
+      "category": "Restaurante de fuego lento",
+      "city": "Santander",
+      "ownerName": "Demo LocalLift",
+      "ownerEmail": "reservas@brasanorte.es",
+      "ownerPhone": "+34 942 000 123",
+      "plan": "operacion-local",
+      "status": "published",
+      "publishedUrl": "",
+      "brand": {
+        "theme": "neon",
+        "accent": "#ff3d81",
+        "typography": "modern"
+      },
+      "integrations": {
+        "google": {
+          "enabled": true,
+          "mapsUrl": "https://maps.google.com/",
+          "reviewUrl": "https://g.page/r/"
+        },
+        "stripe": {
+          "enabled": false
+        },
+        "whatsapp": {
+          "enabled": true,
+          "url": "https://wa.me/34942000123"
+        }
+      },
+      "settings": {
+        "primaryGoal": "reservas",
+        "deliveryScore": 100,
+        "source": "demo"
+      },
+      "content": {
+        "name": "Brasa Norte",
+        "category": "Restaurante de fuego lento",
+        "location": "Santander",
+        "tagline": "Cocina local con alma de brasas",
+        "description": "Restaurante de barrio con producto local, reservas faciles y presencia digital premium.",
+        "conversionGoal": "Reservas de mesa, grupos y eventos privados por WhatsApp",
+        "phone": "+34 942 000 123",
+        "email": "reservas@brasanorte.es",
+        "address": "Calle del Mercado 18, Santander",
+        "bookingUrl": "https://wa.me/34942000123",
+        "services": [
+          "Menu degustacion de temporada",
+          "Parrilla de carne y pescado",
+          "Reservas para grupos",
+          "Take away premium"
+        ],
+        "trustBadges": [
+          "4.8 en Google con resenas conectables",
+          "Reserva en menos de un minuto",
+          "Carta, ubicacion y redes siempre visibles"
+        ]
+      },
+      "createdAt": "2026-05-25T00:00:00.000Z",
+      "updatedAt": "2026-05-25T00:00:00.000Z",
+      "archivedAt": ""
+    }
+  ],
+  "auditLog": [
+    {
+      "id": "audit_seed_brasa_norte",
+      "type": "business.seeded",
+      "businessId": "biz_demo_brasa_norte",
+      "createdAt": "2026-05-25T00:00:00.000Z"
+    }
+  ]
+}

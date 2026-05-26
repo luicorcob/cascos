@@ -1,0 +1,1066 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LocalLift Store Console</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --ink: #161615;
+        --muted: #6d675e;
+        --paper: #fffaf0;
+        --panel: rgba(255, 250, 240, 0.84);
+        --line: rgba(22, 22, 21, 0.14);
+        --accent: #cf3f2e;
+        --ok: #16745c;
+        --warn: #996b00;
+        --radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .side {
+        position: sticky;
+        top: 0;
+        display: grid;
+        align-content: start;
+        gap: 16px;
+        height: 100vh;
+        padding: 22px;
+        overflow-y: auto;
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .main {
+        min-width: 0;
+        padding: 24px;
+      }
+
+      .eyebrow {
+        margin: 0 0 4px;
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 0;
+        font-size: clamp(1.55rem, 4vw, 2.45rem);
+        line-height: 1;
+      }
+
+      h2 {
+        margin-bottom: 14px;
+        font-size: clamp(1.35rem, 2vw, 1.9rem);
+      }
+
+      .box,
+      .status,
+      .metric,
+      .product-card,
+      .order-card,
+      .coupon-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.56);
+      }
+
+      .box,
+      .status {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .status {
+        min-height: 48px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      label {
+        display: grid;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 900;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+        color: var(--ink);
+        outline: none;
+      }
+
+      input,
+      select {
+        padding: 0 11px;
+      }
+
+      textarea {
+        padding: 10px 11px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(207, 63, 46, 0.12);
+      }
+
+      .two,
+      .three {
+        display: grid;
+        gap: 10px;
+      }
+
+      .two {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .three {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .tab {
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.62);
+        color: var(--muted);
+        font-weight: 950;
+      }
+
+      .tab.is-active {
+        border-color: var(--ink);
+        background: var(--ink);
+        color: var(--paper);
+      }
+
+      .panel {
+        display: none;
+      }
+
+      .panel.is-active {
+        display: block;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .button,
+      button {
+        min-height: 40px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+        color: var(--ink);
+        font-weight: 950;
+      }
+
+      .primary {
+        border-color: var(--ink);
+        background: var(--ink);
+        color: var(--paper);
+      }
+
+      .danger {
+        border-color: rgba(207, 63, 46, 0.48);
+        color: var(--accent);
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .metric {
+        padding: 14px;
+      }
+
+      .metric strong,
+      .metric span {
+        display: block;
+      }
+
+      .metric strong {
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      .metric span {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 14px;
+      }
+
+      .product-card {
+        overflow: hidden;
+      }
+
+      .product-card img {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        background: rgba(22, 22, 21, 0.1);
+      }
+
+      .card-body {
+        display: grid;
+        gap: 11px;
+        padding: 14px;
+      }
+
+      .meta,
+      .order-line,
+      .coupon-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(22, 22, 21, 0.08);
+        color: var(--muted);
+        font-size: 0.74rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .badge.is-paid,
+      .badge.is-fulfilled,
+      .badge.is-ready {
+        background: rgba(22, 116, 92, 0.13);
+        color: var(--ok);
+      }
+
+      .badge.is-pending,
+      .badge.is-preparing {
+        background: rgba(153, 107, 0, 0.13);
+        color: var(--warn);
+      }
+
+      .order-card,
+      .coupon-card {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .order-card h3,
+      .coupon-card h3,
+      .product-card h3 {
+        margin: 0;
+        font-size: 1.08rem;
+        line-height: 1.1;
+      }
+
+      .order-items {
+        display: grid;
+        gap: 5px;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .note {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .toggle-row {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+      }
+
+      .toggle-row input {
+        width: 18px;
+        min-height: 18px;
+        accent-color: var(--accent);
+      }
+
+      @media (max-width: 1180px) {
+        .metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 900px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .side {
+          position: relative;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+
+      @media (max-width: 620px) {
+        .side,
+        .main {
+          padding: 16px;
+        }
+
+        .two,
+        .three,
+        .metrics {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="side">
+        <div>
+          <p class="eyebrow">LocalLift Commerce</p>
+          <h1>Store Console</h1>
+        </div>
+
+        <section class="box" aria-label="Conexion API">
+          <label>
+            URL API
+            <input id="apiUrl" type="url" value="http://127.0.0.1:8795">
+          </label>
+          <label>
+            Token admin
+            <input id="adminToken" type="password" value="change-me">
+          </label>
+          <div class="actions">
+            <button class="primary" id="saveSettingsButton" type="button">Guardar conexion</button>
+            <button id="reloadButton" type="button">Recargar todo</button>
+          </div>
+        </section>
+
+        <nav class="tabs" aria-label="Secciones admin">
+          <button class="tab is-active" type="button" data-tab="dashboard">Resumen</button>
+          <button class="tab" type="button" data-tab="products">Productos</button>
+          <button class="tab" type="button" data-tab="orders">Pedidos</button>
+          <button class="tab" type="button" data-tab="coupons">Cupones</button>
+          <button class="tab" type="button" data-tab="settings">Config</button>
+        </nav>
+
+        <div class="status" id="status" role="status">Preparando consola de tienda.</div>
+      </aside>
+
+      <section class="main">
+        <section class="panel is-active" data-panel="dashboard">
+          <h2>Resumen operativo</h2>
+          <div class="metrics" id="metrics"></div>
+          <h2>Ultimos pedidos</h2>
+          <div class="grid" id="latestOrders"></div>
+        </section>
+
+        <section class="panel" data-panel="products">
+          <h2>Productos</h2>
+          <form class="box" id="productForm">
+            <input name="id" type="hidden">
+            <label>
+              Nombre producto
+              <input name="name" type="text" required>
+            </label>
+            <div class="three">
+              <label>
+                Precio
+                <input name="price" type="number" min="0" step="0.01" required>
+              </label>
+              <label>
+                Precio anterior
+                <input name="compareAtPrice" type="number" min="0" step="0.01">
+              </label>
+              <label>
+                Stock
+                <input name="stock" type="number" min="0" step="1" value="999">
+              </label>
+            </div>
+            <div class="two">
+              <label>
+                SKU
+                <input name="sku" type="text" placeholder="camiseta-negra-m">
+              </label>
+              <label>
+                Categoria
+                <input name="category" type="text" placeholder="Regalos, Merch, Servicios...">
+              </label>
+            </div>
+            <label>
+              Tags
+              <input name="tags" type="text" placeholder="regalo,premium,temporada">
+            </label>
+            <label>
+              Imagen URL
+              <input name="image" type="url" inputmode="url" required>
+            </label>
+            <label>
+              Descripcion
+              <textarea name="description" rows="4" required></textarea>
+            </label>
+            <label class="toggle-row">
+              <input name="active" type="checkbox" checked>
+              Producto visible
+            </label>
+            <div class="actions">
+              <button class="primary" type="submit">Guardar producto</button>
+              <button id="clearProductButton" type="button">Limpiar</button>
+            </div>
+          </form>
+          <div class="grid" id="productsGrid" style="margin-top:14px"></div>
+        </section>
+
+        <section class="panel" data-panel="orders">
+          <h2>Pedidos</h2>
+          <div class="two" style="margin-bottom:14px">
+            <label>
+              Estado
+              <select id="orderStatusFilter">
+                <option value="">Todos</option>
+                <option value="pending">Pendientes</option>
+                <option value="paid">Pagados</option>
+                <option value="preparing">Preparando</option>
+                <option value="ready">Listos</option>
+                <option value="fulfilled">Completados</option>
+                <option value="canceled">Cancelados</option>
+                <option value="refunded">Reembolsados</option>
+              </select>
+            </label>
+            <label>
+              Buscar
+              <input id="orderSearch" type="search" placeholder="Pedido, cliente, email...">
+            </label>
+          </div>
+          <div class="grid" id="ordersGrid"></div>
+        </section>
+
+        <section class="panel" data-panel="coupons">
+          <h2>Cupones</h2>
+          <form class="box" id="couponForm">
+            <div class="three">
+              <label>
+                Codigo
+                <input name="code" type="text" required placeholder="BIENVENIDA10">
+              </label>
+              <label>
+                Tipo
+                <select name="type">
+                  <option value="percent">Porcentaje</option>
+                  <option value="fixed">Importe fijo</option>
+                </select>
+              </label>
+              <label>
+                Valor
+                <input name="value" type="number" min="0" step="0.01" required>
+              </label>
+            </div>
+            <div class="three">
+              <label>
+                Minimo compra
+                <input name="minSubtotal" type="number" min="0" step="0.01">
+              </label>
+              <label>
+                Max descuento
+                <input name="maxDiscount" type="number" min="0" step="0.01">
+              </label>
+              <label>
+                Limite usos
+                <input name="usageLimit" type="number" min="0" step="1">
+              </label>
+            </div>
+            <label>
+              Caducidad
+              <input name="expiresAt" type="datetime-local">
+            </label>
+            <label class="toggle-row">
+              <input name="active" type="checkbox" checked>
+              Cupon activo
+            </label>
+            <div class="actions">
+              <button class="primary" type="submit">Guardar cupon</button>
+              <button id="clearCouponButton" type="button">Limpiar</button>
+            </div>
+          </form>
+          <div class="grid" id="couponsGrid" style="margin-top:14px"></div>
+        </section>
+
+        <section class="panel" data-panel="settings">
+          <h2>Configuracion de tienda</h2>
+          <form class="box" id="settingsForm">
+            <div class="two">
+              <label>
+                Nombre negocio
+                <input name="businessName" type="text">
+              </label>
+              <label>
+                Email pedidos
+                <input name="orderEmail" type="email">
+              </label>
+            </div>
+            <div class="three">
+              <label>
+                Moneda
+                <input name="currency" type="text" maxlength="3" value="EUR">
+              </label>
+              <label>
+                IVA %
+                <input name="taxRatePercent" type="number" min="0" step="0.01">
+              </label>
+              <label class="toggle-row">
+                <input name="taxIncluded" type="checkbox">
+                IVA incluido en precios
+              </label>
+            </div>
+            <div class="two">
+              <label>
+                URL exito
+                <input name="successUrl" type="url">
+              </label>
+              <label>
+                URL cancelar
+                <input name="cancelUrl" type="url">
+              </label>
+            </div>
+            <div class="two">
+              <label>
+                Terminos
+                <input name="termsUrl" type="url">
+              </label>
+              <label>
+                Privacidad
+                <input name="privacyUrl" type="url">
+              </label>
+            </div>
+            <label>
+              Paises permitidos Stripe
+              <input name="allowedCountries" type="text" placeholder="ES,PT,FR">
+            </label>
+            <label>
+              Metodos de envio (id | nombre | precio | descripcion | activo | defecto | paises)
+              <textarea name="shippingMethods" rows="5"></textarea>
+            </label>
+            <div class="actions">
+              <button class="primary" type="submit">Guardar configuracion</button>
+            </div>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const state = {
+        summary: null,
+        products: [],
+        orders: [],
+        coupons: [],
+        settings: null
+      };
+
+      const apiUrlInput = document.querySelector("#apiUrl");
+      const adminTokenInput = document.querySelector("#adminToken");
+      const statusLine = document.querySelector("#status");
+      const productForm = document.querySelector("#productForm");
+      const couponForm = document.querySelector("#couponForm");
+      const settingsForm = document.querySelector("#settingsForm");
+      const orderStatusFilter = document.querySelector("#orderStatusFilter");
+      const orderSearch = document.querySelector("#orderSearch");
+
+      const saved = JSON.parse(localStorage.getItem("locallift-store-console") || "{}");
+      apiUrlInput.value = saved.apiUrl || apiUrlInput.value;
+      adminTokenInput.value = saved.adminToken || adminTokenInput.value;
+
+      document.querySelectorAll("[data-tab]").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll("[data-tab]").forEach((item) => item.classList.remove("is-active"));
+          document.querySelectorAll("[data-panel]").forEach((item) => item.classList.remove("is-active"));
+          button.classList.add("is-active");
+          document.querySelector('[data-panel="' + button.dataset.tab + '"]').classList.add("is-active");
+        });
+      });
+
+      document.querySelector("#saveSettingsButton").addEventListener("click", () => {
+        saveConnection();
+        setStatus("Conexion guardada.");
+      });
+      document.querySelector("#reloadButton").addEventListener("click", loadAll);
+      document.querySelector("#clearProductButton").addEventListener("click", () => productForm.reset());
+      document.querySelector("#clearCouponButton").addEventListener("click", () => couponForm.reset());
+      productForm.addEventListener("submit", saveProduct);
+      couponForm.addEventListener("submit", saveCoupon);
+      settingsForm.addEventListener("submit", saveStoreSettings);
+      orderStatusFilter.addEventListener("change", loadOrders);
+      orderSearch.addEventListener("input", debounce(loadOrders, 350));
+
+      loadAll();
+
+      async function loadAll() {
+        saveConnection();
+        setStatus("Sincronizando consola...");
+        try {
+          await Promise.all([loadSummary(), loadProducts(), loadOrders(), loadCoupons(), loadSettings()]);
+          setStatus("Consola actualizada.");
+        } catch (error) {
+          setStatus("No se pudo sincronizar. Revisa URL API, token admin y que el servidor este arrancado.");
+        }
+      }
+
+      async function loadSummary() {
+        const data = await request("GET", "/api/store/admin/summary");
+        state.summary = data.summary;
+        renderSummary();
+      }
+
+      async function loadProducts() {
+        const data = await request("GET", "/api/store/admin/products");
+        state.products = data.products || [];
+        renderProducts();
+      }
+
+      async function loadOrders() {
+        const params = new URLSearchParams();
+        if (orderStatusFilter.value) params.set("status", orderStatusFilter.value);
+        if (orderSearch.value.trim()) params.set("q", orderSearch.value.trim());
+        const query = params.toString() ? "?" + params.toString() : "";
+        const data = await request("GET", "/api/store/admin/orders" + query);
+        state.orders = data.orders || [];
+        renderOrders();
+      }
+
+      async function loadCoupons() {
+        const data = await request("GET", "/api/store/admin/coupons");
+        state.coupons = data.coupons || [];
+        renderCoupons();
+      }
+
+      async function loadSettings() {
+        const data = await request("GET", "/api/store/admin/settings");
+        state.settings = data.settings || {};
+        fillSettings();
+      }
+
+      async function saveProduct(event) {
+        event.preventDefault();
+        const data = new FormData(productForm);
+        const payload = {
+          id: text(data.get("id")),
+          name: text(data.get("name")),
+          sku: text(data.get("sku")),
+          category: text(data.get("category")),
+          tags: text(data.get("tags")),
+          price: Number(data.get("price") || 0),
+          compareAtPrice: Number(data.get("compareAtPrice") || 0),
+          stock: Number(data.get("stock") || 0),
+          image: text(data.get("image")),
+          description: text(data.get("description")),
+          active: data.get("active") === "on"
+        };
+        const method = payload.id ? "PUT" : "POST";
+        const path = payload.id ? "/api/store/products/" + encodeURIComponent(payload.id) : "/api/store/products";
+        await request(method, path, payload);
+        productForm.reset();
+        productForm.elements.active.checked = true;
+        await Promise.all([loadProducts(), loadSummary()]);
+        setStatus("Producto guardado.");
+      }
+
+      async function saveCoupon(event) {
+        event.preventDefault();
+        const data = new FormData(couponForm);
+        const payload = {
+          code: text(data.get("code")),
+          type: text(data.get("type")),
+          value: Number(data.get("value") || 0),
+          minSubtotal: Number(data.get("minSubtotal") || 0),
+          maxDiscount: Number(data.get("maxDiscount") || 0),
+          usageLimit: Number(data.get("usageLimit") || 0),
+          expiresAt: data.get("expiresAt") ? new Date(data.get("expiresAt")).toISOString() : "",
+          active: data.get("active") === "on"
+        };
+        await request("POST", "/api/store/admin/coupons", payload);
+        couponForm.reset();
+        couponForm.elements.active.checked = true;
+        await loadCoupons();
+        setStatus("Cupon guardado.");
+      }
+
+      async function saveStoreSettings(event) {
+        event.preventDefault();
+        const data = new FormData(settingsForm);
+        const payload = {
+          businessName: text(data.get("businessName")),
+          orderEmail: text(data.get("orderEmail")),
+          currency: text(data.get("currency")).toUpperCase(),
+          taxRatePercent: Number(data.get("taxRatePercent") || 0),
+          taxIncluded: data.get("taxIncluded") === "on",
+          successUrl: text(data.get("successUrl")),
+          cancelUrl: text(data.get("cancelUrl")),
+          termsUrl: text(data.get("termsUrl")),
+          privacyUrl: text(data.get("privacyUrl")),
+          allowedCountries: parseCountries(data.get("allowedCountries")),
+          shippingMethods: parseShippingMethods(data.get("shippingMethods"))
+        };
+        const result = await request("PUT", "/api/store/admin/settings", payload);
+        state.settings = result.settings;
+        fillSettings();
+        setStatus("Configuracion guardada.");
+      }
+
+      async function updateOrder(orderId, form) {
+        const data = new FormData(form);
+        await request("PATCH", "/api/store/admin/orders/" + encodeURIComponent(orderId), {
+          status: text(data.get("status")),
+          trackingNumber: text(data.get("trackingNumber")),
+          internalNote: text(data.get("internalNote")),
+          customerNote: text(data.get("customerNote")),
+          notifyCustomer: data.get("notifyCustomer") === "on"
+        });
+        await Promise.all([loadOrders(), loadSummary()]);
+        setStatus("Pedido actualizado.");
+      }
+
+      async function hideProduct(id) {
+        if (!window.confirm("Ocultar este producto?")) return;
+        await request("DELETE", "/api/store/products/" + encodeURIComponent(id));
+        await Promise.all([loadProducts(), loadSummary()]);
+        setStatus("Producto ocultado.");
+      }
+
+      async function disableCoupon(code) {
+        if (!window.confirm("Desactivar este cupon?")) return;
+        await request("DELETE", "/api/store/admin/coupons/" + encodeURIComponent(code));
+        await loadCoupons();
+        setStatus("Cupon desactivado.");
+      }
+
+      function renderSummary() {
+        const summary = state.summary || {};
+        document.querySelector("#metrics").innerHTML = [
+          metric(money(summary.revenue || 0), "ingresos"),
+          metric(summary.paidOrders || 0, "pedidos pagados"),
+          metric(summary.pendingOrders || 0, "pendientes"),
+          metric(summary.products || 0, "productos"),
+          metric(summary.lowStock || 0, "stock bajo")
+        ].join("");
+        document.querySelector("#latestOrders").innerHTML = renderOrderCards(summary.latestOrders || []);
+      }
+
+      function renderProducts() {
+        const target = document.querySelector("#productsGrid");
+        target.innerHTML = state.products.length ? state.products.map((product) => `
+          <article class="product-card">
+            <img src="${esc(product.image)}" alt="${esc(product.name)}" loading="lazy">
+            <div class="card-body">
+              <div class="meta"><span>${esc(product.sku || product.id)}</span><strong>${money(product.price)}</strong></div>
+              <h3>${esc(product.name)}</h3>
+              <p class="note">${esc(product.description || "")}</p>
+              <div class="meta"><span>${esc(product.category || "Sin categoria")}</span><span>Stock ${esc(product.stock ?? 0)}</span></div>
+              <span class="badge ${product.active === false ? "" : "is-paid"}">${product.active === false ? "Oculto" : "Visible"}</span>
+              <div class="actions">
+                <button type="button" data-edit-product="${esc(product.id)}">Editar</button>
+                <button class="danger" type="button" data-hide-product="${esc(product.id)}">Ocultar</button>
+              </div>
+            </div>
+          </article>
+        `).join("") : '<p class="note">No hay productos todavia.</p>';
+
+        target.querySelectorAll("[data-edit-product]").forEach((button) => {
+          button.addEventListener("click", () => fillProduct(state.products.find((item) => item.id === button.dataset.editProduct)));
+        });
+        target.querySelectorAll("[data-hide-product]").forEach((button) => {
+          button.addEventListener("click", () => hideProduct(button.dataset.hideProduct));
+        });
+      }
+
+      function renderOrders() {
+        document.querySelector("#ordersGrid").innerHTML = renderOrderCards(state.orders);
+      }
+
+      function renderOrderCards(orders) {
+        return orders.length ? orders.map((order) => `
+          <article class="order-card">
+            <div class="order-line">
+              <strong>${esc(order.orderNumber || order.id)}</strong>
+              <span class="badge is-${esc(order.status)}">${esc(order.status)}</span>
+            </div>
+            <h3>${esc(order.customer?.name || "Cliente")}</h3>
+            <p class="note">${esc(order.customer?.email || "")} ${esc(order.customer?.phone || "")}</p>
+            <div class="order-items">
+              ${(order.items || []).map((item) => `<span>${esc(item.name)} x ${esc(item.quantity)}</span>`).join("")}
+            </div>
+            <div class="order-line"><span>Total</span><strong>${money(order.total || order.totals?.total || 0, order.currency)}</strong></div>
+            <form class="box" data-order-form="${esc(order.id)}">
+              <label>
+                Estado
+                <select name="status">
+                  ${["pending", "paid", "preparing", "ready", "fulfilled", "canceled", "expired", "failed", "refunded"].map((status) => `<option value="${status}" ${status === order.status ? "selected" : ""}>${status}</option>`).join("")}
+                </select>
+              </label>
+              <label>
+                Seguimiento
+                <input name="trackingNumber" type="text" value="${esc(order.trackingNumber || "")}">
+              </label>
+              <label>
+                Nota interna
+                <textarea name="internalNote" rows="2">${esc(order.internalNote || "")}</textarea>
+              </label>
+              <label>
+                Nota cliente
+                <textarea name="customerNote" rows="2">${esc(order.customerNote || "")}</textarea>
+              </label>
+              <label class="toggle-row">
+                <input name="notifyCustomer" type="checkbox">
+                Notificar al cliente
+              </label>
+              <button class="primary" type="submit">Actualizar</button>
+            </form>
+          </article>
+        `).join("") : '<p class="note">No hay pedidos con este filtro.</p>';
+      }
+
+      function renderCoupons() {
+        const target = document.querySelector("#couponsGrid");
+        target.innerHTML = state.coupons.length ? state.coupons.map((coupon) => `
+          <article class="coupon-card">
+            <div class="coupon-line"><strong>${esc(coupon.code)}</strong><span class="badge ${coupon.active ? "is-paid" : ""}">${coupon.active ? "Activo" : "Inactivo"}</span></div>
+            <h3>${coupon.type === "fixed" ? money(coupon.value) : esc(coupon.value + "%")}</h3>
+            <p class="note">Minimo ${money(coupon.minSubtotal || 0)} · usado ${esc(coupon.used || 0)} / ${esc(coupon.usageLimit || "sin limite")}</p>
+            <div class="actions">
+              <button type="button" data-edit-coupon="${esc(coupon.code)}">Editar</button>
+              <button class="danger" type="button" data-disable-coupon="${esc(coupon.code)}">Desactivar</button>
+            </div>
+          </article>
+        `).join("") : '<p class="note">No hay cupones todavia.</p>';
+
+        target.querySelectorAll("[data-edit-coupon]").forEach((button) => {
+          button.addEventListener("click", () => fillCoupon(state.coupons.find((item) => item.code === button.dataset.editCoupon)));
+        });
+        target.querySelectorAll("[data-disable-coupon]").forEach((button) => {
+          button.addEventListener("click", () => disableCoupon(button.dataset.disableCoupon));
+        });
+      }
+
+      function fillProduct(product) {
+        if (!product) return;
+        productForm.elements.id.value = product.id || "";
+        productForm.elements.name.value = product.name || "";
+        productForm.elements.price.value = product.price || "";
+        productForm.elements.compareAtPrice.value = product.compareAtPrice || "";
+        productForm.elements.stock.value = product.stock ?? 999;
+        productForm.elements.sku.value = product.sku || "";
+        productForm.elements.category.value = product.category || "";
+        productForm.elements.tags.value = Array.isArray(product.tags) ? product.tags.join(",") : "";
+        productForm.elements.image.value = product.image || "";
+        productForm.elements.description.value = product.description || "";
+        productForm.elements.active.checked = product.active !== false;
+        setStatus("Editando producto " + product.name + ".");
+      }
+
+      function fillCoupon(coupon) {
+        if (!coupon) return;
+        couponForm.elements.code.value = coupon.code || "";
+        couponForm.elements.type.value = coupon.type || "percent";
+        couponForm.elements.value.value = coupon.value || "";
+        couponForm.elements.minSubtotal.value = coupon.minSubtotal || "";
+        couponForm.elements.maxDiscount.value = coupon.maxDiscount || "";
+        couponForm.elements.usageLimit.value = coupon.usageLimit || "";
+        couponForm.elements.active.checked = coupon.active !== false;
+        couponForm.elements.expiresAt.value = coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0, 16) : "";
+        setStatus("Editando cupon " + coupon.code + ".");
+      }
+
+      function fillSettings() {
+        const settings = state.settings || {};
+        settingsForm.elements.businessName.value = settings.businessName || "";
+        settingsForm.elements.orderEmail.value = settings.orderEmail || "";
+        settingsForm.elements.currency.value = settings.currency || "EUR";
+        settingsForm.elements.taxRatePercent.value = settings.taxRatePercent ?? 21;
+        settingsForm.elements.taxIncluded.checked = settings.taxIncluded !== false;
+        settingsForm.elements.successUrl.value = settings.successUrl || "";
+        settingsForm.elements.cancelUrl.value = settings.cancelUrl || "";
+        settingsForm.elements.termsUrl.value = settings.termsUrl || "";
+        settingsForm.elements.privacyUrl.value = settings.privacyUrl || "";
+        settingsForm.elements.allowedCountries.value = Array.isArray(settings.allowedCountries) ? settings.allowedCountries.join(",") : "";
+        settingsForm.elements.shippingMethods.value = serializeShippingMethods(settings.shippingMethods || []);
+      }
+
+      function parseShippingMethods(value) {
+        return String(value || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
+          const [id, name, price, description, active, isDefault, countries] = line.split("|").map((part) => part.trim());
+          const activeText = String(active || "true").toLowerCase();
+          const defaultText = String(isDefault || "").toLowerCase();
+          return {
+            id,
+            name,
+            price: Number(String(price || 0).replace(",", ".")),
+            description,
+            active: activeText !== "false" && activeText !== "0" && activeText !== "no",
+            default: defaultText === "true" || defaultText === "1" || defaultText === "si",
+            allowedCountries: parseCountries(countries || "ES")
+          };
+        });
+      }
+
+      function serializeShippingMethods(methods) {
+        return methods.map((method) => [
+          method.id,
+          method.name,
+          method.price,
+          method.description || "",
+          method.active === false ? "false" : "true",
+          method.default ? "true" : "false",
+          Array.isArray(method.allowedCountries) ? method.allowedCountries.join(",") : "ES"
+        ].join(" | ")).join("\n");
+      }
+
+      function parseCountries(value) {
+        return String(value || "ES").split(",").map((item) => item.trim().toUpperCase()).filter(Boolean);
+      }
+
+      function metric(value, label) {
+        return `<div class="metric"><strong>${esc(value)}</strong><span>${esc(label)}</span></div>`;
+      }
+
+      function saveConnection() {
+        localStorage.setItem("locallift-store-console", JSON.stringify({
+          apiUrl: apiUrlInput.value.trim().replace(/\/$/, ""),
+          adminToken: adminTokenInput.value
+        }));
+      }
+
+      async function request(method, path, body) {
+        saveConnection();
+        const response = await fetch(api(path), {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Store-Admin-Token": adminTokenInput.value
+          },
+          body: body ? JSON.stringify(body) : undefined
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          setStatus(data.error || "Error de API.");
+          throw new Error(data.error || "API error");
+        }
+        return data;
+      }
+
+      function api(path) {
+        return apiUrlInput.value.trim().replace(/\/$/, "") + path;
+      }
+
+      function money(value, currency = "EUR") {
+        return new Intl.NumberFormat("es-ES", { style: "currency", currency: currency || "EUR" }).format(Number(value || 0));
+      }
+
+      function text(value) {
+        return String(value || "").trim();
+      }
+
+      function esc(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function setStatus(message) {
+        statusLine.textContent = message;
+      }
+
+      function debounce(fn, delay) {
+        let timer;
+        return (...args) => {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(() => fn(...args), delay);
+        };
+      }
+
+      document.addEventListener("submit", (event) => {
+        const form = event.target.closest("[data-order-form]");
+        if (!form) return;
+        event.preventDefault();
+        updateOrder(form.dataset.orderForm, form).catch(() => {});
+      });
+    </script>
+  </body>
+</html>

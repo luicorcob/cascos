@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-25T10:55:05.463Z",
+  "businesses": [
+    {
+      "id": "biz_demo_brasa_norte",
+      "slug": "brasa-norte",
+      "name": "Brasa Norte",
+      "category": "Restaurante de fuego lento",
+      "city": "Santander",
+      "ownerName": "Demo LocalLift",
+      "ownerEmail": "reservas@brasanorte.es",
+      "ownerPhone": "+34 942 000 123",
+      "plan": "operacion-local",
+      "status": "published",
+      "publishedUrl": "",
+      "brand": {
+        "theme": "neon",
+        "accent": "#ff3d81",
+        "typography": "modern"
+      },
+      "integrations": {
+        "google": {
+          "enabled": true,
+          "mapsUrl": "https://maps.google.com/",
+          "reviewUrl": "https://g.page/r/"
+        },
+        "stripe": {
+          "enabled": false
+        },
+        "whatsapp": {
+          "enabled": true,
+          "url": "https://wa.me/34942000123"
+        }
+      },
+      "settings": {
+        "primaryGoal": "reservas",
+        "deliveryScore": 100,
+        "source": "demo"
+      },
+      "content": {
+        "name": "Brasa Norte",
+        "category": "Restaurante de fuego lento",
+        "location": "Santander",
+        "tagline": "Cocina local con alma de brasas",
+        "description": "Restaurante de barrio con producto local, reservas faciles y presencia digital premium.",
+        "conversionGoal": "Reservas de mesa, grupos y eventos privados por WhatsApp",
+        "phone": "+34 942 000 123",
+        "email": "reservas@brasanorte.es",
+        "address": "Calle del Mercado 18, Santander",
+        "bookingUrl": "https://wa.me/34942000123",
+        "services": [
+          "Menu degustacion de temporada",
+          "Parrilla de carne y pescado",
+          "Reservas para grupos",
+          "Take away premium"
+        ],
+        "trustBadges": [
+          "4.8 en Google con resenas conectables",
+          "Reserva en menos de un minuto",
+          "Carta, ubicacion y redes siempre visibles"
+        ]
+      },
+      "createdAt": "2026-05-25T00:00:00.000Z",
+      "updatedAt": "2026-05-25T00:00:00.000Z",
+      "archivedAt": ""
+    },
+    {
+      "id": "biz_brasa-nort_mpl3awab",
+      "slug": "brasa-nort-santander",
+      "name": "Brasa Nort",
+      "category": "Restaurante de fuego lento",
+      "city": "Santander",
+      "ownerName": "",
+      "ownerEmail": "reservas@brasanorte.es",
+      "ownerPhone": "+34 942 000 123",
+      "plan": "presencia-local",
+      "status": "in-design",
+      "publishedUrl": "",
+      "brand": {
+        "theme": "neon",
+        "accent": "#ff3d81",
+        "typography": "modern",
+        "designPack": "custom"
+      },
+      "integrations": {
+        "google": {
+          "enabled": true,
+          "mapsUrl": "https://maps.google.com/",
+          "reviewUrl": "https://g.page/r/",
+          "appointmentUrl": "https://wa.me/34942000123"
+        },
+        "stripe": {
+          "enabled": false
+        },
+        "whatsapp": {
+          "enabled": true,
+          "url": "https://wa.me/34942000123"
+        }
+      },
+      "settings": {
+        "primaryGoal": "Reservas de mesa, grupos y eventos privados por WhatsApp",
+        "source": "studio",
+        "updatedFromStudioAt": "2026-05-25T10:55:05.444Z"
+      },
+      "content": {
+        "name": "Brasa Nort",
+        "category": "Restaurante de fuego lento",
+        "location": "Santander",
+        "tagline": "Cocina local con alma de brasas",
+        "description": "Un restaurante de barrio convertido en destino: producto cantabrico, parrilla vista, reservas faciles y una experiencia digital que hace que apetezca venir antes de probar el primer plato.",
+        "conversionGoal": "Reservas de mesa, grupos y eventos privados por WhatsApp",
+        "announcement": "Nueva carta de temporada y reservas de grupo abiertas esta semana",
+        "phone": "+34 942 000 123",
+        "email": "reservas@brasanorte.es",
+        "address": "Calle del Mercado 18, Santander",
+        "services": [
+          "Menu degustacion de temporada",
+          "Parrilla de carne y pescado",
+          "Reservas para grupos",
+          "Carta de vinos locales",
+          "Take away premium",
+          "Eventos privados"
+        ],
+        "features": [
+          "Producto de proveedores cercanos con carta que cambia cada semana",
+          "Reservas conectadas a WhatsApp, Google Maps y redes sociales",
+          "Galeria visual preparada para destacar platos, local y equipo",
+          "Secciones modulares para escalar desde una web simple hasta una presencia completa"
+        ],
+        "hours": [
+          "Lunes cerrado",
+          "Martes a jueves: 13:00-16:00 / 20:00-23:00",
+          "Viernes y sabado: 13:00-00:30",
+          "Domingo: 13:00-17:00"
+        ],
+        "testimonials": [
+          {
+            "name": "Laura M.",
+            "text": "La web transmite exactamente lo que se vive en el local. Reserve en dos clicks."
+          },
+          {
+            "name": "Diego R.",
+            "text": "Fotos, carta, ubicacion y redes en una experiencia muy limpia. Parece una marca grande."
+          },
+          {
+            "name": "Marta S.",
+            "text": "El movimiento al hacer scroll hace que todo se sienta cuidado, pero sigue siendo facil encontrar lo importante."
+          }
+        ],
+        "faqs": [
+          {
+            "question": "Se puede reservar online?",
+            "answer": "Si. El boton principal puede apuntar a WhatsApp, CoverManager, Google Calendar o cualquier sistema de reservas."
+          },
+          {
+            "question": "La web sirve para otros sectores?",
+            "answer": "Si. Cambiando textos, fotos y secciones funciona para clinicas, peluquerias, gimnasios, academias, talleres o tiendas."
+          },
+          {
+            "question": "Se puede entregar como HTML?",
+            "answer": "Si. El exportador descarga una pagina completa con estilos y animaciones listas para subir a hosting."
+          }
+        ],
+        "trustBadges": [
+          "4.8 en Google con resenas conectables",
+          "Reserva en menos de un minuto",
+          "Carta, ubicacion y redes siempre visibles",
+          "Chatbot preparado para horarios y reservas"
+        ],
+        "links": [
+          {
+            "label": "Instagram",
+            "url": "https://instagram.com/"
+          },
+          {
+            "label": "Google Maps",
+            "url": "https://maps.google.com/"
+          },
+          {
+            "label": "TikTok",
+            "url": "https://tiktok.com/"
+          }
+        ],
+        "heroImage": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1800&q=85",
+        "gallery": [
+          "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80"
+        ],
+        "theme": "neon",
+        "motion": "bold",
+        "accent": "#ff3d81",
+        "intensity": 90,
+        "premiumEffects": true,
+        "showBooking": true,
+        "bookingUrl": "https://wa.me/34942000123",
+        "bookingLabel": "Reservar ahora",
+        "servicesHeading": "Lo que el cliente entiende en segundos.",
+        "servicesIntro": "La web prioriza decision rapida: que haces, por que elegirte, como se reserva y que sensacion transmite el negocio.",
+        "trustHeading": "Confianza antes de llamar.",
+        "trustIntro": "Testimonios, preguntas frecuentes y enlaces reducen friccion para quien te descubre por primera vez.",
+        "contactHeading": "Ven, reserva o escribe.",
+        "showLeadForm": true,
+        "leadFormTitle": "Recibe disponibilidad y propuesta en minutos.",
+        "leadFormIntro": "Deja tus datos y el equipo recibe un lead preparado con servicio, fecha orientativa y canal de contacto.",
+        "leadFormCta": "Solicitar disponibilidad",
+        "designPack": "custom",
+        "typography": "modern",
+        "contentDensity": "balanced",
+        "visualShape": "clean",
+        "heroSize": "balanced",
+        "contentWidth": "standard",
+        "imageRatio": "portrait",
+        "fontScale": 100,
+        "layoutScale": 100,
+        "showAnnouncement": true,
+        "showResourceMarquee": true,
+        "showTrustRail": true,
+        "showGallery": true,
+        "showTestimonials": true,
+        "showFaq": true,
+        "showMap": true,
+        "showConversionDock": true,
+        "google": {
+          "enabled": true,
+          "workspaceEmail": "reservas@brasanorte.es",
+          "workspaceDomain": "brasanorte.es",
+          "managerEmail": "",
+          "placeId": "",
+          "mapsUrl": "https://maps.google.com/",
+          "mapEmbedUrl": "",
+          "directionsNote": "Estamos en una zona centrica, con acceso facil desde Google Maps y opciones de parking cercano.",
+          "reviewUrl": "https://g.page/r/",
+          "reviewRequestTemplate": "Gracias por visitar {business}. Tu opinion nos ayuda mucho. Puedes dejar una resena aqui: {reviewUrl}",
+          "appointmentUrl": "https://wa.me/34942000123",
+          "bookingRules": "Reservas por WhatsApp con nombre, fecha, hora y numero de personas. Confirmacion manual del equipo.",
+          "rating": 4.8,
+          "reviewCount": 248,
+          "calendarId": "primary",
+          "businessProfileAccountId": "",
+          "businessProfileLocationId": ""
+        },
+        "chatbot": {
+          "enabled": true,
+          "name": "NorteBot",
+          "tone": "cercano",
+          "greeting": "Hola, soy NorteBot. Te ayudo con reservas, horarios, ubicacion, servicios y cualquier duda rapida de Brasa Norte.",
+          "quickPrompts": [
+            "Quiero reservar",
+            "Ver horario",
+            "Donde estais?",
+            "Que servicios teneis?"
+          ],
+          "handoffLabel": "Hablar por WhatsApp",
+          "endpoint": ""
+        },
+        "commerce": {
+          "enabled": false,
+          "title": "Compra online",
+          "intro": "Productos preparados para recoger o recibir en casa. El cliente anade al carrito, deja sus datos y paga con Stripe Checkout.",
+          "currency": "EUR",
+          "taxRatePercent": 21,
+          "taxIncluded": true,
+          "checkoutEndpoint": "http://127.0.0.1:8795/api/store/checkout",
+          "productsEndpoint": "http://127.0.0.1:8795/api/store/products",
+          "successUrl": "",
+          "cancelUrl": "",
+          "termsUrl": "",
+          "privacyUrl": "",
+          "orderEmail": "reservas@brasanorte.es",
+          "deliveryMode": "Recogida en tienda y entrega local bajo confirmacion",
+          "shippingMethods": [
+            {
+              "id": "pickup",
+              "name": "Recogida en tienda",
+              "description": "El negocio confirma la hora de recogida.",
+              "price": 0,
+              "active": true,
+              "default": true
+            },
+            {
+              "id": "local-delivery",
+              "name": "Entrega local",
+              "description": "Reparto local bajo confirmacion.",
+              "price": 4.9,
+              "active": true,
+              "default": false
+            }
+          ],
+          "products": [
+            {
+              "id": "menu-brasa",
+              "sku": "menu-brasa",
+              "name": "Menu brasa para dos",
+              "price": 38,
+              "image": "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80",
+              "description": "Pack de temporada preparado para recoger en el local.",
+              "stock": 12,
+              "active": true
+            },
+            {
+              "id": "vino-local",
+              "sku": "vino-local",
+              "name": "Botella seleccion local",
+              "price": 16.5,
+              "image": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=900&q=80",
+              "description": "Recomendacion de la casa para acompanar pedidos.",
+              "stock": 24,
+              "active": true
+            },
+            {
+              "id": "tarjeta-regalo",
+              "sku": "tarjeta-regalo",
+              "name": "Tarjeta regalo",
+              "price": 50,
+              "image": "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=900&q=80",
+              "description": "Credito para comidas, eventos o regalos de empresa.",
+              "stock": 50,
+              "active": true
+            }
+          ]
+        }
+      },
+      "createdAt": "2026-05-25T10:55:05.459Z",
+      "updatedAt": "2026-05-25T10:55:05.459Z",
+      "archivedAt": ""
+    }
+  ],
+  "auditLog": [
+    {
+      "id": "audit_seed_brasa_norte",
+      "type": "business.seeded",
+      "businessId": "biz_demo_brasa_norte",
+      "createdAt": "2026-05-25T00:00:00.000Z"
+    },
+    {
+      "id": "audit_1779706505462_7em5fn",
+      "type": "business.created",
+      "businessId": "biz_brasa-nort_mpl3awab",
+      "createdAt": "2026-05-25T10:55:05.459Z"
+    }
+  ]
+}

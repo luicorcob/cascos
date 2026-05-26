@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LocalLift Studio - creador de webs para negocios locales</title>
+    <meta
+      name="description"
+      content="Base profesional para crear webs dinamicas de negocios locales con datos, fotos, enlaces y animaciones premium."
+    >
+    <link rel="stylesheet" href="src/styles.css">
+    <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
+  </head>
+  <body>
+    <div class="cursor-glow" aria-hidden="true"></div>
+
+    <main class="studio-shell">
+      <aside class="control-panel" aria-label="Panel de configuracion">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">LL</span>
+          <div>
+            <p class="eyebrow">LocalLift Studio</p>
+            <h1>Webs premium para negocios locales</h1>
+          </div>
+        </div>
+
+        <div class="panel-actions" aria-label="Acciones principales">
+          <button class="icon-button" id="saveButton" type="button" title="Guardar datos">
+            <span aria-hidden="true">Guardar</span>
+            <span class="sr-only">Guardar datos</span>
+          </button>
+          <button class="icon-button" id="loadButton" type="button" title="Cargar datos guardados">
+            <span aria-hidden="true">Cargar</span>
+            <span class="sr-only">Cargar datos guardados</span>
+          </button>
+          <button class="icon-button" id="resetButton" type="button" title="Restaurar demo">
+            <span aria-hidden="true">Demo</span>
+            <span class="sr-only">Restaurar demo</span>
+          </button>
+          <button class="primary-action" id="exportButton" type="button">Exportar web</button>
+        </div>
+
+        <div class="status-line" id="statusLine" role="status">Demo lista para editar.</div>
+
+        <div class="data-actions" aria-label="Gestion de datos">
+          <button class="secondary-action" id="exportDataButton" type="button">Exportar datos</button>
+          <button class="secondary-action" id="importDataButton" type="button">Importar datos</button>
+          <input id="importDataInput" type="file" accept="application/json,.json" hidden>
+        </div>
+
+        <div class="workspace-links" aria-label="Material de presentacion">
+          <a href="pages/investor.html">Pitch inversores</a>
+          <a href="pages/onboarding.html">Brief cliente</a>
+          <a href="pages/google-ops.html">Google Ops</a>
+          <a href="pages/store-admin.html">Admin tienda</a>
+        </div>
+
+        <section class="quality-panel" aria-label="Checklist de calidad">
+          <div>
+            <p class="eyebrow">Control de entrega</p>
+            <strong id="qualityScore">0%</strong>
+          </div>
+          <div class="quality-checklist" id="qualityChecklist"></div>
+        </section>
+
+        <section class="quick-panel" aria-label="Cambios rapidos para demo">
+          <div class="quick-panel-head">
+            <div>
+              <p class="eyebrow">Demo en vivo</p>
+              <h2>Cambios rapidos para cliente</h2>
+            </div>
+            <div class="quick-history">
+              <button class="mini-action" type="button" id="quickUndoButton">Deshacer</button>
+              <button class="mini-action" type="button" id="quickRedoButton">Rehacer</button>
+            </div>
+          </div>
+
+          <div class="quick-command">
+            <input id="quickCommandInput" type="text" placeholder="Ej: mas premium, vender reservas, sin mapa...">
+            <button class="mini-action is-strong" id="quickCommandButton" type="button">Aplicar</button>
+          </div>
+
+          <div class="quick-group" aria-label="Variantes instantaneas">
+            <button class="quick-action" type="button" data-quick-action="premium">Mas premium</button>
+            <button class="quick-action" type="button" data-quick-action="minimal">Mas limpio</button>
+            <button class="quick-action" type="button" data-quick-action="urgent">Mas urgencia</button>
+            <button class="quick-action" type="button" data-quick-action="trust">Mas confianza</button>
+            <button class="quick-action" type="button" data-quick-action="booking">Vender reservas</button>
+            <button class="quick-action" type="button" data-quick-action="food">Pedidos rapidos</button>
+            <button class="quick-action" type="button" data-quick-action="store">Tienda online</button>
+            <button class="quick-action" type="button" data-quick-action="local">Mas local</button>
+            <button class="quick-action" type="button" data-quick-action="mobile">Modo movil</button>
+            <button class="quick-action" type="button" data-quick-action="biggerType">Letra grande</button>
+            <button class="quick-action" type="button" data-quick-action="moreSpace">Mas aire</button>
+            <button class="quick-action" type="button" data-quick-action="wideImages">Fotos anchas</button>
+          </div>
+
+          <div class="quick-toggle-grid" aria-label="Activar secciones">
+            <input class="quick-state-input" form="businessForm" name="showAnnouncement" type="checkbox" checked hidden>
+            <input class="quick-state-input" form="businessForm" name="showResourceMarquee" type="checkbox" checked hidden>
+            <input class="quick-state-input" form="businessForm" name="showTrustRail" type="checkbox" checked hidden>
+            <input class="quick-state-input" form="businessForm" name="showGallery" type="checkbox" checked hidden>
+            <input class="quick-state-input" form="businessForm" name="showTestimonials" type="checkbox" checked hidden>
+            <input class="quick-state-input" form="businessForm" name="showFaq" type="checkbox" checked hidden>
+            <input class="quick-state-input" form="businessForm" name="showMap" type="checkbox" checked hidden>
+            <input class="quick-state-input" form="businessForm" name="showConversionDock" type="checkbox" checked hidden>
+            <button class="quick-toggle" type="button" data-toggle-field="showAnnouncement">Anuncio</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showResourceMarquee">Beneficios</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showTrustRail">Confianza</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showGallery">Galeria</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showTestimonials">Resenas</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showFaq">FAQ</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showMap">Mapa</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showLeadForm">Lead</button>
+            <button class="quick-toggle" type="button" data-toggle-field="chatbotEnabled">Bot</button>
+            <button class="quick-toggle" type="button" data-toggle-field="commerceEnabled">Tienda</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showConversionDock">Dock</button>
+          </div>
+        </section>
+
+        <section class="preset-panel" aria-label="Demos por sector">
+          <p class="eyebrow">Demos por sector</p>
+          <div class="preset-grid">
+            <button class="preset-button is-active" type="button" data-preset="restaurant">Restaurante</button>
+            <button class="preset-button" type="button" data-preset="clinic">Clinica</button>
+            <button class="preset-button" type="button" data-preset="beauty">Belleza</button>
+            <button class="preset-button" type="button" data-preset="gym">Gimnasio</button>
+            <button class="preset-button" type="button" data-preset="bar">Bar</button>
+            <button class="preset-button" type="button" data-preset="stationery">Papeleria</button>
+            <button class="preset-button" type="button" data-preset="kebab">Kebab</button>
+            <button class="preset-button" type="button" data-preset="bazaar">Bazar</button>
+          </div>
+        </section>
+
+        <nav class="editor-tabs" aria-label="Secciones del editor">
+          <button class="tab-button is-active" type="button" data-tab="identity">Marca</button>
+          <button class="tab-button" type="button" data-tab="content">Contenido</button>
+          <button class="tab-button" type="button" data-tab="media">Fotos</button>
+          <button class="tab-button" type="button" data-tab="style">Estilo</button>
+          <button class="tab-button" type="button" data-tab="google">Google</button>
+          <button class="tab-button" type="button" data-tab="chatbot">Chatbot</button>
+          <button class="tab-button" type="button" data-tab="commerce">Tienda</button>
+        </nav>
+
+        <form id="businessForm" class="editor-form">
+          <section class="tab-panel is-active" data-panel="identity">
+            <label>
+              Nombre del negocio
+              <input name="name" type="text" autocomplete="organization">
+            </label>
+            <label>
+              Categoria
+              <input name="category" type="text" placeholder="Restaurante, peluqueria, clinica...">
+            </label>
+            <label>
+              Ciudad o zona
+              <input name="location" type="text" autocomplete="address-level2">
+            </label>
+            <label>
+              Frase potente
+              <input name="tagline" type="text">
+            </label>
+            <label>
+              Descripcion principal
+              <textarea name="description" rows="5"></textarea>
+            </label>
+            <label>
+              Objetivo de conversion
+              <input name="conversionGoal" type="text" placeholder="Reservas, WhatsApp, llamadas, pedidos...">
+            </label>
+            <label>
+              Mensaje destacado / promocion
+              <input name="announcement" type="text" placeholder="Ej: Reserva hoy y recibe confirmacion por WhatsApp">
+            </label>
+            <div class="two-columns">
+              <label>
+                Telefono
+                <input name="phone" type="tel">
+              </label>
+              <label>
+                Email
+                <input name="email" type="email">
+              </label>
+            </div>
+            <label>
+              Direccion
+              <input name="address" type="text" autocomplete="street-address">
+            </label>
+          </section>
+
+          <section class="tab-panel" data-panel="content">
+            <label>
+              Servicios estrella (uno por linea)
+              <textarea name="services" rows="6"></textarea>
+            </label>
+            <label>
+              Diferenciales (uno por linea)
+              <textarea name="features" rows="5"></textarea>
+            </label>
+            <label>
+              Horario
+              <textarea name="hours" rows="4"></textarea>
+            </label>
+            <label>
+              Resenas/testimonios (nombre | texto)
+              <textarea name="testimonials" rows="5"></textarea>
+            </label>
+            <label>
+              Preguntas frecuentes (pregunta | respuesta)
+              <textarea name="faqs" rows="5"></textarea>
+            </label>
+            <label>
+              Pruebas de confianza (una por linea)
+              <textarea name="trustBadges" rows="4" placeholder="Ej: 4.8 en Google&#10;Respuesta por WhatsApp&#10;Entrega en 7 dias"></textarea>
+            </label>
+            <fieldset>
+              <legend>Textos de secciones</legend>
+              <label>
+                Titular de servicios
+                <input name="servicesHeading" type="text">
+              </label>
+              <label>
+                Intro de servicios
+                <textarea name="servicesIntro" rows="3"></textarea>
+              </label>
+              <label>
+                Titular de confianza
+                <input name="trustHeading" type="text">
+              </label>
+              <label>
+                Intro de confianza
+                <textarea name="trustIntro" rows="3"></textarea>
+              </label>
+              <label>
+                Titular de contacto
+                <input name="contactHeading" type="text">
+              </label>
+            </fieldset>
+            <fieldset>
+              <legend>Bloque de captacion</legend>
+              <label class="toggle-row">
+                <input name="showLeadForm" type="checkbox">
+                Mostrar formulario de lead
+              </label>
+              <label>
+                Titular del formulario
+                <input name="leadFormTitle" type="text">
+              </label>
+              <label>
+                Texto del formulario
+                <textarea name="leadFormIntro" rows="3"></textarea>
+              </label>
+              <label>
+                Texto del boton del formulario
+                <input name="leadFormCta" type="text">
+              </label>
+            </fieldset>
+          </section>
+
+          <section class="tab-panel" data-panel="media">
+            <label>
+              Imagen hero
+              <input name="heroImage" type="url" inputmode="url">
+            </label>
+            <label>
+              Galeria (una URL por linea)
+              <textarea name="gallery" rows="7"></textarea>
+            </label>
+            <label>
+              Enlaces sociales (nombre | URL)
+              <textarea name="links" rows="5"></textarea>
+            </label>
+            <div class="media-note">
+              Tambien puedes pegar URLs de imagenes alojadas en Drive, Canva, Unsplash, Instagram CDN o tu propio servidor.
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="style">
+            <input name="designPack" type="hidden" value="custom">
+            <fieldset class="style-pack-panel">
+              <legend>Packs de diseno en un clic</legend>
+              <div class="design-pack-grid">
+                <button class="design-pack-button" type="button" data-design-pack="boutique">Boutique</button>
+                <button class="design-pack-button" type="button" data-design-pack="impact">Impacto</button>
+                <button class="design-pack-button" type="button" data-design-pack="clear">Claro</button>
+                <button class="design-pack-button" type="button" data-design-pack="commerce">Comercial</button>
+                <button class="design-pack-button" type="button" data-design-pack="mobileFirst">Mobile first</button>
+                <button class="design-pack-button" type="button" data-design-pack="localWarm">Local cercano</button>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Plantilla visual</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="theme" value="aurora">
+                  Aurora
+                </label>
+                <label>
+                  <input type="radio" name="theme" value="carbon">
+                  Carbon
+                </label>
+                <label>
+                  <input type="radio" name="theme" value="editorial">
+                  Editorial
+                </label>
+                <label>
+                  <input type="radio" name="theme" value="neon">
+                  Neon
+                </label>
+                <label>
+                  <input type="radio" name="theme" value="luxe">
+                  Luxe
+                </label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Ritmo de animacion</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="motion" value="soft">
+                  Suave
+                </label>
+                <label>
+                  <input type="radio" name="motion" value="cinematic">
+                  Cine
+                </label>
+                <label>
+                  <input type="radio" name="motion" value="bold">
+                  Impacto
+                </label>
+              </div>
+            </fieldset>
+            <label>
+              Color principal
+              <input name="accent" type="color">
+            </label>
+            <div class="two-columns">
+              <label class="range-label">
+                Escala de letras
+                <input name="fontScale" type="range" min="85" max="120" step="5">
+              </label>
+              <label class="range-label">
+                Escala de dimensiones
+                <input name="layoutScale" type="range" min="85" max="120" step="5">
+              </label>
+            </div>
+            <fieldset>
+              <legend>Tipografia</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="typography" value="modern">
+                  Moderna
+                </label>
+                <label>
+                  <input type="radio" name="typography" value="editorial">
+                  Editorial
+                </label>
+                <label>
+                  <input type="radio" name="typography" value="compact">
+                  Compacta
+                </label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Densidad</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="contentDensity" value="compact">
+                  Compacta
+                </label>
+                <label>
+                  <input type="radio" name="contentDensity" value="balanced">
+                  Media
+                </label>
+                <label>
+                  <input type="radio" name="contentDensity" value="spacious">
+                  Amplia
+                </label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Forma visual</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="visualShape" value="sharp">
+                  Recta
+                </label>
+                <label>
+                  <input type="radio" name="visualShape" value="clean">
+                  Limpia
+                </label>
+                <label>
+                  <input type="radio" name="visualShape" value="rounded">
+                  Redonda
+                </label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Altura hero</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="heroSize" value="compact">
+                  Baja
+                </label>
+                <label>
+                  <input type="radio" name="heroSize" value="balanced">
+                  Media
+                </label>
+                <label>
+                  <input type="radio" name="heroSize" value="immersive">
+                  Inmersiva
+                </label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Ancho del contenido</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="contentWidth" value="focused">
+                  Enfocado
+                </label>
+                <label>
+                  <input type="radio" name="contentWidth" value="standard">
+                  Normal
+                </label>
+                <label>
+                  <input type="radio" name="contentWidth" value="wide">
+                  Amplio
+                </label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Formato de fotos</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="imageRatio" value="portrait">
+                  Vertical
+                </label>
+                <label>
+                  <input type="radio" name="imageRatio" value="square">
+                  Cuadrado
+                </label>
+                <label>
+                  <input type="radio" name="imageRatio" value="wide">
+                  Panoramico
+                </label>
+              </div>
+            </fieldset>
+            <label class="range-label">
+              Intensidad visual
+              <input name="intensity" type="range" min="30" max="100" step="5">
+            </label>
+            <label class="toggle-row">
+              <input name="premiumEffects" type="checkbox">
+              Efectos de raton, tilt y parallax
+            </label>
+            <label class="toggle-row">
+              <input name="showBooking" type="checkbox">
+              Mostrar boton de reserva
+            </label>
+            <label>
+              URL de reservas / WhatsApp / contacto
+              <input name="bookingUrl" type="url" inputmode="url">
+            </label>
+            <label>
+              Texto del boton principal
+              <input name="bookingLabel" type="text" placeholder="Reservar ahora">
+            </label>
+          </section>
+
+          <section class="tab-panel" data-panel="google">
+            <fieldset>
+              <legend>Servicio gestionado Google</legend>
+              <label>
+                Email profesional a crear/gestionar
+                <input name="googleWorkspaceEmail" type="email" placeholder="info@tunegocio.com">
+              </label>
+              <label>
+                Dominio Workspace
+                <input name="googleWorkspaceDomain" type="text" placeholder="tunegocio.com">
+              </label>
+              <label>
+                Email gestor LocalLift autorizado
+                <input name="googleManagerEmail" type="email" placeholder="gestor@locallift...">
+              </label>
+            </fieldset>
+            <label class="toggle-row">
+              <input name="googleEnabled" type="checkbox">
+              Activar capa Google
+            </label>
+            <label>
+              Google Place ID
+              <input name="googlePlaceId" type="text" placeholder="ChIJ...">
+            </label>
+            <label>
+              Google Maps URL
+              <input name="googleMapsUrl" type="url" inputmode="url">
+            </label>
+            <label>
+              URL embed de mapa
+              <input name="mapEmbedUrl" type="url" inputmode="url" placeholder="Opcional: iframe/embed de Google Maps">
+            </label>
+            <label>
+              URL para dejar resena
+              <input name="googleReviewUrl" type="url" inputmode="url">
+            </label>
+            <label>
+              Mensaje para pedir resenas
+              <textarea name="googleReviewRequestTemplate" rows="3" placeholder="Gracias por venir. Nos ayudas dejando una resena aqui: {reviewUrl}"></textarea>
+            </label>
+            <label>
+              Indicaciones / parking / zona
+              <textarea name="directionsNote" rows="3" placeholder="Ej: A 2 minutos de la plaza, parking cercano, entrada accesible..."></textarea>
+            </label>
+            <label>
+              URL de reserva/cita en Google o proveedor
+              <input name="googleAppointmentUrl" type="url" inputmode="url">
+            </label>
+            <label>
+              Reglas de reserva
+              <textarea name="googleBookingRules" rows="3" placeholder="Duracion, margen, servicios, horarios bloqueados, confirmacion..."></textarea>
+            </label>
+            <div class="two-columns">
+              <label>
+                Rating Google
+                <input name="googleRating" type="number" min="0" max="5" step="0.1">
+              </label>
+              <label>
+                Numero de resenas
+                <input name="googleReviewCount" type="number" min="0" step="1">
+              </label>
+            </div>
+            <label>
+              Google Calendar ID
+              <input name="googleCalendarId" type="text" placeholder="primary o calendario@group.calendar.google.com">
+            </label>
+            <div class="two-columns">
+              <label>
+                GBP Account ID
+                <input name="googleBusinessProfileAccountId" type="text">
+              </label>
+              <label>
+                GBP Location ID
+                <input name="googleBusinessProfileLocationId" type="text">
+              </label>
+            </div>
+            <div class="media-note">
+              Empieza con URLs manuales. Para sincronizar datos reales de Google Maps, Calendar o Business Profile se usa backend con API keys/OAuth, nunca claves dentro del HTML exportado.
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="chatbot">
+            <label class="toggle-row">
+              <input name="chatbotEnabled" type="checkbox">
+              Activar asistente virtual
+            </label>
+            <div class="two-columns">
+              <label>
+                Nombre del bot
+                <input name="chatbotName" type="text" placeholder="Ej: AnaBot">
+              </label>
+              <label>
+                Texto de traspaso
+                <input name="chatbotHandoffLabel" type="text" placeholder="Hablar por WhatsApp">
+              </label>
+            </div>
+            <fieldset>
+              <legend>Tono del asistente</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="chatbotTone" value="directo">
+                  Directo
+                </label>
+                <label>
+                  <input type="radio" name="chatbotTone" value="cercano">
+                  Cercano
+                </label>
+                <label>
+                  <input type="radio" name="chatbotTone" value="premium">
+                  Premium
+                </label>
+              </div>
+            </fieldset>
+            <label>
+              Saludo inicial
+              <textarea name="chatbotGreeting" rows="4"></textarea>
+            </label>
+            <label>
+              Preguntas rapidas (una por linea)
+              <textarea name="chatbotQuickPrompts" rows="5"></textarea>
+            </label>
+            <label>
+              Endpoint IA opcional
+              <input name="chatbotEndpoint" type="url" inputmode="url" placeholder="https://tu-servidor.com/api/chat">
+            </label>
+            <div class="media-note">
+              Sin endpoint, el bot responde localmente con los datos del negocio. Para IA real usa un backend: nunca pongas claves API en el HTML exportado.
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="commerce">
+            <label class="toggle-row">
+              <input name="commerceEnabled" type="checkbox">
+              Activar compras online
+            </label>
+            <label>
+              Titular de tienda
+              <input name="commerceTitle" type="text" placeholder="Compra online">
+            </label>
+            <label>
+              Intro de tienda
+              <textarea name="commerceIntro" rows="3" placeholder="Elige productos, revisa tu carrito y paga de forma segura."></textarea>
+            </label>
+            <div class="two-columns">
+              <label>
+                Moneda
+                <input name="commerceCurrency" type="text" maxlength="3" placeholder="EUR">
+              </label>
+              <label>
+                Email de pedidos
+                <input name="commerceOrderEmail" type="email" placeholder="pedidos@tunegocio.com">
+              </label>
+            </div>
+            <label>
+              Endpoint checkout Stripe
+              <input name="commerceCheckoutEndpoint" type="url" inputmode="url" placeholder="https://tu-api.com/api/store/checkout">
+            </label>
+            <label>
+              Endpoint productos/base de datos
+              <input name="commerceProductsEndpoint" type="url" inputmode="url" placeholder="https://tu-api.com/api/store/products">
+            </label>
+            <div class="two-columns">
+              <label>
+                URL exito de pago
+                <input name="commerceSuccessUrl" type="url" inputmode="url" placeholder="https://tuweb.com/pedido-ok.html">
+              </label>
+              <label>
+                URL cancelar pago
+                <input name="commerceCancelUrl" type="url" inputmode="url" placeholder="https://tuweb.com/#tienda">
+              </label>
+            </div>
+            <div class="two-columns">
+              <label>
+                URL terminos venta
+                <input name="commerceTermsUrl" type="url" inputmode="url" placeholder="https://tuweb.com/terminos">
+              </label>
+              <label>
+                URL privacidad
+                <input name="commercePrivacyUrl" type="url" inputmode="url" placeholder="https://tuweb.com/privacidad">
+              </label>
+            </div>
+            <label>
+              Entrega / recogida
+              <input name="commerceDeliveryMode" type="text" placeholder="Recogida en tienda y reparto local">
+            </label>
+            <label>
+              Productos (nombre | precio | imagen | descripcion | SKU | stock)
+              <textarea name="commerceProducts" rows="8" placeholder="Caja regalo | 29.90 | https://.../foto.jpg | Lista para recoger | caja-regalo | 20"></textarea>
+            </label>
+            <div class="media-note">
+              Para produccion usa `examples/commerce-api.example.mjs`: el dueno gestiona productos desde `pages/store-admin.html`, se guardan en una base JSON, Stripe cobra y el webhook registra el pedido.
+            </div>
+          </section>
+        </form>
+      </aside>
+
+      <section class="preview-stage" aria-label="Vista previa generada">
+        <div class="preview-toolbar">
+          <div>
+            <p class="eyebrow">Vista previa dinamica</p>
+            <h2 id="previewTitle">Negocio demo</h2>
+          </div>
+          <div class="preview-metrics" id="previewMetrics" aria-label="Metricas del producto"></div>
+          <div class="viewport-switcher" aria-label="Cambiar tamano de vista">
+            <button class="viewport-button" type="button" data-size="desktop">Desktop</button>
+            <button class="viewport-button" type="button" data-size="tablet">Tablet</button>
+            <button class="viewport-button is-active" type="button" data-size="mobile">Movil</button>
+          </div>
+        </div>
+
+        <div class="device-frame" data-size="mobile">
+          <div id="sitePreview" class="site-preview" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <template id="exportTemplate"></template>
+    <script src="assets/vendor/lenis.min.js"></script>
+    <script src="assets/vendor/splitting.min.js"></script>
+    <script src="assets/vendor/vanilla-tilt.min.js"></script>
+    <script src="src/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Portal del negocio - LocalLift</title>
+    <meta name="description" content="Dashboard operativo para negocios LocalLift con leads, reservas, pedidos, productos y reportes.">
+    <link rel="stylesheet" href="../src/styles/business.css">
+    <script type="module" src="../src/business/dashboard.js"></script>
+  </head>
+  <body>
+    <div class="business-shell">
+      <aside class="business-side">
+        <a class="brand-lockup" href="../index.html" aria-label="Volver a LocalLift Studio">
+          <span class="brand-mark">LL</span>
+          <span>
+            <span class="eyebrow">LocalLift</span>
+            <strong>Portal del negocio</strong>
+          </span>
+        </a>
+
+        <label class="select-label" for="businessSelect">
+          Negocio
+          <select id="businessSelect" data-business-select>
+            <option value="">Cargando...</option>
+          </select>
+        </label>
+
+        <form class="admin-token-form" data-admin-token-form>
+          <label for="adminToken">
+            Token admin
+            <input id="adminToken" type="password" autocomplete="off" placeholder="Opcional en local" data-admin-token-input>
+          </label>
+          <div>
+            <button type="submit">Guardar</button>
+            <button type="button" data-admin-token-clear>Limpiar</button>
+          </div>
+        </form>
+
+        <section class="side-panel" aria-live="polite">
+          <p class="eyebrow">Estado</p>
+          <h2 data-side-business>Sin negocio cargado</h2>
+          <p data-side-meta>Arranca el servidor local para leer la API multi-negocio.</p>
+          <div class="status-stack" data-side-status></div>
+        </section>
+
+        <nav class="quick-nav" aria-label="Acciones rapidas">
+          <a href="../index.html" data-action-link="studio">Studio</a>
+          <a href="store-admin.html" data-action-link="store">Tienda</a>
+          <a href="google-ops.html" data-action-link="google">Google</a>
+          <a href="onboarding.html" data-action-link="onboarding">Brief</a>
+        </nav>
+      </aside>
+
+      <main class="business-main">
+        <header class="business-topbar">
+          <div>
+            <p class="eyebrow">Operacion diaria</p>
+            <h1 data-page-title>Dashboard</h1>
+            <p data-page-subtitle>Leads, reservas, pedidos y acciones pendientes.</p>
+          </div>
+          <div class="topbar-actions">
+            <a class="ghost-action" href="../index.html">Editar web</a>
+            <button class="primary-action" type="button" data-refresh>Actualizar</button>
+          </div>
+        </header>
+
+        <section class="notice" data-notice hidden></section>
+
+        <section class="metric-grid" aria-label="Metricas principales">
+          <article class="metric-card">
+            <span>Leads nuevos</span>
+            <strong data-metric="leads">0</strong>
+            <small data-metric-note="leads">Sin leads reales todavia</small>
+          </article>
+          <article class="metric-card">
+            <span>Reservas de hoy</span>
+            <strong data-metric="bookings">0</strong>
+            <small data-metric-note="bookings">Agenda sin citas</small>
+          </article>
+          <article class="metric-card">
+            <span>Pedidos pendientes</span>
+            <strong data-metric="orders">0</strong>
+            <small data-metric-note="orders">Tienda sin pedidos</small>
+          </article>
+          <article class="metric-card">
+            <span>Ventas del mes</span>
+            <strong data-metric="sales">0 EUR</strong>
+            <small data-metric-note="sales">Sin pagos registrados</small>
+          </article>
+        </section>
+
+        <section class="command-strip" aria-label="Acciones del negocio">
+          <a href="#" data-business-action="primary">Accion principal</a>
+          <a href="#" data-business-action="phone">Llamar</a>
+          <a href="#" data-business-action="maps">Mapa</a>
+          <a href="#" data-business-action="reviews">Resenas</a>
+        </section>
+
+        <nav class="tab-list" aria-label="Secciones del portal">
+          <button class="tab-button is-active" type="button" data-tab="home">Inicio</button>
+          <button class="tab-button" type="button" data-tab="leads">Leads</button>
+          <button class="tab-button" type="button" data-tab="customers">Clientes</button>
+          <button class="tab-button" type="button" data-tab="bookings">Reservas</button>
+          <button class="tab-button" type="button" data-tab="orders">Pedidos</button>
+          <button class="tab-button" type="button" data-tab="products">Productos</button>
+          <button class="tab-button" type="button" data-tab="reports">Reportes</button>
+          <button class="tab-button" type="button" data-tab="settings">Ajustes</button>
+        </nav>
+
+        <section class="tab-panel is-active" data-panel="home">
+          <div class="dashboard-grid">
+            <section class="work-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Hoy</p>
+                <h2>Prioridad operativa</h2>
+              </div>
+              <div class="today-list" data-today-list></div>
+            </section>
+
+            <section class="work-panel">
+              <div class="panel-heading">
+                <p class="eyebrow">Entrega</p>
+                <h2>Checklist de salud</h2>
+              </div>
+              <div class="checklist" data-health-list></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-panel="leads">
+          <div class="panel-heading">
+            <p class="eyebrow">CRM ligero</p>
+            <h2>Leads</h2>
+          </div>
+          <div data-list="leads"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="customers">
+          <div class="panel-heading">
+            <p class="eyebrow">Relaciones</p>
+            <h2>Clientes</h2>
+          </div>
+          <div data-list="customers"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="bookings">
+          <div class="panel-heading">
+            <p class="eyebrow">Agenda</p>
+            <h2>Reservas</h2>
+          </div>
+          <div data-list="bookings"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="orders">
+          <div class="panel-heading">
+            <p class="eyebrow">Comercio</p>
+            <h2>Pedidos</h2>
+          </div>
+          <div data-list="orders"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="products">
+          <div class="panel-heading">
+            <p class="eyebrow">Catalogo</p>
+            <h2>Productos</h2>
+          </div>
+          <div data-list="products"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="reports">
+          <div class="panel-heading">
+            <p class="eyebrow">Mantenimiento</p>
+            <h2>Reporte mensual</h2>
+          </div>
+          <div data-list="reports"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="settings">
+          <div class="panel-heading">
+            <p class="eyebrow">Configuracion</p>
+            <h2>Ajustes</h2>
+          </div>
+          <div data-list="settings"></div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

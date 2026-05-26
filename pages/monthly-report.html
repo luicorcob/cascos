@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reporte mensual - LocalLift</title>
+    <meta name="description" content="Reporte mensual imprimible para clientes LocalLift.">
+    <link rel="stylesheet" href="../src/styles/report.css">
+    <script type="module" src="../src/business/monthly-report.js"></script>
+  </head>
+  <body>
+    <main class="report-page">
+      <header class="report-hero">
+        <div>
+          <p class="eyebrow">LocalLift</p>
+          <h1 data-report-title>Reporte mensual</h1>
+          <p data-report-subtitle>Cargando datos del negocio...</p>
+        </div>
+        <div class="report-actions">
+          <a href="business-dashboard.html" data-dashboard-link>Dashboard</a>
+          <button type="button" data-print>Imprimir</button>
+        </div>
+      </header>
+
+      <section class="report-notice" data-report-notice hidden></section>
+
+      <section class="report-metrics" aria-label="Metricas principales" data-report-metrics></section>
+
+      <section class="report-section">
+        <div class="section-heading">
+          <p class="eyebrow">Embudo</p>
+          <h2>Operacion del mes</h2>
+        </div>
+        <div class="report-grid" data-report-funnel></div>
+      </section>
+
+      <section class="report-section">
+        <div class="section-heading">
+          <p class="eyebrow">Acciones</p>
+          <h2>Recomendaciones</h2>
+        </div>
+        <div class="recommendation-list" data-report-recommendations></div>
+      </section>
+
+      <section class="report-section">
+        <div class="section-heading">
+          <p class="eyebrow">Actividad</p>
+          <h2>Ultimos movimientos</h2>
+        </div>
+        <div class="activity-list" data-report-activity></div>
+      </section>
+    </main>
+  </body>
+</html>

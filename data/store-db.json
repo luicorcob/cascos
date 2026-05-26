@@ -1,0 +1,71 @@
+{
+  "settings": {
+    "businessName": "LocalLift Store",
+    "orderEmail": "",
+    "currency": "EUR",
+    "taxRatePercent": 21,
+    "taxIncluded": true,
+    "successUrl": "",
+    "cancelUrl": "",
+    "termsUrl": "",
+    "privacyUrl": "",
+    "allowedCountries": [
+      "ES"
+    ],
+    "shippingMethods": [
+      {
+        "id": "pickup",
+        "name": "Recogida en tienda",
+        "description": "El negocio confirma la hora de recogida.",
+        "price": 0,
+        "active": true,
+        "default": true,
+        "allowedCountries": [
+          "ES"
+        ]
+      },
+      {
+        "id": "local-delivery",
+        "name": "Entrega local",
+        "description": "Reparto local bajo confirmacion del negocio.",
+        "price": 4.9,
+        "active": true,
+        "default": false,
+        "allowedCountries": [
+          "ES"
+        ]
+      }
+    ]
+  },
+  "products": [
+    {
+      "id": "tarjeta-regalo",
+      "sku": "tarjeta-regalo",
+      "name": "Tarjeta regalo",
+      "price": 50,
+      "image": "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=900&q=80",
+      "description": "Credito para usar en tienda o local.",
+      "stock": 50,
+      "active": true,
+      "createdAt": "2026-05-24T15:39:02.071Z",
+      "updatedAt": "2026-05-24T15:39:02.071Z"
+    }
+  ],
+  "orders": [],
+  "coupons": [
+    {
+      "code": "BIENVENIDA10",
+      "type": "percent",
+      "value": 10,
+      "minSubtotal": 20,
+      "maxDiscount": 15,
+      "usageLimit": 100,
+      "used": 0,
+      "expiresAt": "",
+      "active": true,
+      "createdAt": "2026-05-24T15:55:32.941Z",
+      "updatedAt": "2026-05-24T15:55:32.941Z"
+    }
+  ],
+  "auditLog": []
+}
