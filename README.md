@@ -2,6 +2,8 @@
 
 Base web para digitalizar negocios locales: el cliente entrega datos, fotos y enlaces; la herramienta genera una web premium, dinamica y exportable como HTML completo.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/luicorcob/cascos)
+
 ## Como usarlo
 
 1. Ejecuta `npm.cmd start` o abre `index.html` en el navegador.

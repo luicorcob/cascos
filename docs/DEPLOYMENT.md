@@ -32,6 +32,12 @@ Opcion rapida:
 - Dominio: `www.cliente.com` para la web y `api.cliente.com` o `api.tuempresa.com` para la API.
 - Healthcheck: `GET https://api.tuempresa.com/api/health`.
 
+Deploy directo desde GitHub:
+
+```text
+https://render.com/deploy?repo=https://github.com/luicorcob/cascos
+```
+
 El repositorio ya incluye `render.yaml` para crear un servicio web Node en Render con:
 
 - `startCommand: npm run start:prod`
