@@ -34,6 +34,7 @@
 - [x] Brief con permisos Google/Workspace.
 - [x] Portal operativo base del negocio.
 - [x] CRM basico con leads reales, estados e historial.
+- [x] Exportacion CSV de leads, clientes y reservas desde el portal.
 - [x] Agenda MVP con servicios, reservas y bloqueo de solapes.
 - [x] Widget publico visible para solicitar reservas desde la web generada.
 - [x] Disponibilidad semanal editable desde el portal del negocio.

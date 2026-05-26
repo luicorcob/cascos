@@ -986,6 +986,24 @@ tr:last-child td {
   margin-bottom: 10px;
 }
 
+.export-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.export-toolbar span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
 .inline-action {
   min-height: 38px;
   padding: 0 10px;

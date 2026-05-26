@@ -238,6 +238,8 @@ pages/business-dashboard.html
 
 Carga negocios desde la API local, permite cambiar de negocio y muestra Inicio, Leads, Clientes, Reservas, Pedidos, Productos, Reportes y Ajustes. En Reservas ya se pueden crear citas manuales, confirmar, completar o cancelar reservas. En Reportes hay acceso directo al informe mensual imprimible.
 
+Las tabs de Leads, Clientes y Reservas incluyen exportacion CSV para entregar datos al cliente o usarlos en hojas de calculo.
+
 Backend de ejemplo con la libreria oficial de Stripe:
 
 ```powershell

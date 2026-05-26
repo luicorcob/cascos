@@ -426,6 +426,7 @@ function render() {
   renderProducts(model);
   renderReports(model);
   renderSettings(model);
+  bindExportControls(model);
   bindCrmControls(model);
   bindBookingControls(model);
 }
@@ -539,6 +540,7 @@ function renderLeads(model) {
   }
 
   container.innerHTML = `
+    ${renderExportToolbar("leads", model.leads.length, "Exportar leads")}
     <div class="pipeline-grid">
       ${LEAD_STATUSES.map((status) => {
         const leads = model.leads.filter((lead) => String(lead.status || "new") === status);
@@ -566,7 +568,9 @@ function renderCustomers(model) {
     return;
   }
 
-  container.innerHTML = renderTable(
+  container.innerHTML = `
+    ${renderExportToolbar("customers", model.customers.length, "Exportar clientes")}
+    ${renderTable(
     ["Cliente", "Telefono", "Email", "Ultima actividad"],
     model.customers.map((customer) => [
       contactName(customer),
@@ -574,7 +578,8 @@ function renderCustomers(model) {
       clean(customer.email || "-"),
       formatDate(customer.lastInteractionAt || customer.createdAt)
     ])
-  );
+  )}
+  `;
 }
 
 function renderBookings(model) {
@@ -592,8 +597,18 @@ function renderBookings(model) {
     ${form}
     ${agendaTools}
     ${calendar}
+    ${renderExportToolbar("bookings", model.bookings.length, "Exportar reservas")}
     <div class="item-grid">
       ${model.bookings.map((booking) => renderBookingCard(booking)).join("")}
+    </div>
+  `;
+}
+
+function renderExportToolbar(type, count, label) {
+  return `
+    <div class="export-toolbar">
+      <span>${escapeHtml(String(count))} registro(s)</span>
+      <button class="inline-action" type="button" data-export-csv="${escapeAttr(type)}">${escapeHtml(label)}</button>
     </div>
   `;
 }
@@ -933,6 +948,23 @@ function bindCrmControls() {
           button.disabled = false;
         }
       }
+    });
+  });
+}
+
+function bindExportControls(model) {
+  document.querySelectorAll("[data-export-csv]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const type = button.dataset.exportCsv || "";
+      const rows = getCsvRows(type, model);
+
+      if (!rows.length) {
+        showNotice("No hay registros para exportar.", "warn");
+        return;
+      }
+
+      downloadCsv(buildCsvFilename(type, model.business), rows);
+      showNotice("CSV exportado.", "info");
     });
   });
 }
@@ -1622,6 +1654,89 @@ function emptyState(title, text) {
   `;
 }
 
+function getCsvRows(type, model) {
+  if (type === "leads") {
+    return model.leads.map(contactToCsvRow);
+  }
+
+  if (type === "customers") {
+    return model.customers.map(contactToCsvRow);
+  }
+
+  if (type === "bookings") {
+    return model.bookings.map(bookingToCsvRow);
+  }
+
+  return [];
+}
+
+function contactToCsvRow(contact) {
+  return {
+    Nombre: contactName(contact),
+    Telefono: clean(contact.phone || ""),
+    Email: clean(contact.email || ""),
+    Estado: statusLabel(contact.status || "new"),
+    Fuente: statusLabel(contact.source || "manual"),
+    Etiquetas: Array.isArray(contact.tags) ? contact.tags.join(", ") : clean(contact.tags || ""),
+    Valor: Number(contact.valueEstimate || 0),
+    Notas: clean(contact.notes || ""),
+    "Ultima actividad": formatDateTime(contact.lastInteractionAt || contact.updatedAt || contact.createdAt),
+    Creado: formatDateTime(contact.createdAt)
+  };
+}
+
+function bookingToCsvRow(booking) {
+  return {
+    Servicio: clean(booking.serviceName || booking.service || ""),
+    Cliente: clean(booking.customerName || booking.name || ""),
+    Telefono: clean(booking.phone || ""),
+    Email: clean(booking.email || ""),
+    Contacto: clean(booking.contact || booking.customerContact || ""),
+    Estado: statusLabel(booking.status || "pending"),
+    Inicio: formatDateTime(booking.startsAt || booking.date),
+    Fin: formatDateTime(booking.endsAt || ""),
+    Notas: clean(booking.notes || ""),
+    "Ultimo recordatorio": formatDateTime(booking.lastReminderAt || ""),
+    Creado: formatDateTime(booking.createdAt)
+  };
+}
+
+function downloadCsv(filename, rows) {
+  const csv = rowsToCsv(rows);
+  const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  try {
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+}
+
+function rowsToCsv(rows) {
+  const headers = Object.keys(rows[0] || {});
+  return [
+    headers.map(csvCell).join(","),
+    ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(","))
+  ].join("\n");
+}
+
+function csvCell(value) {
+  const text = clean(value).replace(/"/g, '""');
+  return /[",\n\r]/.test(text) ? `"${text}"` : text;
+}
+
+function buildCsvFilename(type, business) {
+  const slug = cleanSlug(business?.slug || business?.name || "negocio") || "negocio";
+  const date = new Date().toISOString().slice(0, 10);
+  return `${slug}-${type}-${date}.csv`;
+}
+
 function statusPill(label, status) {
   return `<span class="pill ${escapeHtml(status || "neutral")}">${escapeHtml(label)}</span>`;
 }
@@ -1767,6 +1882,15 @@ function escapeAttr(value) {
 
 function clean(value) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function cleanSlug(value) {
+  return clean(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function escapeHtml(value) {
