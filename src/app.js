@@ -1,6 +1,6 @@
 const STORAGE_KEY = "locallift-studio-business";
 const API_RECORD_KEY = "locallift-studio-business-api-record";
-const BUSINESS_API_BASE = "/api/businesses";
+const BUSINESS_API_BASE = apiUrl("/api/businesses");
 const DATA_VERSION = 3;
 
 const demoBusiness = {
@@ -3567,7 +3567,7 @@ function getPublicLeadEndpoint(business = {}) {
     || business.id
     || slugify(business.name || "");
 
-  return identifier ? `/api/public/${encodeURIComponent(identifier)}/leads` : "";
+  return identifier ? apiUrl(`/api/public/${encodeURIComponent(identifier)}/leads`) : "";
 }
 
 function getPublicBookingEndpoint(business = {}) {
@@ -3577,7 +3577,7 @@ function getPublicBookingEndpoint(business = {}) {
     || business.id
     || slugify(business.name || "");
 
-  return identifier ? `/api/public/${encodeURIComponent(identifier)}/bookings` : "";
+  return identifier ? apiUrl(`/api/public/${encodeURIComponent(identifier)}/bookings`) : "";
 }
 
 function getPublicEventEndpoint(business = {}) {
@@ -3587,7 +3587,7 @@ function getPublicEventEndpoint(business = {}) {
     || business.id
     || slugify(business.name || "");
 
-  return identifier ? `/api/public/${encodeURIComponent(identifier)}/events` : "";
+  return identifier ? apiUrl(`/api/public/${encodeURIComponent(identifier)}/events`) : "";
 }
 
 async function syncLeadToCrm(endpoint, lead) {
@@ -3595,7 +3595,7 @@ async function syncLeadToCrm(endpoint, lead) {
     return null;
   }
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(apiUrl(endpoint), {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -3615,7 +3615,7 @@ async function syncBookingToAgenda(endpoint, booking) {
     return null;
   }
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(apiUrl(endpoint), {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -3639,7 +3639,7 @@ async function syncEventToMetrics(endpoint, event) {
     return null;
   }
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(apiUrl(endpoint), {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -3694,7 +3694,7 @@ async function saveBusinessToApi(business) {
   const method = id ? "PUT" : "POST";
   const response = await fetch(id ? `${BUSINESS_API_BASE}/${encodeURIComponent(id)}` : BUSINESS_API_BASE, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: apiHeaders({ json: true }),
     body: JSON.stringify(payload)
   });
 
@@ -3713,13 +3713,17 @@ async function fetchBusinessFromApi(idOrSlug) {
     throw new Error("Missing business id");
   }
 
-  const response = await fetch(`${BUSINESS_API_BASE}/${encodeURIComponent(idOrSlug)}`);
+  const response = await fetch(`${BUSINESS_API_BASE}/${encodeURIComponent(idOrSlug)}`, {
+    headers: apiHeaders()
+  });
   const result = await readApiJson(response);
   return result.business;
 }
 
 async function fetchFirstBusinessFromApi() {
-  const response = await fetch(`${BUSINESS_API_BASE}?includeArchived=false`);
+  const response = await fetch(`${BUSINESS_API_BASE}?includeArchived=false`, {
+    headers: apiHeaders()
+  });
   const result = await readApiJson(response);
   const [business] = result.businesses || [];
 
@@ -3744,6 +3748,32 @@ async function readApiJson(response) {
   }
 
   return result;
+}
+
+function apiUrl(path) {
+  return window.LocalLiftApi?.url(path) || path;
+}
+
+function apiHeaders(options = {}) {
+  if (window.LocalLiftApi?.headers) {
+    return window.LocalLiftApi.headers(options);
+  }
+
+  const headers = {
+    Accept: "application/json"
+  };
+
+  if (options.json) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const token = localStorage.getItem("locallift_admin_token");
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+    headers["X-LocalLift-Admin-Token"] = token;
+  }
+
+  return headers;
 }
 
 function applyBusinessRecord(record) {
@@ -3863,6 +3893,7 @@ async function buildExportDocument(business) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${title}</title>
     <meta name="description" content="${description}">
+    ${window.LocalLiftApi?.getBase?.() ? `<meta name="locallift-api-base" content="${escapeAttr(window.LocalLiftApi.getBase())}">` : ""}
     <meta property="og:title" content="${escapeAttr(business.name)}">
     <meta property="og:description" content="${description}">
     <meta property="og:image" content="${escapeAttr(business.heroImage)}">
@@ -4002,6 +4033,7 @@ function getExportScript() {
   return `
 (() => {
   const site = document.querySelector(".generated-site");
+  const apiBase = resolveApiBase();
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (typeof window.Splitting === "function") {
     window.Splitting();
@@ -4706,7 +4738,7 @@ function getExportScript() {
   }
   async function syncLead(endpoint, lead) {
     if (!endpoint) return null;
-    const response = await fetch(endpoint, {
+    const response = await fetch(apiUrl(endpoint), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lead })
@@ -4716,7 +4748,7 @@ function getExportScript() {
   }
   async function syncBooking(endpoint, booking) {
     if (!endpoint) return null;
-    const response = await fetch(endpoint, {
+    const response = await fetch(apiUrl(endpoint), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ booking })
@@ -4742,17 +4774,39 @@ function getExportScript() {
     syncEvent(publicEventEndpoint(), event).catch(() => {});
   }
   function publicEventEndpoint() {
-    return business.slug || business.id ? "/api/public/" + encodeURIComponent(business.slug || business.id) + "/events" : "";
+    return business.slug || business.id ? apiUrl("/api/public/" + encodeURIComponent(business.slug || business.id) + "/events") : "";
   }
   async function syncEvent(endpoint, event) {
     if (!endpoint) return null;
-    const response = await fetch(endpoint, {
+    const response = await fetch(apiUrl(endpoint), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ event: { ...event, page: location.pathname, referrer: document.referrer, userAgent: navigator.userAgent } })
     });
     if (!response.ok) throw new Error("Event API request failed");
     return response.json();
+  }
+  function apiUrl(path) {
+    if (!path || /^[a-z][a-z0-9+.-]*:\\/\\//i.test(String(path))) return path;
+    return apiBase ? apiBase + (path.startsWith("/") ? path : "/" + path) : path;
+  }
+  function resolveApiBase() {
+    const query = new URLSearchParams(window.location.search);
+    const fromQuery = query.get("apiBase");
+    if (fromQuery !== null) {
+      const clean = cleanApiBase(fromQuery);
+      if (clean) localStorage.setItem("locallift_api_base", clean);
+      else localStorage.removeItem("locallift_api_base");
+      return clean;
+    }
+    return cleanApiBase(window.LOCALLIFT_API_BASE)
+      || cleanApiBase(document.querySelector('meta[name="locallift-api-base"]')?.content)
+      || cleanApiBase(localStorage.getItem("locallift_api_base"));
+  }
+  function cleanApiBase(value) {
+    const base = String(value || "").trim();
+    if (!base || ["same-origin", "local", "none"].includes(base.toLowerCase())) return "";
+    return base.replace(/\\/+$/, "");
   }
 })();
   `.trim();

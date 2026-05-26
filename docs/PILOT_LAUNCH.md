@@ -49,6 +49,20 @@ Para el primer piloto hay dos caminos validos:
 - Subir el HTML exportado del Studio a Vercel, Netlify, Cloudflare Pages o hosting del cliente.
 - Servir temporalmente la web desde el mismo backend si el objetivo es solo demo controlada.
 
+Si frontend y backend estan en dominios distintos, abre primero el Studio o dashboard con:
+
+```text
+?apiBase=https://tu-api.onrender.com
+```
+
+Ejemplo:
+
+```text
+https://www.cliente.com/pages/business-dashboard.html?apiBase=https://tu-api.onrender.com
+```
+
+Esto guarda la URL API en el navegador. En el dashboard tambien puedes pegarla en `URL API`. Al exportar una web desde el Studio con esa configuracion activa, el HTML queda preparado para enviar leads, reservas y eventos a esa API.
+
 Antes de publicar:
 
 - Poner telefono real.

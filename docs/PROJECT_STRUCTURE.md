@@ -44,6 +44,7 @@ LocalLift Studio keeps the simple static entry point at the repository root and 
 - `pages/monthly-report.html`: printable monthly report for client delivery.
 - `src/business/dashboard.js`: API loading, tab rendering and operational metrics.
 - `src/business/monthly-report.js`: printable report loader and renderer.
+- `src/shared/api-config.js`: shared browser API base resolver for split frontend/backend deployments.
 - `src/styles/business.css`: responsive dashboard styling.
 - `src/styles/report.css`: printable monthly report styling.
 - `server/api/contact-api.mjs`: CRM endpoints for public leads, contacts and activities.

@@ -24,6 +24,7 @@
 - [x] Token admin opcional para proteger rutas operativas en produccion.
 - [x] CORS configurable por entorno y plantilla `.env.example`.
 - [x] Dockerfile, Render Blueprint y validacion de entorno para despliegue.
+- [x] URL base de API configurable para frontend y backend en dominios separados.
 - [x] Recursos motion locales.
 - [x] Campos Google-ready: Place ID, Maps, reseñas, Calendar, GBP.
 - [x] Backend ejemplo para Places y Calendar.

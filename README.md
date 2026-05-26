@@ -15,6 +15,8 @@ Base web para digitalizar negocios locales: el cliente entrega datos, fotos y en
 
 Para simular produccion o subir el backend, usa `npm run start:prod` con las variables de `.env.example`. Este comando valida `NODE_ENV=production`, `HOST=0.0.0.0`, token admin, CORS HTTPS y ruta de base persistente antes de arrancar.
 
+Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=https://tu-api.com` o pega esa URL en el campo `URL API` del dashboard. LocalLift la guarda en el navegador y la usa para leads, reservas, eventos, dashboard y reportes.
+
 ## Formato de datos
 
 - Servicios: una linea por servicio.

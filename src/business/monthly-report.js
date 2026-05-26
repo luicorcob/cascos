@@ -18,7 +18,14 @@ async function init() {
   const month = query.get("month") || "";
 
   if (refs.dashboardLink) {
-    refs.dashboardLink.href = `business-dashboard.html?business=${encodeURIComponent(businessId)}`;
+    const params = new URLSearchParams({ business: businessId });
+    const apiBase = window.LocalLiftApi?.getBase?.() || "";
+
+    if (apiBase) {
+      params.set("apiBase", apiBase);
+    }
+
+    refs.dashboardLink.href = `business-dashboard.html?${params.toString()}`;
   }
 
   try {
@@ -31,8 +38,8 @@ async function init() {
 }
 
 async function getJson(url) {
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" },
+  const response = await fetch(apiUrl(url), {
+    headers: apiHeaders(),
     cache: "no-store"
   });
 
@@ -41,6 +48,14 @@ async function getJson(url) {
   }
 
   return response.json();
+}
+
+function apiUrl(url) {
+  return window.LocalLiftApi?.url(url) || url;
+}
+
+function apiHeaders() {
+  return window.LocalLiftApi?.headers?.() || { Accept: "application/json" };
 }
 
 function renderReport(report) {

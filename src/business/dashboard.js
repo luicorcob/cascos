@@ -10,6 +10,7 @@ const state = {
   blocks: [],
   reminderQueue: [],
   report: null,
+  apiBase: window.LocalLiftApi?.getBase?.() || "",
   adminToken: localStorage.getItem("locallift_admin_token") || "",
   crmError: "",
   bookingError: "",
@@ -34,6 +35,9 @@ document.addEventListener("DOMContentLoaded", init);
 
 function init() {
   refs.businessSelect = document.querySelector("[data-business-select]");
+  refs.apiBaseForm = document.querySelector("[data-api-base-form]");
+  refs.apiBaseInput = document.querySelector("[data-api-base-input]");
+  refs.apiBaseClear = document.querySelector("[data-api-base-clear]");
   refs.adminTokenForm = document.querySelector("[data-admin-token-form]");
   refs.adminTokenInput = document.querySelector("[data-admin-token-input]");
   refs.adminTokenClear = document.querySelector("[data-admin-token-clear]");
@@ -63,6 +67,33 @@ function bindUi() {
     if (id) {
       loadBusiness(id);
     }
+  });
+
+  if (refs.apiBaseInput) {
+    refs.apiBaseInput.value = state.apiBase;
+  }
+
+  refs.apiBaseForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    state.apiBase = window.LocalLiftApi?.setBase?.(refs.apiBaseInput?.value || "") || "";
+
+    if (refs.apiBaseInput) {
+      refs.apiBaseInput.value = state.apiBase;
+    }
+
+    showNotice(state.apiBase ? "URL de API guardada para este navegador." : "URL de API eliminada; se usara el mismo dominio.", "info");
+    loadBusinesses({ keepCurrent: true });
+  });
+
+  refs.apiBaseClear?.addEventListener("click", () => {
+    state.apiBase = window.LocalLiftApi?.setBase?.("") || "";
+
+    if (refs.apiBaseInput) {
+      refs.apiBaseInput.value = "";
+    }
+
+    showNotice("URL de API eliminada; se usara el mismo dominio.", "warn");
+    loadBusinesses({ keepCurrent: true });
   });
 
   if (refs.adminTokenInput) {
@@ -250,7 +281,7 @@ function setLoading(isLoading) {
 }
 
 async function getJson(url) {
-  const response = await fetch(url, {
+  const response = await fetch(apiUrl(url), {
     headers: apiHeaders(),
     cache: "no-store"
   });
@@ -277,7 +308,7 @@ async function postJson(url, payload) {
 }
 
 async function sendJson(method, url, payload) {
-  const response = await fetch(url, {
+  const response = await fetch(apiUrl(url), {
     method,
     headers: apiHeaders({ json: true }),
     body: JSON.stringify(payload)
@@ -294,6 +325,10 @@ async function sendJson(method, url, payload) {
 }
 
 function apiHeaders(options = {}) {
+  if (window.LocalLiftApi?.headers) {
+    return window.LocalLiftApi.headers(options);
+  }
+
   const headers = {
     Accept: "application/json"
   };
@@ -308,6 +343,10 @@ function apiHeaders(options = {}) {
   }
 
   return headers;
+}
+
+function apiUrl(url) {
+  return window.LocalLiftApi?.url(url) || url;
 }
 
 function renderBusinessSelect() {
@@ -637,7 +676,17 @@ function renderReports(model) {
 function getMonthlyReportUrl(model) {
   const id = model.business?.id || model.business?.slug || "";
   const month = model.report?.period?.month || currentMonthKey();
-  return `monthly-report.html?business=${encodeURIComponent(id)}&month=${encodeURIComponent(month)}`;
+  const params = new URLSearchParams({
+    business: id,
+    month
+  });
+  const apiBase = window.LocalLiftApi?.getBase?.() || "";
+
+  if (apiBase) {
+    params.set("apiBase", apiBase);
+  }
+
+  return `monthly-report.html?${params.toString()}`;
 }
 
 function renderReportFunnel(report) {

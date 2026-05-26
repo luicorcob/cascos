@@ -42,6 +42,33 @@ El repositorio ya incluye `render.yaml` para crear un servicio web Node en Rende
 
 Tambien incluye `Dockerfile` para proveedores basados en contenedor.
 
+## Frontend separado de la API
+
+Si publicas la web o el dashboard en Vercel, Netlify o Cloudflare Pages y la API en Render/Railway, configura la URL base de API de una de estas formas:
+
+```text
+https://www.cliente.com/pages/business-dashboard.html?apiBase=https://tu-api.onrender.com
+```
+
+Al abrir con `apiBase`, LocalLift guarda esa URL en `localStorage` para ese navegador. Tambien puedes pegarla en el campo `URL API` del dashboard.
+
+Orden de prioridad:
+
+1. `window.LOCALLIFT_API_BASE`
+2. `<meta name="locallift-api-base" content="https://tu-api.com">`
+3. `localStorage.locallift_api_base`
+4. mismo dominio
+
+Cuando exportas una web desde el Studio y tienes `apiBase` configurado, el HTML exportado incluye el meta `locallift-api-base`. Asi el formulario de lead, reservas y eventos pueden apuntar al backend online aunque la web viva en otro hosting.
+
+URLs utiles:
+
+```text
+https://www.cliente.com/?apiBase=https://tu-api.onrender.com
+https://www.cliente.com/pages/business-dashboard.html?apiBase=https://tu-api.onrender.com
+https://www.cliente.com/pages/monthly-report.html?business=brasa-norte&apiBase=https://tu-api.onrender.com
+```
+
 Opcion mas profesional:
 
 - Frontend multi-cliente servido desde CDN.
