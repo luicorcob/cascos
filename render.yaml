@@ -2,23 +2,19 @@ services:
   - type: web
     name: locallift-studio-api
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm ci --omit=dev
     startCommand: npm run start:prod
     healthCheckPath: /api/health
-    disk:
-      name: locallift-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: HOST
         value: 0.0.0.0
       - key: BUSINESS_DB_FILE
-        value: /data/business-db.json
+        value: /tmp/locallift/business-db.json
       - key: BUSINESS_DB_BACKUP_DIR
-        value: /data/backups
+        value: /tmp/locallift/backups
       - key: BUSINESS_DB_BACKUPS
         value: "true"
       - key: LOCALLIFT_ADMIN_TOKEN
