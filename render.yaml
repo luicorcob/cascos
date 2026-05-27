@@ -12,9 +12,9 @@ services:
       - key: HOST
         value: 0.0.0.0
       - key: BUSINESS_DB_FILE
-        value: /tmp/locallift/business-db.json
+        value: data/business-db.json
       - key: BUSINESS_DB_BACKUP_DIR
-        value: /tmp/locallift/backups
+        value: data/backups
       - key: BUSINESS_DB_BACKUPS
         value: "true"
       - key: LOCALLIFT_ADMIN_TOKEN
