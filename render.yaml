@@ -22,6 +22,6 @@ services:
       - key: BUSINESS_DB_BACKUPS
         value: "true"
       - key: LOCALLIFT_ADMIN_TOKEN
-        sync: false
+        generateValue: true
       - key: CORS_ORIGIN
-        sync: false
+        value: https://locallift-studio-api.onrender.com
