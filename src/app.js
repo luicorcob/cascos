@@ -1283,9 +1283,9 @@ function bindActions() {
 
     try {
       currentBusiness = businessFromForm();
-      setStatus("Preparando HTML con recursos premium incrustados...");
+      setStatus("Preparando HTML completo con estilos, scripts y datos incrustados...");
       await downloadSite(currentBusiness);
-      setStatus("HTML exportado. Listo para subir a hosting.");
+      setStatus("HTML completo exportado. Listo para abrir o subir a hosting.");
     } catch (error) {
       setStatus("No se pudo exportar el HTML. La vista previa sigue disponible para corregir datos.");
     } finally {
@@ -3883,11 +3883,12 @@ async function buildExportDocument(business) {
   const title = escapeHtml(`${business.name} - ${business.category}`);
   const description = escapeAttr(business.description || business.tagline);
   const content = renderSite(business);
-  const vendor = await fetchVendorResources();
+  const [exportCss, vendor] = await Promise.all([fetchExportCss(), fetchVendorResources()]);
   const schema = JSON.stringify(buildLocalBusinessSchema(business), null, 2).replace(/</g, "\\u003c");
+  const runtimeData = JSON.stringify(buildExportRuntimeData(business), null, 2).replace(/</g, "\\u003c");
 
   return `<!doctype html>
-<html lang="es">
+<html lang="es" class="no-js">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -3901,18 +3902,35 @@ async function buildExportDocument(business) {
 ${schema}
     </script>
     <style>
-${getExportCss()}
+${exportCss}
 ${vendor.css}
     </style>
   </head>
   <body>
 ${content}
+    <script id="locallift-export-data" type="application/json">
+${runtimeData}
+    </script>
     <script>
 ${vendor.js}
 ${getExportScript()}
     </script>
   </body>
 </html>`;
+}
+
+function buildExportRuntimeData(business) {
+  return {
+    version: DATA_VERSION,
+    exportedAt: new Date().toISOString(),
+    business: {
+      id: currentBusinessRecord?.id || business.id || "",
+      slug: currentBusinessRecord?.slug || business.slug || slugify(business.name || ""),
+      name: business.name,
+      category: business.category,
+      location: business.location
+    }
+  };
 }
 
 function buildLocalBusinessSchema(business) {
@@ -4000,6 +4018,50 @@ async function fetchText(url) {
   }
 }
 
+async function fetchExportCss() {
+  const sourceCss = await fetchText("src/styles.css");
+  const css = sourceCss || getExportCss();
+
+  return `${css}
+${getStandaloneExportCss()}`.trim();
+}
+
+function getStandaloneExportCss() {
+  return `
+html {
+  background: #fbf7ef;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: #fbf7ef;
+}
+
+body > .generated-site {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body > .generated-site .conversion-dock {
+  position: fixed;
+}
+
+body > .generated-site .chatbot-widget {
+  position: fixed;
+}
+
+html.no-js .generated-site .reveal,
+html.no-js .generated-site .kinetic-title .char {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+`.trim();
+}
+
 function getExportCss() {
   const liveCss = collectLiveCss();
 
@@ -4032,8 +4094,12 @@ function collectLiveCss() {
 function getExportScript() {
   return `
 (() => {
+  document.documentElement.classList.remove("no-js");
+  document.documentElement.classList.add("js");
   const site = document.querySelector(".generated-site");
   const apiBase = resolveApiBase();
+  const exportData = readExportData();
+  const business = exportData.business || {};
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (typeof window.Splitting === "function") {
     window.Splitting();
@@ -4520,7 +4586,7 @@ function getExportScript() {
         : "Todavia no hay horario detallado publicado. " + contactLine(context);
     }
     if (any(text, ["reserv", "cita", "mesa", "turno", "agenda", "booking"])) {
-      if (/(\+?\d[\d\s().-]{7,})/.test(text)) {
+      if (/(\\+?\\d[\\d\\s().-]{7,})/.test(text)) {
         const quickLead = storeLead({ business: business.name || "", name: "Lead desde chatbot", contact: contactFrom(message), message, source: "chatbot", leadEndpoint: context.chatbot?.leadEndpoint || "" });
         return "Perfecto. He detectado datos de reserva y los dejo preparados para el negocio.\\n\\nResumen recibido: " + quickLead.message + "\\n\\n" + nextStep(context) + "\\n\\n" + contactLine(context);
       }
@@ -4727,6 +4793,10 @@ function getExportScript() {
     try { return JSON.parse(widget.dataset.chatbotContext || "{}"); }
     catch (error) { return {}; }
   }
+  function readExportData() {
+    try { return JSON.parse(document.getElementById("locallift-export-data")?.textContent || "{}"); }
+    catch (error) { return {}; }
+  }
   function normalize(value) {
     return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
   }
@@ -4768,13 +4838,14 @@ function getExportScript() {
   }
   function track(name, detail) {
     window.localLiftEvents = window.localLiftEvents || [];
-    const event = { name, detail, timestamp: new Date().toISOString() };
+    const event = { name, detail: { business: business.name || "", category: business.category || "", ...detail }, timestamp: new Date().toISOString() };
     window.localLiftEvents.push(event);
-    window.dataLayer?.push({ event: "locallift_" + name, ...detail });
+    window.dataLayer?.push({ event: "locallift_" + name, ...event.detail });
     syncEvent(publicEventEndpoint(), event).catch(() => {});
   }
   function publicEventEndpoint() {
-    return business.slug || business.id ? apiUrl("/api/public/" + encodeURIComponent(business.slug || business.id) + "/events") : "";
+    const identifier = business.slug || business.id || "";
+    return identifier ? apiUrl("/api/public/" + encodeURIComponent(identifier) + "/events") : "";
   }
   async function syncEvent(endpoint, event) {
     if (!endpoint) return null;
