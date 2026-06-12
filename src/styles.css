@@ -12,6 +12,209 @@
   --preview-width: min(100%, 1160px);
 }
 
+/* LocalLift block library variants */
+.generated-site.block-hero-split .hero-media {
+  inset: 0 0 0 auto;
+  width: 52%;
+}
+
+.generated-site.block-hero-split .hero-section::after {
+  background: linear-gradient(90deg, var(--solid) 0 43%, color-mix(in srgb, var(--solid), transparent 30%) 62%, transparent 100%);
+}
+
+.generated-site.block-hero-split .hero-content {
+  width: min(52%, 680px);
+}
+
+.generated-site.block-hero-minimal .hero-art,
+.generated-site.block-hero-minimal .hero-atmosphere {
+  display: none;
+}
+
+.generated-site.block-hero-minimal .hero-media {
+  opacity: 0.28;
+}
+
+.generated-site.block-hero-minimal .hero-content {
+  width: min(760px, 100%);
+  margin-inline: auto;
+  text-align: center;
+}
+
+.generated-site.block-hero-minimal .hero-actions {
+  justify-content: center;
+}
+
+.generated-site.block-services-list .services-grid {
+  grid-template-columns: 1fr;
+}
+
+.generated-site.block-services-list .service-card {
+  display: grid;
+  grid-template-columns: 52px minmax(180px, 0.55fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  min-height: 0;
+}
+
+.generated-site.block-services-list .service-card .card-index {
+  margin: 0;
+}
+
+.generated-site.block-services-list .service-card h3,
+.generated-site.block-services-list .service-card p {
+  margin: 0;
+}
+
+.generated-site.block-services-spotlight .services-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.generated-site.block-services-spotlight .service-card:first-child {
+  grid-row: span 2;
+  min-height: calc(var(--card-min-height) * 2 + 14px);
+  background: var(--solid);
+  color: var(--on-solid);
+}
+
+.generated-site.block-services-spotlight .service-card:first-child p {
+  color: color-mix(in srgb, var(--on-solid), transparent 24%);
+}
+
+.generated-site.block-gallery-grid .gallery-band,
+.generated-site.block-gallery-mosaic .gallery-band {
+  padding-inline: clamp(14px, 4vw, 64px);
+  background: var(--bg);
+}
+
+.generated-site.block-gallery-grid .gallery-track,
+.generated-site.block-gallery-mosaic .gallery-track {
+  display: grid;
+  width: min(var(--site-content-width), 100%);
+  margin-inline: auto;
+  animation: none;
+}
+
+.generated-site.block-gallery-grid .gallery-track {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.generated-site.block-gallery-mosaic .gallery-track {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.generated-site.block-gallery-grid .is-gallery-clone,
+.generated-site.block-gallery-mosaic .is-gallery-clone {
+  display: none;
+}
+
+.generated-site.block-gallery-grid .gallery-item,
+.generated-site.block-gallery-mosaic .gallery-item {
+  aspect-ratio: 4 / 3;
+}
+
+.generated-site.block-gallery-mosaic .gallery-item:first-child {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.generated-site.block-gallery-mosaic .gallery-item:nth-child(4) {
+  grid-column: span 2;
+}
+
+.generated-site.block-testimonials-quotes .testimonial-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.generated-site.block-testimonials-quotes .testimonial-card {
+  min-height: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: transparent;
+}
+
+.generated-site.block-testimonials-quotes .testimonial-card p {
+  max-width: 880px;
+  font-size: clamp(1.45rem, 3.2vw, 3rem);
+  line-height: 1.14;
+}
+
+.generated-site.block-contact-banner .contact-panel {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  background: var(--solid);
+  color: var(--on-solid);
+  text-align: center;
+}
+
+.generated-site.block-contact-banner .contact-panel p {
+  color: color-mix(in srgb, var(--on-solid), transparent 24%);
+}
+
+.generated-site.block-contact-banner .contact-links,
+.generated-site.block-contact-banner .social-links {
+  justify-content: center;
+}
+
+.generated-site.block-contact-banner .contact-links a,
+.generated-site.block-contact-banner .social-links a {
+  border-color: color-mix(in srgb, var(--on-solid), transparent 60%);
+  color: var(--on-solid);
+}
+
+.generated-site.block-contact-compact .contact-section {
+  padding-block: 20px;
+}
+
+.generated-site.block-contact-compact .contact-panel {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 22px;
+}
+
+.generated-site.block-contact-compact .contact-panel > div:last-child {
+  display: none;
+}
+
+.generated-site.block-contact-compact .contact-panel h2 {
+  font-size: clamp(1.7rem, 4vw, 3rem);
+}
+
+@media (max-width: 760px) {
+  .generated-site.block-hero-split .hero-media {
+    inset: 0;
+    width: 100%;
+  }
+
+  .generated-site.block-hero-split .hero-content {
+    width: 100%;
+  }
+
+  .generated-site.block-services-list .service-card,
+  .generated-site.block-services-spotlight .services-grid,
+  .generated-site.block-gallery-grid .gallery-track,
+  .generated-site.block-gallery-mosaic .gallery-track,
+  .generated-site.block-contact-compact .contact-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .generated-site.block-services-list .service-card {
+    gap: 8px;
+  }
+
+  .generated-site.block-services-spotlight .service-card:first-child {
+    grid-row: auto;
+    min-height: var(--card-min-height);
+  }
+
+  .generated-site.block-gallery-mosaic .gallery-item:first-child,
+  .generated-site.block-gallery-mosaic .gallery-item:nth-child(4) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -4861,4 +5064,32 @@ body:has(> .generated-site) {
   .art-kinetic .service-card:nth-child(even) {
     transform: none;
   }
+}
+
+/* Keep gallery block choices visible inside the Studio mobile device frame. */
+.device-frame[data-size="mobile"] .generated-site.block-gallery-grid .gallery-track,
+.device-frame[data-size="mobile"] .generated-site.block-gallery-mosaic .gallery-track {
+  display: grid;
+  width: min(var(--site-content-width), 100%);
+  padding: 0 12px;
+  overflow: visible;
+  scroll-snap-type: none;
+}
+
+.device-frame[data-size="mobile"] .generated-site.block-gallery-grid .gallery-track {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.device-frame[data-size="mobile"] .generated-site.block-gallery-mosaic .gallery-track {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.device-frame[data-size="mobile"] .generated-site.block-gallery-grid .gallery-item,
+.device-frame[data-size="mobile"] .generated-site.block-gallery-mosaic .gallery-item {
+  flex: initial;
+  width: 100%;
+}
+
+.device-frame[data-size="mobile"] .generated-site.block-gallery-mosaic .gallery-item:first-child {
+  grid-column: span 2;
 }

@@ -14,6 +14,7 @@ Funcion: mapa tecnico de referencia. Las prioridades actuales se consultan en
 |   |-- app.js
 |   |-- business/
 |   |-- shared/
+|   |-- studio/
 |   `-- styles/
 |-- pages/
 |-- server/
@@ -36,7 +37,9 @@ Funcion: mapa tecnico de referencia. Las prioridades actuales se consultan en
 ## Convenciones de codigo
 
 - Mantener `index.html` en la raiz como entrada sencilla al Studio.
-- Colocar interfaz y logica del Studio en `src/`.
+- Mantener `src/app.js` como orquestador de interfaz e interacciones.
+- Colocar catalogo, estado, datos, validacion, renderizado y exportacion en
+  `src/studio/`.
 - Colocar modulos del portal en `src/business/` y estilos dedicados en
   `src/styles/`.
 - Colocar paginas auxiliares de navegador en `pages/`.
@@ -62,6 +65,15 @@ El inventario completo y las reglas de autoridad estan en
 - `src/business/dashboard.js`: carga API, tabs y metricas operativas.
 - `src/business/monthly-report.js`: carga y render del reporte.
 - `src/shared/api-config.js`: resolucion compartida de la URL de API.
+- `src/studio/catalog.js`: demos, presets, paletas y escalas visuales.
+- `src/studio/core-utils.js`: utilidades puras de texto, URLs, dinero y datos.
+- `src/studio/state-controller.js`: historial y autoguardado.
+- `src/studio/layout-library.js`: composiciones reutilizables guardadas localmente.
+- `src/studio/media-library.js`: biblioteca local reutilizable de imagenes.
+- `src/studio/data-client.js`: cliente API y cache del negocio activo.
+- `src/studio/validation.js`: reglas de calidad y entrega.
+- `src/studio/renderer.js`: HTML compartido por preview y exportacion.
+- `src/studio/exporter.js`: documento HTML standalone y runtime exportado.
 - `server/server.mjs`: entrada del backend.
 - `server/api/`: endpoints de negocios, contactos, reservas, eventos, salud y
   reportes.
@@ -70,4 +82,3 @@ El inventario completo y las reglas de autoridad estan en
   la memoria TFG.
 - `.env.example`: plantilla de variables locales y de produccion.
 - `render.yaml`: Blueprint de Render con healthcheck y disco persistente.
-

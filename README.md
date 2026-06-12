@@ -9,11 +9,15 @@ Base web para digitalizar negocios locales: el cliente entrega datos, fotos y en
 1. Ejecuta `npm.cmd start` o abre `index.html` en el navegador.
 2. Edita los datos del negocio desde el panel izquierdo.
 3. Cambia fotos, servicios, testimonios, enlaces y estilo.
-4. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
-5. Revisa el score de entrega del panel `Control de entrega`.
-6. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
-7. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
-8. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
+4. Activa `Editar preview` y cambia textos, imagenes, encuadres, botones y enlaces directamente sobre la web.
+5. Mueve u oculta secciones desde sus controles sobre la preview.
+6. Elige bloques o aplica y guarda composiciones reutilizables sin perder contenidos.
+7. Reutiliza imagenes subidas o URLs desde `Fotos > Biblioteca de medios`.
+8. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
+9. Revisa el score de entrega; los errores criticos bloquean la exportacion.
+10. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
+11. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
+12. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
 
 Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
 `index.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
@@ -37,12 +41,19 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 ## Que incluye
 
 - Editor de datos del negocio.
-- Panel `Demo en vivo` para cambios delante del cliente: variantes, comando rapido, toggles de secciones y deshacer/rehacer.
+- Panel `Demo en vivo` para cambios delante del cliente: variantes, comando rapido, orden de secciones y deshacer/rehacer.
+- Edicion directa de textos, imagenes, encuadres, botones y enlaces desde la preview.
+- Controles contextuales para mover u ocultar secciones sobre el lienzo.
+- Biblioteca de variantes para portada, servicios, galeria, resenas y contacto.
+- Composiciones reutilizables que conservan el contenido del negocio.
+- Gestor local de medios con compresion, dimensiones, texto alternativo y reutilizacion.
+- Autoguardado de borrador con recuperacion al volver a abrir el Studio.
 - Vista previa dinamica en tiempo real.
 - Ocho demos por sector: restaurante, clinica, belleza, gimnasio, bar, papeleria, kebab y bazar.
 - Import/export de datos por cliente en JSON.
 - Modulo de tienda online: catalogo, productos con imagen/precio, carrito, checkout Stripe y panel admin.
 - Checklist de calidad con score de entrega.
+- Validacion de entrega que marca campos y bloquea exportaciones invalidas.
 - Cinco direcciones visuales: Aurora, Carbon, Editorial, Neon y Luxe.
 - Seis direcciones artisticas estructurales: Cine, Revista, Cartel, Mosaico, Atelier y Kinetica.
 - Modo `Auto unica` con huella visual estable por negocio para evitar webs repetidas.
@@ -165,6 +176,16 @@ El guardado es atomico y crea copias en `data/backups/` antes de cambios importa
 Para recuperar una copia con el backend detenido, usa `npm.cmd run restore:businesses -- "ruta-a-la-copia.json" --confirm`. El procedimiento completo de salud diaria y restauracion esta en `docs/operaciones/OPERATIONS_RUNBOOK.md`.
 
 Antes de desplegar, `npm.cmd run smoke:pilot` levanta un backend temporal y verifica salud, autenticacion admin, lead, reserva, consentimiento, cambios de estado, eventos y reporte sin tocar la base real.
+
+Para verificar la arquitectura y comportamiento modular del Studio:
+
+```powershell
+npm.cmd run check
+npm.cmd run test:studio
+```
+
+La suite cubre utilidades, historial, autoguardado, cliente de datos,
+validacion, renderizado, exportacion y el limite de tamano de `src/app.js`.
 
 Desde el Studio principal, `Guardar` mantiene una copia en el navegador y tambien intenta sincronizar con esta API. `Cargar` recupera el ultimo negocio sincronizado si el servidor esta activo y usa localStorage como respaldo.
 

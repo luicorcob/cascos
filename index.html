@@ -30,7 +30,7 @@
         <span class="live-dot" aria-hidden="true"></span>
         <span class="project-context-label">Proyecto activo</span>
         <strong id="topbarProjectName">Luma Studio</strong>
-        <span class="project-context-state">Cambios en vivo</span>
+        <span class="project-context-state" id="autoSaveState">Cambios en vivo</span>
       </div>
 
       <nav class="topbar-links" aria-label="Herramientas del negocio">
@@ -144,6 +144,27 @@
             <button class="quick-toggle" type="button" data-toggle-field="commerceEnabled">Tienda</button>
             <button class="quick-toggle" type="button" data-toggle-field="showConversionDock">Dock</button>
           </div>
+
+          <div class="section-manager" aria-label="Orden de secciones">
+            <div class="section-manager-head">
+              <strong>Orden de la web</strong>
+              <span>Sube, baja u oculta bloques</span>
+            </div>
+            <div class="section-order-list" id="sectionOrderList"></div>
+          </div>
+
+          <div class="block-library-panel" aria-label="Biblioteca de bloques">
+            <div class="section-manager-head">
+              <strong>Biblioteca de bloques</strong>
+              <span>Cambia la composicion</span>
+            </div>
+            <div class="block-library" id="blockLibrary"></div>
+            <div class="layout-template-actions">
+              <input id="layoutTemplateName" type="text" placeholder="Nombre de esta composicion">
+              <button id="layoutTemplateSave" type="button">Guardar composicion</button>
+            </div>
+            <div class="layout-template-list" id="layoutTemplateList"></div>
+          </div>
         </section>
 
         <section class="preset-panel" aria-label="Demos por sector">
@@ -172,6 +193,9 @@
         </nav>
 
         <form id="businessForm" class="editor-form">
+          <input name="sectionOrder" type="hidden">
+          <input name="blockVariants" type="hidden">
+          <input name="mediaMetadata" type="hidden">
           <section class="tab-panel is-active" data-panel="identity">
             <label>
               Nombre del negocio
@@ -294,6 +318,20 @@
           </section>
 
           <section class="tab-panel" data-panel="media">
+            <fieldset class="media-library-panel">
+              <legend>Biblioteca de medios</legend>
+              <div class="media-library-actions">
+                <label class="media-upload-button">
+                  Subir imagenes
+                  <input id="mediaUploadInput" type="file" accept="image/*" multiple hidden>
+                </label>
+                <div class="media-url-row">
+                  <input id="mediaUrlInput" type="url" inputmode="url" placeholder="https://.../imagen.jpg">
+                  <button id="mediaUrlAddButton" type="button">Anadir URL</button>
+                </div>
+              </div>
+              <div class="media-library-grid" id="mediaLibrary"></div>
+            </fieldset>
             <label>
               Imagen hero
               <input name="heroImage" type="url" inputmode="url">
@@ -788,8 +826,55 @@
             <button class="viewport-button" type="button" data-size="tablet">Tablet</button>
             <button class="viewport-button is-active" type="button" data-size="mobile">Movil</button>
           </div>
-          <button class="present-button" id="presentationModeButton" type="button" aria-pressed="false">Presentar</button>
+          <div class="preview-toolbar-actions">
+            <button class="direct-edit-button" id="directEditButton" type="button" aria-pressed="false">Editar preview</button>
+            <button class="present-button" id="presentationModeButton" type="button" aria-pressed="false">Presentar</button>
+          </div>
         </div>
+
+        <aside class="preview-inspector" id="previewInspector" hidden aria-live="polite">
+          <header>
+            <div>
+              <span>Edicion directa</span>
+              <strong id="previewInspectorTitle">Editar elemento</strong>
+            </div>
+            <button id="previewInspectorClose" type="button" aria-label="Cerrar inspector">Cerrar</button>
+          </header>
+          <section data-inspector-panel="image" hidden>
+            <img id="previewInspectorImage" alt="" src="">
+            <label>
+              URL de imagen
+              <input id="previewInspectorImageUrl" type="url" inputmode="url">
+            </label>
+            <label>
+              Texto alternativo
+              <input id="previewInspectorImageAlt" type="text" placeholder="Describe la imagen para SEO y accesibilidad">
+            </label>
+            <label>
+              Encuadre
+              <select id="previewInspectorImagePosition">
+                <option value="center center">Centro</option>
+                <option value="center top">Arriba</option>
+                <option value="center bottom">Abajo</option>
+                <option value="left center">Izquierda</option>
+                <option value="right center">Derecha</option>
+              </select>
+            </label>
+            <div class="preview-inspector-media" id="previewInspectorMedia"></div>
+            <button class="preview-inspector-apply" id="previewInspectorImageApply" type="button">Aplicar imagen</button>
+          </section>
+          <section data-inspector-panel="link" hidden>
+            <label>
+              Texto visible
+              <input id="previewInspectorLinkLabel" type="text">
+            </label>
+            <label>
+              Destino
+              <input id="previewInspectorLinkUrl" type="text" inputmode="url">
+            </label>
+            <button class="preview-inspector-apply" id="previewInspectorLinkApply" type="button">Aplicar enlace</button>
+          </section>
+        </aside>
 
         <div class="device-frame" data-size="mobile">
           <div class="frame-browserbar" aria-hidden="true">
@@ -808,6 +893,15 @@
     <script src="assets/vendor/vanilla-tilt.min.js"></script>
     <script src="assets/vendor/atropos.min.js"></script>
     <script src="src/shared/api-config.js"></script>
-    <script src="src/app.js?v=20260610-3"></script>
+    <script src="src/studio/core-utils.js?v=20260612-1"></script>
+    <script src="src/studio/catalog.js?v=20260612-1"></script>
+    <script src="src/studio/state-controller.js?v=20260612-1"></script>
+    <script src="src/studio/layout-library.js?v=20260612-1"></script>
+    <script src="src/studio/media-library.js?v=20260612-1"></script>
+    <script src="src/studio/data-client.js?v=20260612-1"></script>
+    <script src="src/studio/validation.js?v=20260612-1"></script>
+    <script src="src/studio/renderer.js?v=20260612-1"></script>
+    <script src="src/studio/exporter.js?v=20260612-1"></script>
+    <script src="src/app.js?v=20260612-1"></script>
   </body>
 </html>

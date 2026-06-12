@@ -1,0 +1,32 @@
+import assert from "node:assert/strict";
+import { readFile, stat } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const index = await readFile(path.join(root, "index.html"), "utf8");
+const appStats = await stat(path.join(root, "src", "app.js"));
+const expectedScripts = [
+  "src/shared/api-config.js",
+  "src/studio/core-utils.js",
+  "src/studio/catalog.js",
+  "src/studio/state-controller.js",
+  "src/studio/layout-library.js",
+  "src/studio/media-library.js",
+  "src/studio/data-client.js",
+  "src/studio/validation.js",
+  "src/studio/renderer.js",
+  "src/studio/exporter.js",
+  "src/app.js"
+];
+
+let previousIndex = -1;
+for (const script of expectedScripts) {
+  const scriptIndex = index.indexOf(script);
+  assert.ok(scriptIndex > previousIndex, `${script} must exist and load after the previous Studio dependency`);
+  previousIndex = scriptIndex;
+}
+
+assert.ok(appStats.size < 180_000, `src/app.js must remain below 180 KB; current size is ${appStats.size}`);
+
+console.log(`Studio architecture checks passed. app.js: ${appStats.size} bytes.`);
