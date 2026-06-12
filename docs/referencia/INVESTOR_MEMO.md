@@ -1,5 +1,8 @@
 # LocalLift - investor memo
 
+> Funcion: material para conversaciones con inversores. No es un plan
+> operativo ni crea prioridades.
+
 ## Tesis
 
 Los negocios locales no necesitan otro constructor web. Necesitan una presencia digital que convierta: web premium, reservas, WhatsApp, Google Maps, fotos, SEO local, FAQ y atencion automatizada.

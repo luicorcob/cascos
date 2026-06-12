@@ -8,6 +8,7 @@ ENV PORT=5173
 ENV BUSINESS_DB_FILE=/data/business-db.json
 ENV BUSINESS_DB_BACKUP_DIR=/data/backups
 ENV BUSINESS_DB_BACKUPS=true
+ENV GOOGLE_AUTH_DB_FILE=/data/google-auth-db.json
 
 COPY package*.json ./
 RUN npm ci --omit=dev

@@ -2,6 +2,9 @@
 
 ## Memoria tecnica, funcional y comercial del proyecto
 
+> Funcion: memoria academica y fotografia amplia del proyecto. No es un plan
+> operativo. Las prioridades actuales se consultan en `docs/AHORA.md`.
+
 **Documento tipo TFG / memoria profesional**  
 **Estado:** version consolidada para demo, piloto y evolucion a producto  
 **Fecha:** 26 de mayo de 2026  
@@ -1580,4 +1583,3 @@ GOOGLE_WORKSPACE_ADMIN_ACCESS_TOKEN=
 **Dry-run:** simulacion o preparacion sin ejecutar envio automatico real.  
 **Schema LocalBusiness:** datos estructurados para buscadores.  
 **API base:** URL del backend usada por un frontend desplegado en otro dominio.  
-

@@ -2,7 +2,7 @@ services:
   - type: web
     name: locallift-studio-api
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: npm ci --omit=dev
     startCommand: npm run start:prod
     healthCheckPath: /api/health
@@ -12,12 +12,28 @@ services:
       - key: HOST
         value: 0.0.0.0
       - key: BUSINESS_DB_FILE
-        value: data/business-db.json
+        value: /data/business-db.json
       - key: BUSINESS_DB_BACKUP_DIR
-        value: data/backups
+        value: /data/backups
       - key: BUSINESS_DB_BACKUPS
         value: "true"
+      - key: GOOGLE_AUTH_DB_FILE
+        value: /data/google-auth-db.json
       - key: LOCALLIFT_ADMIN_TOKEN
         generateValue: true
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_REDIRECT_URI
+        sync: false
+      - key: GOOGLE_TOKEN_ENCRYPTION_KEY
+        generateValue: true
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
       - key: CORS_ORIGIN
         value: https://locallift-studio-api.onrender.com
+    disk:
+      name: locallift-data
+      mountPath: /data
+      sizeGB: 1

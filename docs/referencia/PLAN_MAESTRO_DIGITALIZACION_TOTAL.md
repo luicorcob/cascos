@@ -2,6 +2,9 @@
 
 Fecha de referencia: 2026-05-25
 
+> Estado: vision de largo plazo y documento de referencia. No es un backlog
+> activo. Las prioridades actuales se consultan en `docs/AHORA.md`.
+
 Objetivo: convertir LocalLift Studio en una plataforma operativa completa para negocios pequenos: web, ventas, reservas, clientes, marketing, reputacion, pagos, automatizaciones y gestion diaria. La meta no es copiar un ERP pesado, sino ofrecer el 80-90% del valor real que necesita un negocio local con una experiencia mucho mas simple, rapida y barata.
 
 ## 1. Vision ejecutiva

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-25T21:02:14.632Z",
+  "updatedAt": "2026-06-11T23:32:16.701Z",
   "businesses": [
     {
       "id": "biz_demo_brasa_norte",
@@ -327,6 +327,277 @@
       "createdAt": "2026-05-25T10:55:05.459Z",
       "updatedAt": "2026-05-25T10:55:23.054Z",
       "archivedAt": ""
+    },
+    {
+      "id": "biz_luma-studio_mqa4u25j",
+      "slug": "luma-studio-sevilla",
+      "name": "Luma Studio",
+      "category": "Peluqueria y belleza",
+      "city": "Sevilla",
+      "ownerName": "",
+      "ownerEmail": "citas@lumastudio.es",
+      "ownerPhone": "+34 954 000 781",
+      "plan": "presencia-local",
+      "status": "in-design",
+      "publishedUrl": "",
+      "brand": {
+        "theme": "editorial",
+        "accent": "#b2477b",
+        "typography": "modern",
+        "designPack": "custom",
+        "artDirection": "auto",
+        "contentMode": "visual"
+      },
+      "integrations": {
+        "google": {
+          "enabled": true,
+          "mapsUrl": "https://maps.google.com/",
+          "reviewUrl": "https://g.page/r/",
+          "appointmentUrl": "https://wa.me/34954000781"
+        },
+        "stripe": {
+          "enabled": false
+        },
+        "whatsapp": {
+          "enabled": true,
+          "url": "https://wa.me/34954000781"
+        }
+      },
+      "settings": {
+        "primaryGoal": "Convertir visitas en clientes para Peluqueria y belleza",
+        "source": "studio",
+        "updatedFromStudioAt": "2026-06-11T23:32:16.670Z"
+      },
+      "content": {
+        "name": "Luma Studio",
+        "category": "Peluqueria y belleza",
+        "location": "Sevilla",
+        "tagline": "Belleza con agenda llena, experiencia cuidada y reserva facil",
+        "description": "Un estudio de belleza con servicios claros, fotos aspiracionales, reservas por WhatsApp y chatbot para resolver dudas de tratamientos.",
+        "conversionGoal": "Convertir visitas en clientes para Peluqueria y belleza",
+        "announcement": "",
+        "phone": "+34 954 000 781",
+        "email": "citas@lumastudio.es",
+        "address": "Zona Nervion, Sevilla",
+        "services": [
+          "Coloracion y balayage",
+          "Corte y styling",
+          "Tratamientos capilares",
+          "Manicura premium",
+          "Maquillaje social",
+          "Novias y eventos"
+        ],
+        "features": [
+          "Galeria antes/despues preparada para redes y conversion",
+          "Reserva en un toque desde movil",
+          "FAQ de duracion, cuidados y preparacion",
+          "Estetica premium sin perder claridad comercial"
+        ],
+        "hours": [
+          "Martes a viernes: 10:00-20:00",
+          "Sabado: 09:30-15:00",
+          "Domingo y lunes cerrado"
+        ],
+        "testimonials": [
+          {
+            "name": "Sara L.",
+            "text": "Reserve balayage desde el movil y llegue sabiendo precio orientativo y duracion."
+          },
+          {
+            "name": "Irene M.",
+            "text": "La web se siente igual de cuidada que el salon."
+          },
+          {
+            "name": "Paula C.",
+            "text": "El bot respondio mis dudas antes de pedir cita."
+          }
+        ],
+        "faqs": [
+          {
+            "question": "Como reservo?",
+            "answer": "Puedes reservar por WhatsApp desde el boton principal."
+          },
+          {
+            "question": "Cuanto dura una coloracion?",
+            "answer": "Depende del servicio, pero suele estar entre 2 y 4 horas."
+          },
+          {
+            "question": "Haceis novias?",
+            "answer": "Si. Se recomienda escribir con fecha y referencias."
+          }
+        ],
+        "trustBadges": [
+          "4.7/5 en Google",
+          "CTA directo activo",
+          "Asistente instantaneo",
+          "Captura de leads",
+          "Galeria preparada"
+        ],
+        "links": [
+          {
+            "label": "Instagram",
+            "url": "https://instagram.com/"
+          },
+          {
+            "label": "Google Maps",
+            "url": "https://maps.google.com/"
+          },
+          {
+            "label": "TikTok",
+            "url": "https://tiktok.com/"
+          }
+        ],
+        "heroImage": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1800&q=85",
+        "gallery": [
+          "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1200&q=80"
+        ],
+        "theme": "editorial",
+        "motion": "cinematic",
+        "accent": "#b2477b",
+        "intensity": 80,
+        "premiumEffects": true,
+        "showBooking": true,
+        "bookingUrl": "https://wa.me/34954000781",
+        "bookingLabel": "Reservar ahora",
+        "servicesHeading": "Lo que el cliente entiende en segundos.",
+        "servicesIntro": "La web prioriza decision rapida: que haces, por que elegirte, como se reserva y que sensacion transmite el negocio.",
+        "trustHeading": "Confianza antes de llamar.",
+        "trustIntro": "Testimonios, preguntas frecuentes y enlaces reducen friccion para quien te descubre por primera vez.",
+        "contactHeading": "Ven, reserva o escribe.",
+        "showLeadForm": true,
+        "leadFormTitle": "Recibe disponibilidad y propuesta en minutos.",
+        "leadFormIntro": "Deja tus datos y el equipo recibe un lead preparado con servicio, fecha orientativa y canal de contacto.",
+        "leadFormCta": "Solicitar disponibilidad",
+        "privacyUrl": "pages/privacy-demo.html",
+        "designPack": "custom",
+        "artDirection": "auto",
+        "contentMode": "visual",
+        "typography": "modern",
+        "contentDensity": "balanced",
+        "visualShape": "clean",
+        "heroSize": "balanced",
+        "contentWidth": "standard",
+        "imageRatio": "portrait",
+        "fontScale": 100,
+        "layoutScale": 100,
+        "showAnnouncement": true,
+        "showResourceMarquee": true,
+        "showTrustRail": true,
+        "showGallery": true,
+        "showTestimonials": true,
+        "showFaq": true,
+        "showMap": true,
+        "showConversionDock": true,
+        "showMenu": false,
+        "menuTitle": "Carta de temporada",
+        "menuIntro": "Producto local, fuego lento y platos pensados para compartir.",
+        "menuCurrency": "EUR",
+        "menuItems": [],
+        "google": {
+          "enabled": true,
+          "workspaceEmail": "reservas@brasanorte.es",
+          "workspaceDomain": "brasanorte.es",
+          "managerEmail": "",
+          "placeId": "",
+          "mapsUrl": "https://maps.google.com/",
+          "mapEmbedUrl": "",
+          "directionsNote": "Estamos en una zona centrica, con acceso facil desde Google Maps y opciones de parking cercano.",
+          "reviewUrl": "https://g.page/r/",
+          "reviewRequestTemplate": "Gracias por visitar {business}. Tu opinion nos ayuda mucho. Puedes dejar una resena aqui: {reviewUrl}",
+          "appointmentUrl": "https://wa.me/34954000781",
+          "bookingRules": "Reservas por WhatsApp con nombre, fecha, hora y numero de personas. Confirmacion manual del equipo.",
+          "rating": 4.7,
+          "reviewCount": 186,
+          "calendarId": "primary",
+          "businessProfileAccountId": "",
+          "businessProfileLocationId": ""
+        },
+        "chatbot": {
+          "enabled": true,
+          "name": "LumaBot",
+          "tone": "cercano",
+          "greeting": "Hola, soy LumaBot. Te ayudo con citas, servicios, horarios y cuidados antes de venir.",
+          "quickPrompts": [
+            "Reservar cita",
+            "Servicios",
+            "Horario",
+            "Cuanto dura?"
+          ],
+          "handoffLabel": "Escribir por WhatsApp",
+          "endpoint": ""
+        },
+        "commerce": {
+          "enabled": false,
+          "title": "Compra online",
+          "intro": "Productos preparados para recoger o recibir en casa. El cliente anade al carrito, deja sus datos y paga con Stripe Checkout.",
+          "currency": "EUR",
+          "taxRatePercent": 21,
+          "taxIncluded": true,
+          "checkoutEndpoint": "http://127.0.0.1:8795/api/store/checkout",
+          "productsEndpoint": "http://127.0.0.1:8795/api/store/products",
+          "successUrl": "",
+          "cancelUrl": "",
+          "termsUrl": "",
+          "privacyUrl": "",
+          "orderEmail": "reservas@brasanorte.es",
+          "deliveryMode": "Recogida en tienda y entrega local bajo confirmacion",
+          "shippingMethods": [
+            {
+              "id": "pickup",
+              "name": "Recogida en tienda",
+              "description": "El negocio confirma la hora de recogida.",
+              "price": 0,
+              "active": true,
+              "default": true
+            },
+            {
+              "id": "local-delivery",
+              "name": "Entrega local",
+              "description": "Reparto local bajo confirmacion.",
+              "price": 4.9,
+              "active": true,
+              "default": false
+            }
+          ],
+          "products": [
+            {
+              "id": "menu-brasa",
+              "sku": "menu-brasa",
+              "name": "Menu brasa para dos",
+              "price": 38,
+              "image": "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80",
+              "description": "Pack de temporada preparado para recoger en el local.",
+              "stock": 12,
+              "active": true
+            },
+            {
+              "id": "vino-local",
+              "sku": "vino-local",
+              "name": "Botella seleccion local",
+              "price": 16.5,
+              "image": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=900&q=80",
+              "description": "Recomendacion de la casa para acompanar pedidos.",
+              "stock": 24,
+              "active": true
+            },
+            {
+              "id": "tarjeta-regalo",
+              "sku": "tarjeta-regalo",
+              "name": "Tarjeta regalo",
+              "price": 50,
+              "image": "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=900&q=80",
+              "description": "Credito para comidas, eventos o regalos de empresa.",
+              "stock": 50,
+              "active": true
+            }
+          ]
+        }
+      },
+      "createdAt": "2026-06-11T23:32:13.543Z",
+      "updatedAt": "2026-06-11T23:32:16.700Z",
+      "archivedAt": ""
     }
   ],
   "availability": [
@@ -442,6 +713,18 @@
       "businessId": "biz_demo_brasa_norte",
       "subjectId": "1",
       "createdAt": "2026-05-25T21:02:14.632Z"
+    },
+    {
+      "id": "audit_1781220733601_vg6u4b",
+      "type": "business.created",
+      "businessId": "biz_luma-studio_mqa4u25j",
+      "createdAt": "2026-06-11T23:32:13.543Z"
+    },
+    {
+      "id": "audit_1781220736701_70a0hm",
+      "type": "business.updated",
+      "businessId": "biz_luma-studio_mqa4u25j",
+      "createdAt": "2026-06-11T23:32:16.700Z"
     }
   ]
 }

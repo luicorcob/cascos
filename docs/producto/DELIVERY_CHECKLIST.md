@@ -1,5 +1,9 @@
 # Checklist de entrega investor-ready
 
+> Esta checklist demuestra calidad, pero no marca prioridades. La prioridad
+> actual se consulta en `docs/AHORA.md` y el plan vinculante en
+> `docs/activo/PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md`.
+
 ## Producto
 
 - [x] Studio generador de webs.
@@ -63,7 +67,7 @@
 - [x] Crear guia inicial de despliegue frontend/backend.
 - [x] Crear runbook del primer piloto online.
 - [ ] Desplegar backend IA en cloud.
-- [ ] Implementar OAuth Google por negocio.
+- [x] Implementar OAuth Google por negocio.
 - [ ] Solicitar acceso Business Profile API.
 - [ ] Probar alta real de Workspace con cliente piloto.
 - [ ] Probar reseñas/replies con aprobacion humana.

@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const sourcePath = path.join(root, "docs", "LOCAL_LIFT_STUDIO_MEMORIA_TFG.md");
-const htmlPath = path.join(root, "docs", "LOCAL_LIFT_STUDIO_MEMORIA_TFG.html");
+const sourcePath = path.join(root, "docs", "referencia", "LOCAL_LIFT_STUDIO_MEMORIA_TFG.md");
+const htmlPath = path.join(root, "docs", "referencia", "LOCAL_LIFT_STUDIO_MEMORIA_TFG.html");
 
 const markdown = await readFile(sourcePath, "utf8");
 const { body, toc } = renderMarkdown(markdown);

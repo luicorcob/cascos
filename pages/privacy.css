@@ -1,0 +1,104 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: #f6eee9;
+  color: #25151e;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+.privacy-shell {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.7fr) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.privacy-hero {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: clamp(28px, 5vw, 72px);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.2), transparent 32%),
+    linear-gradient(145deg, #b2477b, #5f2446);
+  color: #fff8f5;
+}
+
+.privacy-hero a {
+  color: inherit;
+  font-weight: 900;
+}
+
+.eyebrow {
+  margin: clamp(72px, 14vw, 150px) 0 12px;
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.privacy-hero h1 {
+  max-width: 620px;
+  margin: 0;
+  font-size: clamp(3rem, 7vw, 6.6rem);
+  line-height: 0.92;
+}
+
+.privacy-hero p:last-child {
+  max-width: 560px;
+  color: rgba(255, 248, 245, 0.78);
+  line-height: 1.7;
+}
+
+.privacy-content {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  padding: clamp(20px, 5vw, 72px);
+}
+
+.privacy-content section,
+.demo-notice {
+  padding: clamp(20px, 4vw, 36px);
+  border: 1px solid rgba(37, 21, 30, 0.12);
+  border-radius: 12px;
+  background: #fffaf7;
+}
+
+.privacy-content h2 {
+  margin: 0 0 10px;
+}
+
+.privacy-content p,
+.demo-notice {
+  color: #6f5d67;
+  line-height: 1.7;
+}
+
+.demo-notice {
+  border-color: rgba(178, 71, 123, 0.32);
+  background: rgba(178, 71, 123, 0.08);
+}
+
+.demo-notice strong {
+  display: block;
+  color: #5f2446;
+}
+
+@media (max-width: 820px) {
+  .privacy-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .privacy-hero {
+    position: relative;
+    height: auto;
+  }
+}

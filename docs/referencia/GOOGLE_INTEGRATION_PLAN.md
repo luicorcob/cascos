@@ -1,5 +1,8 @@
 # Plan Google-first para LocalLift
 
+> Estado: roadmap tecnico de referencia. No se ejecuta hasta que una prioridad
+> aparezca en `docs/AHORA.md` o resuelva un bloqueo repetido de cliente.
+
 Objetivo: conectar LocalLift con el ecosistema Google para que la web, el chatbot y el panel del negocio trabajen con datos reales: correo profesional, telefono, horarios, ubicacion, reseñas, reservas y rendimiento.
 
 ## Fuentes oficiales clave

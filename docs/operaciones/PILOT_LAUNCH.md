@@ -20,6 +20,9 @@ Archivos ya preparados:
 - `Dockerfile`: despliegue por contenedor si se usa Railway, Fly.io, VPS o similar.
 - `.env.example`: plantilla de variables.
 - `server/scripts/validate-deploy-env.mjs`: bloqueo de arranque inseguro en produccion.
+- `server/scripts/restore-business-db.mjs`: restauracion validada con copia previa automatica.
+- `server/scripts/smoke-test-pilot.mjs`: prueba integral local con una base temporal.
+- `docs/operaciones/OPERATIONS_RUNBOOK.md`: salud diaria, respuesta a incidentes y restauracion.
 
 Variables minimas en cloud:
 
@@ -63,6 +66,15 @@ https://www.cliente.com/pages/business-dashboard.html?apiBase=https://tu-api.onr
 
 Esto guarda la URL API en el navegador. En el dashboard tambien puedes pegarla en `URL API`. Al exportar una web desde el Studio con esa configuracion activa, el HTML queda preparado para enviar leads, reservas y eventos a esa API.
 
+URL recomendada para enseñar la demo sectorial antes de exportar:
+
+```text
+https://tu-demo.com/index.html?presentation=true&view=mobile&apiBase=https://tu-api.com
+```
+
+Abre Luma Studio directamente a pantalla completa y evita mostrar el editor
+durante la reunion.
+
 Antes de publicar:
 
 - Poner telefono real.
@@ -89,6 +101,14 @@ Acciones:
 - Abrir reporte mensual imprimible.
 
 ## Prueba de aceptacion
+
+Antes de publicar, ejecutar la prueba integral local:
+
+```powershell
+npm.cmd run smoke:pilot
+```
+
+Despues repetir manualmente desde la URL publica:
 
 - [ ] `/api/health` devuelve `ok: true`.
 - [ ] `/api/businesses` sin token devuelve `401`.

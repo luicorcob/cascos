@@ -7,5 +7,6 @@ npm-debug.log
 !.env.example
 data/business-db.json
 data/store-db.json
+data/google-auth-db.json
 data/backups
 *.local

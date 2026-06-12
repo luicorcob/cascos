@@ -4,7 +4,9 @@ import { corsHeaders } from "./cors.mjs";
 const ADMIN_TOKEN_ENV_KEYS = ["LOCALLIFT_ADMIN_TOKEN", "ADMIN_API_TOKEN"];
 
 export function isAdminApiRequest(pathname) {
-  return pathname === "/api/businesses" || pathname.startsWith("/api/businesses/");
+  return pathname === "/api/businesses"
+    || pathname.startsWith("/api/businesses/")
+    || (pathname.startsWith("/api/google/") && pathname !== "/api/google/oauth/callback");
 }
 
 export function requireAdminApiAuth(request, response, context) {

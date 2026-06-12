@@ -264,6 +264,9 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     valueEstimate: Number.isFinite(Number(source.valueEstimate ?? existing?.valueEstimate))
       ? Number(source.valueEstimate ?? existing?.valueEstimate)
       : 0,
+    privacyAccepted: normalizeBoolean(source.privacyAccepted, existing?.privacyAccepted ?? false),
+    privacyAcceptedAt: cleanText(source.privacyAcceptedAt || existing?.privacyAcceptedAt || "", 80),
+    privacyPolicyUrl: cleanText(source.privacyPolicyUrl || existing?.privacyPolicyUrl || "", 500),
     lastInteractionAt: cleanText(source.lastInteractionAt || existing?.lastInteractionAt || now, 80),
     createdAt: existing?.createdAt || now,
     updatedAt: now
@@ -477,6 +480,18 @@ function httpError(statusCode, message) {
 
 function cleanText(value, maxLength = 500) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function normalizeBoolean(value, fallback = false) {
+  if (value === true || value === "true" || value === "on" || value === 1 || value === "1") {
+    return true;
+  }
+
+  if (value === false || value === "false" || value === "off" || value === 0 || value === "0") {
+    return false;
+  }
+
+  return Boolean(fallback);
 }
 
 function cleanId(value) {

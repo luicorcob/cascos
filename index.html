@@ -8,36 +8,62 @@
       name="description"
       content="Base profesional para crear webs dinamicas de negocios locales con datos, fotos, enlaces y animaciones premium."
     >
-    <link rel="stylesheet" href="src/styles.css">
+    <link rel="stylesheet" href="src/styles.css?v=20260610-3">
+    <link rel="stylesheet" href="src/studio-redesign.css">
+    <link rel="stylesheet" href="assets/vendor/atropos.min.css">
     <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
+    <link rel="stylesheet" href="src/generated-responsive.css?v=20260610-3">
   </head>
   <body>
     <div class="cursor-glow" aria-hidden="true"></div>
+
+    <header class="studio-topbar">
+      <a class="topbar-brand" href="index.html" aria-label="LocalLift Studio">
+        <span class="topbar-brand-mark" aria-hidden="true">L</span>
+        <span>
+          <strong>LocalLift</strong>
+          <small>Studio</small>
+        </span>
+      </a>
+
+      <div class="project-context" aria-label="Proyecto activo">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="project-context-label">Proyecto activo</span>
+        <strong id="topbarProjectName">Luma Studio</strong>
+        <span class="project-context-state">Cambios en vivo</span>
+      </div>
+
+      <nav class="topbar-links" aria-label="Herramientas del negocio">
+        <a href="pages/onboarding.html">Brief</a>
+        <a href="pages/business-dashboard.html">Portal</a>
+        <a href="pages/store-admin.html">Tienda</a>
+      </nav>
+
+      <div class="panel-actions" aria-label="Acciones principales">
+        <button class="icon-button" id="saveButton" type="button" title="Guardar datos">
+          <span aria-hidden="true">Guardar</span>
+          <span class="sr-only">Guardar datos</span>
+        </button>
+        <button class="icon-button" id="loadButton" type="button" title="Cargar datos guardados">
+          <span aria-hidden="true">Cargar</span>
+          <span class="sr-only">Cargar datos guardados</span>
+        </button>
+        <button class="icon-button" id="resetButton" type="button" title="Restaurar demo">
+          <span aria-hidden="true">Demo</span>
+          <span class="sr-only">Restaurar demo</span>
+        </button>
+        <button class="primary-action" id="exportButton" type="button">Exportar web</button>
+      </div>
+    </header>
 
     <main class="studio-shell">
       <aside class="control-panel" aria-label="Panel de configuracion">
         <div class="brand-lockup">
           <span class="brand-mark" aria-hidden="true">LL</span>
           <div>
-            <p class="eyebrow">LocalLift Studio</p>
-            <h1>Webs premium para negocios locales</h1>
+            <p class="eyebrow">Mesa de produccion</p>
+            <h1>Convierte un negocio en una marca digital</h1>
           </div>
-        </div>
-
-        <div class="panel-actions" aria-label="Acciones principales">
-          <button class="icon-button" id="saveButton" type="button" title="Guardar datos">
-            <span aria-hidden="true">Guardar</span>
-            <span class="sr-only">Guardar datos</span>
-          </button>
-          <button class="icon-button" id="loadButton" type="button" title="Cargar datos guardados">
-            <span aria-hidden="true">Cargar</span>
-            <span class="sr-only">Cargar datos guardados</span>
-          </button>
-          <button class="icon-button" id="resetButton" type="button" title="Restaurar demo">
-            <span aria-hidden="true">Demo</span>
-            <span class="sr-only">Restaurar demo</span>
-          </button>
-          <button class="primary-action" id="exportButton" type="button">Exportar web</button>
         </div>
 
         <div class="status-line" id="statusLine" role="status">Demo lista para editar.</div>
@@ -66,8 +92,8 @@
         <section class="quick-panel" aria-label="Cambios rapidos para demo">
           <div class="quick-panel-head">
             <div>
-              <p class="eyebrow">Demo en vivo</p>
-              <h2>Cambios rapidos para cliente</h2>
+              <p class="eyebrow">Director creativo</p>
+              <h2>Describe el resultado</h2>
             </div>
             <div class="quick-history">
               <button class="mini-action" type="button" id="quickUndoButton">Deshacer</button>
@@ -76,11 +102,12 @@
           </div>
 
           <div class="quick-command">
-            <input id="quickCommandInput" type="text" placeholder="Ej: mas premium, vender reservas, sin mapa...">
+            <input id="quickCommandInput" type="text" placeholder="Ej: más premium, centrada en reservas...">
             <button class="mini-action is-strong" id="quickCommandButton" type="button">Aplicar</button>
           </div>
 
           <div class="quick-group" aria-label="Variantes instantaneas">
+            <button class="quick-action quick-action-featured" type="button" data-quick-action="surprise">Generar variacion</button>
             <button class="quick-action" type="button" data-quick-action="premium">Mas premium</button>
             <button class="quick-action" type="button" data-quick-action="minimal">Mas limpio</button>
             <button class="quick-action" type="button" data-quick-action="urgent">Mas urgencia</button>
@@ -112,6 +139,7 @@
             <button class="quick-toggle" type="button" data-toggle-field="showFaq">FAQ</button>
             <button class="quick-toggle" type="button" data-toggle-field="showMap">Mapa</button>
             <button class="quick-toggle" type="button" data-toggle-field="showLeadForm">Lead</button>
+            <button class="quick-toggle" type="button" data-toggle-field="showMenu">Carta</button>
             <button class="quick-toggle" type="button" data-toggle-field="chatbotEnabled">Bot</button>
             <button class="quick-toggle" type="button" data-toggle-field="commerceEnabled">Tienda</button>
             <button class="quick-toggle" type="button" data-toggle-field="showConversionDock">Dock</button>
@@ -121,9 +149,9 @@
         <section class="preset-panel" aria-label="Demos por sector">
           <p class="eyebrow">Demos por sector</p>
           <div class="preset-grid">
-            <button class="preset-button is-active" type="button" data-preset="restaurant">Restaurante</button>
+            <button class="preset-button" type="button" data-preset="restaurant">Restaurante</button>
             <button class="preset-button" type="button" data-preset="clinic">Clinica</button>
-            <button class="preset-button" type="button" data-preset="beauty">Belleza</button>
+            <button class="preset-button is-active" type="button" data-preset="beauty">Belleza</button>
             <button class="preset-button" type="button" data-preset="gym">Gimnasio</button>
             <button class="preset-button" type="button" data-preset="bar">Bar</button>
             <button class="preset-button" type="button" data-preset="stationery">Papeleria</button>
@@ -139,6 +167,7 @@
           <button class="tab-button" type="button" data-tab="style">Estilo</button>
           <button class="tab-button" type="button" data-tab="google">Google</button>
           <button class="tab-button" type="button" data-tab="chatbot">Chatbot</button>
+          <button class="tab-button" type="button" data-tab="menu">Carta</button>
           <button class="tab-button" type="button" data-tab="commerce">Tienda</button>
         </nav>
 
@@ -254,6 +283,13 @@
                 Texto del boton del formulario
                 <input name="leadFormCta" type="text">
               </label>
+              <label>
+                URL de privacidad
+                <input name="privacyUrl" type="url" inputmode="url" placeholder="https://tuweb.com/privacidad">
+              </label>
+              <div class="media-note">
+                Obligatoria antes de publicar formularios que recojan datos personales. El texto legal debe revisarse para cada cliente.
+              </div>
             </fieldset>
           </section>
 
@@ -286,6 +322,56 @@
                 <button class="design-pack-button" type="button" data-design-pack="commerce">Comercial</button>
                 <button class="design-pack-button" type="button" data-design-pack="mobileFirst">Mobile first</button>
                 <button class="design-pack-button" type="button" data-design-pack="localWarm">Local cercano</button>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Direccion artistica</legend>
+              <div class="segmented-control art-direction-control">
+                <label>
+                  <input type="radio" name="artDirection" value="auto">
+                  Auto unica
+                </label>
+                <label>
+                  <input type="radio" name="artDirection" value="cinematic">
+                  Cine
+                </label>
+                <label>
+                  <input type="radio" name="artDirection" value="editorial">
+                  Revista
+                </label>
+                <label>
+                  <input type="radio" name="artDirection" value="poster">
+                  Cartel
+                </label>
+                <label>
+                  <input type="radio" name="artDirection" value="mosaic">
+                  Mosaico
+                </label>
+                <label>
+                  <input type="radio" name="artDirection" value="atelier">
+                  Atelier
+                </label>
+                <label>
+                  <input type="radio" name="artDirection" value="kinetic">
+                  Kinetica
+                </label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Carga de contenido</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="contentMode" value="visual">
+                  Muy visual
+                </label>
+                <label>
+                  <input type="radio" name="contentMode" value="balanced">
+                  Equilibrada
+                </label>
+                <label>
+                  <input type="radio" name="contentMode" value="detailed">
+                  Completa
+                </label>
               </div>
             </fieldset>
             <fieldset>
@@ -598,6 +684,32 @@
             </div>
           </section>
 
+          <section class="tab-panel" data-panel="menu">
+            <label class="toggle-row">
+              <input name="showMenu" type="checkbox">
+              Mostrar carta en la web
+            </label>
+            <label>
+              Titulo de la carta
+              <input name="menuTitle" type="text" placeholder="Carta de temporada">
+            </label>
+            <label>
+              Introduccion
+              <textarea name="menuIntro" rows="3" placeholder="Producto local, fuego lento y platos pensados para compartir."></textarea>
+            </label>
+            <label>
+              Moneda
+              <input name="menuCurrency" type="text" maxlength="3" placeholder="EUR">
+            </label>
+            <label>
+              Platos (categoria | nombre | precio | descripcion)
+              <textarea name="menuItems" rows="12" placeholder="Para empezar | Croquetas de vaca tudanca | 12 | Bechamel cremosa y jugo de asado&#10;Brasas | Costilla glaseada | 24 | Cocinada a baja temperatura"></textarea>
+            </label>
+            <div class="media-note">
+              La carta es informativa y funciona sin pago online. Usa Tienda solo cuando el cliente deba anadir productos al carrito y pagar.
+            </div>
+          </section>
+
           <section class="tab-panel" data-panel="commerce">
             <label class="toggle-row">
               <input name="commerceEnabled" type="checkbox">
@@ -666,8 +778,8 @@
 
       <section class="preview-stage" aria-label="Vista previa generada">
         <div class="preview-toolbar">
-          <div>
-            <p class="eyebrow">Vista previa dinamica</p>
+          <div class="preview-heading">
+            <p class="eyebrow">Lienzo en vivo</p>
             <h2 id="previewTitle">Negocio demo</h2>
           </div>
           <div class="preview-metrics" id="previewMetrics" aria-label="Metricas del producto"></div>
@@ -676,9 +788,15 @@
             <button class="viewport-button" type="button" data-size="tablet">Tablet</button>
             <button class="viewport-button is-active" type="button" data-size="mobile">Movil</button>
           </div>
+          <button class="present-button" id="presentationModeButton" type="button" aria-pressed="false">Presentar</button>
         </div>
 
         <div class="device-frame" data-size="mobile">
+          <div class="frame-browserbar" aria-hidden="true">
+            <span class="frame-dots"><i></i><i></i><i></i></span>
+            <span class="frame-address" id="frameAddress">locallift.site/luma-studio</span>
+            <span class="frame-secure">Live</span>
+          </div>
           <div id="sitePreview" class="site-preview" aria-live="polite"></div>
         </div>
       </section>
@@ -688,7 +806,8 @@
     <script src="assets/vendor/lenis.min.js"></script>
     <script src="assets/vendor/splitting.min.js"></script>
     <script src="assets/vendor/vanilla-tilt.min.js"></script>
+    <script src="assets/vendor/atropos.min.js"></script>
     <script src="src/shared/api-config.js"></script>
-    <script src="src/app.js"></script>
+    <script src="src/app.js?v=20260610-3"></script>
   </body>
 </html>

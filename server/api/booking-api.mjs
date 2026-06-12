@@ -579,6 +579,9 @@ function normalizeBooking(payload, existing, business, db, now, defaults) {
     endsAt: endsAt.toISOString(),
     status: normalizeBookingStatus(source.status || existing?.status || defaults.status || "pending"),
     source: cleanText(source.source || existing?.source || defaults.source || "dashboard", 80),
+    privacyAccepted: normalizeBoolean(source.privacyAccepted, existing?.privacyAccepted ?? false),
+    privacyAcceptedAt: cleanText(source.privacyAcceptedAt || existing?.privacyAcceptedAt || "", 80),
+    privacyPolicyUrl: cleanText(source.privacyPolicyUrl || existing?.privacyPolicyUrl || "", 500),
     createdAt: existing?.createdAt || now,
     updatedAt: now
   };
@@ -844,6 +847,9 @@ function ensureContactForBooking(db, businessId, booking, now) {
       tags: ["reserva"],
       notes: booking.notes,
       valueEstimate: 0,
+      privacyAccepted: booking.privacyAccepted,
+      privacyAcceptedAt: booking.privacyAcceptedAt,
+      privacyPolicyUrl: booking.privacyPolicyUrl,
       lastInteractionAt: now,
       createdAt: now,
       updatedAt: now
@@ -856,6 +862,9 @@ function ensureContactForBooking(db, businessId, booking, now) {
   contact.phone = contact.phone || phone;
   contact.email = contact.email || email;
   contact.status = contact.status === "new" ? "reserved" : contact.status;
+  contact.privacyAccepted = contact.privacyAccepted || booking.privacyAccepted;
+  contact.privacyAcceptedAt = contact.privacyAcceptedAt || booking.privacyAcceptedAt;
+  contact.privacyPolicyUrl = contact.privacyPolicyUrl || booking.privacyPolicyUrl;
   contact.lastInteractionAt = now;
   contact.updatedAt = now;
   contact.tags = Array.from(new Set([...(Array.isArray(contact.tags) ? contact.tags : []), "reserva"])).slice(0, 12);

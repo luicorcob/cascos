@@ -7,8 +7,13 @@ import { handleBusinessApi, isBusinessApiRequest } from "./api/business-api.mjs"
 import { handleContactApi, isContactApiRequest } from "./api/contact-api.mjs";
 import { handleEventApi, isEventApiRequest } from "./api/event-api.mjs";
 import { handleHealthApi, isHealthApiRequest } from "./api/health-api.mjs";
+import { handleGoogleApi, isGoogleApiRequest } from "./api/google-api.mjs";
 import { handleReportApi, isReportApiRequest } from "./api/report-api.mjs";
 import { isAdminApiRequest, requireAdminApiAuth } from "./lib/admin-auth.mjs";
+import { loadLocalEnv } from "./lib/load-env.mjs";
+import { requirePublicApiRateLimit } from "./lib/public-rate-limit.mjs";
+
+loadLocalEnv();
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const port = Number(process.env.PORT || 5173);
@@ -50,12 +55,21 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (!requirePublicApiRateLimit(request, response, apiContext, requestUrl.pathname)) {
+      return;
+    }
+
     if (isAdminApiRequest(requestUrl.pathname) && !requireAdminApiAuth(request, response, apiContext)) {
       return;
     }
 
     if (isBookingApiRequest(requestUrl.pathname)) {
       await handleBookingApi(request, response, apiContext);
+      return;
+    }
+
+    if (isGoogleApiRequest(requestUrl.pathname)) {
+      await handleGoogleApi(request, response, apiContext);
       return;
     }
 

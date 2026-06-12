@@ -15,6 +15,10 @@ Base web para digitalizar negocios locales: el cliente entrega datos, fotos y en
 7. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
 8. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
 
+Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
+`index.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
+`view=desktop`.
+
 Para simular produccion o subir el backend, usa `npm run start:prod` con las variables de `.env.example`. Este comando valida `NODE_ENV=production`, `HOST=0.0.0.0`, token admin, CORS HTTPS y ruta de base persistente antes de arrancar.
 
 Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=https://tu-api.com` o pega esa URL en el campo `URL API` del dashboard. LocalLift la guarda en el navegador y la usa para leads, reservas, eventos, dashboard y reportes.
@@ -40,8 +44,12 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 - Modulo de tienda online: catalogo, productos con imagen/precio, carrito, checkout Stripe y panel admin.
 - Checklist de calidad con score de entrega.
 - Cinco direcciones visuales: Aurora, Carbon, Editorial, Neon y Luxe.
+- Seis direcciones artisticas estructurales: Cine, Revista, Cartel, Mosaico, Atelier y Kinetica.
+- Modo `Auto unica` con huella visual estable por negocio para evitar webs repetidas.
+- Modos de contenido Muy visual, Equilibrado y Completo para controlar la carga de texto.
 - Personalizacion de CTA, titulares de seccion, tipografia, densidad, forma visual, color y animacion.
 - Hero con imagen grande, malla luminica animada, scroll reveal, galeria en movimiento, parallax y tilt con raton.
+- Collages con profundidad y parallax tactil mediante Atropos.
 - Secciones de servicios, prueba rapida, galeria, diferenciales, horario, confianza, testimonios, FAQ, mapa, captacion de leads y contacto.
 - Dock flotante de conversion con reserva, llamada y mapa.
 - Chatbot configurable por negocio con modo local y endpoint IA opcional.
@@ -153,6 +161,10 @@ Para produccion, define `LOCALLIFT_ADMIN_TOKEN` o `ADMIN_API_TOKEN` en el backen
 `CORS_ORIGIN` permite limitar que dominios frontend pueden llamar a la API desde navegador. Si no se define, el servidor usa `*` para desarrollo local. Hay una plantilla completa en `.env.example`.
 
 El guardado es atomico y crea copias en `data/backups/` antes de cambios importantes. Para pruebas automatizadas se puede usar `BUSINESS_DB_FILE` y `BUSINESS_DB_BACKUPS=false`.
+
+Para recuperar una copia con el backend detenido, usa `npm.cmd run restore:businesses -- "ruta-a-la-copia.json" --confirm`. El procedimiento completo de salud diaria y restauracion esta en `docs/operaciones/OPERATIONS_RUNBOOK.md`.
+
+Antes de desplegar, `npm.cmd run smoke:pilot` levanta un backend temporal y verifica salud, autenticacion admin, lead, reserva, consentimiento, cambios de estado, eventos y reporte sin tocar la base real.
 
 Desde el Studio principal, `Guardar` mantiene una copia en el navegador y tambien intenta sincronizar con esta API. `Cargar` recupera el ultimo negocio sincronizado si el servidor esta activo y usa localStorage como respaldo.
 
@@ -319,28 +331,57 @@ El panel `Demo en vivo` permite aplicar cambios sin navegar por todas las pestan
 - Generar textos con IA a partir de un cuestionario corto.
 - Publicar automaticamente en Netlify, Vercel o un servidor propio.
 
-## Material comercial
+## Documentacion
 
-- `docs/PLAN_MAESTRO_DIGITALIZACION_TOTAL.md`: plan maestro para convertir LocalLift en plataforma completa de digitalizacion de negocios locales.
-- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.md`: memoria tecnica, funcional y comercial tipo TFG.
-- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.html`: version imprimible profesional de la memoria.
-- `docs/LOCAL_LIFT_STUDIO_MEMORIA_TFG.pdf`: PDF completo de documentacion del proyecto.
-- `docs/PRODUCT_ACTION_PLAN.md`: investigacion, posicionamiento, paquetes, roadmap y guion de venta.
-- `docs/SALES_ONE_PAGER.md`: propuesta corta para enviar a negocios por WhatsApp/email.
-- `docs/INVESTOR_MEMO.md`: memo ejecutivo para inversores.
-- `docs/INVESTOR_DEMO_SCRIPT.md`: guion para presentar la demo.
-- `docs/DEPLOYMENT.md`: guia inicial para publicar frontend, backend y healthcheck.
-- `docs/PILOT_LAUNCH.md`: runbook para publicar y validar el primer piloto online.
-- `docs/DELIVERY_CHECKLIST.md`: estado de entrega y siguientes hitos.
-- `docs/GOOGLE_INTEGRATION_PLAN.md`: arquitectura para Google Maps, Business Profile, Calendar, reseñas y reservas.
-- `docs/GOOGLE_CLIENT_SERVICE_PLAYBOOK.md`: playbook para vender y operar correo profesional, GBP, reseñas y reservas.
-- `docs/PROJECT_STRUCTURE.md`: mapa de carpetas y convenciones del proyecto.
-- `pages/google-ops.html`: vista comercial/operativa del servicio Google gestionado.
-- `docs/COMPATIBILITY_CHECKLIST.md`: checklist para moviles, navegadores y testing manual.
-- `pages/investor.html`: pitch navegable con demo de producto.
-- `pages/onboarding.html`: brief para recopilar datos del cliente.
+- [Objetivo y siguientes acciones](docs/AHORA.md)
+- [Mapa y reglas de la documentacion](docs/README.md)
+- [Vista del servicio Google gestionado](pages/google-ops.html)
+- [Pitch navegable para inversores](pages/investor.html)
+- [Brief de onboarding](pages/onboarding.html)
 
-## Backend Google opcional
+## Integracion Google productiva
+
+El servidor principal incluye OAuth persistente por negocio, refresh automatico
+y tokens cifrados fuera de la ficha publica. La pestana `Google` del portal
+permite conectar Calendar, Business Profile y Workspace, comprobar el estado y
+sincronizar Places.
+
+Capacidades:
+
+- Places API con snapshot local y aplicacion opcional a los datos del negocio.
+- Calendar FreeBusy, creacion de eventos y sincronizacion de reservas locales.
+- Business Profile: cuentas, ubicaciones, cambios validados, resenas,
+  respuestas con aprobacion humana y metricas de rendimiento.
+- Workspace Admin SDK: alta de usuarios con dry-run y confirmacion explicita.
+- Mensajes de solicitud de resena.
+
+Rutas principales:
+
+```text
+GET  /api/google/oauth/start?businessId=...&features=calendar,business-profile,workspace
+GET  /api/google/oauth/callback
+GET  /api/businesses/{id}/google
+GET  /api/businesses/{id}/google/diagnostics
+POST /api/businesses/{id}/google/disconnect
+POST /api/businesses/{id}/google/place/sync
+POST /api/businesses/{id}/google/calendar/freebusy
+POST /api/businesses/{id}/google/calendar/events
+POST /api/businesses/{id}/google/calendar/sync-booking/{bookingId}
+GET  /api/businesses/{id}/google/business/accounts
+GET  /api/businesses/{id}/google/business/locations
+PATCH /api/businesses/{id}/google/business/location
+GET  /api/businesses/{id}/google/business/reviews
+POST /api/businesses/{id}/google/business/reviews/reply
+GET  /api/businesses/{id}/google/business/performance
+GET|POST|PATCH|DELETE /api/businesses/{id}/google/business/place-actions
+POST /api/businesses/{id}/google/workspace/users
+POST /api/businesses/{id}/google/review-request
+```
+
+Alta, variables y pasos que requieren intervencion humana:
+[Google Cloud Setup](docs/operaciones/GOOGLE_CLOUD_SETUP.md).
+
+## Backend Google legacy
 
 `examples/google-integration.example.mjs` es una base para conectar:
 
@@ -376,6 +417,7 @@ POST http://127.0.0.1:8790/api/google/workspace/user
 POST http://127.0.0.1:8790/api/google/review-request
 ```
 
-En produccion hay que implementar OAuth persistente y guardar tokens cifrados por negocio.
+La integracion productiva vive en el servidor principal. Este ejemplo se
+conserva como referencia aislada y compatibilidad.
 
 Nota: la creacion de correo profesional debe hacerse con Google Workspace del dominio del cliente y permisos de administrador. No se crean cuentas Gmail personales para clientes.

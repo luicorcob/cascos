@@ -1,3 +1,5 @@
 node_modules/
 .tmp-*
 .tmp-*/
+data/google-auth-db.json
+data/backups/google-auth-db.*.json

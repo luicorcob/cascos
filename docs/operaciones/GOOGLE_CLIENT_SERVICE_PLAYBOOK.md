@@ -42,7 +42,25 @@ Objetivo: que el cliente no solo tenga una web bonita, sino una operacion Google
 - No crear reservas sin validar horario, buffers y datos de contacto.
 - Mantener tokens OAuth cifrados y separados por cliente.
 
-## Backend de ejemplo
+La configuracion tecnica y los pasos externos estan en
+[`GOOGLE_CLOUD_SETUP.md`](GOOGLE_CLOUD_SETUP.md).
+
+## Backend productivo
+
+La integracion vive en el servidor principal y se opera desde la pestana
+`Google` de `pages/business-dashboard.html`. Incluye OAuth persistente por
+negocio, refresh automatico, cifrado, Places, Calendar, Business Profile,
+resenas, performance y Workspace.
+
+Acciones sensibles:
+
+- Responder una resena exige revision humana y `confirm: true`.
+- Cambiar Business Profile exige `confirm: true`.
+- Crear un usuario Workspace exige autorizacion del cliente y `confirm: true`.
+- Las reservas locales se sincronizan con Calendar cuando la cuenta esta
+  conectada.
+
+## Backend legacy de ejemplo
 
 `examples/google-integration.example.mjs` incluye:
 

@@ -1,11 +1,14 @@
 # Guion de demo para inversores
 
+> Funcion: material para presentar LocalLift a inversores. No es el guion
+> comercial activo para clientes ni crea prioridades.
+
 ## Preparacion
 
 1. Ejecutar `npm.cmd start`.
 2. Abrir `http://127.0.0.1:5173/pages/investor.html`.
 3. Tener una segunda pestana con `http://127.0.0.1:5173/index.html`.
-4. Tener abierto `docs/INVESTOR_MEMO.md` por si preguntan modelo, riesgos o roadmap.
+4. Tener abierto `docs/referencia/INVESTOR_MEMO.md` por si preguntan modelo, riesgos o roadmap.
 
 ## Apertura
 

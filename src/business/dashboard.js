@@ -10,10 +10,13 @@ const state = {
   blocks: [],
   reminderQueue: [],
   report: null,
+  googleStatus: null,
+  googleDiagnostics: null,
   apiBase: window.LocalLiftApi?.getBase?.() || "",
   adminToken: localStorage.getItem("locallift_admin_token") || "",
   crmError: "",
   bookingError: "",
+  googleError: "",
   loading: false
 };
 
@@ -161,8 +164,11 @@ async function loadBusinesses(options = {}) {
       state.blocks = [];
       state.reminderQueue = [];
       state.report = null;
+      state.googleStatus = null;
+      state.googleDiagnostics = null;
       state.crmError = "";
       state.bookingError = "";
+      state.googleError = "";
       renderBusinessSelect();
       render();
       showNotice(error.status === 401
@@ -186,11 +192,12 @@ async function loadBusiness(id, options = {}) {
     await loadContacts(state.business?.id || id);
     await loadBookings(state.business?.id || id);
     await loadReport(state.business?.id || id);
+    await loadGoogle(state.business?.id || id);
     renderBusinessSelect();
     render();
 
-    if (state.crmError || state.bookingError) {
-      showNotice([state.crmError, state.bookingError].filter(Boolean).join(" "), "warn");
+    if (state.crmError || state.bookingError || state.googleError) {
+      showNotice([state.crmError, state.bookingError, state.googleError].filter(Boolean).join(" "), "warn");
     } else if (!options.silent) {
       showNotice("", "info");
     }
@@ -204,6 +211,9 @@ async function loadBusiness(id, options = {}) {
     state.blocks = [];
     state.reminderQueue = [];
     state.report = null;
+    state.googleStatus = null;
+    state.googleDiagnostics = null;
+    state.googleError = "";
     render();
     showNotice("Se cargo el resumen del negocio, pero falta el detalle completo.", "warn");
   } finally {
@@ -272,6 +282,22 @@ async function loadReport(id) {
   }
 }
 
+async function loadGoogle(id) {
+  state.googleStatus = null;
+  state.googleDiagnostics = null;
+  state.googleError = "";
+
+  if (!id) {
+    return;
+  }
+
+  try {
+    state.googleStatus = await getJson(`/api/businesses/${encodeURIComponent(id)}/google`);
+  } catch (error) {
+    state.googleError = "La integracion Google no respondio.";
+  }
+}
+
 function setLoading(isLoading) {
   state.loading = isLoading;
   if (refs.refresh) {
@@ -287,7 +313,8 @@ async function getJson(url) {
   });
 
   if (!response.ok) {
-    const error = new Error(`Request failed: ${response.status}`);
+    const payload = await response.json().catch(() => ({}));
+    const error = new Error(payload.error || `Request failed: ${response.status}`);
     error.status = response.status;
     throw error;
   }
@@ -424,11 +451,13 @@ function render() {
   renderBookings(model);
   renderOrders(model);
   renderProducts(model);
+  renderGoogle(model);
   renderReports(model);
   renderSettings(model);
   bindExportControls(model);
   bindCrmControls(model);
   bindBookingControls(model);
+  bindGoogleControls();
 }
 
 function renderEmptyShell() {
@@ -788,6 +817,114 @@ function renderSettings(model) {
   `;
 }
 
+function renderGoogle(model) {
+  const container = document.querySelector('[data-list="google"]');
+
+  if (!container) {
+    return;
+  }
+
+  if (state.googleError) {
+    container.innerHTML = emptyState("Google Ops no disponible", state.googleError);
+    return;
+  }
+
+  const status = state.googleStatus;
+
+  if (!status) {
+    container.innerHTML = emptyState("Cargando Google Ops", "Actualiza el dashboard para consultar la conexion.");
+    return;
+  }
+
+  const connected = status.connected || {};
+  const configured = status.configured || {};
+  const settings = status.settings || {};
+  const snapshot = status.placeSnapshot || null;
+  const diagnostics = state.googleDiagnostics?.checks || [];
+  const setupItems = [
+    ["OAuth web-server", configured.oauth],
+    ["Cifrado de tokens", configured.tokenEncryption],
+    ["Places API", configured.placesApi]
+  ];
+  const connectionItems = [
+    ["Calendar", connected.calendar, "calendar"],
+    ["Business Profile", connected.businessProfile, "business-profile"],
+    ["Workspace", connected.workspace, "workspace"]
+  ];
+
+  container.innerHTML = `
+    <div class="google-actions">
+      <button type="button" data-google-connect="calendar">Conectar Calendar</button>
+      <button type="button" data-google-connect="business-profile">Conectar Business Profile</button>
+      <button type="button" data-google-connect="workspace">Conectar Workspace</button>
+      <button type="button" data-google-connect="calendar,business-profile,workspace">Conectar todo</button>
+      <button type="button" data-google-refresh>Actualizar estado</button>
+      <button type="button" data-google-diagnostics>Probar conexiones</button>
+      ${status.connection ? '<button type="button" data-google-disconnect>Desconectar OAuth</button>' : ""}
+    </div>
+
+    <div class="google-feature-grid">
+      <article class="google-ops-card">
+        <p class="eyebrow">Backend</p>
+        <h3>Preparacion tecnica</h3>
+        <div class="google-check-list">
+          ${setupItems.map(([label, done]) => `
+            <span class="${done ? "is-ready" : "is-pending"}"><strong>${done ? "OK" : "!"}</strong>${escapeHtml(label)}</span>
+          `).join("")}
+        </div>
+      </article>
+
+      <article class="google-ops-card">
+        <p class="eyebrow">OAuth por negocio</p>
+        <h3>Servicios conectados</h3>
+        <div class="google-check-list">
+          ${connectionItems.map(([label, done]) => `
+            <span class="${done ? "is-ready" : "is-pending"}"><strong>${done ? "OK" : "!"}</strong>${escapeHtml(label)}</span>
+          `).join("")}
+        </div>
+        <small>${escapeHtml(status.connection?.updatedAt ? `Ultima conexion: ${formatDateTime(status.connection.updatedAt)}` : "Sin OAuth persistente guardado")}</small>
+      </article>
+
+      <article class="google-ops-card">
+        <p class="eyebrow">Configuracion</p>
+        <h3>IDs operativos</h3>
+        <dl>
+          <div><dt>Place ID</dt><dd>${escapeHtml(settings.placeId || "Pendiente")}</dd></div>
+          <div><dt>Calendar ID</dt><dd>${escapeHtml(settings.calendarId || "primary")}</dd></div>
+          <div><dt>Cuenta GBP</dt><dd>${escapeHtml(settings.businessProfileAccountId || "Pendiente")}</dd></div>
+          <div><dt>Ubicacion GBP</dt><dd>${escapeHtml(settings.businessProfileLocationId || "Pendiente")}</dd></div>
+        </dl>
+      </article>
+
+      <article class="google-ops-card">
+        <p class="eyebrow">Places snapshot</p>
+        <h3>${escapeHtml(snapshot?.name || model.business.name)}</h3>
+        ${snapshot ? `
+          <strong>${escapeHtml(String(snapshot.rating || 0))}/5 - ${escapeHtml(String(snapshot.reviewCount || 0))} resenas</strong>
+          <p>${escapeHtml(snapshot.address || "Sin direccion devuelta")}</p>
+          <small>Sincronizado: ${escapeHtml(formatDateTime(status.placeSnapshotAt))}</small>
+        ` : "<p>Sin snapshot. Configura Place ID y sincroniza para contrastar datos publicos.</p>"}
+        <button type="button" data-google-sync-place${settings.placeId && configured.placesApi ? "" : " disabled"}>Sincronizar Places</button>
+      </article>
+    </div>
+
+    <section class="google-ops-note">
+      <strong>Politica operativa</strong>
+      <p>Las reservas se sincronizan con Calendar al crearlas o cambiarlas. Las respuestas a resenas, cambios de Business Profile y altas de Workspace requieren confirmacion explicita en la API.</p>
+    </section>
+    ${diagnostics.length ? `
+      <section class="google-ops-note">
+        <strong>Diagnostico real</strong>
+        <div class="google-check-list">
+          ${diagnostics.map((check) => `
+            <span class="${check.ok ? "is-ready" : "is-pending"}"><strong>${check.ok ? "OK" : check.skipped ? "-" : "!"}</strong>${escapeHtml(`${check.name}: ${check.ok ? "conexion verificada" : check.message || "pendiente"}`)}</span>
+          `).join("")}
+        </div>
+      </section>
+    ` : ""}
+  `;
+}
+
 function createDashboardModel(business, crm = {}) {
   const content = business.content || {};
   const commerce = content.commerce || {};
@@ -987,7 +1124,8 @@ function bindBookingControls() {
           { status }
         );
         state.bookings = state.bookings.map((booking) => booking.id === bookingId ? result.booking : booking);
-        showNotice("Reserva actualizada.", "info");
+        const synced = await syncBookingToGoogle(bookingId);
+        showNotice(synced ? "Reserva actualizada y sincronizada con Google Calendar." : "Reserva actualizada.", "info");
         render();
       } catch (error) {
         showNotice("No se pudo actualizar la reserva.", "error");
@@ -1029,7 +1167,8 @@ function bindBookingControls() {
           ? state.contacts.map((contact) => contact.id === result.contact.id ? { ...contact, ...result.contact } : contact)
           : [result.contact, ...state.contacts];
       }
-      showNotice("Reserva creada y vinculada al CRM.", "info");
+      const synced = await syncBookingToGoogle(result.booking.id);
+      showNotice(synced ? "Reserva creada, vinculada al CRM y sincronizada con Google Calendar." : "Reserva creada y vinculada al CRM.", "info");
       form.reset();
       render();
     } catch (error) {
@@ -1198,6 +1337,124 @@ function bindBookingControls() {
       }
     });
   });
+}
+
+function bindGoogleControls() {
+  document.querySelectorAll("[data-google-connect]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (!state.business) {
+        return;
+      }
+
+      button.disabled = true;
+
+      try {
+        const features = button.dataset.googleConnect || "calendar";
+        const result = await getJson(`/api/google/oauth/start?businessId=${encodeURIComponent(state.business.id)}&features=${encodeURIComponent(features)}`);
+        window.open(result.authorizationUrl, "locallift-google-oauth", "popup,width=680,height=760");
+        showNotice("Completa el consentimiento de Google en la ventana abierta y despues actualiza el estado.", "info");
+      } catch (error) {
+        showNotice(error.message || "No se pudo iniciar la conexion con Google.", "error");
+        button.disabled = false;
+      }
+    });
+  });
+
+  document.querySelector("[data-google-refresh]")?.addEventListener("click", async (event) => {
+    event.currentTarget.disabled = true;
+    await loadGoogle(state.business?.id || "");
+    render();
+    showNotice("Estado Google actualizado.", "info");
+  });
+
+  document.querySelector("[data-google-diagnostics]")?.addEventListener("click", async (event) => {
+    if (!state.business) {
+      return;
+    }
+
+    const button = event.currentTarget;
+    button.disabled = true;
+
+    try {
+      state.googleDiagnostics = await getJson(`/api/businesses/${encodeURIComponent(state.business.id)}/google/diagnostics`);
+      render();
+      showNotice(state.googleDiagnostics.ok ? "Todas las conexiones Google disponibles responden." : "Diagnostico Google completado con conexiones pendientes.", state.googleDiagnostics.ok ? "info" : "warn");
+    } catch (error) {
+      showNotice(error.message || "No se pudo ejecutar el diagnostico Google.", "error");
+      button.disabled = false;
+    }
+  });
+
+  document.querySelector("[data-google-sync-place]")?.addEventListener("click", async (event) => {
+    if (!state.business) {
+      return;
+    }
+
+    const button = event.currentTarget;
+    button.disabled = true;
+
+    try {
+      await postJson(`/api/businesses/${encodeURIComponent(state.business.id)}/google/place/sync`, { applyToBusiness: false });
+      await loadGoogle(state.business.id);
+      render();
+      showNotice("Datos publicos de Places sincronizados.", "info");
+    } catch (error) {
+      showNotice(error.message || "No se pudo sincronizar Places.", "error");
+      button.disabled = false;
+    }
+  });
+
+  document.querySelector("[data-google-disconnect]")?.addEventListener("click", async (event) => {
+    if (!state.business || !window.confirm("Se eliminara la conexion OAuth cifrada de este negocio. Continuar?")) {
+      return;
+    }
+
+    const button = event.currentTarget;
+    button.disabled = true;
+
+    try {
+      await postJson(`/api/businesses/${encodeURIComponent(state.business.id)}/google/disconnect`, {});
+      await loadGoogle(state.business.id);
+      render();
+      showNotice("Conexion OAuth de Google eliminada.", "info");
+    } catch (error) {
+      showNotice("No se pudo desconectar Google.", "error");
+      button.disabled = false;
+    }
+  });
+
+  document.querySelectorAll("[data-google-booking-sync]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      const synced = await syncBookingToGoogle(button.dataset.bookingId || "", { notifyFailure: true });
+      if (synced) {
+        showNotice("Reserva sincronizada con Google Calendar.", "info");
+        render();
+      } else {
+        button.disabled = false;
+      }
+    });
+  });
+}
+
+async function syncBookingToGoogle(bookingId, options = {}) {
+  if (!bookingId || !state.business || !state.googleStatus?.connected?.calendar) {
+    return false;
+  }
+
+  try {
+    const result = await postJson(
+      `/api/businesses/${encodeURIComponent(state.business.id)}/google/calendar/sync-booking/${encodeURIComponent(bookingId)}`,
+      {}
+    );
+    state.bookings = state.bookings.map((booking) => booking.id === bookingId ? result.booking : booking);
+    return true;
+  } catch (error) {
+    if (options.notifyFailure) {
+      showNotice(error.message || "La reserva se guardo localmente, pero Calendar no pudo sincronizarla.", "error");
+    }
+    return false;
+  }
 }
 
 function renderBookingForm(model) {
@@ -1396,6 +1653,10 @@ function renderCalendarEvent(booking) {
 }
 
 function renderBookingCard(booking) {
+  const googleSync = state.googleStatus?.connected?.calendar
+    ? `<button class="inline-action" type="button" data-google-booking-sync data-booking-id="${escapeAttr(booking.id)}">${booking.google?.eventId ? "Actualizar Google Calendar" : "Enviar a Google Calendar"}</button>`
+    : "";
+
   return `
     <article class="item-card booking-card">
       <span class="pill ${escapeHtml(booking.status || "pending")}">${escapeHtml(statusLabel(booking.status || "pending"))}</span>
@@ -1411,6 +1672,7 @@ function renderBookingCard(booking) {
         </select>
       </label>
       <button class="inline-action" type="button" data-booking-reminder data-booking-id="${escapeAttr(booking.id)}" data-channel="${escapeAttr(preferredReminderChannel(booking))}">Preparar recordatorio</button>
+      ${googleSync}
     </article>
   `;
 }

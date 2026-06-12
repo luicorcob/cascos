@@ -1,4 +1,13 @@
+import { loadLocalEnv } from "../lib/load-env.mjs";
+
+loadLocalEnv();
+
 const MIN_TOKEN_LENGTH = 32;
+const googleOAuthRequested = [
+  process.env.GOOGLE_OAUTH_CLIENT_ID,
+  process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+  process.env.GOOGLE_OAUTH_REDIRECT_URI
+].some((value) => Boolean(clean(value)));
 
 const checks = [
   {
@@ -25,6 +34,11 @@ const checks = [
     name: "BUSINESS_DB_FILE",
     ok: Boolean(clean(process.env.BUSINESS_DB_FILE)),
     message: "BUSINESS_DB_FILE debe apuntar a la base persistente."
+  },
+  {
+    name: "GOOGLE_OAUTH",
+    ok: !googleOAuthRequested || googleOAuthReady(),
+    message: "Si activas OAuth Google, configura client id, client secret, redirect URI exacta y clave de cifrado de 32+ caracteres."
   }
 ];
 
@@ -49,6 +63,24 @@ function hasProductionOrigin(value) {
     .split(",")
     .map((origin) => clean(origin))
     .some((origin) => origin.startsWith("https://"));
+}
+
+function googleOAuthReady() {
+  return Boolean(
+    clean(process.env.GOOGLE_OAUTH_CLIENT_ID)
+      && clean(process.env.GOOGLE_OAUTH_CLIENT_SECRET)
+      && validGoogleRedirect(process.env.GOOGLE_OAUTH_REDIRECT_URI)
+      && clean(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY).length >= MIN_TOKEN_LENGTH
+  );
+}
+
+function validGoogleRedirect(value) {
+  try {
+    const url = new URL(clean(value));
+    return url.protocol === "https:" && url.pathname === "/api/google/oauth/callback";
+  } catch (error) {
+    return false;
+  }
 }
 
 function clean(value) {

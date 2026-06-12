@@ -33,6 +33,7 @@ export async function handleHealthApi(request, response, context) {
   const dbPath = getDbPath(context.root);
   const db = await readHealthDb(dbPath);
   const checks = await buildChecks(dbPath, db);
+  const google = await readGoogleHealth(context.root);
   const ok = checks.databaseReadable && checks.databaseWritable;
 
   sendJson(response, ok ? 200 : 503, {
@@ -55,7 +56,8 @@ export async function handleHealthApi(request, response, context) {
       reminders: db.bookingReminders.length,
       events: db.businessEvents.length,
       auditLog: db.auditLog.length
-    }
+    },
+    google
   }, context);
 }
 
@@ -94,10 +96,60 @@ async function buildChecks(dbPath, db) {
   return checks;
 }
 
+async function readGoogleHealth(root) {
+  const authDbPath = process.env.GOOGLE_AUTH_DB_FILE
+    ? path.resolve(root, process.env.GOOGLE_AUTH_DB_FILE)
+    : path.join(root, "data", "google-auth-db.json");
+  let connections = 0;
+  let placeSnapshots = 0;
+
+  try {
+    const db = JSON.parse(await readFile(authDbPath, "utf8"));
+    connections = Array.isArray(db.connections) ? db.connections.length : 0;
+    placeSnapshots = Array.isArray(db.placeSnapshots) ? db.placeSnapshots.length : 0;
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      return {
+        oauthConfigured: googleOAuthConfigured(),
+        tokenEncryptionConfigured: googleEncryptionConfigured(),
+        placesConfigured: Boolean(clean(process.env.GOOGLE_MAPS_API_KEY)),
+        connections,
+        placeSnapshots,
+        authStoreReadable: false
+      };
+    }
+  }
+
+  return {
+    oauthConfigured: googleOAuthConfigured(),
+    tokenEncryptionConfigured: googleEncryptionConfigured(),
+    placesConfigured: Boolean(clean(process.env.GOOGLE_MAPS_API_KEY)),
+    connections,
+    placeSnapshots,
+    authStoreReadable: true
+  };
+}
+
+function googleOAuthConfigured() {
+  return Boolean(
+    clean(process.env.GOOGLE_OAUTH_CLIENT_ID)
+      && clean(process.env.GOOGLE_OAUTH_CLIENT_SECRET)
+      && clean(process.env.GOOGLE_OAUTH_REDIRECT_URI)
+  );
+}
+
+function googleEncryptionConfigured() {
+  return clean(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY).length >= 32;
+}
+
 function getDbPath(root) {
   return process.env.BUSINESS_DB_FILE
     ? path.resolve(root, process.env.BUSINESS_DB_FILE)
     : path.join(root, "data", "business-db.json");
+}
+
+function clean(value) {
+  return String(value || "").trim();
 }
 
 function sendJson(response, status, payload, context, extraHeaders = {}) {

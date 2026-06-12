@@ -42,9 +42,11 @@ El repositorio ya incluye `render.yaml` para crear un servicio web Node en Rende
 
 - `startCommand: npm run start:prod`
 - `healthCheckPath: /api/health`
-- disco persistente montado en `/data`
+- plan `starter` y disco persistente montado en `/data`
 - `BUSINESS_DB_FILE=/data/business-db.json`
 - secretos `LOCALLIFT_ADMIN_TOKEN` y `CORS_ORIGIN` pendientes de rellenar en la plataforma
+
+Render solo permite adjuntar discos persistentes a servicios de pago. No cambies el Blueprint a plan gratuito mientras el backend use archivos JSON para guardar datos reales.
 
 Tambien incluye `Dockerfile` para proveedores basados en contenedor.
 
@@ -136,9 +138,29 @@ Para IA y Google, mantener claves y tokens siempre en backend:
 OPENAI_API_KEY
 OPENAI_MODEL
 GOOGLE_MAPS_API_KEY
+GOOGLE_OAUTH_CLIENT_ID
+GOOGLE_OAUTH_CLIENT_SECRET
+GOOGLE_OAUTH_REDIRECT_URI
+GOOGLE_TOKEN_ENCRYPTION_KEY
+GOOGLE_AUTH_DB_FILE
+GOOGLE_CALENDAR_ID
+```
+
+Los siguientes tokens globales solo existen para migrar el antiguo backend de
+ejemplo y no deben usarse con nuevos clientes:
+
+```text
 GOOGLE_CALENDAR_ACCESS_TOKEN
 GOOGLE_BUSINESS_PROFILE_ACCESS_TOKEN
 GOOGLE_WORKSPACE_ADMIN_ACCESS_TOKEN
+```
+
+La guia completa de alta y consentimiento esta en
+[`GOOGLE_CLOUD_SETUP.md`](GOOGLE_CLOUD_SETUP.md). Antes de conectar una cuenta:
+
+```powershell
+npm.cmd run google:check
+npm.cmd run test:google
 ```
 
 ## Healthcheck
@@ -191,4 +213,4 @@ Usalo en Render/Railway/Fly/VPS para saber si la API esta levantada y si puede l
 - [ ] Activar logs/backups del proveedor.
 - [ ] Preparar migracion a Postgres/Supabase si hay mas de 3-5 clientes activos.
 
-La guia operativa del primer piloto esta en `docs/PILOT_LAUNCH.md`.
+La guia operativa del primer piloto esta en `docs/operaciones/PILOT_LAUNCH.md`.

@@ -1,7 +1,7 @@
 const STORAGE_KEY = "locallift-studio-business";
 const API_RECORD_KEY = "locallift-studio-business-api-record";
 const BUSINESS_API_BASE = apiUrl("/api/businesses");
-const DATA_VERSION = 3;
+const DATA_VERSION = 5;
 
 const demoBusiness = {
   name: "Brasa Norte",
@@ -103,7 +103,10 @@ const demoBusiness = {
   leadFormIntro:
     "Deja tus datos y el equipo recibe un lead preparado con servicio, fecha orientativa y canal de contacto.",
   leadFormCta: "Solicitar disponibilidad",
+  privacyUrl: "",
   designPack: "custom",
+  artDirection: "auto",
+  contentMode: "visual",
   typography: "modern",
   contentDensity: "balanced",
   visualShape: "clean",
@@ -120,6 +123,48 @@ const demoBusiness = {
   showFaq: true,
   showMap: true,
   showConversionDock: true,
+  showMenu: true,
+  menuTitle: "Carta de temporada",
+  menuIntro: "Producto local, fuego lento y platos pensados para compartir.",
+  menuCurrency: "EUR",
+  menuItems: [
+    {
+      category: "Para empezar",
+      name: "Croquetas de vaca tudanca",
+      price: 12,
+      description: "Bechamel cremosa, carne guisada y jugo de asado."
+    },
+    {
+      category: "Para empezar",
+      name: "Puerro a la brasa",
+      price: 11.5,
+      description: "Avellana tostada, queso ahumado y vinagreta de hierbas."
+    },
+    {
+      category: "Brasas",
+      name: "Costilla glaseada",
+      price: 24,
+      description: "Cocinada a baja temperatura, lacada al fuego y acompanada de patata."
+    },
+    {
+      category: "Brasas",
+      name: "Pescado del Cantabrico",
+      price: 26,
+      description: "Pieza diaria, verduras de temporada y salsa de sus espinas."
+    },
+    {
+      category: "Postres",
+      name: "Tarta de queso ahumada",
+      price: 8,
+      description: "Cremosa, poco dulce y terminada junto a las brasas."
+    },
+    {
+      category: "Postres",
+      name: "Chocolate, sal y aceite",
+      price: 7.5,
+      description: "Chocolate intenso, escamas de sal y aceite de oliva."
+    }
+  ],
   google: {
     enabled: true,
     workspaceEmail: "reservas@brasanorte.es",
@@ -308,13 +353,13 @@ const sectorPresets = {
   beauty: {
     name: "Luma Studio",
     category: "Peluqueria y belleza",
-    location: "Madrid",
+    location: "Sevilla",
     tagline: "Belleza con agenda llena, experiencia cuidada y reserva facil",
     description:
       "Un estudio de belleza con servicios claros, fotos aspiracionales, reservas por WhatsApp y chatbot para resolver dudas de tratamientos.",
-    phone: "+34 910 000 781",
+    phone: "+34 954 000 781",
     email: "citas@lumastudio.es",
-    address: "Calle Primavera 9, Madrid",
+    address: "Zona Nervion, Sevilla",
     services: [
       "Coloracion y balayage",
       "Corte y styling",
@@ -358,13 +403,14 @@ const sectorPresets = {
     intensity: 82,
     premiumEffects: true,
     showBooking: true,
-    bookingUrl: "https://wa.me/34910000781",
+    bookingUrl: "https://wa.me/34954000781",
+    privacyUrl: "pages/privacy-demo.html",
     google: {
       enabled: true,
       placeId: "",
       mapsUrl: "https://maps.google.com/",
       reviewUrl: "https://g.page/r/",
-      appointmentUrl: "https://wa.me/34910000781",
+      appointmentUrl: "https://wa.me/34954000781",
       rating: 4.7,
       reviewCount: 186,
       calendarId: "primary",
@@ -811,6 +857,8 @@ const sectorPresets = {
   }
 };
 
+const defaultSectorPreset = sectorPresets.beauty;
+
 const themePalette = {
   aurora: {
     bg: "#fbf7ef",
@@ -821,7 +869,7 @@ const themePalette = {
   },
   carbon: {
     bg: "#11110f",
-    paper: "#f7efe1",
+    paper: "#1b1a17",
     ink: "#f6efe4",
     muted: "#b9b0a4",
     accent2: "#f0b247"
@@ -849,9 +897,72 @@ const themePalette = {
   }
 };
 
+function hexToRgb(color) {
+  const normalized = String(color || "").trim().replace(/^#/, "");
+  const value = normalized.length === 3
+    ? normalized.split("").map((part) => `${part}${part}`).join("")
+    : normalized;
+
+  if (!/^[0-9a-f]{6}$/i.test(value)) {
+    return null;
+  }
+
+  const integer = Number.parseInt(value, 16);
+  return {
+    r: (integer >> 16) & 255,
+    g: (integer >> 8) & 255,
+    b: integer & 255
+  };
+}
+
+function relativeLuminance(color) {
+  const rgb = hexToRgb(color);
+
+  if (!rgb) {
+    return 0;
+  }
+
+  const channels = [rgb.r, rgb.g, rgb.b].map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+
+  return (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2]);
+}
+
+function contrastRatio(colorA, colorB) {
+  const lighter = Math.max(relativeLuminance(colorA), relativeLuminance(colorB));
+  const darker = Math.min(relativeLuminance(colorA), relativeLuminance(colorB));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function highestContrast(background, colors) {
+  return colors.reduce((best, color) => (
+    contrastRatio(background, color) > contrastRatio(background, best) ? color : best
+  ), colors[0]);
+}
+
+function getContrastTokens(accent, palette) {
+  const neutralCandidates = [palette.ink, palette.paper, "#111316", "#ffffff"];
+  const solid = relativeLuminance(palette.bg) < 0.35 ? palette.bg : palette.ink;
+  const onSolid = highestContrast(solid, neutralCandidates);
+  const onAccent = highestContrast(accent, ["#111316", "#ffffff"]);
+  const accentReadable = Math.min(
+    contrastRatio(accent, palette.bg),
+    contrastRatio(accent, palette.paper)
+  ) >= 4.5
+    ? accent
+    : highestContrast(palette.bg, [palette.ink, palette.paper]);
+  const accentOnSolid = contrastRatio(accent, solid) >= 3 ? accent : onSolid;
+
+  return { solid, onSolid, onAccent, accentReadable, accentOnSolid };
+}
+
 const designPacks = {
   boutique: {
     label: "Boutique",
+    artDirection: "atelier",
+    contentMode: "visual",
     theme: "luxe",
     motion: "cinematic",
     typography: "editorial",
@@ -868,6 +979,8 @@ const designPacks = {
   },
   impact: {
     label: "Impacto",
+    artDirection: "kinetic",
+    contentMode: "visual",
     theme: "neon",
     motion: "bold",
     typography: "modern",
@@ -884,6 +997,8 @@ const designPacks = {
   },
   clear: {
     label: "Claro",
+    artDirection: "editorial",
+    contentMode: "balanced",
     theme: "aurora",
     motion: "soft",
     typography: "modern",
@@ -900,6 +1015,8 @@ const designPacks = {
   },
   commerce: {
     label: "Comercial",
+    artDirection: "mosaic",
+    contentMode: "visual",
     theme: "carbon",
     motion: "bold",
     typography: "compact",
@@ -916,6 +1033,8 @@ const designPacks = {
   },
   mobileFirst: {
     label: "Mobile first",
+    artDirection: "poster",
+    contentMode: "visual",
     theme: "aurora",
     motion: "soft",
     typography: "compact",
@@ -932,6 +1051,8 @@ const designPacks = {
   },
   localWarm: {
     label: "Local cercano",
+    artDirection: "cinematic",
+    contentMode: "balanced",
     theme: "editorial",
     motion: "cinematic",
     typography: "editorial",
@@ -984,6 +1105,8 @@ const densityLayoutMap = {
   }
 };
 
+const artDirectionOptions = ["cinematic", "editorial", "poster", "mosaic", "atelier", "kinetic"];
+
 const form = document.querySelector("#businessForm");
 const sitePreview = document.querySelector("#sitePreview");
 const previewTitle = document.querySelector("#previewTitle");
@@ -994,13 +1117,17 @@ const statusLine = document.querySelector("#statusLine");
 const deviceFrame = document.querySelector(".device-frame");
 const cursorGlow = document.querySelector(".cursor-glow");
 const importDataInput = document.querySelector("#importDataInput");
+const topbarProjectName = document.querySelector("#topbarProjectName");
+const frameAddress = document.querySelector("#frameAddress");
+const presentationModeButton = document.querySelector("#presentationModeButton");
 
 let previewObserver;
-let currentBusiness = cloneData(demoBusiness);
+let currentBusiness = cloneData(defaultSectorPreset);
 let currentBusinessRecord = null;
 let quickHistory = [];
 let quickFuture = [];
 let renderFrame = 0;
+let parallaxFrame = 0;
 
 init();
 
@@ -1016,11 +1143,13 @@ function init() {
   bindDesignPackButtons();
   bindQuickEditor();
   bindActions();
+  bindPresentationMode();
   bindCursor();
   fillForm(currentBusiness);
   syncSegmentedControls();
   syncDesignPackState();
   renderFromForm();
+  applyLaunchView();
   form.addEventListener("input", (event) => {
     markCustomDesignPack(event.target);
     syncSegmentedControls();
@@ -1126,6 +1255,8 @@ function applyDesignPack(packName) {
 
 function applyDesignPackValues(packName, pack) {
   setValue("designPack", packName);
+  setRadioValue("artDirection", pack.artDirection || "auto");
+  setRadioValue("contentMode", pack.contentMode || "visual");
   setRadioValue("theme", pack.theme);
   setRadioValue("motion", pack.motion);
   setRadioValue("typography", pack.typography);
@@ -1194,6 +1325,41 @@ function bindQuickEditor() {
       applyQuickCommand();
     }
   });
+}
+
+function bindPresentationMode() {
+  presentationModeButton?.addEventListener("click", () => {
+    togglePresentationMode();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.body.classList.contains("is-presentation")) {
+      togglePresentationMode(false);
+    }
+  });
+}
+
+function applyLaunchView() {
+  const params = new URLSearchParams(window.location.search);
+  const requestedView = params.get("view");
+
+  if (["desktop", "tablet", "mobile"].includes(requestedView)) {
+    setDeviceSize(requestedView);
+  }
+
+  if (["1", "true", "yes"].includes(String(params.get("presentation") || "").toLowerCase())) {
+    togglePresentationMode(true);
+  }
+}
+
+function togglePresentationMode(force) {
+  const nextState = typeof force === "boolean"
+    ? force
+    : !document.body.classList.contains("is-presentation");
+
+  document.body.classList.toggle("is-presentation", nextState);
+  presentationModeButton?.setAttribute("aria-pressed", String(nextState));
+  setStatus(nextState ? "Modo presentacion activo. Pulsa Esc para volver al Studio." : "Modo presentacion cerrado.");
 }
 
 function bindActions() {
@@ -1268,7 +1434,7 @@ function bindActions() {
   document.querySelector("#resetButton").addEventListener("click", () => {
     currentBusinessRecord = null;
     storeApiRecord(null);
-    currentBusiness = cloneData(demoBusiness);
+    currentBusiness = cloneData(defaultSectorPreset);
     fillForm(currentBusiness);
     syncSegmentedControls();
     syncDesignPackState();
@@ -1378,7 +1544,10 @@ function fillForm(business) {
   setValue("leadFormTitle", resolved.leadFormTitle);
   setValue("leadFormIntro", resolved.leadFormIntro);
   setValue("leadFormCta", resolved.leadFormCta);
+  setValue("privacyUrl", resolved.privacyUrl);
   setValue("designPack", resolved.designPack);
+  setRadio("artDirection", resolved.artDirection);
+  setRadio("contentMode", resolved.contentMode);
   setValue("accent", resolved.accent);
   setValue("intensity", resolved.intensity);
   setValue("fontScale", resolved.fontScale);
@@ -1403,6 +1572,11 @@ function fillForm(business) {
   setChecked("showFaq", resolved.showFaq);
   setChecked("showMap", resolved.showMap);
   setChecked("showConversionDock", resolved.showConversionDock);
+  setChecked("showMenu", resolved.showMenu);
+  setValue("menuTitle", resolved.menuTitle);
+  setValue("menuIntro", resolved.menuIntro);
+  setValue("menuCurrency", resolved.menuCurrency);
+  setValue("menuItems", serializeMenuItems(resolved.menuItems));
   setChecked("googleEnabled", google.enabled);
   setValue("googleWorkspaceEmail", google.workspaceEmail);
   setValue("googleWorkspaceDomain", google.workspaceDomain);
@@ -1498,7 +1672,10 @@ function businessFromForm() {
     leadFormTitle: textOr(data.get("leadFormTitle"), demoBusiness.leadFormTitle),
     leadFormIntro: textOr(data.get("leadFormIntro"), demoBusiness.leadFormIntro),
     leadFormCta: textOr(data.get("leadFormCta"), demoBusiness.leadFormCta),
+    privacyUrl: normalizeOptionalUrl(data.get("privacyUrl")),
     designPack: textOr(data.get("designPack"), "custom"),
+    artDirection: textOr(data.get("artDirection"), "auto"),
+    contentMode: textOr(data.get("contentMode"), "visual"),
     heroImage: normalizeImage(data.get("heroImage"), demoBusiness.heroImage),
     gallery: parseLines(data.get("gallery"))
       .map((url) => normalizeImage(url, ""))
@@ -1522,6 +1699,11 @@ function businessFromForm() {
     showFaq: data.get("showFaq") === "on",
     showMap: data.get("showMap") === "on",
     showConversionDock: data.get("showConversionDock") === "on",
+    showMenu: data.get("showMenu") === "on",
+    menuTitle: textOr(data.get("menuTitle"), demoBusiness.menuTitle),
+    menuIntro: textOr(data.get("menuIntro"), demoBusiness.menuIntro),
+    menuCurrency: normalizeCurrency(data.get("menuCurrency")),
+    menuItems: parseMenuItems(data.get("menuItems")).slice(0, 60),
     accent: textOr(data.get("accent"), "#cf3f2e"),
     intensity: Number(data.get("intensity") || 78),
     premiumEffects: data.get("premiumEffects") === "on",
@@ -1581,19 +1763,29 @@ function renderFromForm() {
   try {
     currentBusiness = businessFromForm();
     previewTitle.textContent = currentBusiness.name;
+    if (topbarProjectName) {
+      topbarProjectName.textContent = currentBusiness.name;
+    }
+    if (frameAddress) {
+      frameAddress.textContent = `locallift.site/${slugify(currentBusiness.name || "nuevo-negocio")}`;
+    }
     renderPreviewMetrics(currentBusiness);
     renderQualityPanel(currentBusiness);
     sitePreview.innerHTML = renderSite(currentBusiness);
     attachGeneratedInteractions(sitePreview, currentBusiness);
     syncQuickToggleState();
+    document.documentElement.dataset.studioReady = "true";
+    delete document.documentElement.dataset.studioError;
   } catch (error) {
     if (previewObserver) {
       previewObserver.disconnect();
     }
 
     sitePreview.innerHTML = renderPreviewError(error);
+    document.documentElement.dataset.studioReady = "false";
+    document.documentElement.dataset.studioError = error?.message || "unknown";
     sitePreview.querySelector("[data-preview-reset]")?.addEventListener("click", () => {
-      currentBusiness = cloneData(demoBusiness);
+      currentBusiness = cloneData(defaultSectorPreset);
       fillForm(currentBusiness);
       syncSegmentedControls();
       syncDesignPackState();
@@ -1688,8 +1880,32 @@ function mutateQuickAction(action) {
   const location = business.location || "tu zona";
 
   const actions = {
+    surprise: () => {
+      const packNames = Object.keys(designPacks);
+      const currentPack = form.elements.designPack?.value;
+      const availablePacks = packNames.filter((packName) => packName !== currentPack);
+      const packName = availablePacks[Math.floor(Math.random() * availablePacks.length)] || packNames[0];
+      const pack = designPacks[packName];
+      const accentVariations = {
+        boutique: ["#151816", "#384b44", "#8b4f42"],
+        impact: ["#ff3d81", "#8c5cff", "#00a896"],
+        clear: ["#2f6fed", "#16866f", "#c54a32"],
+        commerce: ["#ff6a00", "#d83b27", "#19826b"],
+        mobileFirst: ["#0f8f8f", "#3568a8", "#b14968"],
+        localWarm: ["#cf3f2e", "#a65b2f", "#357b68"]
+      };
+      const accents = accentVariations[packName] || [pack.accent];
+
+      applyDesignPackValues(packName, pack);
+      setValue("accent", accents[Math.floor(Math.random() * accents.length)]);
+      setChecked("showGallery", true);
+      setChecked("showTrustRail", true);
+      setChecked("showConversionDock", true);
+    },
     premium: () => {
       setValue("designPack", "custom");
+      setRadioValue("artDirection", "atelier");
+      setRadioValue("contentMode", "visual");
       setRadioValue("theme", "luxe");
       setRadioValue("typography", "editorial");
       setRadioValue("motion", "cinematic");
@@ -1704,6 +1920,8 @@ function mutateQuickAction(action) {
     },
     minimal: () => {
       setValue("designPack", "custom");
+      setRadioValue("artDirection", "editorial");
+      setRadioValue("contentMode", "visual");
       setRadioValue("theme", "aurora");
       setRadioValue("typography", "modern");
       setRadioValue("motion", "soft");
@@ -1715,6 +1933,8 @@ function mutateQuickAction(action) {
       setValue("servicesIntro", "Servicios, horario, ubicacion y contacto quedan claros para decidir rapido.");
     },
     urgent: () => {
+      setRadioValue("artDirection", "poster");
+      setRadioValue("contentMode", "visual");
       setChecked("showAnnouncement", true);
       setValue("announcement", `Plazas y horarios limitados esta semana en ${name}.`);
       setValue("bookingLabel", "Reservar hoy");
@@ -1724,6 +1944,8 @@ function mutateQuickAction(action) {
       setChecked("showConversionDock", true);
     },
     trust: () => {
+      setRadioValue("artDirection", "editorial");
+      setRadioValue("contentMode", "balanced");
       setChecked("showTrustRail", true);
       setChecked("showTestimonials", true);
       setChecked("showFaq", true);
@@ -1738,6 +1960,8 @@ function mutateQuickAction(action) {
       ].join("\n"));
     },
     booking: () => {
+      setRadioValue("artDirection", "cinematic");
+      setRadioValue("contentMode", "visual");
       setChecked("showBooking", true);
       setChecked("showLeadForm", true);
       setChecked("showConversionDock", true);
@@ -1749,6 +1973,8 @@ function mutateQuickAction(action) {
     },
     food: () => {
       setValue("designPack", "custom");
+      setRadioValue("artDirection", "poster");
+      setRadioValue("contentMode", "visual");
       setRadioValue("theme", "neon");
       setRadioValue("motion", "bold");
       setRadioValue("contentDensity", "compact");
@@ -1757,11 +1983,14 @@ function mutateQuickAction(action) {
       setValue("announcement", "Pide por WhatsApp y recoge sin esperas.");
       setChecked("showAnnouncement", true);
       setChecked("showConversionDock", true);
+      setChecked("showMenu", true);
       setChecked("commerceEnabled", true);
       setValue("servicesHeading", "Menu claro para decidir rapido.");
       setValue("conversionGoal", `Pedidos, recogida y llamadas para ${name}`);
     },
     store: () => {
+      setRadioValue("artDirection", "mosaic");
+      setRadioValue("contentMode", "visual");
       setChecked("commerceEnabled", true);
       setChecked("showConversionDock", true);
       setValue("commerceTitle", "Compra online");
@@ -1778,6 +2007,8 @@ function mutateQuickAction(action) {
       setChecked("showAnnouncement", true);
     },
     local: () => {
+      setRadioValue("artDirection", "cinematic");
+      setRadioValue("contentMode", "balanced");
       setChecked("showMap", true);
       setChecked("googleEnabled", true);
       setValue("servicesIntro", `Una web pensada para que clientes de ${location} entiendan rapido que ofrece ${name}, como llegar y como contactar.`);
@@ -1785,6 +2016,8 @@ function mutateQuickAction(action) {
       setValue("contactHeading", "Ven al local o escribe antes de pasar.");
     },
     mobile: () => {
+      setRadioValue("artDirection", "poster");
+      setRadioValue("contentMode", "visual");
       setRadioValue("contentDensity", "compact");
       setRadioValue("visualShape", "rounded");
       setRadioValue("heroSize", "compact");
@@ -1812,6 +2045,7 @@ function mutateQuickAction(action) {
     },
     wideImages: () => {
       setValue("designPack", "custom");
+      setRadioValue("artDirection", "cinematic");
       setChecked("showGallery", true);
       setRadioValue("imageRatio", "wide");
       setRadioValue("contentWidth", "wide");
@@ -1830,6 +2064,7 @@ function mutateQuickAction(action) {
         "showFaq",
         "showMap",
         "showLeadForm",
+        "showMenu",
         "chatbotEnabled",
         "commerceEnabled",
         "showConversionDock"
@@ -1911,6 +2146,7 @@ function setRadioValue(name, value) {
 
 function quickActionLabel(action) {
   return {
+    surprise: "Nueva direccion creativa generada.",
     premium: "Variante aplicada: mas premium.",
     minimal: "Variante aplicada: mas limpia.",
     urgent: "Variante aplicada: mas urgencia comercial.",
@@ -1993,7 +2229,8 @@ function getQualityChecks(business) {
     { label: "Prueba social y confianza visibles", done: business.testimonials.length >= 2 && business.trustBadges.length >= 2 },
     { label: "FAQ preparada para reducir llamadas", done: business.faqs.length >= 2 },
     { label: "Mapa, ruta o resenas conectables", done: Boolean(business.google?.enabled && (business.google.mapsUrl || business.google.mapEmbedUrl || business.google.reviewUrl)) },
-    { label: "Chatbot o formulario de lead activo", done: Boolean(business.chatbot?.enabled || business.showLeadForm) }
+    { label: "Chatbot o formulario de lead activo", done: Boolean(business.chatbot?.enabled || business.showLeadForm) },
+    { label: "Privacidad enlazada para formularios", done: Boolean((!business.showLeadForm && !business.showBooking) || business.privacyUrl) }
   ];
 
   if (business.commerce?.enabled) {
@@ -2032,14 +2269,74 @@ function scalePixels(value, scale) {
   return Math.round(value * scale);
 }
 
+function resolveArtDirection(business) {
+  if (business.artDirection && business.artDirection !== "auto") {
+    return business.artDirection;
+  }
+
+  const fingerprint = [
+    business.name,
+    business.category,
+    business.location,
+    business.accent,
+    business.designPack
+  ].join("|");
+  return artDirectionOptions[stableHash(fingerprint) % artDirectionOptions.length];
+}
+
+function getCreativeStyleVars(business, artDirection) {
+  const seed = stableHash(`${business.name}|${business.category}|${business.location}|${artDirection}`);
+  const shift = 12 + (seed % 31);
+  const angle = (seed % 11) - 5;
+  const radius = [0, 6, 18, 999][seed % 4];
+  const columns = 2 + (seed % 2);
+
+  return [
+    `--creative-shift:${shift}%`,
+    `--creative-angle:${angle}deg`,
+    `--creative-radius:${radius}px`,
+    `--creative-columns:${columns}`,
+    `--creative-seed:${seed % 100}`
+  ];
+}
+
+function stableHash(value) {
+  return Array.from(String(value || "")).reduce((hash, character) => {
+    return ((hash << 5) - hash + character.charCodeAt(0)) >>> 0;
+  }, 2166136261);
+}
+
+function visualList(items, mode, visualCount, balancedCount) {
+  const limit = mode === "visual" ? visualCount : mode === "balanced" ? balancedCount : items.length;
+  return items.slice(0, Math.max(1, limit));
+}
+
+function compactText(value, mode, visualWords = 20, balancedWords = 38) {
+  const text = String(value || "").trim();
+  if (!text || mode === "detailed") {
+    return text;
+  }
+
+  const words = text.split(/\s+/);
+  const limit = mode === "visual" ? visualWords : balancedWords;
+  return words.length > limit ? `${words.slice(0, limit).join(" ")}...` : text;
+}
+
 function renderSite(business) {
   business = withBusinessDefaults(business);
+  const artDirection = resolveArtDirection(business);
+  const contentMode = business.contentMode || "visual";
   const palette = themePalette[business.theme] || themePalette.aurora;
+  const contrast = getContrastTokens(business.accent, palette);
   const gallery = business.gallery.length ? business.gallery : demoBusiness.gallery;
-  const services = business.services.length ? business.services : demoBusiness.services;
-  const features = business.features.length ? business.features : demoBusiness.features;
-  const testimonials = business.testimonials.length ? business.testimonials : demoBusiness.testimonials;
-  const faqs = business.faqs.length ? business.faqs : demoBusiness.faqs;
+  const allServices = business.services.length ? business.services : demoBusiness.services;
+  const allFeatures = business.features.length ? business.features : demoBusiness.features;
+  const allTestimonials = business.testimonials.length ? business.testimonials : demoBusiness.testimonials;
+  const allFaqs = business.faqs.length ? business.faqs : demoBusiness.faqs;
+  const services = visualList(allServices, contentMode, 4, 6);
+  const features = visualList(allFeatures, contentMode, 3, 4);
+  const testimonials = visualList(allTestimonials, contentMode, 2, 3);
+  const faqs = visualList(allFaqs, contentMode, 3, 5);
   const hours = business.hours.length ? business.hours : demoBusiness.hours;
   const links = business.links.length ? business.links : demoBusiness.links;
   const heroImage = business.heroImage || demoBusiness.heroImage;
@@ -2053,7 +2350,13 @@ function renderSite(business) {
   const trustHeading = textOr(business.trustHeading, demoBusiness.trustHeading);
   const trustIntro = textOr(business.trustIntro, demoBusiness.trustIntro);
   const contactHeading = textOr(business.contactHeading, demoBusiness.contactHeading);
-  const trustBadges = business.trustBadges.length ? business.trustBadges : buildTrustBadges(business, google);
+  const trustBadges = visualList(
+    business.trustBadges.length ? business.trustBadges : buildTrustBadges(business, google),
+    contentMode,
+    3,
+    5
+  );
+  const heroDescription = compactText(business.description, contentMode);
   const styleVars = [
     `--site-accent:${escapeAttr(business.accent)}`,
     `--site-accent-2:${palette.accent2}`,
@@ -2061,9 +2364,20 @@ function renderSite(business) {
     `--site-paper:${palette.paper}`,
     `--site-ink:${palette.ink}`,
     `--site-muted:${palette.muted}`,
+    `--site-solid:${contrast.solid}`,
+    `--site-on-solid:${contrast.onSolid}`,
+    `--site-on-accent:${contrast.onAccent}`,
+    `--site-accent-readable:${contrast.accentReadable}`,
+    `--site-accent-on-solid:${contrast.accentOnSolid}`,
+    `--solid:${contrast.solid}`,
+    `--on-solid:${contrast.onSolid}`,
+    `--on-accent:${contrast.onAccent}`,
+    `--accent-readable:${contrast.accentReadable}`,
+    `--accent-on-solid:${contrast.accentOnSolid}`,
     `--site-intensity:${business.intensity}`,
     `--site-glow-opacity:${Math.min(0.88, Math.max(0.24, business.intensity / 130)).toFixed(2)}`,
     `--site-spotlight-opacity:${Math.min(0.78, Math.max(0.18, business.intensity / 150)).toFixed(2)}`,
+    ...getCreativeStyleVars(business, artDirection),
     ...getPersonalizationStyleVars(business)
   ].join(";");
   const bookingButton = business.showBooking
@@ -2072,17 +2386,19 @@ function renderSite(business) {
   const resourcePills = buildResourcePills(business, services, links);
 
   return `
-    <article class="generated-site theme-${escapeAttr(business.theme)} motion-${escapeAttr(business.motion)} typography-${escapeAttr(business.typography)} density-${escapeAttr(business.contentDensity)} shape-${escapeAttr(business.visualShape)} image-ratio-${escapeAttr(business.imageRatio)}" style="${styleVars}" data-premium-effects="${business.premiumEffects}">
+    <article class="generated-site art-${escapeAttr(artDirection)} content-${escapeAttr(contentMode)} theme-${escapeAttr(business.theme)} motion-${escapeAttr(business.motion)} typography-${escapeAttr(business.typography)} density-${escapeAttr(business.contentDensity)} shape-${escapeAttr(business.visualShape)} image-ratio-${escapeAttr(business.imageRatio)}" style="${styleVars}" data-premium-effects="${business.premiumEffects}" data-art-direction="${escapeAttr(artDirection)}">
       ${business.premiumEffects ? '<div class="cursor-spotlight" aria-hidden="true"></div>' : ""}
       <div class="site-progress" aria-hidden="true"></div>
       ${business.showAnnouncement && business.announcement ? `<div class="site-announcement">${escapeHtml(business.announcement)}</div>` : ""}
-      <nav class="site-nav">
+      <a class="site-skip-link" href="#servicios">Saltar al contenido</a>
+      <nav class="site-nav" aria-label="Navegacion principal">
         <a class="site-logo" href="#inicio" aria-label="${escapeAttr(business.name)}">
           <span class="site-logo-mark">${escapeHtml(initials(business.name))}</span>
           <span>${escapeHtml(business.name)}</span>
         </a>
         <div class="site-nav-links">
           <a href="#servicios">Servicios</a>
+          ${business.showMenu && business.menuItems.length ? '<a href="#carta">Carta</a>' : ""}
           ${commerce.enabled ? '<a href="#tienda">Tienda</a>' : ""}
           ${business.showGallery ? '<a href="#galeria">Galeria</a>' : ""}
           ${business.showMap ? '<a href="#ubicacion">Mapa</a>' : ""}
@@ -2096,6 +2412,7 @@ function renderSite(business) {
         <picture class="hero-media parallax-media">
           <img src="${escapeAttr(heroImage)}" alt="${escapeAttr(business.name)}" loading="eager" fetchpriority="high" decoding="async" sizes="100vw">
         </picture>
+        ${renderHeroArt(business, gallery, artDirection)}
         <div class="hero-atmosphere" aria-hidden="true">
           <span class="mesh-field"></span>
           <span class="mesh-field"></span>
@@ -2104,7 +2421,7 @@ function renderSite(business) {
         <div class="hero-content">
           <span class="hero-kicker reveal">${escapeHtml(categoryLine || business.category)}</span>
           <h1 class="reveal kinetic-title" data-splitting>${escapeHtml(business.tagline || business.name)}</h1>
-          <p class="reveal">${escapeHtml(business.description)}</p>
+          <p class="reveal">${escapeHtml(heroDescription)}</p>
           <div class="hero-actions reveal">
             ${bookingButton}
             <a class="ghost-link magnetic" href="#contacto">Ver contacto</a>
@@ -2119,15 +2436,15 @@ function renderSite(business) {
       <section class="proof-strip" aria-label="Datos destacados">
         <div class="proof-item reveal">
           <span class="proof-number">${services.length}</span>
-          <span class="proof-label">servicios preparados para convertir visitas en clientes</span>
+          <span class="proof-label">servicios clave</span>
         </div>
         <div class="proof-item reveal">
           <span class="proof-number">${gallery.length}</span>
-          <span class="proof-label">imagenes para mostrar producto, local y experiencia</span>
+          <span class="proof-label">momentos visuales</span>
         </div>
         <div class="proof-item reveal">
           <span class="proof-number">24/7</span>
-          <span class="proof-label">presencia digital lista para reservas, mapas y redes</span>
+          <span class="proof-label">abierto digitalmente</span>
         </div>
         ${commerce.enabled ? `
         <div class="proof-item reveal">
@@ -2155,13 +2472,15 @@ function renderSite(business) {
         <div class="section-inner">
           <div class="section-heading">
             <h2 class="reveal kinetic-title" data-splitting>${escapeHtml(servicesHeading)}</h2>
-            <p class="reveal">${escapeHtml(servicesIntro)}</p>
+            <p class="reveal">${escapeHtml(compactText(servicesIntro, contentMode, 13, 28))}</p>
           </div>
           <div class="services-grid">
             ${services.map((service, index) => renderServiceCard(service, index)).join("")}
           </div>
         </div>
       </section>
+
+      ${business.showMenu && business.menuItems.length ? renderMenuSection(business) : ""}
 
       ${commerce.enabled ? renderStoreSection(business, commerce) : ""}
 
@@ -2171,7 +2490,7 @@ function renderSite(business) {
         </div>
       </section>` : ""}
 
-      <section class="site-section">
+      <section class="site-section feature-section">
         <div class="section-inner split-section">
           <div class="image-panel parallax-media reveal">
             <img src="${escapeAttr(gallery[0] || heroImage)}" alt="${escapeAttr(`${business.name} destacado`)}" loading="lazy" decoding="async" sizes="(max-width: 760px) calc(100vw - 28px), 44vw">
@@ -2189,11 +2508,11 @@ function renderSite(business) {
         </div>
       </section>
 
-      ${business.showTestimonials ? `<section class="site-section">
+      ${business.showTestimonials ? `<section class="site-section testimonial-section">
         <div class="section-inner">
           <div class="section-heading">
             <h2 class="reveal kinetic-title" data-splitting>${escapeHtml(trustHeading)}</h2>
-            <p class="reveal">${escapeHtml(trustIntro)}</p>
+            <p class="reveal">${escapeHtml(compactText(trustIntro, contentMode, 13, 28))}</p>
           </div>
           <div class="testimonial-grid">
             ${testimonials.map((testimonial) => renderTestimonial(testimonial)).join("")}
@@ -2201,7 +2520,7 @@ function renderSite(business) {
         </div>
       </section>` : ""}
 
-      ${business.showFaq ? `<section class="site-section">
+      ${business.showFaq ? `<section class="site-section faq-section">
         <div class="section-inner">
           <div class="section-heading">
             <h2 class="reveal kinetic-title" data-splitting>Preguntas que venden por ti.</h2>
@@ -2233,7 +2552,7 @@ function renderSite(business) {
             </div>
           </div>
           <div>
-            <p>${escapeHtml(business.description)}</p>
+            <p>${escapeHtml(compactText(business.description, contentMode, 16, 30))}</p>
             <div class="social-links">
               ${links.map((link) => `<a href="${escapeAttr(link.url)}" target="_blank" rel="noreferrer" data-track="outbound_${escapeAttr(slugify(link.label))}">${escapeHtml(link.label)}</a>`).join("")}
             </div>
@@ -2246,8 +2565,42 @@ function renderSite(business) {
         <span>Web generada con LocalLift Studio</span>
       </footer>
       ${business.showConversionDock ? renderConversionDock(business, google) : ""}
-      ${renderChatbotWidget(business, { services, features, hours, faqs, links, chatbot, google, commerce })}
+      ${renderChatbotWidget(business, { services: allServices, features: allFeatures, hours, faqs: allFaqs, links, chatbot, google, commerce })}
     </article>
+  `;
+}
+
+function renderHeroArt(business, gallery, artDirection) {
+  const images = [
+    gallery[0] || business.heroImage,
+    gallery[1] || business.heroImage,
+    gallery[2] || business.heroImage
+  ];
+
+  return `
+    <div class="hero-art atropos hero-art-${escapeAttr(artDirection)}" data-atropos-root aria-hidden="true">
+      <div class="atropos-scale">
+        <div class="atropos-rotate">
+          <div class="atropos-inner hero-art-inner">
+            <figure class="hero-art-card hero-art-card-primary" data-atropos-offset="-2">
+              <img src="${escapeAttr(images[0])}" alt="" loading="eager" decoding="async">
+            </figure>
+            <figure class="hero-art-card hero-art-card-secondary" data-atropos-offset="5">
+              <img src="${escapeAttr(images[1])}" alt="" loading="lazy" decoding="async">
+            </figure>
+            <figure class="hero-art-card hero-art-card-tertiary" data-atropos-offset="9">
+              <img src="${escapeAttr(images[2])}" alt="" loading="lazy" decoding="async">
+            </figure>
+            <span class="hero-art-monogram" data-atropos-offset="12">${escapeHtml(initials(business.name))}</span>
+            <span class="hero-art-label" data-atropos-offset="7">${escapeHtml(business.location || business.category)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="creative-signature" aria-hidden="true">
+      <span>${escapeHtml(artDirection)}</span>
+      <strong>${escapeHtml(business.name)}</strong>
+    </div>
   `;
 }
 
@@ -2336,6 +2689,42 @@ function renderStoreSection(business, commerce) {
           <span>Ver carrito</span>
           <strong data-mobile-cart-total>${escapeHtml(formatMoney(0, commerce.currency))}</strong>
         </a>
+      </div>
+    </section>
+  `;
+}
+
+function renderMenuSection(business) {
+  const groups = groupMenuItems(business.menuItems);
+
+  return `
+    <section class="site-section menu-section" id="carta">
+      <div class="section-inner">
+        <div class="section-heading menu-heading">
+          <div>
+            <span class="menu-eyebrow">Carta / ${escapeHtml(groups.length)} secciones</span>
+            <h2 class="reveal kinetic-title" data-splitting>${escapeHtml(business.menuTitle)}</h2>
+          </div>
+          <p class="reveal">${escapeHtml(business.menuIntro)}</p>
+        </div>
+        <div class="menu-category-grid">
+          ${groups.map((group) => `
+            <section class="menu-category reveal" aria-labelledby="menu-${escapeAttr(slugify(group.category))}">
+              <h3 id="menu-${escapeAttr(slugify(group.category))}">${escapeHtml(group.category)}</h3>
+              <div class="menu-items">
+                ${group.items.map((item) => `
+                  <article class="menu-item">
+                    <div>
+                      <h4>${escapeHtml(item.name)}</h4>
+                      ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
+                    </div>
+                    <strong>${escapeHtml(formatMoney(item.price, business.menuCurrency))}</strong>
+                  </article>
+                `).join("")}
+              </div>
+            </section>
+          `).join("")}
+        </div>
       </div>
     </section>
   `;
@@ -2439,6 +2828,7 @@ function renderLeadSection(business) {
             Que necesitas?
             <textarea name="leadMessage" rows="4" required></textarea>
           </label>
+          ${renderPrivacyConsent(business)}
           <button type="submit">${escapeHtml(business.leadFormCta)}</button>
           <span class="lead-status" data-lead-status aria-live="polite"></span>
         </form>
@@ -2483,11 +2873,25 @@ function renderBookingSection(business, services) {
             Nota
             <textarea name="notes" rows="3" placeholder="Personas, preferencia horaria o contexto"></textarea>
           </label>
+          ${renderPrivacyConsent(business)}
           <button type="submit">Solicitar reserva</button>
           <span class="lead-status" data-booking-status aria-live="polite"></span>
         </form>
       </div>
     </section>
+  `;
+}
+
+function renderPrivacyConsent(business) {
+  const privacyLabel = business.privacyUrl
+    ? `<a href="${escapeAttr(business.privacyUrl)}" target="_blank" rel="noreferrer">politica de privacidad</a>`
+    : "informacion de privacidad";
+
+  return `
+    <label class="form-consent">
+      <input name="privacyAccepted" type="checkbox" value="true" required>
+      <span>Acepto que ${escapeHtml(business.name)} use mis datos para responder a esta solicitud y he leido la ${privacyLabel}.</span>
+    </label>
   `;
 }
 
@@ -2715,7 +3119,12 @@ function runSplitting(container) {
 }
 
 function runVanillaTilt(container, business) {
-  if (typeof window.VanillaTilt !== "function" || !business.premiumEffects) {
+  if (
+    typeof window.VanillaTilt !== "function"
+    || !business.premiumEffects
+    || container.clientWidth < 680
+    || window.matchMedia("(pointer: coarse)").matches
+  ) {
     return;
   }
 
@@ -2733,6 +3142,33 @@ function runVanillaTilt(container, business) {
   }
 }
 
+function runAtropos(container, business) {
+  if (
+    typeof window.Atropos !== "function"
+    || !business.premiumEffects
+    || container.clientWidth < 680
+    || window.matchMedia("(pointer: coarse)").matches
+  ) {
+    return;
+  }
+
+  container.querySelectorAll("[data-atropos-root]").forEach((element) => {
+    try {
+      window.Atropos({
+        el: element,
+        activeOffset: 18,
+        rotateXMax: 5,
+        rotateYMax: 7,
+        duration: 700,
+        shadow: false,
+        highlight: false
+      });
+    } catch (error) {
+      // The collage remains fully visible when enhanced parallax is unavailable.
+    }
+  });
+}
+
 function updateScrollProgress(container, root) {
   if (!root) {
     return;
@@ -2741,6 +3177,35 @@ function updateScrollProgress(container, root) {
   const max = container.scrollHeight - container.clientHeight;
   const progress = max > 0 ? container.scrollTop / max : 0;
   root.style.setProperty("--scroll-progress", progress.toFixed(4));
+}
+
+function updatePreviewParallax(container, business) {
+  const images = container.querySelectorAll(".parallax-media img");
+  const disableParallax =
+    container.clientWidth < 680
+    || window.matchMedia("(pointer: coarse)").matches
+    || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (disableParallax) {
+    images.forEach((image) => image.style.setProperty("--parallax-y", "0px"));
+    return;
+  }
+
+  const viewport = container.getBoundingClientRect();
+  const viewportCenter = viewport.top + viewport.height / 2;
+  const range = Math.max(1, viewport.height / 2);
+  const maxShift = 22 * motionMultiplier(business.motion);
+
+  images.forEach((image) => {
+    const frame = image.closest(".parallax-media")?.getBoundingClientRect();
+    if (!frame || frame.bottom < viewport.top - viewport.height || frame.top > viewport.bottom + viewport.height) {
+      return;
+    }
+
+    const center = frame.top + frame.height / 2;
+    const normalized = Math.max(-1, Math.min(1, (center - viewportCenter) / range));
+    image.style.setProperty("--parallax-y", `${(-normalized * maxShift).toFixed(2)}px`);
+  });
 }
 
 function attachChatbot(container) {
@@ -2792,6 +3257,9 @@ function attachLeadForms(container, business) {
         name: textOr(data.get("leadName"), "Lead sin nombre"),
         contact: textOr(data.get("leadContact"), ""),
         message: textOr(data.get("leadMessage"), ""),
+        privacyAccepted: data.get("privacyAccepted") === "true",
+        privacyAcceptedAt: new Date().toISOString(),
+        privacyPolicyUrl: business.privacyUrl || "",
         source: "form",
         timestamp: new Date().toISOString()
       };
@@ -2835,6 +3303,9 @@ function attachPublicBookingForms(container, business) {
         contact: textOr(data.get("contact"), ""),
         startsAt: data.get("startsAt") ? new Date(String(data.get("startsAt"))).toISOString() : "",
         notes: textOr(data.get("notes"), ""),
+        privacyAccepted: data.get("privacyAccepted") === "true",
+        privacyAcceptedAt: new Date().toISOString(),
+        privacyPolicyUrl: business.privacyUrl || "",
         source: "public-widget",
         timestamp: new Date().toISOString()
       };
@@ -3447,6 +3918,7 @@ function attachGeneratedInteractions(container, business) {
 
   runSplitting(container);
   runVanillaTilt(container, business);
+  runAtropos(container, business);
   attachStore(container, business);
   attachChatbot(container);
   attachPublicBookingForms(container, business);
@@ -3481,13 +3953,18 @@ function attachGeneratedInteractions(container, business) {
   }
 
   container.onscroll = () => {
-    updateScrollProgress(container, root);
-    const amount = container.scrollTop * 0.08 * motionMultiplier(business.motion);
-    container.querySelectorAll(".parallax-media img").forEach((image) => {
-      image.style.transform = `translateY(${amount}px) scale(1.08)`;
+    if (parallaxFrame) {
+      return;
+    }
+
+    parallaxFrame = requestAnimationFrame(() => {
+      parallaxFrame = 0;
+      updateScrollProgress(container, root);
+      updatePreviewParallax(container, business);
     });
   };
   updateScrollProgress(container, root);
+  updatePreviewParallax(container, business);
 
   container.onpointermove = (event) => {
     if (!premiumEnabled) {
@@ -3804,7 +4281,9 @@ function buildBusinessApiPayload(business, record) {
         theme: business.theme,
         accent: business.accent,
         typography: business.typography,
-        designPack: business.designPack
+        designPack: business.designPack,
+        artDirection: business.artDirection,
+        contentMode: business.contentMode
       },
       integrations: {
         google: {
@@ -3928,7 +4407,8 @@ function buildExportRuntimeData(business) {
       slug: currentBusinessRecord?.slug || business.slug || slugify(business.name || ""),
       name: business.name,
       category: business.category,
-      location: business.location
+      location: business.location,
+      privacyUrl: business.privacyUrl || ""
     }
   };
 }
@@ -3988,16 +4468,21 @@ function buildLocalBusinessSchema(business) {
 }
 
 async function fetchVendorResources() {
-  const [openProps, lenis, splitting, vanillaTilt] = await Promise.all([
+  const [openProps, atroposCss, lenis, splitting, vanillaTilt, atropos] = await Promise.all([
     fetchText("assets/vendor/open-props-animations.min.css"),
+    fetchText("assets/vendor/atropos.min.css"),
     fetchText("assets/vendor/lenis.min.js"),
     fetchText("assets/vendor/splitting.min.js"),
-    fetchText("assets/vendor/vanilla-tilt.min.js")
+    fetchText("assets/vendor/vanilla-tilt.min.js"),
+    fetchText("assets/vendor/atropos.min.js")
   ]);
 
   return {
-    css: openProps ? `\n/* Open Props animations */\n${openProps}` : "",
-    js: [lenis, splitting, vanillaTilt]
+    css: [
+      openProps ? `\n/* Open Props animations */\n${openProps}` : "",
+      atroposCss ? `\n/* Atropos touch parallax */\n${atroposCss}` : ""
+    ].filter(Boolean).join("\n"),
+    js: [lenis, splitting, vanillaTilt, atropos]
       .filter(Boolean)
       .map((source, index) => `\n/* Vendor motion resource ${index + 1} */\n${source}`)
       .join("\n")
@@ -4019,10 +4504,14 @@ async function fetchText(url) {
 }
 
 async function fetchExportCss() {
-  const sourceCss = await fetchText("src/styles.css");
+  const [sourceCss, responsiveCss] = await Promise.all([
+    fetchText("src/styles.css"),
+    fetchText("src/generated-responsive.css")
+  ]);
   const css = sourceCss || getExportCss();
 
   return `${css}
+${responsiveCss}
 ${getStandaloneExportCss()}`.trim();
 }
 
@@ -4074,7 +4563,7 @@ function getExportCss() {
   `.trim();
 
   return `${fallbackCss}
-.generated-site{font-size:calc(16px * var(--site-font-scale,1))}.generated-site img{display:block;max-width:100%}.section-inner{width:min(var(--site-content-width,1160px),100%)}.hero-content{width:min(var(--site-hero-content-width,980px),100%)}.gallery-band{--gallery-gap:clamp(10px,1.4vw,16px);--gallery-card-width:clamp(240px,32vw,430px);--gallery-card-ratio:4/5;overflow:hidden}.gallery-track{grid-auto-columns:var(--gallery-card-width);gap:var(--gallery-gap);align-items:stretch;will-change:transform}.gallery-item{min-width:0;aspect-ratio:var(--gallery-card-ratio);margin:0}.gallery-item img,.image-panel img,.product-card img{display:block;object-position:center}.image-panel{min-height:clamp(360px,48vw,560px);aspect-ratio:4/5}.image-ratio-square{--gallery-card-ratio:1/1}.image-ratio-square .image-panel{aspect-ratio:1/1}.image-ratio-wide{--gallery-card-ratio:16/10;--gallery-card-width:clamp(280px,42vw,560px)}.image-ratio-wide .image-panel{aspect-ratio:16/10}@keyframes galleryMove{from{transform:translateX(0)}to{transform:translateX(calc(-50% - (var(--gallery-gap) / 2)))}}@media(max-width:760px){.gallery-track{display:flex;width:100%;max-width:100%;gap:12px;padding:0 clamp(14px,4vw,20px);overflow-x:auto;scroll-padding-inline:clamp(14px,4vw,20px);scroll-snap-type:x mandatory;scrollbar-width:none;animation:none;will-change:auto;-webkit-overflow-scrolling:touch}.gallery-track::-webkit-scrollbar{display:none}.gallery-item{flex:0 0 min(82vw,360px);aspect-ratio:4/3;scroll-snap-align:center}.gallery-item.is-gallery-clone{display:none}.image-panel{min-height:0;aspect-ratio:4/3}}
+.generated-site{font-size:calc(16px * var(--site-font-scale,1))}.generated-site img{display:block;max-width:100%}.section-inner{width:min(var(--site-content-width,1160px),100%)}.hero-content{width:min(var(--site-hero-content-width,980px),100%)}.form-consent{grid-template-columns:auto minmax(0,1fr)!important;align-items:start!important;font-size:.76rem!important;line-height:1.45}.form-consent input{width:18px!important;min-height:18px!important;margin-top:1px;accent-color:var(--accent)}.form-consent a{text-decoration:underline}.gallery-band{--gallery-gap:clamp(10px,1.4vw,16px);--gallery-card-width:clamp(240px,32vw,430px);--gallery-card-ratio:4/5;overflow:hidden}.gallery-track{grid-auto-columns:var(--gallery-card-width);gap:var(--gallery-gap);align-items:stretch;will-change:transform}.gallery-item{min-width:0;aspect-ratio:var(--gallery-card-ratio);margin:0}.gallery-item img,.image-panel img,.product-card img{display:block;object-position:center}.image-panel{min-height:clamp(360px,48vw,560px);aspect-ratio:4/5}.image-ratio-square{--gallery-card-ratio:1/1}.image-ratio-square .image-panel{aspect-ratio:1/1}.image-ratio-wide{--gallery-card-ratio:16/10;--gallery-card-width:clamp(280px,42vw,560px)}.image-ratio-wide .image-panel{aspect-ratio:16/10}@keyframes galleryMove{from{transform:translateX(0)}to{transform:translateX(calc(-50% - (var(--gallery-gap) / 2)))}}@media(max-width:760px){.gallery-track{display:flex;width:100%;max-width:100%;gap:12px;padding:0 clamp(14px,4vw,20px);overflow-x:auto;scroll-padding-inline:clamp(14px,4vw,20px);scroll-snap-type:x mandatory;scrollbar-width:none;animation:none;will-change:auto;-webkit-overflow-scrolling:touch}.gallery-track::-webkit-scrollbar{display:none}.gallery-item{flex:0 0 min(82vw,360px);aspect-ratio:4/3;scroll-snap-align:center}.gallery-item.is-gallery-clone{display:none}.image-panel{min-height:0;aspect-ratio:4/3}}
 `.trim();
 }
 
@@ -4101,10 +4590,11 @@ function getExportScript() {
   const exportData = readExportData();
   const business = exportData.business || {};
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const compactViewport = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches;
   if (typeof window.Splitting === "function") {
     window.Splitting();
   }
-  if (typeof window.VanillaTilt === "function" && site?.dataset.premiumEffects === "true") {
+  if (typeof window.VanillaTilt === "function" && site?.dataset.premiumEffects === "true" && !compactViewport) {
     window.VanillaTilt.init(document.querySelectorAll(".tilt-card"), {
       max: 9,
       speed: 650,
@@ -4114,7 +4604,20 @@ function getExportScript() {
       gyroscope: false
     });
   }
-  if (typeof window.Lenis === "function" && !prefersReducedMotion) {
+  if (typeof window.Atropos === "function" && site?.dataset.premiumEffects === "true" && !compactViewport) {
+    document.querySelectorAll("[data-atropos-root]").forEach((element) => {
+      window.Atropos({
+        el: element,
+        activeOffset: 18,
+        rotateXMax: 5,
+        rotateYMax: 7,
+        duration: 700,
+        shadow: false,
+        highlight: false
+      });
+    });
+  }
+  if (typeof window.Lenis === "function" && !prefersReducedMotion && !compactViewport) {
     const lenis = new window.Lenis({ lerp: 0.085, smoothWheel: true, anchors: true });
     const raf = (time) => {
       lenis.raf(time);
@@ -4144,15 +4647,34 @@ function getExportScript() {
     const progress = max > 0 ? window.scrollY / max : 0;
     site?.style.setProperty("--scroll-progress", progress.toFixed(4));
   };
-  updateProgress();
-
-  window.addEventListener("scroll", () => {
-    updateProgress();
-    const amount = window.scrollY * 0.08;
-    document.querySelectorAll(".parallax-media img").forEach((image) => {
-      image.style.transform = "translateY(" + amount + "px) scale(1.08)";
+  const updateParallax = () => {
+    const images = document.querySelectorAll(".parallax-media img");
+    if (compactViewport || prefersReducedMotion) {
+      images.forEach((image) => image.style.setProperty("--parallax-y", "0px"));
+      return;
+    }
+    const viewportCenter = window.innerHeight / 2;
+    const range = Math.max(1, window.innerHeight / 2);
+    images.forEach((image) => {
+      const frame = image.closest(".parallax-media")?.getBoundingClientRect();
+      if (!frame || frame.bottom < -window.innerHeight || frame.top > window.innerHeight * 2) return;
+      const center = frame.top + frame.height / 2;
+      const normalized = Math.max(-1, Math.min(1, (center - viewportCenter) / range));
+      image.style.setProperty("--parallax-y", (-normalized * 22).toFixed(2) + "px");
     });
-  }, { passive: true });
+  };
+  let scrollFrame = 0;
+  const updateScrollEffects = () => {
+    if (scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      updateProgress();
+      updateParallax();
+    });
+  };
+  updateScrollEffects();
+  window.addEventListener("scroll", updateScrollEffects, { passive: true });
+  window.addEventListener("resize", updateScrollEffects, { passive: true });
 
   window.addEventListener("pointermove", (event) => {
     if (!premiumEnabled) return;
@@ -4188,6 +4710,9 @@ function getExportScript() {
         name: String(data.get("leadName") || "Lead sin nombre").trim(),
         contact: String(data.get("leadContact") || "").trim(),
         message: String(data.get("leadMessage") || "").trim(),
+        privacyAccepted: data.get("privacyAccepted") === "true",
+        privacyAcceptedAt: new Date().toISOString(),
+        privacyPolicyUrl: business.privacyUrl || "",
         source: "form",
         timestamp: new Date().toISOString()
       };
@@ -4217,6 +4742,9 @@ function getExportScript() {
         contact: String(data.get("contact") || "").trim(),
         startsAt: data.get("startsAt") ? new Date(String(data.get("startsAt"))).toISOString() : "",
         notes: String(data.get("notes") || "").trim(),
+        privacyAccepted: data.get("privacyAccepted") === "true",
+        privacyAcceptedAt: new Date().toISOString(),
+        privacyPolicyUrl: business.privacyUrl || "",
         source: "public-widget",
         timestamp: new Date().toISOString()
       };
@@ -4917,6 +5445,12 @@ function withBusinessDefaults(business = {}) {
     faqs: Array.isArray(base.faqs) ? base.faqs : [],
     links: Array.isArray(base.links) ? base.links : [],
     gallery: Array.isArray(base.gallery) ? base.gallery : [],
+    menuTitle: textOr(base.menuTitle, demoBusiness.menuTitle),
+    menuIntro: textOr(base.menuIntro, demoBusiness.menuIntro),
+    menuCurrency: normalizeCurrency(base.menuCurrency),
+    menuItems: hasOwn("menuItems")
+      ? normalizeMenuItems(business.menuItems)
+      : (isFoodCategory(base.category) ? normalizeMenuItems(demoBusiness.menuItems) : []),
     conversionGoal: hasOwn("conversionGoal")
       ? textOr(business.conversionGoal, `Convertir visitas en clientes para ${base.category || "negocio local"}`)
       : `Convertir visitas en clientes para ${base.category || "negocio local"}`,
@@ -4935,7 +5469,14 @@ function withBusinessDefaults(business = {}) {
       "Completa el formulario y el negocio tendra los datos necesarios para responder con contexto."
     ),
     leadFormCta: textOr(base.leadFormCta, "Enviar solicitud"),
+    privacyUrl: normalizeOptionalUrl(base.privacyUrl),
     designPack: normalizeChoice(base.designPack, ["custom", ...Object.keys(designPacks)], "custom"),
+    artDirection: normalizeChoice(
+      base.artDirection,
+      ["auto", "cinematic", "editorial", "poster", "mosaic", "atelier", "kinetic"],
+      "auto"
+    ),
+    contentMode: normalizeChoice(base.contentMode, ["visual", "balanced", "detailed"], "visual"),
     typography: normalizeChoice(base.typography, ["modern", "editorial", "compact"], "modern"),
     contentDensity: normalizeChoice(base.contentDensity, ["compact", "balanced", "spacious"], "balanced"),
     visualShape: normalizeChoice(base.visualShape, ["sharp", "clean", "rounded"], "clean"),
@@ -4951,7 +5492,8 @@ function withBusinessDefaults(business = {}) {
     showTestimonials: base.showTestimonials ?? true,
     showFaq: base.showFaq ?? true,
     showMap: base.showMap ?? true,
-    showConversionDock: base.showConversionDock ?? true
+    showConversionDock: base.showConversionDock ?? true,
+    showMenu: hasOwn("showMenu") ? Boolean(business.showMenu) : isFoodCategory(base.category)
   };
 }
 
@@ -4965,6 +5507,72 @@ function parsePairs(value, fallbackA, fallbackB) {
     const [first, ...rest] = line.split("|");
     return [textOr(first, fallbackA), textOr(rest.join("|"), fallbackB)];
   });
+}
+
+function serializeMenuItems(items = []) {
+  return normalizeMenuItems(items)
+    .map((item) => [
+      item.category,
+      item.name,
+      formatPlainPrice(item.price),
+      item.description
+    ].join(" | "))
+    .join("\n");
+}
+
+function parseMenuItems(value) {
+  return parseLines(value)
+    .map((line) => {
+      const [category, name, price, ...description] = line.split("|").map((part) => part.trim());
+      return normalizeMenuItem({ category, name, price, description: description.join(" | ") });
+    })
+    .filter((item) => item.name && item.price > 0);
+}
+
+function normalizeMenuItems(items = []) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map((item) => normalizeMenuItem(item))
+    .filter((item) => item.name && item.price > 0);
+}
+
+function normalizeMenuItem(item = {}) {
+  return {
+    category: textOr(item.category, "Carta"),
+    name: textOr(item.name, ""),
+    price: parsePrice(item.price),
+    description: textOr(item.description, "")
+  };
+}
+
+function groupMenuItems(items = []) {
+  const groups = new Map();
+
+  normalizeMenuItems(items).forEach((item) => {
+    if (!groups.has(item.category)) {
+      groups.set(item.category, []);
+    }
+    groups.get(item.category).push(item);
+  });
+
+  return Array.from(groups, ([category, groupItems]) => ({ category, items: groupItems }));
+}
+
+function isFoodCategory(category) {
+  return matchesAny(normalizeText(category), [
+    "restaurante",
+    "bar",
+    "cafeteria",
+    "cafe",
+    "kebab",
+    "comida",
+    "cocina",
+    "pizzeria",
+    "panaderia"
+  ]);
 }
 
 function serializeProducts(products = []) {
@@ -5186,7 +5794,7 @@ function normalizeUrl(value) {
     return "#";
   }
 
-  if (/^(https?:|mailto:|tel:|sms:|whatsapp:)/i.test(url) || url.startsWith("#")) {
+  if (/^(https?:|mailto:|tel:|sms:|whatsapp:)/i.test(url) || url.startsWith("#") || /^(\/|\.\/|\.\.\/)/.test(url) || /^[a-z0-9_-]+(?:\/[a-z0-9_.-]+)+$/i.test(url)) {
     return url;
   }
 

@@ -1,5 +1,9 @@
 # Plan de accion comercial - LocalLift Studio
 
+> Estado: documento de referencia. No crea tareas activas. Consulta
+> `docs/AHORA.md` y el plan vinculante
+> `docs/activo/PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md`.
+
 Objetivo: convertir LocalLift Studio en un producto vendible para negocios locales que quieren mas llamadas, reservas, confianza y presencia digital sin tener que aprender herramientas.
 
 ## Lectura del mercado
