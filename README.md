@@ -11,13 +11,16 @@ Base web para digitalizar negocios locales: el cliente entrega datos, fotos y en
 3. Cambia fotos, servicios, testimonios, enlaces y estilo.
 4. Activa `Editar preview` y cambia textos, imagenes, encuadres, botones y enlaces directamente sobre la web.
 5. Mueve u oculta secciones desde sus controles sobre la preview.
-6. Elige bloques o aplica y guarda composiciones reutilizables sin perder contenidos.
-7. Reutiliza imagenes subidas o URLs desde `Fotos > Biblioteca de medios`.
-8. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
-9. Revisa el score de entrega; los errores criticos bloquean la exportacion.
-10. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
-11. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
-12. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
+6. Anade, duplica, reordena o borra servicios, diferenciales, resenas, FAQ y fotos desde el lienzo.
+7. Elige bloques o aplica y guarda composiciones reutilizables sin perder contenidos.
+8. Reutiliza imagenes subidas o URLs desde `Fotos > Biblioteca de medios`.
+9. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
+10. Pulsa `Entrega Pro` para generar un preflight con bloqueos, avisos y siguientes pasos.
+11. Revisa el score de entrega; los errores criticos bloquean la exportacion.
+12. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
+13. Usa `Exportar paquete` para descargar un ZIP con HTML, `business.json`, ficha de entrega y cambios.
+14. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
+15. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
 
 Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
 `index.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
@@ -43,7 +46,12 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 - Editor de datos del negocio.
 - Panel `Demo en vivo` para cambios delante del cliente: variantes, comando rapido, orden de secciones y deshacer/rehacer.
 - Edicion directa de textos, imagenes, encuadres, botones y enlaces desde la preview.
+- Estilo de botones principales desde la preview: color de fondo, color de texto y neon activable con intensidad regulable.
+- Estilos por texto desde la preview: color, opacidad, tamano, peso, cursiva y espaciado.
 - Controles contextuales para mover u ocultar secciones sobre el lienzo.
+- Duplicado y eliminacion de copias de secciones completas desde la preview.
+- Controles por elemento para anadir, duplicar, subir, bajar y borrar contenido repetido desde la preview.
+- Accion rapida `Escaparate visual` para reducir letras, priorizar imagenes y dejar CTA/prueba social al frente.
 - Biblioteca de variantes para portada, servicios, galeria, resenas y contacto.
 - Composiciones reutilizables que conservan el contenido del negocio.
 - Gestor local de medios con compresion, dimensiones, texto alternativo y reutilizacion.
@@ -53,11 +61,13 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 - Import/export de datos por cliente en JSON.
 - Modulo de tienda online: catalogo, productos con imagen/precio, carrito, checkout Stripe y panel admin.
 - Checklist de calidad con score de entrega.
+- Modo `Entrega Pro` con preflight operativo, bloqueos, avisos, checklist y siguiente paso recomendado.
+- Paquete de entrega en ZIP con web standalone, datos del negocio, ficha operativa y registro de cambios.
 - Validacion de entrega que marca campos y bloquea exportaciones invalidas.
 - Cinco direcciones visuales: Aurora, Carbon, Editorial, Neon y Luxe.
 - Seis direcciones artisticas estructurales: Cine, Revista, Cartel, Mosaico, Atelier y Kinetica.
 - Modo `Auto unica` con huella visual estable por negocio para evitar webs repetidas.
-- Modos de contenido Muy visual, Equilibrado y Completo para controlar la carga de texto.
+- Modos de contenido Muy visual, Equilibrado y Completo para controlar la carga de texto; `Muy visual` limita piezas visibles y comprime copys largos.
 - Personalizacion de CTA, titulares de seccion, tipografia, densidad, forma visual, color y animacion.
 - Hero con imagen grande, malla luminica animada, scroll reveal, galeria en movimiento, parallax y tilt con raton.
 - Collages con profundidad y parallax tactil mediante Atropos.

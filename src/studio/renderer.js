@@ -24,6 +24,7 @@
       formatMoney,
       splitTitleBody,
       textOr,
+      sectionBaseKey = (value) => String(value || "").split("__copy")[0],
       phoneHref,
       initials,
       slugify,
@@ -117,21 +118,113 @@
       return words.length > limit ? `${words.slice(0, limit).join(" ")}...` : text;
     }
 
+    function fieldTextAttrs(business, field, scope = "") {
+      const key = scope ? `field:${field}:${scope}` : `field:${field}`;
+      return textAttrs(business, key, `data-edit-field="${escapeAttr(field)}"`);
+    }
+
+    function listTextAttrs(business, list, index, part) {
+      const key = `list:${list}:${index}:${part}`;
+      return textAttrs(
+        business,
+        key,
+        `data-edit-list="${escapeAttr(list)}" data-edit-index="${index}" data-edit-part="${escapeAttr(part)}"`
+      );
+    }
+
+    function textAttrs(business, key, editAttrs) {
+      return `${editAttrs} data-text-style-key="${escapeAttr(key)}"${renderTextStyleAttr(business, key)}`;
+    }
+
+    function renderTextStyleAttr(business, key) {
+      const style = normalizeTextStyle(business?.textStyles?.[key]);
+      const declarations = [];
+      if (style.color) declarations.push(`color:${style.color}`);
+      if (style.opacity) declarations.push(`opacity:${style.opacity}`);
+      if (style.size) declarations.push(`font-size:calc(var(--text-base-size, 1em) * ${style.size})`);
+      if (style.weight) declarations.push(`font-weight:${style.weight}`);
+      if (style.italic) declarations.push("font-style:italic");
+      if (style.letterSpacing) declarations.push(`letter-spacing:${style.letterSpacing}em`);
+      return declarations.length ? ` style="${escapeAttr(declarations.join(";"))}"` : "";
+    }
+
+    function normalizeTextStyle(style = {}) {
+      const normalized = {};
+      const color = normalizeColor(style.color);
+      const opacity = clamp(Number(style.opacity || 1), 0.35, 1);
+      const size = clamp(Number(style.size || 1), 0.8, 1.45);
+      const letterSpacing = clamp(Number(style.letterSpacing || 0), -0.02, 0.08);
+      const weight = ["400", "700", "900"].includes(String(style.weight)) ? String(style.weight) : "";
+
+      if (color) normalized.color = color;
+      if (Math.abs(opacity - 1) > 0.001) normalized.opacity = Number(opacity.toFixed(2));
+      if (Math.abs(size - 1) > 0.001) normalized.size = Number(size.toFixed(2));
+      if (weight) normalized.weight = weight;
+      if (style.italic === true) normalized.italic = true;
+      if (Math.abs(letterSpacing) > 0.001) normalized.letterSpacing = Number(letterSpacing.toFixed(3));
+      return normalized;
+    }
+
+    function normalizeColor(value) {
+      const color = String(value || "").trim();
+      return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : "";
+    }
+
+    function resolvePrimaryButtonStyle(business, contrast) {
+      const source = business?.buttonStyles?.primary;
+      if (!source || typeof source !== "object") {
+        return { custom: false, neon: business.theme === "neon", vars: [] };
+      }
+      const customBackground = normalizeColor(source.background);
+      const customTextColor = normalizeColor(source.textColor);
+      const hasCustomValue = Boolean(customBackground || customTextColor)
+        || typeof source.neon === "boolean"
+        || Number.isFinite(Number(source.glowStrength));
+      if (!hasCustomValue) {
+        return { custom: false, neon: business.theme === "neon", vars: [] };
+      }
+      const background = customBackground
+        || (business.theme === "neon" ? normalizeColor(business.accent) : normalizeColor(contrast.solid))
+        || "#111111";
+      const textColor = customTextColor
+        || (business.theme === "neon" ? normalizeColor(contrast.onAccent) : normalizeColor(contrast.onSolid))
+        || "#ffffff";
+      const neon = typeof source.neon === "boolean" ? source.neon : business.theme === "neon";
+      const glowStrength = clamp(Number(source.glowStrength ?? 60), 0, 100);
+      const glowSize = Math.round(8 + glowStrength * 0.34);
+      const glowFade = Math.round(86 - glowStrength * 0.66);
+      return {
+        custom: true,
+        neon,
+        vars: [
+          `--site-primary-button-bg:${background}`,
+          `--site-primary-button-text:${textColor}`,
+          `--site-primary-button-glow-size:${glowSize}px`,
+          `--site-primary-button-glow-fade:${glowFade}%`
+        ]
+      };
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
+    }
+
     function renderSite(business) {
       business = withBusinessDefaults(business);
       const artDirection = resolveArtDirection(business);
       const contentMode = business.contentMode || "visual";
       const palette = themePalette[business.theme] || themePalette.aurora;
       const contrast = getContrastTokens(business.accent, palette);
+      const primaryButtonStyle = resolvePrimaryButtonStyle(business, contrast);
       const gallery = business.gallery.length ? business.gallery : demoBusiness.gallery;
       const allServices = business.services.length ? business.services : demoBusiness.services;
       const allFeatures = business.features.length ? business.features : demoBusiness.features;
       const allTestimonials = business.testimonials.length ? business.testimonials : demoBusiness.testimonials;
       const allFaqs = business.faqs.length ? business.faqs : demoBusiness.faqs;
-      const services = visualList(allServices, contentMode, 4, 6);
-      const features = visualList(allFeatures, contentMode, 3, 4);
+      const services = visualList(allServices, contentMode, 3, 5);
+      const features = visualList(allFeatures, contentMode, 2, 4);
       const testimonials = visualList(allTestimonials, contentMode, 2, 3);
-      const faqs = visualList(allFaqs, contentMode, 3, 5);
+      const faqs = visualList(allFaqs, contentMode, 2, 4);
       const hours = business.hours.length ? business.hours : demoBusiness.hours;
       const links = business.links.length ? business.links : demoBusiness.links;
       const heroImage = business.heroImage || demoBusiness.heroImage;
@@ -153,7 +246,7 @@
         3,
         5
       );
-      const heroDescription = compactText(business.description, contentMode);
+      const heroDescription = compactText(business.description, contentMode, 12, 30);
       const styleVars = [
         `--site-accent:${escapeAttr(business.accent)}`,
         `--site-accent-2:${palette.accent2}`,
@@ -174,11 +267,12 @@
         `--site-intensity:${business.intensity}`,
         `--site-glow-opacity:${Math.min(0.88, Math.max(0.24, business.intensity / 130)).toFixed(2)}`,
         `--site-spotlight-opacity:${Math.min(0.78, Math.max(0.18, business.intensity / 150)).toFixed(2)}`,
+        ...primaryButtonStyle.vars,
         ...getCreativeStyleVars(business, artDirection),
         ...getPersonalizationStyleVars(business)
       ].join(";");
       const bookingButton = business.showBooking
-        ? `<a class="site-cta magnetic" href="${escapeAttr(business.bookingUrl)}" data-track="booking_click" data-edit-link-field="booking">${escapeHtml(bookingLabel)}</a>`
+        ? `<a class="site-cta magnetic primary-site-action" href="${escapeAttr(business.bookingUrl)}" data-track="booking_click" data-edit-link-field="booking" data-edit-button-style="primary">${escapeHtml(bookingLabel)}</a>`
         : "";
       const resourcePills = buildResourcePills(business, services, links);
       const sectionBlocks = {
@@ -186,11 +280,11 @@
           <section class="site-section" id="servicios" data-section-key="services">
             <div class="section-inner">
               <div class="section-heading">
-                <h2 class="reveal kinetic-title" data-splitting data-edit-field="servicesHeading">${escapeHtml(servicesHeading)}</h2>
-                <p class="reveal" data-edit-field="servicesIntro">${escapeHtml(compactText(servicesIntro, contentMode, 13, 28))}</p>
+                <h2 class="reveal kinetic-title" data-splitting ${fieldTextAttrs(business, "servicesHeading")}>${escapeHtml(servicesHeading)}</h2>
+                <p class="reveal" ${fieldTextAttrs(business, "servicesIntro")}>${escapeHtml(compactText(servicesIntro, contentMode, 9, 24))}</p>
               </div>
               <div class="services-grid">
-                ${services.map((service, index) => renderServiceCard(service, index)).join("")}
+                ${services.map((service, index) => renderServiceCard(business, service, index)).join("")}
               </div>
             </div>
           </section>`,
@@ -214,7 +308,7 @@
                 })}
               </div>
               <div class="feature-stack">
-                ${features.map((feature, index) => renderFeatureCard(feature, index)).join("")}
+                ${features.map((feature, index) => renderFeatureCard(business, feature, index)).join("")}
                 <div class="feature-card reveal tilt-card">
                   <span class="card-index">H</span>
                   <h3>Horario y ritmo real</h3>
@@ -229,11 +323,11 @@
           <section class="site-section testimonial-section" data-section-key="testimonials">
             <div class="section-inner">
               <div class="section-heading">
-                <h2 class="reveal kinetic-title" data-splitting data-edit-field="trustHeading">${escapeHtml(trustHeading)}</h2>
-                <p class="reveal" data-edit-field="trustIntro">${escapeHtml(compactText(trustIntro, contentMode, 13, 28))}</p>
+                <h2 class="reveal kinetic-title" data-splitting ${fieldTextAttrs(business, "trustHeading")}>${escapeHtml(trustHeading)}</h2>
+                <p class="reveal" ${fieldTextAttrs(business, "trustIntro")}>${escapeHtml(compactText(trustIntro, contentMode, 9, 24))}</p>
               </div>
               <div class="testimonial-grid">
-                ${testimonials.map((testimonial, index) => renderTestimonial(testimonial, index)).join("")}
+                ${testimonials.map((testimonial, index) => renderTestimonial(business, testimonial, index)).join("")}
               </div>
             </div>
           </section>` : "",
@@ -245,7 +339,7 @@
                 <p class="reveal">Cada respuesta evita mensajes repetidos y acerca al cliente al siguiente paso.</p>
               </div>
               <div class="faq-list">
-                ${faqs.map((faq, index) => renderFaq(faq, index)).join("")}
+                ${faqs.map((faq, index) => renderFaq(business, faq, index)).join("")}
               </div>
             </div>
           </section>` : "",
@@ -254,20 +348,40 @@
         lead: business.showLeadForm ? renderLeadSection(business) : ""
       };
       const requestedOrder = Array.isArray(business.sectionOrder) ? business.sectionOrder : [];
+      const seenSectionTokens = new Set();
+      const seenSectionBases = new Set();
       const sectionOrder = [...requestedOrder, ...Object.keys(sectionBlocks)]
-        .filter((key, index, items) => sectionBlocks[key] !== undefined && items.indexOf(key) === index);
-      const orderedSections = sectionOrder.map((key) => sectionBlocks[key]).join("");
+        .map((key) => String(key || "").trim())
+        .filter((key) => {
+          const base = sectionBaseKey(key);
+          if (!key || !sectionBlocks[base] || seenSectionTokens.has(key)) {
+            return false;
+          }
+          seenSectionTokens.add(key);
+          seenSectionBases.add(base);
+          return true;
+        })
+        .filter((key, index, items) => {
+          const base = sectionBaseKey(key);
+          return key.includes("__copy") || items.findIndex((candidate) => sectionBaseKey(candidate) === base) === index;
+        });
+      Object.keys(sectionBlocks).forEach((key) => {
+        if (!seenSectionBases.has(key)) {
+          sectionOrder.push(key);
+        }
+      });
+      const orderedSections = sectionOrder.map((key) => decorateSectionInstance(sectionBlocks[sectionBaseKey(key)], key)).join("");
 
       return `
-        <article class="generated-site art-${escapeAttr(artDirection)} content-${escapeAttr(contentMode)} theme-${escapeAttr(business.theme)} motion-${escapeAttr(business.motion)} typography-${escapeAttr(business.typography)} density-${escapeAttr(business.contentDensity)} shape-${escapeAttr(business.visualShape)} image-ratio-${escapeAttr(business.imageRatio)} block-hero-${escapeAttr(blockVariants.hero || "cinematic")} block-services-${escapeAttr(blockVariants.services || "cards")} block-gallery-${escapeAttr(blockVariants.gallery || "marquee")} block-testimonials-${escapeAttr(blockVariants.testimonials || "cards")} block-contact-${escapeAttr(blockVariants.contact || "split")}" style="${styleVars}" data-premium-effects="${business.premiumEffects}" data-art-direction="${escapeAttr(artDirection)}">
+        <article class="generated-site art-${escapeAttr(artDirection)} content-${escapeAttr(contentMode)} theme-${escapeAttr(business.theme)} motion-${escapeAttr(business.motion)} typography-${escapeAttr(business.typography)} density-${escapeAttr(business.contentDensity)} shape-${escapeAttr(business.visualShape)} image-ratio-${escapeAttr(business.imageRatio)} block-hero-${escapeAttr(blockVariants.hero || "cinematic")} block-services-${escapeAttr(blockVariants.services || "cards")} block-gallery-${escapeAttr(blockVariants.gallery || "marquee")} block-testimonials-${escapeAttr(blockVariants.testimonials || "cards")} block-contact-${escapeAttr(blockVariants.contact || "split")}" style="${styleVars}" data-premium-effects="${business.premiumEffects}" data-art-direction="${escapeAttr(artDirection)}" data-primary-button-custom="${primaryButtonStyle.custom}" data-primary-button-neon="${primaryButtonStyle.neon ? "on" : "off"}">
           ${business.premiumEffects ? '<div class="cursor-spotlight" aria-hidden="true"></div>' : ""}
           <div class="site-progress" aria-hidden="true"></div>
-          ${business.showAnnouncement && business.announcement ? `<div class="site-announcement" data-edit-field="announcement">${escapeHtml(business.announcement)}</div>` : ""}
+          ${business.showAnnouncement && business.announcement ? `<div class="site-announcement" ${fieldTextAttrs(business, "announcement")}>${escapeHtml(business.announcement)}</div>` : ""}
           <a class="site-skip-link" href="#servicios">Saltar al contenido</a>
           <nav class="site-nav" aria-label="Navegacion principal">
             <a class="site-logo" href="#inicio" aria-label="${escapeAttr(business.name)}">
               <span class="site-logo-mark">${escapeHtml(initials(business.name))}</span>
-              <span data-edit-field="name">${escapeHtml(business.name)}</span>
+              <span ${fieldTextAttrs(business, "name")}>${escapeHtml(business.name)}</span>
             </a>
             <div class="site-nav-links">
               <a href="#servicios">Servicios</a>
@@ -293,14 +407,14 @@
             </div>
             <div class="hero-content">
               <span class="hero-kicker reveal">${escapeHtml(categoryLine || business.category)}</span>
-              <h1 class="reveal kinetic-title" data-splitting data-edit-field="tagline">${escapeHtml(business.tagline || business.name)}</h1>
-              <p class="reveal" data-edit-field="description">${escapeHtml(heroDescription)}</p>
+              <h1 class="reveal kinetic-title" data-splitting ${fieldTextAttrs(business, "tagline")}>${escapeHtml(business.tagline || business.name)}</h1>
+              <p class="reveal" ${fieldTextAttrs(business, "description", "hero")}>${escapeHtml(heroDescription)}</p>
               <div class="hero-actions reveal">
                 ${bookingButton}
                 <a class="ghost-link magnetic" href="#contacto">Ver contacto</a>
               </div>
               <div class="hero-conversion reveal" aria-label="Resumen de conversion">
-                <span data-edit-field="conversionGoal">${escapeHtml(business.conversionGoal)}</span>
+                <span ${fieldTextAttrs(business, "conversionGoal")}>${escapeHtml(business.conversionGoal)}</span>
                 ${google.enabled && google.rating ? `<strong>${escapeHtml(Number(google.rating).toFixed(1))}/5 Google</strong>` : `<strong>${escapeHtml(services.length)} servicios</strong>`}
               </div>
             </div>
@@ -322,12 +436,12 @@
             ${commerce.enabled ? `
             <div class="proof-item reveal">
               <span class="proof-number">${escapeHtml(commerce.products.length)}</span>
-              <span class="proof-label">productos listos para carrito, pago seguro y gestion de pedidos</span>
+              <span class="proof-label">${contentMode === "visual" ? "productos online" : "productos listos para carrito, pago seguro y gestion de pedidos"}</span>
             </div>` : ""}
             ${google.enabled && google.rating ? `
             <div class="proof-item reveal">
               <span class="proof-number">${escapeHtml(google.rating.toFixed ? google.rating.toFixed(1) : google.rating)}</span>
-              <span class="proof-label">rating Google con ${escapeHtml(google.reviewCount || 0)} resenas conectables</span>
+              <span class="proof-label">${contentMode === "visual" ? `${escapeHtml(google.reviewCount || 0)} resenas` : `rating Google con ${escapeHtml(google.reviewCount || 0)} resenas conectables`}</span>
             </div>` : ""}
           </section>
 
@@ -346,8 +460,8 @@
           <section class="site-section contact-section" id="contacto">
             <div class="section-inner contact-panel reveal">
               <div>
-                <h2 data-edit-field="contactHeading">${escapeHtml(contactHeading)}</h2>
-                <p data-edit-field="address">${escapeHtml(business.address || business.location || "Direccion pendiente de confirmar.")}</p>
+                <h2 ${fieldTextAttrs(business, "contactHeading")}>${escapeHtml(contactHeading)}</h2>
+                <p ${fieldTextAttrs(business, "address")}>${escapeHtml(business.address || business.location || "Direccion pendiente de confirmar.")}</p>
                 <div class="contact-links">
                   ${business.phone ? `<a href="tel:${escapeAttr(phoneHref(business.phone))}" data-track="phone_click" data-edit-link-field="phone">Llamar</a>` : ""}
                   ${business.email ? `<a href="mailto:${escapeAttr(business.email)}" data-track="email_click" data-edit-link-field="email">Email</a>` : ""}
@@ -357,7 +471,7 @@
                 </div>
               </div>
               <div>
-                <p data-edit-field="description">${escapeHtml(compactText(business.description, contentMode, 16, 30))}</p>
+                <p ${fieldTextAttrs(business, "description", "contact")}>${escapeHtml(compactText(business.description, contentMode, 16, 30))}</p>
                 <div class="social-links">
                   ${links.map((link, index) => `<a href="${escapeAttr(link.url)}" target="_blank" rel="noreferrer" data-track="outbound_${escapeAttr(slugify(link.label))}" data-edit-link-list="links" data-edit-index="${index}">${escapeHtml(link.label)}</a>`).join("")}
                 </div>
@@ -377,24 +491,30 @@
 
     function renderHeroArt(business, gallery, artDirection) {
       const images = [
-        gallery[0] || business.heroImage,
-        gallery[1] || business.heroImage,
-        gallery[2] || business.heroImage
+        { url: business.heroImage, options: { field: "heroImage" } },
+        gallery[0]
+          ? { url: gallery[0], options: { list: "gallery", index: 0 } }
+          : { url: business.heroImage, options: { field: "heroImage" } },
+        gallery[1]
+          ? { url: gallery[1], options: { list: "gallery", index: 1 } }
+          : gallery[0]
+            ? { url: gallery[0], options: { list: "gallery", index: 0 } }
+            : { url: business.heroImage, options: { field: "heroImage" } }
       ];
 
       return `
-        <div class="hero-art atropos hero-art-${escapeAttr(artDirection)}" data-atropos-root aria-hidden="true">
+        <div class="hero-art atropos hero-art-${escapeAttr(artDirection)}" data-atropos-root aria-label="Galeria destacada de portada">
           <div class="atropos-scale">
             <div class="atropos-rotate">
               <div class="atropos-inner hero-art-inner">
                 <figure class="hero-art-card hero-art-card-primary" data-atropos-offset="-2">
-                  <img src="${escapeAttr(images[0])}" alt="" loading="eager" decoding="async">
+                  ${renderEditableImage(business, images[0].url, `${business.name} - imagen destacada 1`, { ...images[0].options, loading: "eager", sizes: "45vw" })}
                 </figure>
                 <figure class="hero-art-card hero-art-card-secondary" data-atropos-offset="5">
-                  <img src="${escapeAttr(images[1])}" alt="" loading="lazy" decoding="async">
+                  ${renderEditableImage(business, images[1].url, `${business.name} - imagen destacada 2`, { ...images[1].options, sizes: "22vw" })}
                 </figure>
                 <figure class="hero-art-card hero-art-card-tertiary" data-atropos-offset="9">
-                  <img src="${escapeAttr(images[2])}" alt="" loading="lazy" decoding="async">
+                  ${renderEditableImage(business, images[2].url, `${business.name} - imagen destacada 3`, { ...images[2].options, sizes: "22vw" })}
                 </figure>
                 <span class="hero-art-monogram" data-atropos-offset="12">${escapeHtml(initials(business.name))}</span>
                 <span class="hero-art-label" data-atropos-offset="7">${escapeHtml(business.location || business.category)}</span>
@@ -535,6 +655,29 @@
       `;
     }
 
+    function decorateSectionInstance(html, sectionKey) {
+      const base = sectionBaseKey(sectionKey);
+      let output = String(html || "");
+      output = output.replace(`data-section-key="${base}"`, `data-section-key="${escapeAttr(sectionKey)}"`);
+      if (sectionKey === base) {
+        return output;
+      }
+
+      const idMap = {
+        services: "servicios",
+        menu: "carta",
+        store: "tienda",
+        gallery: "galeria",
+        map: "ubicacion",
+        booking: "reservas",
+        lead: "lead"
+      };
+      const id = idMap[base];
+      return id
+        ? output.replace(`id="${id}"`, `id="${escapeAttr(`${id}-${sectionKey.replace(/[^a-z0-9_-]/gi, "-")}`)}"`)
+        : output;
+    }
+
     function renderProductCard(product, currency) {
       return `
         <article class="product-card reveal tilt-card" data-product-id="${escapeAttr(product.id)}">
@@ -556,24 +699,24 @@
       `;
     }
 
-    function renderServiceCard(service, index) {
+    function renderServiceCard(business, service, index) {
       const parts = splitTitleBody(service);
       return `
         <article class="service-card reveal tilt-card">
           <span class="card-index">${String(index + 1).padStart(2, "0")}</span>
-          <h3 data-edit-list="services" data-edit-index="${index}" data-edit-part="title">${escapeHtml(parts.title)}</h3>
-          <p data-edit-list="services" data-edit-index="${index}" data-edit-part="body">${escapeHtml(parts.body)}</p>
+          <h3 ${listTextAttrs(business, "services", index, "title")}>${escapeHtml(parts.title)}</h3>
+          <p ${listTextAttrs(business, "services", index, "body")}>${escapeHtml(parts.body)}</p>
         </article>
       `;
     }
 
-    function renderFeatureCard(feature, index) {
+    function renderFeatureCard(business, feature, index) {
       const parts = splitTitleBody(feature);
       return `
         <article class="feature-card reveal tilt-card">
           <span class="card-index">${String.fromCharCode(65 + index)}</span>
-          <h3 data-edit-list="features" data-edit-index="${index}" data-edit-part="title">${escapeHtml(parts.title)}</h3>
-          <p data-edit-list="features" data-edit-index="${index}" data-edit-part="body">${escapeHtml(parts.body)}</p>
+          <h3 ${listTextAttrs(business, "features", index, "title")}>${escapeHtml(parts.title)}</h3>
+          <p ${listTextAttrs(business, "features", index, "body")}>${escapeHtml(parts.body)}</p>
         </article>
       `;
     }
@@ -591,12 +734,12 @@
       `;
     }
 
-    function renderTestimonial(testimonial, index) {
+    function renderTestimonial(business, testimonial, index) {
       return `
         <article class="testimonial-card reveal tilt-card">
           <span class="quote-mark">"</span>
-          <p data-edit-list="testimonials" data-edit-index="${index}" data-edit-part="text">${escapeHtml(testimonial.text)}</p>
-          <strong class="testimonial-author" data-edit-list="testimonials" data-edit-index="${index}" data-edit-part="name">${escapeHtml(testimonial.name)}</strong>
+          <p ${listTextAttrs(business, "testimonials", index, "text")}>${escapeHtml(testimonial.text)}</p>
+          <strong class="testimonial-author" ${listTextAttrs(business, "testimonials", index, "name")}>${escapeHtml(testimonial.name)}</strong>
         </article>
       `;
     }
@@ -618,11 +761,11 @@
       };
     }
 
-    function renderFaq(faq, index) {
+    function renderFaq(business, faq, index) {
       return `
         <details class="faq-item reveal">
-          <summary data-edit-list="faqs" data-edit-index="${index}" data-edit-part="question">${escapeHtml(faq.question)}</summary>
-          <p data-edit-list="faqs" data-edit-index="${index}" data-edit-part="answer">${escapeHtml(faq.answer)}</p>
+          <summary ${listTextAttrs(business, "faqs", index, "question")}>${escapeHtml(faq.question)}</summary>
+          <p ${listTextAttrs(business, "faqs", index, "answer")}>${escapeHtml(faq.answer)}</p>
         </details>
       `;
     }
@@ -652,7 +795,7 @@
                 <textarea name="leadMessage" rows="4" required></textarea>
               </label>
               ${renderPrivacyConsent(business)}
-              <button type="submit">${escapeHtml(business.leadFormCta)}</button>
+              <button class="primary-site-action" type="submit" data-edit-button-style="primary">${escapeHtml(business.leadFormCta)}</button>
               <span class="lead-status" data-lead-status aria-live="polite"></span>
             </form>
           </div>
@@ -697,7 +840,7 @@
                 <textarea name="notes" rows="3" placeholder="Personas, preferencia horaria o contexto"></textarea>
               </label>
               ${renderPrivacyConsent(business)}
-              <button type="submit">Solicitar reserva</button>
+              <button class="primary-site-action" type="submit" data-edit-button-style="primary">Solicitar reserva</button>
               <span class="lead-status" data-booking-status aria-live="polite"></span>
             </form>
           </div>
@@ -757,7 +900,7 @@
       const actions = [
         commerce.enabled ? { label: "Comprar", url: "#tienda", track: "dock_store_click" } : null,
         business.showBooking
-          ? { label: textOr(business.bookingLabel, "Reservar"), url: "#reservas", track: "dock_booking_click" }
+          ? { label: textOr(business.bookingLabel, "Reservar"), url: "#reservas", track: "dock_booking_click", primary: true }
           : null,
         business.phone ? { label: "Llamar", url: `tel:${phoneHref(business.phone)}`, track: "dock_phone_click" } : null,
         google.enabled && google.mapsUrl ? { label: "Mapa", url: google.mapsUrl, track: "dock_maps_click" } : null
@@ -769,7 +912,7 @@
 
       return `
         <aside class="conversion-dock" aria-label="Acciones rapidas">
-          ${actions.map((action) => `<a href="${escapeAttr(action.url)}" data-track="${escapeAttr(action.track)}">${escapeHtml(action.label)}</a>`).join("")}
+          ${actions.map((action) => `<a class="${action.primary ? "primary-site-action" : ""}" href="${escapeAttr(action.url)}" data-track="${escapeAttr(action.track)}"${action.primary ? ' data-edit-button-style="primary"' : ""}>${escapeHtml(action.label)}</a>`).join("")}
         </aside>
       `;
     }

@@ -32,6 +32,9 @@ body {
   height: 100vh;
   height: 100dvh;
   padding: clamp(28px, 5vw, 70px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
   background:
     linear-gradient(135deg, rgba(207, 63, 46, 0.16), transparent 45%),
     #111316;
@@ -135,6 +138,142 @@ label {
   padding-left: 18px;
 }
 
+.google-brief-section {
+  scroll-margin-top: 18px;
+}
+
+.google-brief-section > h2 {
+  order: 0;
+}
+
+.google-brief-section > label {
+  order: 2;
+}
+
+.google-ops-details {
+  order: 1;
+  margin-top: 8px;
+  scroll-margin-top: 18px;
+}
+
+.google-ops-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 64px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #111316;
+  color: #fffaf0;
+  cursor: pointer;
+  list-style: none;
+  transition: background 180ms ease;
+}
+
+.google-ops-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.google-ops-details summary:hover {
+  background: #24282d;
+}
+
+.google-ops-details summary:focus-visible {
+  outline: 3px solid rgba(207, 63, 46, 0.3);
+  outline-offset: 3px;
+}
+
+.google-ops-details summary::after {
+  content: "+";
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #5cffc6;
+  color: #07100d;
+  font-size: 1.35rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.google-ops-details[open] summary {
+  border-radius: 8px 8px 0 0;
+}
+
+.google-ops-details[open] summary::after {
+  content: "−";
+}
+
+.google-ops-details summary span,
+.google-ops-details summary strong,
+.google-ops-details summary small {
+  display: block;
+}
+
+.google-ops-details summary small {
+  margin-top: 4px;
+  color: rgba(255, 250, 240, 0.68);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.google-ops-guide {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(23, 21, 19, 0.12);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: #f7f2e6;
+}
+
+.google-ops-guide article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(23, 21, 19, 0.1);
+  border-radius: 8px;
+  background: #fffdf6;
+}
+
+.google-ops-step {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(207, 63, 46, 0.1);
+  color: #cf3f2e;
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.google-ops-guide h3 {
+  margin: 3px 0 8px;
+  font-size: 1rem;
+}
+
+.google-ops-guide p,
+.google-ops-guide li {
+  color: #6d675e;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.google-ops-guide p {
+  margin: 0;
+}
+
+.google-ops-guide ul {
+  gap: 5px;
+  margin-top: 10px;
+}
+
 input,
 textarea {
   width: 100%;
@@ -188,5 +327,21 @@ textarea:focus {
   .brief-hero {
     position: relative;
     height: auto;
+    overflow-y: visible;
+    scrollbar-gutter: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .google-ops-details summary {
+    align-items: flex-start;
+  }
+
+  .google-ops-guide {
+    padding: 10px;
+  }
+
+  .google-ops-guide article {
+    grid-template-columns: 1fr;
   }
 }

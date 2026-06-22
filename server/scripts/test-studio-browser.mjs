@@ -6,12 +6,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const port = 5199;
-const debugPort = 9229;
+const port = 5199 + Math.floor(Math.random() * 600);
+const debugPort = 9229 + Math.floor(Math.random() * 600);
 const url = `http://127.0.0.1:${port}/index.html`;
 const chrome = await findChrome();
 const profile = await mkdtemp(path.join(os.tmpdir(), "locallift-browser-"));
 const downloads = path.join(profile, "downloads");
+const debug = process.env.STUDIO_BROWSER_TEST_DEBUG === "1";
 await mkdir(downloads);
 const server = spawn(process.execPath, ["server/server.mjs"], {
   cwd: root,
@@ -23,28 +24,58 @@ let browser;
 let cdp;
 
 try {
+  trace(`waiting for server ${url}`);
   await waitForUrl(url);
-  browser = spawn(chrome, [
+  trace("launching browser");
+  const browserArgs = [
     "--headless=new",
     "--disable-gpu",
+    "--disable-gpu-compositing",
+    "--disable-accelerated-2d-canvas",
+    "--disable-accelerated-video-decode",
+    "--disable-features=UseSkiaRenderer,Vulkan,DefaultANGLEVulkan,DawnGraphite,CanvasOopRasterization,VizDisplayCompositor",
+    "--disable-gpu-watchdog",
+    "--in-process-gpu",
+    "--disable-dev-shm-usage",
+    "--disable-extensions",
     "--no-first-run",
     "--no-default-browser-check",
     `--remote-debugging-port=${debugPort}`,
     `--user-data-dir=${profile}`,
     url
-  ], { stdio: "ignore", windowsHide: true });
+  ];
+  if (debug) {
+    browserArgs.splice(4, 0, "--enable-logging=stderr", "--v=1");
+  }
+  browser = spawn(chrome, browserArgs, { stdio: debug ? ["ignore", "pipe", "pipe"] : "ignore", windowsHide: true });
+  browser.stderr?.on("data", (chunk) => trace(String(chunk).trim()));
 
   const page = await waitForPage(debugPort);
+  trace("devtools page ready");
   cdp = await createCdpClient(page.webSocketDebuggerUrl);
   await cdp.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: downloads });
   await waitForExpression('document.documentElement.dataset.studioReady === "true"');
+  trace("studio ready");
 
   assert.equal(await evaluate('document.documentElement.dataset.studioError || ""'), "");
   assert.ok(await evaluate('document.querySelectorAll("[data-edit-field], [data-edit-list]").length > 20'));
   assert.ok(await evaluate('document.querySelectorAll("[data-edit-image-field], [data-edit-image-list]").length > 4'));
   assert.ok(await evaluate('document.querySelectorAll("[data-edit-link-field], [data-edit-link-list]").length > 3'));
   assert.ok(await evaluate('document.querySelectorAll("[data-block-section][data-block-variant]").length >= 13'));
+  assert.equal(await evaluate('document.querySelectorAll("#heroLayoutPicker .hero-layout-option").length'), 5);
+  await evaluate('document.querySelector(\'#heroLayoutPicker [data-block-variant="collage"]\').click()');
+  await waitForExpression('document.querySelector(".generated-site").classList.contains("block-hero-collage")');
+  assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".hero-art")).display'), "none");
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".hero-media")).display'), "none");
+  await evaluate('document.querySelector(\'#heroLayoutPicker [data-block-variant="oval"]\').click()');
+  await waitForExpression('document.querySelector(".generated-site").classList.contains("block-hero-oval")');
+  assert.equal(await evaluate('document.querySelector(\'#heroLayoutPicker [data-block-variant="oval"]\').getAttribute("aria-pressed")'), "true");
+  assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".hero-media")).display'), "none");
   assert.ok(await evaluate('document.querySelectorAll("[data-preview-section-action]").length > 10'));
+  await evaluate('document.querySelector("#prepareDeliveryButton").click()');
+  await waitForExpression('document.querySelector("#deliveryStatus").textContent !== "Sin preparar"');
+  assert.ok(await evaluate('document.querySelector("#deliveryReport").textContent.includes("Siguiente paso")'));
+  assert.ok(await evaluate('document.querySelector("#deliveryReadiness").textContent.endsWith("%")'));
 
   await evaluate(`
     document.querySelector("#directEditButton").click();
@@ -59,6 +90,24 @@ try {
   await waitForExpression('document.querySelector("#businessForm").elements.tagline.value !== "Texto editado desde preview"');
   await evaluate('document.querySelector("#quickRedoButton").click()');
   await waitForExpression('document.querySelector("#businessForm").elements.tagline.value === "Texto editado desde preview"');
+
+  const serviceCountBefore = await evaluate('document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/).filter(Boolean).length');
+  await evaluate('document.querySelector(\'[data-preview-section-action="add-item"][data-section-key="services"]\').click()');
+  await waitForExpression(`document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/).filter(Boolean).length === ${serviceCountBefore + 1}`);
+  await evaluate('document.querySelector(\'[data-preview-item-action="duplicate"][data-preview-item-list="services"][data-preview-item-index="0"]\').click()');
+  await waitForExpression(`document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/).filter(Boolean).length === ${serviceCountBefore + 2}`);
+  const firstService = await evaluate('document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/)[0]');
+  await evaluate('document.querySelector(\'[data-preview-item-action="down"][data-preview-item-list="services"][data-preview-item-index="0"]\').click()');
+  await waitForExpression(`document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/)[1] === ${JSON.stringify(firstService)}`);
+  await evaluate('document.querySelector(\'[data-preview-item-action="delete"][data-preview-item-list="services"][data-preview-item-index="1"]\').click()');
+  await waitForExpression(`document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/).filter(Boolean).length === ${serviceCountBefore + 1}`);
+
+  const testimonialCountBefore = await evaluate('document.querySelector("#businessForm").elements.testimonials.value.trim().split(/\\n+/).filter(Boolean).length');
+  await evaluate('document.querySelector(\'[data-preview-section-action="add-item"][data-section-key="testimonials"]\').click()');
+  await waitForExpression(`document.querySelector("#businessForm").elements.testimonials.value.trim().split(/\\n+/).filter(Boolean).length === ${testimonialCountBefore + 1}`);
+  const faqCountBefore = await evaluate('document.querySelector("#businessForm").elements.faqs.value.trim().split(/\\n+/).filter(Boolean).length');
+  await evaluate('document.querySelector(\'[data-preview-section-action="add-item"][data-section-key="faq"]\').click()');
+  await waitForExpression(`document.querySelector("#businessForm").elements.faqs.value.trim().split(/\\n+/).filter(Boolean).length === ${faqCountBefore + 1}`);
 
   await evaluate('document.querySelector(\'[data-block-section="services"][data-block-variant="list"]\').click()');
   await waitForExpression('document.querySelector(".generated-site").classList.contains("block-services-list")');
@@ -92,6 +141,9 @@ try {
     await evaluate('document.querySelector(".hero-media img").getAttribute("src")'),
     "https://example.com/studio-test.jpg"
   );
+  const galleryCountBefore = await evaluate('document.querySelector("#businessForm").elements.gallery.value.trim().split(/\\n+/).filter(Boolean).length');
+  await evaluate('document.querySelector(\'[data-preview-section-action="add-item"][data-section-key="gallery"]\').click()');
+  await waitForExpression(`document.querySelector("#businessForm").elements.gallery.value.trim().split(/\\n+/).filter(Boolean).length === ${galleryCountBefore + 1}`);
 
   await evaluate(`
     document.querySelector('[data-edit-image-field="heroImage"]').click();
@@ -110,16 +162,34 @@ try {
     document.querySelector('[data-edit-link-field="booking"]').click();
     document.querySelector("#previewInspectorLinkLabel").value = "Reservar visita";
     document.querySelector("#previewInspectorLinkUrl").value = "https://example.com/reserva";
+    document.querySelector("#previewInspectorButtonBackground").value = "#2255aa";
+    document.querySelector("#previewInspectorButtonTextColor").value = "#ffffff";
+    document.querySelector("#previewInspectorButtonNeon").checked = false;
+    document.querySelector("#previewInspectorButtonGlow").value = "75";
     document.querySelector("#previewInspectorLinkApply").click();
     true
   `);
   await waitForExpression('document.querySelector("#businessForm").elements.bookingLabel.value === "Reservar visita"');
   assert.equal(await evaluate('document.querySelector("#businessForm").elements.bookingUrl.value'), "https://example.com/reserva");
+  assert.deepEqual(
+    await evaluate('JSON.parse(document.querySelector("#businessForm").elements.buttonStyles.value).primary'),
+    { background: "#2255aa", textColor: "#ffffff", neon: false, glowStrength: 75 }
+  );
+  assert.equal(
+    await evaluate('getComputedStyle(document.querySelector(".site-cta")).backgroundColor'),
+    "rgb(34, 85, 170)"
+  );
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".site-cta")).boxShadow'), "none");
 
   await evaluate('document.querySelector(\'[data-preview-section-action="down"][data-section-key="services"]\').click()');
   await waitForExpression('!document.querySelector("#businessForm").elements.sectionOrder.value.startsWith("services")');
   await evaluate('document.querySelector(\'[data-preview-section-action="hide"][data-section-key="gallery"]\').click()');
   await waitForExpression('document.querySelector("#businessForm").elements.showGallery.checked === false');
+  await evaluate('document.querySelector(\'[data-preview-section-action="duplicate"][data-section-key="services"]\').click()');
+  await waitForExpression('document.querySelector("#businessForm").elements.sectionOrder.value.includes("services__copy1")');
+  assert.equal(await evaluate('document.querySelectorAll(\'section[data-section-key="services"], section[data-section-key="services__copy1"]\').length'), 2);
+  await evaluate('document.querySelector(\'section[data-section-key="services__copy1"] [data-preview-section-action="remove"]\').click()');
+  await waitForExpression('!document.querySelector("#businessForm").elements.sectionOrder.value.includes("services__copy1")');
 
   await evaluate(`
     document.querySelector("#layoutTemplateName").value = "Mi composicion";
@@ -134,20 +204,65 @@ try {
     "Texto editado desde preview",
     "Applying a layout must preserve business content"
   );
+  await evaluate('document.querySelector(\'[data-quick-action="showcase"]\').click()');
+  await waitForExpression('document.querySelector(".generated-site").classList.contains("content-visual")');
+  assert.equal(await evaluate('document.querySelector("#businessForm").elements.showGallery.checked'), true);
+  assert.equal(await evaluate('document.querySelector("#businessForm").elements.showFaq.checked'), false);
+  assert.equal(await evaluate('document.querySelector("#businessForm").elements.showLeadForm.checked'), false);
+  assert.ok(await evaluate('document.querySelectorAll(".service-card").length <= 3'));
+  assert.equal(await evaluate('document.querySelector(".faq-section")'), null);
+  await evaluate(`
+    const tagline = document.querySelector('[data-edit-field="tagline"]');
+    tagline.click();
+    tagline.blur();
+    document.querySelector("#previewInspectorTextColor").value = "#ff3366";
+    document.querySelector("#previewInspectorTextOpacity").value = "75";
+    document.querySelector("#previewInspectorTextSize").value = "120";
+    document.querySelector("#previewInspectorTextWeight").value = "900";
+    document.querySelector("#previewInspectorTextItalic").value = "italic";
+    document.querySelector("#previewInspectorTextLetterSpacing").value = "4";
+    document.querySelector("#previewInspectorTextApply").click();
+    true
+  `);
+  await waitForExpression('JSON.parse(document.querySelector("#businessForm").elements.textStyles.value)["field:tagline"].color === "#ff3366"');
+  await waitForExpression('!!document.querySelector(\'[data-text-style-key="field:tagline"]\')');
 
   await evaluate(`
     document.querySelector("#businessForm").elements.privacyUrl.value = "/privacidad";
     document.querySelector("#exportButton").click();
     true
   `);
-  const exportedFile = await waitForDownloadedFile(downloads);
+  trace("html export clicked");
+  const exportedFile = await waitForDownloadedFile(downloads, ".html");
+  trace(`html downloaded ${path.basename(exportedFile)}`);
   const exportedHtml = await readFile(exportedFile, "utf8");
   assert.match(exportedHtml, /Portada accesible del estudio/);
   assert.match(exportedHtml, /Reservar visita/);
+  assert.match(exportedHtml, /--site-primary-button-bg:#2255aa/);
+  assert.match(exportedHtml, /data-primary-button-neon="off"/);
+  assert.match(exportedHtml, /style="[^"]*color:#ff3366[^"]*opacity:0.75[^"]*font-size:calc\(var\(--text-base-size, 1em\) \* 1.2\)/);
   assert.doesNotMatch(exportedHtml, /preview-section-controls/);
   assert.doesNotMatch(exportedHtml, /preview-inspector/);
   assert.doesNotMatch(exportedHtml, /data-edit-/);
   assert.doesNotMatch(exportedHtml, /data-section-key/);
+  assert.doesNotMatch(exportedHtml, /data-text-style-key/);
+
+  await evaluate(`
+    document.querySelector("#exportPackageButton").click();
+    true
+  `);
+  trace("package export clicked");
+  const packageFile = await waitForDownloadedFile(downloads, ".zip");
+  trace(`package downloaded ${path.basename(packageFile)}`);
+  const packageEntries = readStoredZipEntries(await readFile(packageFile));
+  assert.deepEqual(
+    packageEntries.map((entry) => entry.name).sort(),
+    ["business.json", "cambios.md", "ficha-entrega.md", "index.html"]
+  );
+  assert.match(packageEntries.find((entry) => entry.name === "index.html").text, /Reservar visita/);
+  assert.match(packageEntries.find((entry) => entry.name === "business.json").text, /"business"/);
+  assert.match(packageEntries.find((entry) => entry.name === "ficha-entrega.md").text, /Ficha de entrega/);
+  assert.match(packageEntries.find((entry) => entry.name === "cambios.md").text, /Cambios de entrega/);
 
   console.log("Studio browser interaction checks passed.");
 } finally {
@@ -223,16 +338,18 @@ async function createCdpClient(socketUrl) {
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
     if (!message.id || !pending.has(message.id)) return;
-    const { resolve, reject } = pending.get(message.id);
+    const { resolve, reject, method, params } = pending.get(message.id);
     pending.delete(message.id);
-    message.error ? reject(new Error(message.error.message)) : resolve(message.result);
+    message.error ? reject(new Error(`${method}: ${message.error.message}${describeCdpParams(params)}`)) : resolve(message.result);
   });
+  socket.addEventListener("close", () => rejectPending("Chrome DevTools socket closed"));
+  socket.addEventListener("error", () => rejectPending("Chrome DevTools socket errored"));
 
   return {
     send(method, params = {}) {
       const id = ++nextId;
       return new Promise((resolve, reject) => {
-        pending.set(id, { resolve, reject });
+        pending.set(id, { resolve, reject, method, params });
         socket.send(JSON.stringify({ id, method, params }));
       });
     },
@@ -240,6 +357,18 @@ async function createCdpClient(socketUrl) {
       socket.close();
     }
   };
+
+  function rejectPending(message) {
+    pending.forEach(({ reject, method, params }) => {
+      reject(new Error(`${method}: ${message}${describeCdpParams(params)}`));
+    });
+    pending.clear();
+  }
+}
+
+function describeCdpParams(params) {
+  const expression = params?.expression;
+  return expression ? `\nExpression: ${String(expression).slice(0, 220)}` : "";
 }
 
 async function evaluate(expression) {
@@ -249,7 +378,9 @@ async function evaluate(expression) {
     returnByValue: true
   });
   if (result.exceptionDetails) {
-    throw new Error(result.exceptionDetails.text || "Browser evaluation failed");
+    const details = result.exceptionDetails;
+    const description = details.exception?.description || details.exception?.value || details.text || "Browser evaluation failed";
+    throw new Error(description);
   }
   return result.result.value;
 }
@@ -267,15 +398,48 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForDownloadedFile(directory, timeout = 20_000) {
+async function waitForDownloadedFile(directory, extension = ".html", timeout = 20_000) {
   const started = Date.now();
   while (Date.now() - started < timeout) {
     const files = await readdir(directory);
-    const complete = files.find((file) => file.endsWith(".html") && !file.endsWith(".crdownload"));
+    const complete = files.find((file) => file.endsWith(extension) && !file.endsWith(".crdownload"));
     if (complete) {
       return path.join(directory, complete);
     }
     await delay(120);
   }
-  throw new Error("Timed out waiting for the exported HTML download.");
+  throw new Error(`Timed out waiting for exported ${extension} download.`);
+}
+
+function trace(message) {
+  if (debug) {
+    console.log(`[browser-test] ${message}`);
+  }
+}
+
+function readStoredZipEntries(buffer) {
+  const entries = [];
+  let offset = 0;
+
+  while (offset + 30 <= buffer.length && buffer.readUInt32LE(offset) === 0x04034b50) {
+    const method = buffer.readUInt16LE(offset + 8);
+    const compressedSize = buffer.readUInt32LE(offset + 18);
+    const uncompressedSize = buffer.readUInt32LE(offset + 22);
+    const nameLength = buffer.readUInt16LE(offset + 26);
+    const extraLength = buffer.readUInt16LE(offset + 28);
+    const nameStart = offset + 30;
+    const dataStart = nameStart + nameLength + extraLength;
+    const dataEnd = dataStart + compressedSize;
+    const name = buffer.subarray(nameStart, nameStart + nameLength).toString("utf8");
+
+    assert.equal(method, 0, `${name} must use stored ZIP entries`);
+    assert.equal(compressedSize, uncompressedSize, `${name} must not be compressed`);
+    entries.push({
+      name,
+      text: buffer.subarray(dataStart, dataEnd).toString("utf8")
+    });
+    offset = dataEnd;
+  }
+
+  return entries;
 }

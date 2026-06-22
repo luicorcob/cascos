@@ -48,7 +48,7 @@ npm.cmd run test:google
 
 ## Resultado
 
-`src/app.js` pasa de aproximadamente 239 KB a 132 KB. El controlador principal
+`src/app.js` pasa de aproximadamente 239 KB a 156 KB. El controlador principal
 ya no contiene catalogo visual, utilidades, estado, cliente de datos,
 validacion, renderizado ni exportacion.
 
@@ -74,5 +74,42 @@ y los elementos editables.
 - [x] Descargar y leer el HTML final desde la prueba de navegador.
 - [x] Confirmar que el HTML entregado no contiene controles ni metadatos internos del Studio.
 
+## Extension - Edicion visual v3
+
+- [x] Anadir elementos repetidos desde controles de seccion en la preview.
+- [x] Duplicar, borrar y reordenar servicios, diferenciales, resenas, FAQ y galeria.
+- [x] Mantener los controles como DOM dinamico exclusivo del Studio.
+- [x] Cubrir las mutaciones con una prueba de navegador en Chrome headless.
+
+## Extension - Equilibrio visual
+
+- [x] Reforzar `Muy visual` para limitar servicios, diferenciales y FAQ visibles.
+- [x] Reducir textos largos en hero, introducciones, metricas, reseñas y movil.
+- [x] Anadir accion rapida `Escaparate visual` para priorizar imagenes, CTA y prueba social.
+- [x] Cubrir el comportamiento con pruebas contractuales de render y navegador.
+
+## Extension - Inspector tipografico
+
+- [x] Guardar estilos por elemento editable en `textStyles`.
+- [x] Editar color, opacidad, tamano, peso, cursiva y espaciado desde la preview.
+- [x] Renderizar estilos en preview y HTML exportado sin exponer metadatos internos.
+- [x] Cubrir persistencia y exportacion con pruebas de renderer y Chrome headless.
+
+## Extension - Secciones duplicables
+
+- [x] Soportar instancias de seccion en `sectionOrder` con claves como `services__copy1`.
+- [x] Duplicar secciones completas desde los controles de la preview.
+- [x] Eliminar copias desde preview y gestor lateral sin borrar la seccion base.
+- [x] Renderizar copias con ids HTML unicos y metadatos internos limpiados en exportacion.
+- [x] Cubrir normalizacion, render y flujo real en Chrome headless.
+
+## Extension - Entrega Pro v1
+
+- [x] Anadir accion `Entrega Pro` en la barra superior.
+- [x] Generar preflight con estado listo/bloqueado, bloqueos, avisos, checklist y paquete estimado.
+- [x] Reutilizar la validacion existente para mantener los mismos bloqueos que la exportacion.
+- [x] Cubrir el flujo en Chrome headless.
+
 La siguiente etapa recomendada es probar el flujo con personas no tecnicas,
-permitir duplicar contenido y preparar una entrega empaquetada con activos.
+preparar una entrega empaquetada con HTML, JSON, ficha de cambios y capturas,
+y mejorar el tratamiento avanzado de imagenes.

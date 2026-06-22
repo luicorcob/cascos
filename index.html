@@ -8,11 +8,12 @@
       name="description"
       content="Base profesional para crear webs dinamicas de negocios locales con datos, fotos, enlaces y animaciones premium."
     >
-    <link rel="stylesheet" href="src/styles.css?v=20260610-3">
-    <link rel="stylesheet" href="src/studio-redesign.css">
+    <link rel="stylesheet" href="src/styles.css?v=20260622-2">
+    <link rel="stylesheet" href="src/studio-redesign.css?v=20260622-2">
     <link rel="stylesheet" href="assets/vendor/atropos.min.css">
     <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
     <link rel="stylesheet" href="src/generated-responsive.css?v=20260610-3">
+    <link rel="stylesheet" href="src/hero-layouts-responsive.css?v=20260622-2">
   </head>
   <body>
     <div class="cursor-glow" aria-hidden="true"></div>
@@ -34,7 +35,7 @@
       </div>
 
       <nav class="topbar-links" aria-label="Herramientas del negocio">
-        <a href="pages/onboarding.html">Brief</a>
+        <a href="pages/onboarding.html">Brief + Google</a>
         <a href="pages/business-dashboard.html">Portal</a>
         <a href="pages/store-admin.html">Tienda</a>
       </nav>
@@ -51,6 +52,10 @@
         <button class="icon-button" id="resetButton" type="button" title="Restaurar demo">
           <span aria-hidden="true">Demo</span>
           <span class="sr-only">Restaurar demo</span>
+        </button>
+        <button class="icon-button" id="prepareDeliveryButton" type="button" title="Preparar entrega">
+          <span aria-hidden="true">Entrega Pro</span>
+          <span class="sr-only">Preparar entrega profesional</span>
         </button>
         <button class="primary-action" id="exportButton" type="button">Exportar web</button>
       </div>
@@ -69,6 +74,7 @@
         <div class="status-line" id="statusLine" role="status">Demo lista para editar.</div>
 
         <div class="data-actions" aria-label="Gestion de datos">
+          <button class="secondary-action" id="exportPackageButton" type="button">Exportar paquete</button>
           <button class="secondary-action" id="exportDataButton" type="button">Exportar datos</button>
           <button class="secondary-action" id="importDataButton" type="button">Importar datos</button>
           <input id="importDataInput" type="file" accept="application/json,.json" hidden>
@@ -76,17 +82,45 @@
 
         <div class="workspace-links" aria-label="Material de presentacion">
           <a href="pages/investor.html">Pitch inversores</a>
-          <a href="pages/onboarding.html">Brief cliente</a>
-          <a href="pages/google-ops.html">Google Ops</a>
+          <a href="pages/onboarding.html">Brief + Google Ops</a>
           <a href="pages/store-admin.html">Admin tienda</a>
         </div>
 
         <section class="quality-panel" aria-label="Checklist de calidad">
-          <div>
-            <p class="eyebrow">Control de entrega</p>
-            <strong id="qualityScore">0%</strong>
+          <div class="quality-panel-head">
+            <div>
+              <p class="eyebrow">Control de entrega</p>
+              <div class="quality-score-line">
+                <strong id="qualityScore">0%</strong>
+                <span id="qualityState">Analizando</span>
+              </div>
+            </div>
+            <span class="quality-help" title="El porcentaje combina requisitos de contenido y comprobaciones tecnicas.">?</span>
           </div>
+          <div
+            class="quality-progress"
+            id="qualityProgress"
+            role="progressbar"
+            aria-label="Preparacion de la entrega"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          ><span></span></div>
+          <p class="quality-explainer" id="qualityExplainer">Completa los requisitos para poder entregar.</p>
           <div class="quality-checklist" id="qualityChecklist"></div>
+        </section>
+
+        <section class="delivery-panel" aria-label="Modo Entrega Pro">
+          <div class="delivery-panel-head">
+            <div>
+              <p class="eyebrow">Entrega Pro</p>
+              <strong id="deliveryStatus">Sin preparar</strong>
+            </div>
+            <span id="deliveryReadiness">Pendiente</span>
+          </div>
+          <div class="delivery-report" id="deliveryReport">
+            Pulsa `Entrega Pro` para generar un preflight con bloqueos, avisos y pasos de entrega.
+          </div>
         </section>
 
         <section class="quick-panel" aria-label="Cambios rapidos para demo">
@@ -117,6 +151,7 @@
             <button class="quick-action" type="button" data-quick-action="store">Tienda online</button>
             <button class="quick-action" type="button" data-quick-action="local">Mas local</button>
             <button class="quick-action" type="button" data-quick-action="mobile">Modo movil</button>
+            <button class="quick-action" type="button" data-quick-action="showcase">Escaparate visual</button>
             <button class="quick-action" type="button" data-quick-action="biggerType">Letra grande</button>
             <button class="quick-action" type="button" data-quick-action="moreSpace">Mas aire</button>
             <button class="quick-action" type="button" data-quick-action="wideImages">Fotos anchas</button>
@@ -196,6 +231,8 @@
           <input name="sectionOrder" type="hidden">
           <input name="blockVariants" type="hidden">
           <input name="mediaMetadata" type="hidden">
+          <input name="textStyles" type="hidden">
+          <input name="buttonStyles" type="hidden">
           <section class="tab-panel is-active" data-panel="identity">
             <label>
               Nombre del negocio
@@ -318,6 +355,11 @@
           </section>
 
           <section class="tab-panel" data-panel="media">
+            <fieldset class="hero-layout-panel">
+              <legend>Disposicion de la portada</legend>
+              <p>Elige exactamente como se veran las imagenes al abrir la pagina. Esta eleccion no cambia aunque cambies la direccion artistica.</p>
+              <div class="hero-layout-picker" id="heroLayoutPicker" aria-label="Disposicion de imagenes en portada"></div>
+            </fieldset>
             <fieldset class="media-library-panel">
               <legend>Biblioteca de medios</legend>
               <div class="media-library-actions">
@@ -333,7 +375,7 @@
               <div class="media-library-grid" id="mediaLibrary"></div>
             </fieldset>
             <label>
-              Imagen hero
+              Imagen principal de portada
               <input name="heroImage" type="url" inputmode="url">
             </label>
             <label>
@@ -860,19 +902,107 @@
                 <option value="right center">Derecha</option>
               </select>
             </label>
+            <div class="stock-image-panel">
+              <div class="stock-image-header">
+                <strong>Galeria libre 200+</strong>
+                <span id="stockImageStatus">Seleccion profesional y licencias libres</span>
+              </div>
+              <div class="stock-category-list" id="stockCategoryList" aria-label="Categorias de imagenes libres"></div>
+              <div class="stock-search-row">
+                <input id="stockSearchInput" type="search" placeholder="Buscar entre miles de fotos libres">
+                <button id="stockSearchButton" type="button">Buscar</button>
+              </div>
+              <div class="stock-image-results" id="stockImageResults" aria-live="polite"></div>
+              <button class="stock-load-more" id="stockLoadMoreButton" type="button" hidden>Mas imagenes</button>
+            </div>
             <div class="preview-inspector-media" id="previewInspectorMedia"></div>
             <button class="preview-inspector-apply" id="previewInspectorImageApply" type="button">Aplicar imagen</button>
           </section>
           <section data-inspector-panel="link" hidden>
-            <label>
-              Texto visible
-              <input id="previewInspectorLinkLabel" type="text">
-            </label>
-            <label>
-              Destino
-              <input id="previewInspectorLinkUrl" type="text" inputmode="url">
-            </label>
-            <button class="preview-inspector-apply" id="previewInspectorLinkApply" type="button">Aplicar enlace</button>
+            <div class="preview-inspector-link-fields" id="previewInspectorLinkFields">
+              <label>
+                Texto visible
+                <input id="previewInspectorLinkLabel" type="text">
+              </label>
+              <label>
+                Destino
+                <input id="previewInspectorLinkUrl" type="text" inputmode="url">
+              </label>
+            </div>
+            <div class="preview-inspector-button-options" id="previewInspectorButtonOptions" hidden>
+              <div class="preview-inspector-subheading">
+                <strong>Aspecto del boton principal</strong>
+                <span>Se aplica a reservas y acciones principales.</span>
+              </div>
+              <button class="preview-inspector-button-sample" id="previewInspectorButtonSample" type="button" tabindex="-1">Reservar ahora</button>
+              <div class="two-columns">
+                <label>
+                  Fondo
+                  <input id="previewInspectorButtonBackground" type="color">
+                </label>
+                <label>
+                  Texto
+                  <input id="previewInspectorButtonTextColor" type="color">
+                </label>
+              </div>
+              <label class="preview-inspector-switch">
+                <input id="previewInspectorButtonNeon" type="checkbox">
+                <span>Activar resplandor neon</span>
+              </label>
+              <label id="previewInspectorButtonGlowLabel">
+                Intensidad del neon <output id="previewInspectorButtonGlowValue">60%</output>
+                <input id="previewInspectorButtonGlow" type="range" min="0" max="100" step="5">
+              </label>
+            </div>
+            <div class="preview-inspector-actions">
+              <button class="preview-inspector-apply" id="previewInspectorLinkApply" type="button">Aplicar cambios</button>
+              <button class="preview-inspector-reset" id="previewInspectorButtonReset" type="button" hidden>Restablecer estilo</button>
+            </div>
+          </section>
+          <section data-inspector-panel="text" hidden>
+            <div class="preview-inspector-text-sample" id="previewInspectorTextSample">Texto seleccionado</div>
+            <div class="two-columns">
+              <label>
+                Color
+                <input id="previewInspectorTextColor" type="color">
+              </label>
+              <label>
+                Opacidad
+                <input id="previewInspectorTextOpacity" type="range" min="35" max="100" step="5">
+              </label>
+            </div>
+            <div class="two-columns">
+              <label>
+                Tamano
+                <input id="previewInspectorTextSize" type="range" min="80" max="145" step="5">
+              </label>
+              <label>
+                Peso
+                <select id="previewInspectorTextWeight">
+                  <option value="default">Original</option>
+                  <option value="400">Normal</option>
+                  <option value="700">Negrita</option>
+                  <option value="900">Impacto</option>
+                </select>
+              </label>
+            </div>
+            <div class="two-columns">
+              <label>
+                Estilo
+                <select id="previewInspectorTextItalic">
+                  <option value="normal">Normal</option>
+                  <option value="italic">Cursiva</option>
+                </select>
+              </label>
+              <label>
+                Espaciado
+                <input id="previewInspectorTextLetterSpacing" type="range" min="-2" max="8" step="1">
+              </label>
+            </div>
+            <div class="preview-inspector-actions">
+              <button class="preview-inspector-apply" id="previewInspectorTextApply" type="button">Aplicar estilo</button>
+              <button class="preview-inspector-reset" id="previewInspectorTextReset" type="button">Restablecer</button>
+            </div>
           </section>
         </aside>
 
@@ -894,14 +1024,18 @@
     <script src="assets/vendor/atropos.min.js"></script>
     <script src="src/shared/api-config.js"></script>
     <script src="src/studio/core-utils.js?v=20260612-1"></script>
-    <script src="src/studio/catalog.js?v=20260612-1"></script>
+    <script src="src/studio/button-style-editor.js?v=20260622-1"></script>
+    <script src="src/studio/catalog.js?v=20260622-2"></script>
     <script src="src/studio/state-controller.js?v=20260612-1"></script>
     <script src="src/studio/layout-library.js?v=20260612-1"></script>
     <script src="src/studio/media-library.js?v=20260612-1"></script>
+    <script src="src/studio/curated-stock-images.js?v=20260620-2"></script>
+    <script src="src/studio/stock-images.js?v=20260620-10"></script>
     <script src="src/studio/data-client.js?v=20260612-1"></script>
     <script src="src/studio/validation.js?v=20260612-1"></script>
-    <script src="src/studio/renderer.js?v=20260612-1"></script>
-    <script src="src/studio/exporter.js?v=20260612-1"></script>
-    <script src="src/app.js?v=20260612-1"></script>
+    <script src="src/studio/quality-control.js?v=20260622-1"></script>
+    <script src="src/studio/renderer.js?v=20260622-2"></script>
+    <script src="src/studio/exporter.js?v=20260622-1"></script>
+    <script src="src/app.js?v=20260622-2"></script>
   </body>
 </html>

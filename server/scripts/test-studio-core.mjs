@@ -22,6 +22,13 @@ assert.deepEqual(core.normalizeSectionOrder(["faq", "services", "faq"], ["servic
   "services",
   "gallery"
 ]);
+assert.equal(core.sectionBaseKey("services__copy2"), "services");
+assert.deepEqual(core.normalizeSectionOrder(["services", "services__copy1", "faq"], ["services", "gallery", "faq"]), [
+  "services",
+  "services__copy1",
+  "faq",
+  "gallery"
+]);
 assert.deepEqual(core.groupMenuItems([
   { category: "Cafe", name: "Solo", price: "1,50" },
   { category: "Cafe", name: "Leche", price: 2 }

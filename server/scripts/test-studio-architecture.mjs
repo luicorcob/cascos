@@ -9,12 +9,16 @@ const appStats = await stat(path.join(root, "src", "app.js"));
 const expectedScripts = [
   "src/shared/api-config.js",
   "src/studio/core-utils.js",
+  "src/studio/button-style-editor.js",
   "src/studio/catalog.js",
   "src/studio/state-controller.js",
   "src/studio/layout-library.js",
   "src/studio/media-library.js",
+  "src/studio/curated-stock-images.js",
+  "src/studio/stock-images.js",
   "src/studio/data-client.js",
   "src/studio/validation.js",
+  "src/studio/quality-control.js",
   "src/studio/renderer.js",
   "src/studio/exporter.js",
   "src/app.js"

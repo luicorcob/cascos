@@ -5,6 +5,13 @@ body:has(> .generated-site) {
   container-name: client-site;
 }
 
+/* `hidden` creates a nested scroll container and breaks the Studio's sticky
+   assistant/booking layer on mobile. `clip` keeps the horizontal crop without
+   changing which element owns vertical scrolling. */
+.site-preview > .generated-site {
+  overflow-x: clip;
+}
+
 @container client-site (max-width: 760px) {
   .generated-site {
     overflow-x: hidden;
@@ -148,7 +155,8 @@ body:has(> .generated-site) {
   .generated-site.art-mosaic .hero-content h1,
   .generated-site.art-kinetic .hero-content h1 {
     max-width: 100%;
-    font-size: clamp(2.4rem, 11.5cqw, 3.45rem);
+    --text-base-size: clamp(2.4rem, 11.5cqw, 3.45rem);
+    font-size: var(--text-base-size);
     line-height: 0.94;
     overflow-wrap: anywhere;
     text-wrap: balance;
@@ -172,7 +180,8 @@ body:has(> .generated-site) {
     max-width: 38ch;
     margin-top: 14px;
     color: rgba(255, 250, 240, 0.92);
-    font-size: 0.9rem;
+    --text-base-size: 0.9rem;
+    font-size: var(--text-base-size);
     line-height: 1.5;
   }
 
@@ -190,7 +199,8 @@ body:has(> .generated-site) {
     max-width: 100%;
     margin-bottom: 12px;
     padding: 7px 10px;
-    font-size: 0.66rem;
+    --text-base-size: 0.66rem;
+    font-size: var(--text-base-size);
     line-height: 1.25;
     white-space: normal;
   }
@@ -302,14 +312,16 @@ body:has(> .generated-site) {
   .generated-site .lead-panel h2,
   .generated-site .location-copy h2,
   .generated-site .contact-panel h2 {
-    font-size: clamp(2rem, 9cqw, 2.75rem);
+    --text-base-size: clamp(2rem, 9cqw, 2.75rem);
+    font-size: var(--text-base-size);
     line-height: 1;
     overflow-wrap: anywhere;
   }
 
   .generated-site .section-heading p {
     margin-top: 12px;
-    font-size: 0.92rem;
+    --text-base-size: 0.92rem;
+    font-size: var(--text-base-size);
     line-height: 1.55;
   }
 
@@ -370,7 +382,8 @@ body:has(> .generated-site) {
   .generated-site.art-editorial .service-card:first-child h3,
   .generated-site.art-atelier .service-card h3 {
     margin-bottom: 7px;
-    font-size: 1.3rem;
+    --text-base-size: 1.3rem;
+    font-size: var(--text-base-size);
     line-height: 1.05;
   }
 
@@ -378,12 +391,29 @@ body:has(> .generated-site) {
   .generated-site .feature-card p,
   .generated-site .testimonial-card p {
     display: block;
-    font-size: 0.9rem;
+    --text-base-size: 0.9rem;
+    font-size: var(--text-base-size);
     line-height: 1.55;
   }
 
   .generated-site.content-visual .contact-panel > div:last-child > p {
-    display: block;
+    display: none;
+  }
+
+  .generated-site.content-visual .service-card p,
+  .generated-site.content-visual .feature-card p,
+  .generated-site.content-visual .contact-panel > div:last-child > p {
+    display: none;
+  }
+
+  .generated-site.content-visual .testimonial-card p,
+  .generated-site.content-visual .faq-item p,
+  .generated-site.content-visual .lead-panel p,
+  .generated-site.content-visual .location-copy p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .generated-site .gallery-band {
@@ -467,11 +497,13 @@ body:has(> .generated-site) {
   }
 
   .site-preview .generated-site .conversion-dock {
-    position: sticky;
+    position: absolute;
     right: auto;
-    bottom: 8px;
+    top: calc(var(--preview-viewport-height, 720px) - 8px);
+    bottom: auto;
     width: calc(100% - 16px);
-    margin: 0 8px 8px;
+    margin: 0;
+    transform: translateY(-100%);
   }
 
   .generated-site .conversion-dock a {
@@ -494,10 +526,12 @@ body:has(> .generated-site) {
   }
 
   .site-preview .generated-site .chatbot-widget {
-    position: sticky;
-    right: auto;
-    bottom: 72px;
-    margin: 0 8px 72px auto;
+    position: absolute;
+    right: 8px;
+    top: calc(var(--preview-viewport-height, 720px) - 72px);
+    bottom: auto;
+    margin: 0;
+    transform: translateY(-100%);
   }
 
   .generated-site .chatbot-launcher {
@@ -520,6 +554,11 @@ body:has(> .generated-site) {
     left: 8px;
     right: 8px;
     width: auto;
+  }
+
+  .site-preview .generated-site .chatbot-widget.is-open {
+    top: calc(var(--preview-viewport-height, 720px) - 8px);
+    bottom: auto;
   }
 
   .generated-site .chatbot-panel {
@@ -696,7 +735,8 @@ body:has(> .generated-site) {
 .device-frame[data-size="mobile"] .site-preview .generated-site.art-mosaic .hero-content h1,
 .device-frame[data-size="mobile"] .site-preview .generated-site.art-kinetic .hero-content h1 {
   max-width: 100%;
-  font-size: clamp(2.4rem, 11.5cqw, 3.45rem);
+  --text-base-size: clamp(2.4rem, 11.5cqw, 3.45rem);
+  font-size: var(--text-base-size);
   line-height: 0.94;
   overflow-wrap: anywhere;
   text-wrap: balance;
@@ -759,7 +799,18 @@ body:has(> .generated-site) {
 .device-frame[data-size="mobile"] .site-preview .generated-site.content-visual .service-card p,
 .device-frame[data-size="mobile"] .site-preview .generated-site.content-visual .feature-card p,
 .device-frame[data-size="mobile"] .site-preview .generated-site.content-visual .contact-panel > div:last-child > p {
-  display: block;
+  display: none;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site.content-visual .hero-content p,
+.device-frame[data-size="mobile"] .site-preview .generated-site.content-visual .testimonial-card p,
+.device-frame[data-size="mobile"] .site-preview .generated-site.content-visual .faq-item p,
+.device-frame[data-size="mobile"] .site-preview .generated-site.content-visual .lead-panel p,
+.device-frame[data-size="mobile"] .site-preview .generated-site.content-visual .location-copy p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* Image-independent mobile contrast: photo and copy never compete for the same pixels. */

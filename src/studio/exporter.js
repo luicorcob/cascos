@@ -81,7 +81,7 @@
     }
 
     function stripStudioMetadata(html) {
-      return String(html || "").replace(/\sdata-(?:edit-[a-z-]+|section-key)="[^"]*"/g, "");
+      return String(html || "").replace(/\sdata-(?:edit-[a-z-]+|section-key|text-style-key)="[^"]*"/g, "");
     }
 
     function buildLocalBusinessSchema(business) {
@@ -211,6 +211,21 @@
 
     body > .generated-site .chatbot-widget {
       position: fixed;
+    }
+
+    .generated-site[data-primary-button-custom="true"] .primary-site-action {
+      background: var(--site-primary-button-bg);
+      color: var(--site-primary-button-text);
+      box-shadow: none;
+    }
+
+    .generated-site[data-primary-button-custom="true"][data-primary-button-neon="on"] .primary-site-action {
+      box-shadow: 0 0 var(--site-primary-button-glow-size, 28px) color-mix(in srgb, var(--site-primary-button-bg), transparent var(--site-primary-button-glow-fade, 48%));
+    }
+
+    .generated-site[data-primary-button-custom="true"] .primary-site-action:hover {
+      background: color-mix(in srgb, var(--site-primary-button-bg), #000000 10%);
+      color: var(--site-primary-button-text);
     }
 
     html.no-js .generated-site .reveal,

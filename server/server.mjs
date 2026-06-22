@@ -9,6 +9,7 @@ import { handleEventApi, isEventApiRequest } from "./api/event-api.mjs";
 import { handleHealthApi, isHealthApiRequest } from "./api/health-api.mjs";
 import { handleGoogleApi, isGoogleApiRequest } from "./api/google-api.mjs";
 import { handleReportApi, isReportApiRequest } from "./api/report-api.mjs";
+import { handleStockImageApi, isStockImageApiRequest } from "./api/stock-image-api.mjs";
 import { isAdminApiRequest, requireAdminApiAuth } from "./lib/admin-auth.mjs";
 import { loadLocalEnv } from "./lib/load-env.mjs";
 import { requirePublicApiRateLimit } from "./lib/public-rate-limit.mjs";
@@ -52,6 +53,11 @@ const server = createServer(async (request, response) => {
 
     if (isHealthApiRequest(requestUrl.pathname)) {
       await handleHealthApi(request, response, apiContext);
+      return;
+    }
+
+    if (isStockImageApiRequest(requestUrl.pathname)) {
+      await handleStockImageApi(request, response, apiContext);
       return;
     }
 

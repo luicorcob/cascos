@@ -18,9 +18,11 @@
     hero: {
       label: "Portada",
       variants: [
-        { id: "cinematic", label: "Cinematica", description: "Imagen protagonista y CTA visible." },
-        { id: "split", label: "Dividida", description: "Texto e imagen comparten el foco." },
-        { id: "minimal", label: "Minimal", description: "Mensaje limpio con menos ruido." }
+        { id: "cinematic", label: "Fondo + texto", description: "Una imagen ocupa toda la portada con el texto encima." },
+        { id: "split", label: "Imagen lateral", description: "Texto a un lado y una imagen rectangular al otro." },
+        { id: "collage", label: "3 flotantes", description: "Tres imagenes superpuestas forman una composicion visual." },
+        { id: "oval", label: "Imagen ovalada", description: "Una imagen protagonista recortada en forma de ovalo." },
+        { id: "minimal", label: "Sin imagen", description: "Portada tipografica centrada, sin fotografias." }
       ]
     },
     services: {

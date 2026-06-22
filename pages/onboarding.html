@@ -3,18 +3,18 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Brief cliente - LocalLift</title>
-    <meta name="description" content="Formulario de briefing para crear una web LocalLift para negocios locales.">
+    <title>Brief cliente y Google Ops - LocalLift</title>
+    <meta name="description" content="Formulario de briefing y guia de Google Ops para crear y operar una web LocalLift.">
     <link rel="stylesheet" href="onboarding.css">
   </head>
   <body>
     <main class="brief-shell">
       <header class="brief-hero">
         <a href="../index.html">LocalLift Studio</a>
-        <p class="eyebrow">Brief cliente</p>
+        <p class="eyebrow">Brief cliente + Google Ops</p>
         <h1>Recopila todo lo necesario para entregar una web premium en 7 dias.</h1>
         <p>
-          Este formulario sirve como guion de onboarding. El cliente puede completarlo en una reunion, por email o copiando las respuestas en un documento compartido.
+          Este formulario sirve como guion de onboarding. Incluye los datos que necesitamos del cliente y, dentro del apartado de Google, el flujo operativo para poner en marcha Workspace, Business Profile, resenas y reservas.
         </p>
         <div class="brief-actions">
           <button id="copyBriefButton" type="button">Copiar brief</button>
@@ -72,7 +72,7 @@
           <label>Restricciones legales o de marca <textarea rows="3" placeholder="Textos obligatorios, logos, colores, privacidad, disclaimers..."></textarea></label>
         </section>
 
-        <section>
+        <section id="google-gestionado" class="google-brief-section">
           <h2>7. Google gestionado</h2>
           <label>Dominio para correo profesional <input type="text" placeholder="tunegocio.com"></label>
           <label>Correo profesional deseado <input type="email" placeholder="info@tunegocio.com"></label>
@@ -81,6 +81,89 @@
           <label>Acceso que nos puede dar <textarea rows="3" placeholder="Manager de Business Profile, admin Workspace, Calendar, permisos de reseñas..."></textarea></label>
           <label>Reglas de reservas/citas <textarea rows="4" placeholder="Duracion por servicio, margen entre citas, horarios, quien confirma..."></textarea></label>
           <label>Mensaje para pedir resenas <textarea rows="3" placeholder="Gracias por venir. Nos ayudas dejando una resena aqui: {reviewUrl}"></textarea></label>
+
+          <details class="google-ops-details" id="google-ops-info">
+            <summary>
+              <span>
+                <strong>Más información sobre Google Ops</strong>
+                <small>Ver el proceso, los permisos necesarios y el entregable</small>
+              </span>
+            </summary>
+
+            <div class="google-ops-guide">
+              <article>
+                <span class="google-ops-step">01</span>
+                <div>
+                  <h3>Correo profesional</h3>
+                  <p>Se crea en Google Workspace, no como Gmail personal. Requiere el dominio del cliente, alta de Workspace, facturacion y permisos de administrador.</p>
+                  <ul>
+                    <li>Definir cuentas como info@, reservas@, hola@ o citas@.</li>
+                    <li>Configurar firma, recuperacion, reenvios y cambio de contrasena.</li>
+                  </ul>
+                </div>
+              </article>
+
+              <article>
+                <span class="google-ops-step">02</span>
+                <div>
+                  <h3>Google Business Profile</h3>
+                  <p>El cliente nos invita como manager o propietario autorizado para revisar datos, horarios, categorias, web y acciones.</p>
+                  <ul>
+                    <li>Sincronizar telefono, direccion, web y horarios.</li>
+                    <li>Conectar Place ID, Maps URL, resenas y enlaces de reserva.</li>
+                  </ul>
+                </div>
+              </article>
+
+              <article>
+                <span class="google-ops-step">03</span>
+                <div>
+                  <h3>Reservas y citas</h3>
+                  <p>El nivel inicial usa una URL de reserva o WhatsApp. El nivel avanzado conecta Google Calendar mediante OAuth del negocio.</p>
+                  <ul>
+                    <li>Comprobar disponibilidad y crear eventos con los datos del lead.</li>
+                    <li>Definir duracion, margenes, servicios y confirmacion.</li>
+                  </ul>
+                </div>
+              </article>
+
+              <article>
+                <span class="google-ops-step">04</span>
+                <div>
+                  <h3>Resenas y reputacion</h3>
+                  <p>LocalLift prepara mensajes para solicitar resenas y borradores de respuesta. La publicacion final requiere aprobacion humana.</p>
+                  <ul>
+                    <li>Enviar el enlace de resena despues de una visita o reserva.</li>
+                    <li>Detectar resenas pendientes y responder con el tono del negocio.</li>
+                  </ul>
+                </div>
+              </article>
+
+              <article>
+                <span class="google-ops-step">05</span>
+                <div>
+                  <h3>Permisos necesarios</h3>
+                  <p>Los accesos se gestionan por cliente y nunca se incluyen claves dentro de la web exportada.</p>
+                  <ul>
+                    <li>Admin de Workspace y OAuth de Business Profile y Calendar.</li>
+                    <li>API de Maps o Places configurada de forma segura en backend.</li>
+                  </ul>
+                </div>
+              </article>
+
+              <article>
+                <span class="google-ops-step">06</span>
+                <div>
+                  <h3>Seguimiento mensual</h3>
+                  <p>El mantenimiento mide resultados y mantiene coordinadas la web, la presencia local y las reservas.</p>
+                  <ul>
+                    <li>Leads, clics, llamadas, mapas, conversaciones y resenas.</li>
+                    <li>Cambios aplicados en la web, Google y el sistema de reservas.</li>
+                  </ul>
+                </div>
+              </article>
+            </div>
+          </details>
         </section>
       </form>
     </main>
@@ -102,6 +185,16 @@
         await navigator.clipboard.writeText(sections.join("\n\n"));
         document.querySelector("#copyBriefButton").textContent = "Brief copiado";
       });
+
+      const googleOpsDetails = document.querySelector("#google-ops-info");
+      const revealGoogleOps = () => {
+        if (window.location.hash !== "#google-ops-info" || !googleOpsDetails) return;
+        googleOpsDetails.open = true;
+        window.requestAnimationFrame(() => googleOpsDetails.scrollIntoView({ block: "start" }));
+      };
+
+      revealGoogleOps();
+      window.addEventListener("hashchange", revealGoogleOps);
     </script>
   </body>
 </html>

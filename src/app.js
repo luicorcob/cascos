@@ -18,6 +18,7 @@ const {
   clampNumber,
   normalizeChoice,
   normalizeSectionOrder,
+  sectionBaseKey,
   splitTitleBody,
   normalizeImage,
   normalizeUrl,
@@ -45,6 +46,13 @@ const {
 const { createRenderer } = window.LocalLiftStudio.renderer;
 const { createExporter } = window.LocalLiftStudio.exporter;
 const { validateBusiness } = window.LocalLiftStudio.validation;
+const { renderQualityControl } = window.LocalLiftStudio.qualityControl;
+const { createStockImageSearch } = window.LocalLiftStudio.stockImages;
+const {
+  createButtonStyleEditor,
+  readButtonStyles,
+  normalizeButtonStyles
+} = window.LocalLiftStudio.buttonStyles;
 const {
   SECTION_DEFINITIONS,
   DEFAULT_SECTION_ORDER,
@@ -72,8 +80,9 @@ const form = document.querySelector("#businessForm");
 const sitePreview = document.querySelector("#sitePreview");
 const previewTitle = document.querySelector("#previewTitle");
 const previewMetrics = document.querySelector("#previewMetrics");
-const qualityScore = document.querySelector("#qualityScore");
-const qualityChecklist = document.querySelector("#qualityChecklist");
+const deliveryStatus = document.querySelector("#deliveryStatus");
+const deliveryReadiness = document.querySelector("#deliveryReadiness");
+const deliveryReport = document.querySelector("#deliveryReport");
 const statusLine = document.querySelector("#statusLine");
 const deviceFrame = document.querySelector(".device-frame");
 const cursorGlow = document.querySelector(".cursor-glow");
@@ -81,10 +90,12 @@ const importDataInput = document.querySelector("#importDataInput");
 const topbarProjectName = document.querySelector("#topbarProjectName");
 const frameAddress = document.querySelector("#frameAddress");
 const presentationModeButton = document.querySelector("#presentationModeButton");
+const prepareDeliveryButton = document.querySelector("#prepareDeliveryButton");
 const directEditButton = document.querySelector("#directEditButton");
 const autoSaveState = document.querySelector("#autoSaveState");
 const sectionOrderList = document.querySelector("#sectionOrderList");
 const blockLibrary = document.querySelector("#blockLibrary");
+const heroLayoutPicker = document.querySelector("#heroLayoutPicker");
 const layoutTemplateName = document.querySelector("#layoutTemplateName");
 const layoutTemplateList = document.querySelector("#layoutTemplateList");
 const mediaLibraryGrid = document.querySelector("#mediaLibrary");
@@ -98,8 +109,26 @@ const previewInspectorImageUrl = document.querySelector("#previewInspectorImageU
 const previewInspectorImageAlt = document.querySelector("#previewInspectorImageAlt");
 const previewInspectorImagePosition = document.querySelector("#previewInspectorImagePosition");
 const previewInspectorMedia = document.querySelector("#previewInspectorMedia");
+const stockCategoryList = document.querySelector("#stockCategoryList");
+const stockSearchInput = document.querySelector("#stockSearchInput");
+const stockSearchButton = document.querySelector("#stockSearchButton");
+const stockImageResults = document.querySelector("#stockImageResults");
+const stockImageStatus = document.querySelector("#stockImageStatus");
+const stockLoadMoreButton = document.querySelector("#stockLoadMoreButton");
 const previewInspectorLinkLabel = document.querySelector("#previewInspectorLinkLabel");
 const previewInspectorLinkUrl = document.querySelector("#previewInspectorLinkUrl");
+const previewInspectorTextSample = document.querySelector("#previewInspectorTextSample");
+const previewInspectorTextColor = document.querySelector("#previewInspectorTextColor");
+const previewInspectorTextOpacity = document.querySelector("#previewInspectorTextOpacity");
+const previewInspectorTextSize = document.querySelector("#previewInspectorTextSize");
+const previewInspectorTextWeight = document.querySelector("#previewInspectorTextWeight");
+const previewInspectorTextItalic = document.querySelector("#previewInspectorTextItalic");
+const previewInspectorTextLetterSpacing = document.querySelector("#previewInspectorTextLetterSpacing");
+const previewButtonStyleEditor = createButtonStyleEditor({
+  sitePreview,
+  getBusiness: businessFromForm,
+  onReset: resetPreviewButtonStyle
+});
 
 let previewObserver;
 const editorHistory = createHistory({ limit: 60, clone: cloneData });
@@ -119,9 +148,16 @@ const businessDataClient = createBusinessDataClient({
 const mediaLibrary = createMediaLibrary({
   storage: localStorage,
   key: "locallift-studio-media-library",
-  maxItems: 24,
+  maxItems: 240,
   maxItemBytes: 900_000,
   maxTotalBytes: 2_000_000
+});
+const stockImageSearch = createStockImageSearch({
+  pageSize: 30,
+  catalogMinItems: 200,
+  catalogTargetItems: 240,
+  catalogPageSize: 24,
+  catalogConcurrency: 1
 });
 const layoutLibrary = createLayoutLibrary({
   storage: localStorage,
@@ -171,6 +207,25 @@ let parallaxFrame = 0;
 let directEditEnabled = false;
 let activePreviewEdit = null;
 let previewInspectorTarget = null;
+let stockImageState = {
+  category: "all",
+  query: "",
+  mode: "catalog",
+  page: 1,
+  loading: false,
+  items: [],
+  catalogItems: [],
+  categoryCount: 0,
+  hasNext: false
+};
+let selectedStockImage = null;
+const PREVIEW_SECTION_LISTS = {
+  services: "services",
+  features: "features",
+  gallery: "gallery",
+  testimonials: "testimonials",
+  faq: "faqs"
+};
 
 init();
 
@@ -188,6 +243,7 @@ function init() {
   bindBlockLibrary();
   bindLayoutTemplates();
   bindMediaManager();
+  bindStockImageSearch();
   bindDirectEditing();
   bindActions();
   bindPresentationMode();
@@ -386,11 +442,14 @@ function bindQuickEditor() {
   sectionOrderList?.addEventListener("click", (event) => {
     const moveButton = event.target.closest("[data-section-move]");
     const toggleButton = event.target.closest("[data-section-toggle]");
+    const removeButton = event.target.closest("[data-section-remove]");
 
     if (moveButton) {
       moveSection(moveButton.dataset.sectionMove, Number(moveButton.dataset.direction || 0));
+    } else if (removeButton) {
+      removeSectionInstance(removeButton.dataset.sectionRemove);
     } else if (toggleButton) {
-      const definition = SECTION_DEFINITIONS[toggleButton.dataset.sectionToggle];
+      const definition = SECTION_DEFINITIONS[sectionBaseKey(toggleButton.dataset.sectionToggle)];
       if (definition?.field) {
         toggleQuickField(definition.field);
       }
@@ -418,7 +477,7 @@ function bindQuickEditor() {
 }
 
 function bindBlockLibrary() {
-  blockLibrary?.addEventListener("click", (event) => {
+  const applyBlockVariant = (event) => {
     const button = event.target.closest("[data-block-section][data-block-variant]");
     if (!button) {
       return;
@@ -437,7 +496,9 @@ function bindBlockLibrary() {
       variants[section] = variant;
       setValue("blockVariants", JSON.stringify(variants));
     }, `${definition.label}: bloque ${option.label.toLowerCase()} aplicado.`);
-  });
+  };
+
+  [blockLibrary, heroLayoutPicker].forEach((root) => root?.addEventListener("click", applyBlockVariant));
 }
 
 function renderBlockLibrary(business = businessFromForm()) {
@@ -446,7 +507,7 @@ function renderBlockLibrary(business = businessFromForm()) {
   }
 
   const active = normalizeBlockVariants(business.blockVariants);
-  blockLibrary.innerHTML = Object.entries(BLOCK_LIBRARY).map(([section, definition]) => `
+  blockLibrary.innerHTML = Object.entries(BLOCK_LIBRARY).filter(([section]) => section !== "hero").map(([section, definition]) => `
     <section class="block-library-group">
       <strong>${escapeHtml(definition.label)}</strong>
       <div>
@@ -465,6 +526,16 @@ function renderBlockLibrary(business = businessFromForm()) {
       </div>
     </section>
   `).join("");
+
+  if (heroLayoutPicker) {
+    heroLayoutPicker.innerHTML = BLOCK_LIBRARY.hero.variants.map(({ id, label, description }) => `
+      <button class="hero-layout-option ${active.hero === id ? "is-active" : ""}" type="button"
+        data-block-section="hero" data-block-variant="${escapeAttr(id)}"
+        aria-pressed="${active.hero === id}" title="${escapeAttr(description)}">
+        <span class="hero-layout-swatch hero-layout-swatch-${escapeAttr(id)}" aria-hidden="true"><i></i><i></i><i></i></span>
+        <strong>${escapeHtml(label)}</strong>
+      </button>`).join("");
+  }
 }
 
 function bindLayoutTemplates() {
@@ -592,7 +663,7 @@ function bindMediaManager() {
     if (button.dataset.mediaAction === "hero") {
       runQuickMutation(() => {
         setValue("heroImage", item.url);
-        mergeMediaMetadata(item.url, { alt: item.alt || item.name });
+        mergeMediaMetadata(item.url, { alt: item.alt || item.name, ...mediaCreditMetadata(item) });
       }, `"${item.name}" aplicada como portada.`);
     } else if (button.dataset.mediaAction === "gallery") {
       runQuickMutation(() => {
@@ -600,7 +671,7 @@ function bindMediaManager() {
         if (!gallery.includes(item.url)) {
           setValue("gallery", [...gallery, item.url].slice(0, 12).join("\n"));
         }
-        mergeMediaMetadata(item.url, { alt: item.alt || item.name });
+        mergeMediaMetadata(item.url, { alt: item.alt || item.name, ...mediaCreditMetadata(item) });
         setChecked("showGallery", true);
       }, `"${item.name}" anadida a la galeria.`);
     } else if (button.dataset.mediaAction === "metadata") {
@@ -668,7 +739,323 @@ function renderMediaDetails(item) {
   const dimensions = item.width && item.height ? `${item.width}x${item.height}` : "dimensiones pendientes";
   const weight = item.size ? `${Math.max(1, Math.round(item.size / 1000))} KB` : "";
   const warning = item.width && item.width < 800 ? " - resolucion baja" : "";
-  return escapeHtml([source, dimensions, weight].filter(Boolean).join(" - ") + warning);
+  const license = item.license ? `${item.license}` : "";
+  return escapeHtml([source, dimensions, weight, license].filter(Boolean).join(" - ") + warning);
+}
+
+function bindStockImageSearch() {
+  if (!stockCategoryList || !stockSearchButton || !stockImageResults) {
+    return;
+  }
+
+  stockCategoryList.innerHTML = [{ id: "all", label: "Todas" }, ...stockImageSearch.categories].map((category) => `
+    <button type="button" data-stock-category="${escapeAttr(category.id)}">${escapeHtml(category.label)}</button>
+  `).join("");
+
+  stockCategoryList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-stock-category]");
+    if (!button) {
+      return;
+    }
+    showStockImageCategory(button.dataset.stockCategory || "all");
+    syncStockCategoryButtons();
+  });
+
+  stockSearchButton.addEventListener("click", () => {
+    const query = String(stockSearchInput?.value || "").trim();
+    if (!query) {
+      showStockImageCategory(stockImageState.category);
+      return;
+    }
+    stockImageState = {
+      ...stockImageState,
+      query,
+      mode: "search",
+      page: 1,
+      items: []
+    };
+    loadStockImages({ replace: true });
+  });
+
+  stockSearchInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      stockSearchButton.click();
+    }
+  });
+
+  stockLoadMoreButton?.addEventListener("click", () => {
+    stockImageState = {
+      ...stockImageState,
+      page: stockImageState.page + 1
+    };
+    loadStockImages({ replace: false });
+  });
+
+  stockImageResults.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-stock-action][data-stock-id]");
+    if (!button) {
+      return;
+    }
+    const item = stockImageState.items.find((candidate) => candidate.id === button.dataset.stockId);
+    if (!item) {
+      return;
+    }
+
+    if (button.dataset.stockAction === "use") {
+      selectStockImage(item);
+    } else if (button.dataset.stockAction === "save") {
+      saveStockImage(item);
+    }
+  });
+
+  syncStockCategoryButtons();
+}
+
+function showStockImageCategory(category = "all") {
+  if (stockSearchInput) {
+    stockSearchInput.value = "";
+  }
+  stockImageState = {
+    ...stockImageState,
+    category,
+    query: "",
+    mode: "catalog",
+    page: 1,
+    items: stockImageState.catalogItems,
+    hasNext: false
+  };
+  syncStockCategoryButtons();
+
+  if (stockImageState.catalogItems.length) {
+    renderStockImages();
+    renderStockCatalogStatus();
+  } else if (!stockImageState.loading) {
+    loadStockImageCatalog();
+  }
+}
+
+function syncStockCategoryButtons() {
+  stockCategoryList?.querySelectorAll("[data-stock-category]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.stockCategory === stockImageState.category);
+  });
+}
+
+async function loadStockImageCatalog() {
+  if (!stockImageResults || stockImageState.loading) {
+    return;
+  }
+
+  const builtInItems = Array.isArray(stockImageSearch.builtInItems) ? stockImageSearch.builtInItems : [];
+  stockImageState = {
+    ...stockImageState,
+    mode: "catalog",
+    loading: true,
+    items: builtInItems,
+    catalogItems: builtInItems,
+    categoryCount: new Set(builtInItems.map((item) => item.category)).size
+  };
+  renderStockImages();
+  renderStockImageStatus(builtInItems.length
+    ? `${builtInItems.length} fotos profesionales incluidas`
+    : "Preparando catalogo profesional...");
+  if (stockLoadMoreButton) {
+    stockLoadMoreButton.hidden = true;
+  }
+
+  if (builtInItems.length >= 200) {
+    stockImageState = { ...stockImageState, loading: false };
+    renderStockCatalogStatus();
+    return;
+  }
+
+  try {
+    const result = await stockImageSearch.discover({ minItems: 200, targetItems: 240 });
+    const items = mergeStockImageItems(builtInItems, result.items, 240);
+    stockImageState = {
+      ...stockImageState,
+      loading: false,
+      mode: "catalog",
+      page: 1,
+      items,
+      catalogItems: items,
+      categoryCount: new Set(items.map((item) => item.category)).size,
+      hasNext: false
+    };
+    renderStockImages();
+    renderStockCatalogStatus();
+  } catch (error) {
+    stockImageState = {
+      ...stockImageState,
+      loading: false,
+      mode: "catalog",
+      items: builtInItems,
+      catalogItems: builtInItems,
+      categoryCount: new Set(builtInItems.map((item) => item.category)).size,
+      hasNext: false
+    };
+    renderStockImages();
+    renderStockImageStatus(builtInItems.length
+      ? `${builtInItems.length} fotos incluidas · ampliacion online temporalmente limitada`
+      : "Banco de imagenes temporalmente no disponible");
+  }
+}
+
+async function loadStockImages({ replace = true } = {}) {
+  if (!stockImageResults || stockImageState.loading) {
+    return;
+  }
+
+  stockImageState = { ...stockImageState, mode: "search", loading: true };
+  renderStockImageStatus("Buscando imagenes libres...");
+  if (replace) {
+    stockImageResults.innerHTML = '<p class="stock-empty">Cargando imagenes libres...</p>';
+    if (stockLoadMoreButton) {
+      stockLoadMoreButton.hidden = true;
+    }
+  }
+
+  try {
+    const result = await stockImageSearch.search(stockImageState);
+    const knownUrls = new Set(replace ? [] : stockImageState.items.map((item) => item.url));
+    const items = result.items.filter((item) => !knownUrls.has(item.url));
+    stockImageState = {
+      ...stockImageState,
+      loading: false,
+      page: result.page,
+      items: replace ? items : [...stockImageState.items, ...items],
+      hasNext: result.hasNext
+    };
+    renderStockImages();
+    renderStockImageStatus(`${stockImageState.items.length} de ${result.total || "muchas"} imagenes libres`);
+  } catch (error) {
+    const catalogItems = stockImageState.catalogItems || [];
+    stockImageState = {
+      ...stockImageState,
+      loading: false,
+      mode: catalogItems.length ? "catalog" : "search",
+      items: catalogItems.length ? catalogItems : []
+    };
+    renderStockImages();
+    if (stockLoadMoreButton) {
+      stockLoadMoreButton.hidden = true;
+    }
+    renderStockImageStatus(catalogItems.length
+      ? "Busqueda online limitada · mostrando seleccion incluida"
+      : "Banco de imagenes temporalmente no disponible");
+  }
+}
+
+function mergeStockImageItems(primary, secondary, limit = 240) {
+  const known = new Set();
+  return [...primary, ...secondary].filter((item) => {
+    if (!item?.url || known.has(item.url)) {
+      return false;
+    }
+    known.add(item.url);
+    return true;
+  }).slice(0, limit);
+}
+
+function renderStockImages() {
+  if (!stockImageResults) {
+    return;
+  }
+
+  const items = visibleStockImages();
+  stockImageResults.innerHTML = items.length ? items.map((item) => `
+    <article class="stock-image-card">
+      <button type="button" data-stock-action="use" data-stock-id="${escapeAttr(item.id)}" aria-label="Usar ${escapeAttr(item.title)}">
+        <img src="${escapeAttr(item.thumbnail)}" alt="${escapeAttr(item.alt || item.title)}" loading="lazy" decoding="async">
+      </button>
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml([item.categoryLabel, item.license, item.provider].filter(Boolean).join(" - "))}</span>
+      </div>
+      <footer>
+        <button type="button" data-stock-action="use" data-stock-id="${escapeAttr(item.id)}">Usar</button>
+        <button type="button" data-stock-action="save" data-stock-id="${escapeAttr(item.id)}">Guardar</button>
+      </footer>
+    </article>
+  `).join("") : '<p class="stock-empty">No hay resultados en esta categoria.</p>';
+
+  if (stockLoadMoreButton) {
+    stockLoadMoreButton.hidden = !stockImageState.hasNext;
+  }
+}
+
+function visibleStockImages() {
+  if (stockImageState.mode !== "catalog" || stockImageState.category === "all") {
+    return stockImageState.items;
+  }
+  return stockImageState.catalogItems.filter((item) => item.category === stockImageState.category);
+}
+
+function renderStockCatalogStatus() {
+  const visible = visibleStockImages();
+  const category = stockImageSearch.categories.find((item) => item.id === stockImageState.category);
+  if (category) {
+    renderStockImageStatus(`${visible.length} de ${category.label} · ${stockImageState.catalogItems.length} en total`);
+    return;
+  }
+  renderStockImageStatus(`${stockImageState.catalogItems.length} fotos · ${stockImageState.categoryCount} colecciones`);
+}
+
+function selectStockImage(item) {
+  selectedStockImage = item;
+  previewInspectorImageUrl.value = item.url;
+  previewInspectorImageAlt.value = item.alt || item.title || "";
+  previewInspectorImage.src = item.url;
+  renderStockImageStatus(`${item.license} seleccionado`);
+}
+
+function saveStockImage(item) {
+  try {
+    const stored = mediaLibrary.add({
+      name: item.title,
+      url: item.url,
+      alt: item.alt,
+      license: item.license,
+      sourceUrl: item.sourceUrl,
+      provider: item.provider,
+      creator: item.creator
+    });
+    mediaLibrary.update(stored.id, {
+      name: item.title,
+      alt: item.alt,
+      license: item.license,
+      sourceUrl: item.sourceUrl,
+      provider: item.provider,
+      creator: item.creator
+    });
+    renderMediaLibrary();
+    renderStockImageStatus(`Guardada: ${stored.name}`);
+    setStatus(`"${stored.name}" disponible en la biblioteca.`);
+  } catch (error) {
+    setStatus(error?.message || "No se pudo guardar esa imagen.");
+  }
+}
+
+function resolveImageCreditMetadata(url) {
+  if (selectedStockImage?.url === url) {
+    return mediaCreditMetadata(selectedStockImage);
+  }
+  return mediaCreditMetadata(mediaLibrary.list().find((item) => item.url === url));
+}
+
+function mediaCreditMetadata(item = {}) {
+  return Object.fromEntries(Object.entries({
+    license: item.license,
+    sourceUrl: item.sourceUrl,
+    provider: item.provider,
+    creator: item.creator
+  }).filter(([, value]) => String(value || "").trim()));
+}
+
+function renderStockImageStatus(message) {
+  if (stockImageStatus) {
+    stockImageStatus.textContent = message;
+  }
 }
 
 function bindDirectEditing() {
@@ -678,7 +1065,18 @@ function bindDirectEditing() {
   document.querySelector("#previewInspectorClose")?.addEventListener("click", closePreviewInspector);
   document.querySelector("#previewInspectorImageApply")?.addEventListener("click", applyPreviewImageEdit);
   document.querySelector("#previewInspectorLinkApply")?.addEventListener("click", applyPreviewLinkEdit);
+  document.querySelector("#previewInspectorTextApply")?.addEventListener("click", applyPreviewTextStyle);
+  document.querySelector("#previewInspectorTextReset")?.addEventListener("click", resetPreviewTextStyle);
+  [
+    previewInspectorTextColor,
+    previewInspectorTextOpacity,
+    previewInspectorTextSize,
+    previewInspectorTextWeight,
+    previewInspectorTextItalic,
+    previewInspectorTextLetterSpacing
+  ].forEach((field) => field?.addEventListener("input", updatePreviewTextSample));
   previewInspectorImageUrl?.addEventListener("input", () => {
+    selectedStockImage = null;
     previewInspectorImage.src = previewInspectorImageUrl.value;
   });
   previewInspectorMedia?.addEventListener("click", (event) => {
@@ -687,6 +1085,7 @@ function bindDirectEditing() {
     if (!item) {
       return;
     }
+    selectedStockImage = null;
     previewInspectorImageUrl.value = item.url;
     previewInspectorImageAlt.value = item.alt || item.name;
     previewInspectorImage.src = item.url;
@@ -710,6 +1109,14 @@ function bindDirectEditing() {
       return;
     }
 
+    const itemAction = event.target.closest("[data-preview-item-action]");
+    if (itemAction) {
+      event.preventDefault();
+      event.stopPropagation();
+      handlePreviewItemAction(itemAction);
+      return;
+    }
+
     const image = event.target.closest("[data-edit-image-field], [data-edit-image-list]");
     if (image) {
       event.preventDefault();
@@ -723,6 +1130,14 @@ function bindDirectEditing() {
       event.preventDefault();
       event.stopPropagation();
       openPreviewLinkInspector(link);
+      return;
+    }
+
+    const button = event.target.closest("[data-edit-button-style]");
+    if (button) {
+      event.preventDefault();
+      event.stopPropagation();
+      openPreviewButtonInspector(button);
       return;
     }
 
@@ -755,7 +1170,7 @@ function toggleDirectEditing(force) {
   directEditButton?.classList.toggle("is-active", directEditEnabled);
   directEditButton?.setAttribute("aria-pressed", String(directEditEnabled));
   setStatus(directEditEnabled
-    ? "Edicion directa activa. Edita textos, imagenes, enlaces o el orden de las secciones."
+    ? "Edicion directa activa. Edita textos, imagenes, enlaces, botones o el orden de las secciones."
     : "Edicion directa cerrada.");
 }
 
@@ -767,6 +1182,7 @@ function openPreviewImageInspector(element) {
   const url = field ? business[field] : business[list]?.[index];
   const metadata = business.mediaMetadata?.[url] || {};
 
+  selectedStockImage = null;
   previewInspectorTarget = { type: "image", field, list, index, originalUrl: url };
   previewInspectorTitle.textContent = field === "heroImage" ? "Imagen de portada" : `Imagen ${index + 1} de galeria`;
   previewInspectorImage.src = url || "";
@@ -778,6 +1194,17 @@ function openPreviewImageInspector(element) {
       <img src="${escapeAttr(item.url)}" alt="">
     </button>
   `).join("") || "<span>No hay imagenes guardadas todavia.</span>";
+  syncStockCategoryButtons();
+  if (stockImageState.items.length) {
+    renderStockImages();
+    if (stockImageState.mode === "catalog") {
+      renderStockCatalogStatus();
+    }
+  } else if (stockImageState.mode === "catalog") {
+    loadStockImageCatalog();
+  } else {
+    loadStockImages({ replace: true });
+  }
   showPreviewInspector("image");
 }
 
@@ -802,9 +1229,11 @@ function applyPreviewImageEdit() {
     }
     mergeMediaMetadata(url, {
       alt: previewInspectorImageAlt.value,
-      position: previewInspectorImagePosition.value
+      position: previewInspectorImagePosition.value,
+      ...resolveImageCreditMetadata(url)
     });
   }, "Imagen actualizada desde la preview.");
+  selectedStockImage = null;
   closePreviewInspector();
 }
 
@@ -822,50 +1251,191 @@ function openPreviewLinkInspector(element) {
         ? { label: "Email", url: business.email }
         : { label: item?.label || element.textContent, url: item?.url || element.href };
 
-  previewInspectorTarget = { type: "link", field, list, index };
+  const buttonStyle = field === "booking" || element.dataset.editButtonStyle === "primary"
+    ? "primary"
+    : "";
+  previewInspectorTarget = { type: "link", field, list, index, buttonStyle };
   previewInspectorTitle.textContent = field === "booking" ? "Boton principal" : "Enlace";
   previewInspectorLinkLabel.value = values.label || "";
   previewInspectorLinkLabel.disabled = ["phone", "email"].includes(field);
+  previewInspectorLinkUrl.disabled = false;
   previewInspectorLinkUrl.value = values.url || "";
+  previewButtonStyleEditor.configure(element, {
+    styleKey: buttonStyle,
+    targetType: "link",
+    label: values.label
+  });
+  showPreviewInspector("link");
+}
+
+function openPreviewButtonInspector(element) {
+  const styleKey = element.dataset.editButtonStyle || "";
+  if (styleKey !== "primary") {
+    return;
+  }
+  previewInspectorTarget = { type: "button", buttonStyle: styleKey };
+  previewInspectorTitle.textContent = "Botones principales";
+  previewInspectorLinkLabel.disabled = true;
+  previewInspectorLinkUrl.disabled = true;
+  previewButtonStyleEditor.configure(element, {
+    styleKey,
+    targetType: "button",
+    label: element.textContent
+  });
   showPreviewInspector("link");
 }
 
 function applyPreviewLinkEdit() {
-  if (previewInspectorTarget?.type !== "link") {
+  if (!previewInspectorTarget || !["link", "button"].includes(previewInspectorTarget.type)) {
     return;
   }
   const target = { ...previewInspectorTarget };
   const label = previewInspectorLinkLabel.value.trim();
   const url = previewInspectorLinkUrl.value.trim();
-  if (!url || (!label && !["phone", "email"].includes(target.field))) {
+  if (target.type === "link" && (!url || (!label && !["phone", "email"].includes(target.field)))) {
     setStatus("El enlace necesita texto y destino.");
     return;
   }
 
   runQuickMutation(() => {
-    if (target.field === "booking") {
+    if (target.type === "link" && target.field === "booking") {
       setValue("bookingLabel", label);
       setValue("bookingUrl", normalizeUrl(url));
       setChecked("showBooking", true);
-    } else if (target.field === "phone" || target.field === "email") {
+    } else if (target.type === "link" && (target.field === "phone" || target.field === "email")) {
       setValue(target.field, url);
-    } else if (target.list === "links") {
+    } else if (target.type === "link" && target.list === "links") {
       const currentLinks = businessFromForm().links;
       const links = (currentLinks.length ? currentLinks : demoBusiness.links).map((item) => ({ ...item }));
       links[target.index] = { label, url: normalizeUrl(url) };
       setValue("links", links.map((item) => `${item.label} | ${item.url}`).join("\n"));
     }
-  }, "Enlace actualizado desde la preview.");
+    if (target.buttonStyle === "primary") {
+      const styles = readButtonStyles(form.elements.buttonStyles?.value);
+      styles.primary = previewButtonStyleEditor.value();
+      setValue("buttonStyles", JSON.stringify(normalizeButtonStyles(styles)));
+    }
+  }, target.buttonStyle === "primary"
+    ? "Botones principales actualizados desde la preview."
+    : "Enlace actualizado desde la preview.");
   closePreviewInspector();
 }
 
-function showPreviewInspector(panel) {
+function resetPreviewButtonStyle() {
+  if (previewInspectorTarget?.buttonStyle !== "primary") {
+    return;
+  }
+  runQuickMutation(() => {
+    const styles = readButtonStyles(form.elements.buttonStyles?.value);
+    delete styles.primary;
+    setValue("buttonStyles", JSON.stringify(normalizeButtonStyles(styles)));
+  }, "Estilo de botones restablecido al del tema.");
+  closePreviewInspector();
+}
+
+function openPreviewTextInspector(element, options = {}) {
+  const key = getPreviewTextStyleKey(element);
+  if (!key) {
+    return;
+  }
+  const styles = readTextStyles(form.elements.textStyles?.value);
+  const style = styles[key] || {};
+  const computed = window.getComputedStyle(element);
+
+  previewInspectorTarget = {
+    type: "text",
+    key,
+    label: getPreviewTextLabel(element)
+  };
+  previewInspectorTitle.textContent = previewInspectorTarget.label;
+  previewInspectorTextSample.textContent = element.textContent.trim() || "Texto seleccionado";
+  previewInspectorTextColor.value = normalizeColor(style.color) || rgbToHex(computed.color) || "#111111";
+  previewInspectorTextOpacity.value = Math.round((style.opacity ?? Number(computed.opacity || 1)) * 100);
+  previewInspectorTextSize.value = Math.round((style.size || 1) * 100);
+  previewInspectorTextWeight.value = style.weight || "default";
+  previewInspectorTextItalic.value = style.italic ? "italic" : "normal";
+  previewInspectorTextLetterSpacing.value = Math.round((style.letterSpacing || 0) * 100);
+  updatePreviewTextSample();
+  showPreviewInspector("text", { focus: options.focus ?? true });
+}
+
+function applyPreviewTextStyle() {
+  if (previewInspectorTarget?.type !== "text") {
+    return;
+  }
+  const key = previewInspectorTarget.key;
+  const nextStyle = normalizeTextStyle({
+    color: previewInspectorTextColor.value,
+    opacity: Number(previewInspectorTextOpacity.value || 100) / 100,
+    size: Number(previewInspectorTextSize.value || 100) / 100,
+    weight: previewInspectorTextWeight.value,
+    italic: previewInspectorTextItalic.value === "italic",
+    letterSpacing: Number(previewInspectorTextLetterSpacing.value || 0) / 100
+  });
+
+  runQuickMutation(() => {
+    const styles = readTextStyles(form.elements.textStyles?.value);
+    styles[key] = nextStyle;
+    setValue("textStyles", JSON.stringify(normalizeTextStyles(styles)));
+  }, "Estilo de texto aplicado desde la preview.");
+  closePreviewInspector();
+}
+
+function resetPreviewTextStyle() {
+  if (previewInspectorTarget?.type !== "text") {
+    return;
+  }
+  const key = previewInspectorTarget.key;
+  runQuickMutation(() => {
+    const styles = readTextStyles(form.elements.textStyles?.value);
+    delete styles[key];
+    setValue("textStyles", JSON.stringify(normalizeTextStyles(styles)));
+  }, "Estilo de texto restablecido.");
+  closePreviewInspector();
+}
+
+function updatePreviewTextSample() {
+  const style = normalizeTextStyle({
+    color: previewInspectorTextColor?.value,
+    opacity: Number(previewInspectorTextOpacity?.value || 100) / 100,
+    size: Number(previewInspectorTextSize?.value || 100) / 100,
+    weight: previewInspectorTextWeight?.value,
+    italic: previewInspectorTextItalic?.value === "italic",
+    letterSpacing: Number(previewInspectorTextLetterSpacing?.value || 0) / 100
+  });
+  applyTextStyleToElement(previewInspectorTextSample, style, "1rem");
+  applyTextStyleToElement(findPreviewTextElement(previewInspectorTarget?.key), style, "var(--text-base-size, 1em)");
+}
+
+function findPreviewTextElement(key) {
+  if (!key || !sitePreview || !window.CSS?.escape) {
+    return null;
+  }
+  return sitePreview.querySelector(`[data-text-style-key="${CSS.escape(key)}"]`);
+}
+
+function applyTextStyleToElement(element, style, baseSize = "1em") {
+  if (!element) {
+    return;
+  }
+  element.style.color = style.color || "";
+  element.style.opacity = style.opacity ? String(style.opacity) : "";
+  element.style.fontSize = style.size ? `calc(${baseSize} * ${style.size})` : "";
+  element.style.fontWeight = style.weight || "";
+  element.style.fontStyle = style.italic ? "italic" : "";
+  element.style.letterSpacing = style.letterSpacing ? `${style.letterSpacing}em` : "";
+}
+
+function showPreviewInspector(panel, options = {}) {
   previewInspector.hidden = false;
   previewInspector.querySelectorAll("[data-inspector-panel]").forEach((element) => {
     element.hidden = element.dataset.inspectorPanel !== panel;
   });
+  if (options.focus === false) {
+    return;
+  }
   requestAnimationFrame(() => {
-    previewInspector.querySelector(`[data-inspector-panel="${panel}"] input:not(:disabled)`)?.focus();
+    previewInspector.querySelector(`[data-inspector-panel="${panel}"] input:not(:disabled), [data-inspector-panel="${panel}"] select:not(:disabled)`)?.focus();
   });
 }
 
@@ -880,7 +1450,8 @@ function attachPreviewSectionControls() {
   const order = normalizeSectionOrder(form.elements.sectionOrder?.value, DEFAULT_SECTION_ORDER);
   sitePreview.querySelectorAll("[data-section-key]").forEach((section) => {
     const key = section.dataset.sectionKey;
-    const definition = SECTION_DEFINITIONS[key];
+    const baseKey = sectionBaseKey(key);
+    const definition = SECTION_DEFINITIONS[baseKey];
     if (!definition || section.querySelector(":scope > .preview-section-controls")) {
       return;
     }
@@ -888,9 +1459,12 @@ function attachPreviewSectionControls() {
     const controls = document.createElement("div");
     controls.className = "preview-section-controls";
     controls.innerHTML = `
-      <strong>${escapeHtml(definition.label)}</strong>
+      <strong>${escapeHtml(sectionInstanceLabel(key))}</strong>
+      ${PREVIEW_SECTION_LISTS[baseKey] ? `<button type="button" data-preview-section-action="add-item" data-section-key="${escapeAttr(key)}">Anadir</button>` : ""}
+      <button type="button" data-preview-section-action="duplicate" data-section-key="${escapeAttr(key)}">Duplicar</button>
       <button type="button" data-preview-section-action="up" data-section-key="${escapeAttr(key)}" ${index <= 0 ? "disabled" : ""}>Subir</button>
       <button type="button" data-preview-section-action="down" data-section-key="${escapeAttr(key)}" ${index < 0 || index >= order.length - 1 ? "disabled" : ""}>Bajar</button>
+      ${key.includes("__copy") ? `<button type="button" data-preview-section-action="remove" data-section-key="${escapeAttr(key)}">Eliminar</button>` : ""}
       ${definition.field ? `<button type="button" data-preview-section-action="hide" data-section-key="${escapeAttr(key)}">Ocultar</button>` : ""}
     `;
     section.prepend(controls);
@@ -899,16 +1473,238 @@ function attachPreviewSectionControls() {
 
 function handlePreviewSectionAction(button) {
   const section = button.dataset.sectionKey;
-  if (button.dataset.previewSectionAction === "up") {
+  const baseKey = sectionBaseKey(section);
+  if (button.dataset.previewSectionAction === "add-item") {
+    addPreviewItemForSection(section);
+  } else if (button.dataset.previewSectionAction === "duplicate") {
+    duplicateSection(section);
+  } else if (button.dataset.previewSectionAction === "up") {
     moveSection(section, -1);
   } else if (button.dataset.previewSectionAction === "down") {
     moveSection(section, 1);
+  } else if (button.dataset.previewSectionAction === "remove") {
+    removeSectionInstance(section);
   } else if (button.dataset.previewSectionAction === "hide") {
-    const field = SECTION_DEFINITIONS[section]?.field;
+    const field = SECTION_DEFINITIONS[baseKey]?.field;
     if (field) {
       toggleQuickField(field);
     }
   }
+}
+
+function attachPreviewItemControls() {
+  const seen = new Set();
+  sitePreview.querySelectorAll("[data-edit-list]").forEach((element) => {
+    const list = element.dataset.editList;
+    const index = Number(element.dataset.editIndex || 0);
+    const key = `${list}:${index}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    const container = element.closest(".service-card, .feature-card, .testimonial-card, .faq-item");
+    attachPreviewItemControl(container, list, index);
+  });
+
+  sitePreview.querySelectorAll(".gallery-item:not(.is-gallery-clone) [data-edit-image-list='gallery']").forEach((element) => {
+    const index = Number(element.dataset.editIndex || 0);
+    attachPreviewItemControl(element.closest(".gallery-item"), "gallery", index);
+  });
+}
+
+function attachPreviewItemControl(container, list, index) {
+  if (!container || container.querySelector(":scope > .preview-item-controls")) {
+    return;
+  }
+
+  const total = getEditableListItems(list).length;
+  const controls = document.createElement("div");
+  controls.className = "preview-item-controls";
+  controls.innerHTML = `
+    <span>${escapeHtml(previewListLabel(list))} ${index + 1}</span>
+    <button type="button" data-preview-item-action="up" data-preview-item-list="${escapeAttr(list)}" data-preview-item-index="${index}" ${index <= 0 ? "disabled" : ""}>Subir</button>
+    <button type="button" data-preview-item-action="down" data-preview-item-list="${escapeAttr(list)}" data-preview-item-index="${index}" ${index >= total - 1 ? "disabled" : ""}>Bajar</button>
+    <button type="button" data-preview-item-action="duplicate" data-preview-item-list="${escapeAttr(list)}" data-preview-item-index="${index}" ${total >= previewListMax(list) ? "disabled" : ""}>Duplicar</button>
+    <button type="button" data-preview-item-action="delete" data-preview-item-list="${escapeAttr(list)}" data-preview-item-index="${index}" ${total <= 1 ? "disabled" : ""}>Borrar</button>
+  `;
+
+  if (container.matches("details")) {
+    container.insertBefore(controls, container.children[1] || null);
+  } else {
+    container.prepend(controls);
+  }
+}
+
+function handlePreviewItemAction(button) {
+  const list = button.dataset.previewItemList;
+  const index = Number(button.dataset.previewItemIndex || 0);
+  const action = button.dataset.previewItemAction;
+  mutatePreviewList(list, (items) => {
+    if (action === "up" && index > 0) {
+      [items[index - 1], items[index]] = [items[index], items[index - 1]];
+    } else if (action === "down" && index < items.length - 1) {
+      [items[index], items[index + 1]] = [items[index + 1], items[index]];
+    } else if (action === "duplicate" && items.length < previewListMax(list)) {
+      items.splice(index + 1, 0, cloneData(items[index]));
+    } else if (action === "delete" && items.length > 1) {
+      items.splice(index, 1);
+    }
+  }, previewItemActionLabel(action, list));
+}
+
+function addPreviewItemForSection(section) {
+  const list = PREVIEW_SECTION_LISTS[sectionBaseKey(section)];
+  if (!list) {
+    return;
+  }
+
+  mutatePreviewList(list, (items) => {
+    if (items.length < previewListMax(list)) {
+      items.push(createPreviewListItem(list));
+    }
+  }, `${previewListLabel(list)} anadido desde la preview.`);
+}
+
+function duplicateSection(section) {
+  const baseKey = sectionBaseKey(section);
+  if (!SECTION_DEFINITIONS[baseKey]) {
+    return;
+  }
+
+  const order = normalizeSectionOrder(form.elements.sectionOrder?.value, DEFAULT_SECTION_ORDER);
+  const sourceIndex = order.indexOf(section);
+  const copyCount = order.filter((key) => sectionBaseKey(key) === baseKey && key.includes("__copy")).length;
+  if (copyCount >= 2) {
+    setStatus("Limite alcanzado: maximo dos copias por tipo de seccion.");
+    return;
+  }
+
+  const copyKey = nextSectionCopyKey(order, baseKey);
+  runQuickMutation(() => {
+    const nextOrder = [...order];
+    nextOrder.splice(sourceIndex >= 0 ? sourceIndex + 1 : order.length, 0, copyKey);
+    setValue("sectionOrder", nextOrder.join(","));
+    const field = SECTION_DEFINITIONS[baseKey]?.field;
+    if (field) {
+      setChecked(field, true);
+    }
+  }, `${SECTION_DEFINITIONS[baseKey].label} duplicada.`);
+}
+
+function removeSectionInstance(section) {
+  if (!String(section || "").includes("__copy")) {
+    return;
+  }
+  const order = normalizeSectionOrder(form.elements.sectionOrder?.value, DEFAULT_SECTION_ORDER);
+  if (!order.includes(section)) {
+    return;
+  }
+
+  runQuickMutation(() => {
+    setValue("sectionOrder", order.filter((key) => key !== section).join(","));
+  }, `${sectionInstanceLabel(section)} eliminada.`);
+}
+
+function nextSectionCopyKey(order, baseKey) {
+  let index = 1;
+  const used = new Set(order);
+  while (used.has(`${baseKey}__copy${index}`)) {
+    index += 1;
+  }
+  return `${baseKey}__copy${index}`;
+}
+
+function sectionInstanceLabel(key) {
+  const baseKey = sectionBaseKey(key);
+  const label = SECTION_DEFINITIONS[baseKey]?.label || baseKey;
+  const match = String(key || "").match(/__copy(\d+)$/);
+  return match ? `${label} copia ${match[1]}` : label;
+}
+
+function mutatePreviewList(list, mutator, message) {
+  const items = getEditableListItems(list);
+  const before = JSON.stringify(items);
+  mutator(items);
+  const next = items.slice(0, previewListMax(list));
+  if (JSON.stringify(next) === before) {
+    setStatus("No se pudo aplicar ese cambio en la lista.");
+    return;
+  }
+
+  runQuickMutation(() => {
+    setEditableListItems(list, next);
+    const visibilityField = previewListVisibilityField(list);
+    if (visibilityField) {
+      setChecked(visibilityField, true);
+    }
+  }, message);
+}
+
+function getEditableListItems(list, business = businessFromForm()) {
+  if (list === "testimonials" || list === "faqs") {
+    return (business[list] || []).map((item) => ({ ...item }));
+  }
+  return [...(business[list] || [])];
+}
+
+function setEditableListItems(list, items) {
+  if (list === "testimonials") {
+    setValue("testimonials", items.map((item) => `${item.name} | ${item.text}`).join("\n"));
+  } else if (list === "faqs") {
+    setValue("faqs", items.map((item) => `${item.question} | ${item.answer}`).join("\n"));
+  } else {
+    setValue(list, items.join("\n"));
+  }
+}
+
+function createPreviewListItem(list) {
+  const business = businessFromForm();
+  const firstMedia = mediaLibrary.list()[0]?.url;
+  return {
+    services: "Nuevo servicio: Describe que incluye y para quien es.",
+    features: "Nuevo diferencial: Explica por que el cliente deberia elegirte.",
+    gallery: firstMedia || business.heroImage || demoBusiness.gallery[0],
+    testimonials: { name: "Nuevo cliente", text: "Escribe aqui una resena breve y creible." },
+    faqs: { question: "Nueva pregunta frecuente", answer: "Escribe una respuesta clara y util." }
+  }[list];
+}
+
+function previewListMax(list) {
+  return {
+    services: 9,
+    features: 8,
+    gallery: 12,
+    testimonials: 6,
+    faqs: 8
+  }[list] || 8;
+}
+
+function previewListLabel(list) {
+  return {
+    services: "Servicio",
+    features: "Diferencial",
+    gallery: "Foto",
+    testimonials: "Resena",
+    faqs: "FAQ"
+  }[list] || "Elemento";
+}
+
+function previewListVisibilityField(list) {
+  return {
+    gallery: "showGallery",
+    testimonials: "showTestimonials",
+    faqs: "showFaq"
+  }[list] || "";
+}
+
+function previewItemActionLabel(action, list) {
+  const label = previewListLabel(list).toLowerCase();
+  return {
+    up: `${previewListLabel(list)} movido arriba.`,
+    down: `${previewListLabel(list)} movido abajo.`,
+    duplicate: `${previewListLabel(list)} duplicado.`,
+    delete: `${previewListLabel(list)} eliminado.`
+  }[action] || `${label} actualizado.`;
 }
 
 function beginPreviewEdit(element) {
@@ -960,6 +1756,7 @@ function beginPreviewEdit(element) {
   activePreviewEdit = { element, commit, cancel };
   element.addEventListener("blur", commit);
   element.addEventListener("keydown", onKeydown);
+  openPreviewTextInspector(element, { focus: false });
 }
 
 function getPreviewEditValue(element, business) {
@@ -1008,6 +1805,48 @@ function updatePreviewListField(element, value) {
     items[index] = { ...items[index], [part]: value };
     setValue(field, items.map((item) => `${item.question} | ${item.answer}`).join("\n"));
   }
+}
+
+function getPreviewTextStyleKey(element) {
+  if (element.dataset.textStyleKey) {
+    return element.dataset.textStyleKey;
+  }
+  if (element.dataset.editField) {
+    return `field:${element.dataset.editField}`;
+  }
+  if (element.dataset.editList) {
+    return `list:${element.dataset.editList}:${Number(element.dataset.editIndex || 0)}:${element.dataset.editPart || "text"}`;
+  }
+  return "";
+}
+
+function getPreviewTextLabel(element) {
+  if (element.dataset.editField) {
+    return {
+      name: "Nombre en logo",
+      announcement: "Anuncio superior",
+      tagline: "Titular principal",
+      description: "Descripcion",
+      conversionGoal: "Objetivo de conversion",
+      servicesHeading: "Titular de servicios",
+      servicesIntro: "Intro de servicios",
+      trustHeading: "Titular de confianza",
+      trustIntro: "Intro de confianza",
+      contactHeading: "Titular de contacto",
+      address: "Direccion"
+    }[element.dataset.editField] || "Texto";
+  }
+
+  const listLabel = previewListLabel(element.dataset.editList || "").toLowerCase();
+  const part = {
+    title: "titulo",
+    body: "texto",
+    text: "texto",
+    name: "autor",
+    question: "pregunta",
+    answer: "respuesta"
+  }[element.dataset.editPart] || "texto";
+  return `${listLabel || "Texto"} - ${part}`;
 }
 
 function selectElementText(element) {
@@ -1139,6 +1978,12 @@ function bindActions() {
     setStatus("Demo restaurada.");
   });
 
+  prepareDeliveryButton?.addEventListener("click", () => {
+    currentBusiness = businessFromForm();
+    renderQualityPanel(currentBusiness);
+    renderDeliveryReport(currentBusiness);
+  });
+
   document.querySelector("#exportButton").addEventListener("click", async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
@@ -1168,6 +2013,29 @@ function bindActions() {
       setStatus("Datos exportados en JSON para reutilizar o versionar.");
     } catch (error) {
       setStatus("No se pudieron exportar los datos.");
+    }
+  });
+
+  document.querySelector("#exportPackageButton")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+
+    try {
+      currentBusiness = businessFromForm();
+      const validation = validateBusiness(currentBusiness);
+      if (!validation.ok) {
+        renderQualityPanel(currentBusiness);
+        renderDeliveryReport(currentBusiness);
+        setStatus(`Paquete bloqueado: corrige ${validation.errors.length} error(es) de entrega.`);
+        return;
+      }
+      setStatus("Preparando paquete con HTML, JSON, ficha de entrega y cambios...");
+      await downloadDeliveryPackage(currentBusiness);
+      setStatus("Paquete de entrega exportado. Incluye HTML, business.json, ficha y cambios.");
+    } catch (error) {
+      setStatus("No se pudo exportar el paquete. Revisa los datos y vuelve a intentarlo.");
+    } finally {
+      button.disabled = false;
     }
   });
 
@@ -1319,6 +2187,8 @@ function fillForm(business) {
   setValue("sectionOrder", normalizeSectionOrder(resolved.sectionOrder, DEFAULT_SECTION_ORDER).join(","));
   setValue("blockVariants", JSON.stringify(normalizeBlockVariants(resolved.blockVariants)));
   setValue("mediaMetadata", JSON.stringify(normalizeMediaMetadata(resolved.mediaMetadata)));
+  setValue("textStyles", JSON.stringify(normalizeTextStyles(resolved.textStyles)));
+  setValue("buttonStyles", JSON.stringify(normalizeButtonStyles(resolved.buttonStyles)));
 }
 
 function setValue(name, value) {
@@ -1463,7 +2333,9 @@ function businessFromForm() {
     },
     sectionOrder: normalizeSectionOrder(data.get("sectionOrder"), DEFAULT_SECTION_ORDER),
     blockVariants: readBlockVariants(data.get("blockVariants")),
-    mediaMetadata: readMediaMetadata(data.get("mediaMetadata"))
+    mediaMetadata: readMediaMetadata(data.get("mediaMetadata")),
+    textStyles: readTextStyles(data.get("textStyles")),
+    buttonStyles: readButtonStyles(data.get("buttonStyles"))
   };
 }
 
@@ -1482,6 +2354,7 @@ function renderFromForm() {
     sitePreview.innerHTML = renderSite(currentBusiness);
     attachGeneratedInteractions(sitePreview, currentBusiness);
     attachPreviewSectionControls();
+    attachPreviewItemControls();
     sitePreview.classList.toggle("is-direct-edit", directEditEnabled);
     syncQuickToggleState();
     renderSectionManager(currentBusiness);
@@ -1562,6 +2435,7 @@ function applyQuickCommand() {
   if (matchesAny(command, ["tienda", "compras", "compra online", "productos", "pagar", "stripe", "ecommerce"])) actions.push("store");
   if (matchesAny(command, ["local", "barrio", "cerca", "zona"])) actions.push("local");
   if (matchesAny(command, ["movil", "telefono", "mobile", "compacto"])) actions.push("mobile");
+  if (matchesAny(command, ["menos texto", "menos letras", "mas visual", "muy visual", "escaparate", "poco texto"])) actions.push("showcase");
   if (matchesAny(command, ["letra grande", "texto grande", "mas grande", "fuente grande"])) actions.push("biggerType");
   if (matchesAny(command, ["mas aire", "mas espacio", "amplio", "dimensiones grandes"])) actions.push("moreSpace");
   if (matchesAny(command, ["fotos anchas", "imagenes anchas", "panoramico", "horizontal"])) actions.push("wideImages");
@@ -1743,6 +2617,27 @@ function mutateQuickAction(action) {
       setValue("bookingLabel", "Contactar ahora");
       setDeviceSize("mobile");
     },
+    showcase: () => {
+      setValue("designPack", "custom");
+      setRadioValue("artDirection", "mosaic");
+      setRadioValue("contentMode", "visual");
+      setRadioValue("contentDensity", "compact");
+      setRadioValue("imageRatio", "wide");
+      setRadioValue("contentWidth", "wide");
+      setRadioValue("heroSize", "immersive");
+      setRadioValue("motion", "bold");
+      setChecked("showGallery", true);
+      setChecked("showTrustRail", true);
+      setChecked("showResourceMarquee", false);
+      setChecked("showFaq", false);
+      setChecked("showLeadForm", false);
+      setChecked("showConversionDock", true);
+      setValue("servicesHeading", "Lo esencial, visto al instante.");
+      setValue("servicesIntro", "Menos texto, mas imagen, CTA claro y prueba visual.");
+      setValue("trustHeading", "Confianza de un vistazo.");
+      setValue("trustIntro", "Resenas breves y senales claras para decidir rapido.");
+      setValue("conversionGoal", `Mostrar ${name} de forma visual y llevar a contacto rapido`);
+    },
     biggerType: () => {
       setValue("designPack", "custom");
       setValue("fontScale", Math.min(120, numberOr(form.elements.fontScale.value, 100) + 10));
@@ -1874,17 +2769,18 @@ function renderSectionManager(business = businessFromForm()) {
 
   const order = normalizeSectionOrder(business.sectionOrder, DEFAULT_SECTION_ORDER);
   sectionOrderList.innerHTML = order.map((key, index) => {
-    const definition = SECTION_DEFINITIONS[key];
+    const definition = SECTION_DEFINITIONS[sectionBaseKey(key)];
     const field = definition.field ? form.elements[definition.field] : null;
     const active = !field || Boolean(field.checked);
 
     return `
       <div class="section-order-item ${active ? "is-active" : "is-hidden"}">
         <span class="section-order-index">${String(index + 1).padStart(2, "0")}</span>
-        <strong>${escapeHtml(definition.label)}</strong>
+        <strong>${escapeHtml(sectionInstanceLabel(key))}</strong>
         <div>
           <button type="button" data-section-move="${escapeAttr(key)}" data-direction="-1" aria-label="Subir ${escapeAttr(definition.label)}" ${index === 0 ? "disabled" : ""}>↑</button>
           <button type="button" data-section-move="${escapeAttr(key)}" data-direction="1" aria-label="Bajar ${escapeAttr(definition.label)}" ${index === order.length - 1 ? "disabled" : ""}>↓</button>
+          ${key.includes("__copy") ? `<button type="button" data-section-remove="${escapeAttr(key)}">Eliminar</button>` : ""}
           ${definition.field ? `<button type="button" data-section-toggle="${escapeAttr(key)}">${active ? "Ocultar" : "Mostrar"}</button>` : ""}
         </div>
       </div>
@@ -1907,7 +2803,7 @@ function moveSection(section, direction) {
   runQuickMutation(() => {
     [order[currentIndex], order[nextIndex]] = [order[nextIndex], order[currentIndex]];
     setValue("sectionOrder", order.join(","));
-  }, `${SECTION_DEFINITIONS[section].label} movida ${direction < 0 ? "arriba" : "abajo"}.`);
+  }, `${sectionInstanceLabel(section)} movida ${direction < 0 ? "arriba" : "abajo"}.`);
 }
 
 function setRadioValue(name, value) {
@@ -1925,6 +2821,7 @@ function quickActionLabel(action) {
     food: "Variante aplicada: pedidos rapidos.",
     local: "Variante aplicada: mas local y mapa.",
     mobile: "Variante aplicada: modo movil.",
+    showcase: "Variante aplicada: escaparate visual.",
     biggerType: "Variante aplicada: letras mas grandes.",
     moreSpace: "Variante aplicada: mas aire y dimensiones amplias.",
     wideImages: "Variante aplicada: fotos panoramicas.",
@@ -1978,22 +2875,123 @@ function calculateConversionScore(business) {
 }
 
 function renderQualityPanel(business) {
-  if (!qualityScore || !qualityChecklist) {
+  const checks = getQualityChecks(business);
+  const validation = validateBusiness(business);
+  renderQualityControl(checks, validation);
+  applyFormValidation(validation);
+}
+
+function renderDeliveryReport(business) {
+  if (!deliveryStatus || !deliveryReadiness || !deliveryReport) {
     return;
   }
 
-  const checks = getQualityChecks(business);
+  const report = buildDeliveryReport(business);
+  deliveryStatus.textContent = report.ready ? "Lista para entregar" : "Bloqueada";
+  deliveryReadiness.textContent = `${report.score}%`;
+  deliveryReadiness.className = report.ready ? "is-ready" : "is-blocked";
+  deliveryReport.innerHTML = `
+    <div class="delivery-summary ${report.ready ? "is-ready" : "is-blocked"}">
+      <strong>${escapeHtml(report.title)}</strong>
+      <span>${escapeHtml(report.summary)}</span>
+    </div>
+    <div class="delivery-grid">
+      ${report.groups.map((group) => `
+        <article class="delivery-group">
+          <h3>${escapeHtml(group.label)}</h3>
+          ${group.items.map((item) => `
+            <span class="delivery-item is-${escapeAttr(item.status)}">
+              ${escapeHtml(item.label)}
+            </span>
+          `).join("")}
+        </article>
+      `).join("")}
+    </div>
+    <div class="delivery-next">
+      <strong>Siguiente paso</strong>
+      <span>${escapeHtml(report.nextStep)}</span>
+    </div>
+  `;
+  setStatus(report.ready
+    ? "Entrega Pro preparada: la web puede exportarse con informe limpio."
+    : `Entrega Pro bloqueada: corrige ${report.validation.errors.length} error(es) critico(s).`);
+}
+
+function buildDeliveryReport(business) {
   const validation = validateBusiness(business);
-  const checklistScore = Math.round((checks.filter((item) => item.done).length / checks.length) * 100);
+  const qualityChecks = getQualityChecks(business);
+  const assets = estimateDeliveryAssets(business);
+  const visibleSections = normalizeSectionOrder(business.sectionOrder, DEFAULT_SECTION_ORDER)
+    .filter((key) => isSectionVisible(sectionBaseKey(key), business));
+  const sectionCopies = visibleSections.filter((key) => key.includes("__copy")).length;
+  const checklistScore = Math.round((qualityChecks.filter((item) => item.done).length / qualityChecks.length) * 100);
   const score = Math.min(checklistScore, validation.score);
-  qualityScore.textContent = `${score}%`;
-  qualityChecklist.innerHTML = [
-    ...validation.issues.map((issue) => `
-      <span class="quality-item is-${escapeAttr(issue.severity)}" title="${escapeAttr(issue.message)}">${escapeHtml(issue.message)}</span>
-    `),
-    ...checks.map((item) => `<span class="quality-item ${item.done ? "is-done" : ""}">${escapeHtml(item.label)}</span>`)
-  ].join("");
-  applyFormValidation(validation);
+  const ready = validation.ok && score >= 82;
+  const warnings = validation.warnings.length + qualityChecks.filter((item) => !item.done).length;
+
+  return {
+    ready,
+    score,
+    validation,
+    title: ready ? "Entrega preparada" : "Entrega no lista",
+    summary: ready
+      ? "La web supera los bloqueos criticos y puede exportarse para revision final."
+      : "Hay bloqueos o carencias que conviene resolver antes de mandar nada al cliente.",
+    nextStep: ready
+      ? "Exporta el HTML y guarda el JSON del negocio para poder mantener esta entrega."
+      : validation.errors[0]?.message || "Completa los puntos pendientes del checklist de entrega.",
+    groups: [
+      {
+        label: "Bloqueos",
+        items: validation.errors.length
+          ? validation.errors.map((issue) => ({ status: "error", label: issue.message }))
+          : [{ status: "done", label: "Sin errores criticos de entrega" }]
+      },
+      {
+        label: "Avisos",
+        items: validation.warnings.length
+          ? validation.warnings.map((issue) => ({ status: "warning", label: issue.message }))
+          : [{ status: "done", label: "Sin avisos tecnicos principales" }]
+      },
+      {
+        label: "Contenido",
+        items: qualityChecks.map((item) => ({
+          status: item.done ? "done" : "pending",
+          label: item.label
+        }))
+      },
+      {
+        label: "Paquete",
+        items: [
+          { status: "info", label: `${visibleSections.length} secciones visibles (${sectionCopies} copias)` },
+          { status: assets.gallery >= 3 ? "done" : "warning", label: `${assets.gallery} fotos de galeria` },
+          { status: business.textStyles && Object.keys(business.textStyles).length ? "info" : "pending", label: `${Object.keys(business.textStyles || {}).length} estilos tipograficos personalizados` },
+          { status: assets.localMediaCount ? "warning" : "done", label: assets.localMediaCount ? `${assets.localMediaCount} imagenes embebidas en base64` : "Sin imagenes locales pesadas detectadas" },
+          { status: warnings ? "warning" : "done", label: warnings ? `${warnings} punto(s) a revisar antes de enviar` : "Checklist sin puntos pendientes" }
+        ]
+      }
+    ]
+  };
+}
+
+function estimateDeliveryAssets(business) {
+  const images = [business.heroImage, ...(business.gallery || [])].filter(Boolean);
+  return {
+    gallery: (business.gallery || []).length,
+    imageCount: images.length,
+    localMediaCount: images.filter((url) => String(url).startsWith("data:image/")).length
+  };
+}
+
+function isSectionVisible(section, business) {
+  const field = SECTION_DEFINITIONS[section]?.field;
+  if (!field) {
+    return true;
+  }
+  if (field === "commerceEnabled") {
+    return Boolean(business.commerce?.enabled);
+  }
+  return Boolean(business[field]);
 }
 
 function applyFormValidation(validation) {
@@ -2109,6 +3107,20 @@ function updateScrollProgress(container, root) {
   const max = container.scrollHeight - container.clientHeight;
   const progress = max > 0 ? container.scrollTop / max : 0;
   root.style.setProperty("--scroll-progress", progress.toFixed(4));
+  root.style.setProperty("--preview-viewport-height", `${container.clientHeight}px`);
+}
+
+function fixPreviewFloatingControls(root) {
+  const controls = root.querySelectorAll(":scope > .conversion-dock, :scope > .chatbot-widget");
+
+  if (!controls.length) {
+    return;
+  }
+
+  const layer = document.createElement("div");
+  layer.className = "preview-floating-layer";
+  controls.forEach((control) => layer.appendChild(control));
+  root.prepend(layer);
 }
 
 function updatePreviewParallax(container, business) {
@@ -2848,6 +3860,7 @@ function attachGeneratedInteractions(container, business) {
     return;
   }
 
+  fixPreviewFloatingControls(root);
   runSplitting(container);
   runVanillaTilt(container, business);
   runAtropos(container, business);
@@ -3069,6 +4082,228 @@ async function downloadSite(business) {
   downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${filename}.html`);
 }
 
+async function downloadDeliveryPackage(business) {
+  const resolved = withBusinessDefaults(business);
+  const exportedAt = new Date().toISOString();
+  const html = await studioExporter.buildExportDocument(resolved);
+  const filename = slugify(resolved.name || "negocio-local");
+  const files = buildDeliveryPackageFiles(resolved, html, exportedAt);
+  downloadBlob(createZipBlob(files), `${filename}-entrega.zip`);
+}
+
+function buildDeliveryPackageFiles(business, html, exportedAt) {
+  const report = buildDeliveryReport(business);
+  const payload = {
+    version: DATA_VERSION,
+    exportedAt,
+    business: withBusinessDefaults(business)
+  };
+
+  return [
+    { name: "index.html", content: html },
+    { name: "business.json", content: JSON.stringify(payload, null, 2) },
+    { name: "ficha-entrega.md", content: buildDeliveryBrief(business, report, exportedAt) },
+    { name: "cambios.md", content: buildDeliveryChangelog(business, report, exportedAt) }
+  ];
+}
+
+function buildDeliveryBrief(business, report, exportedAt) {
+  const lines = [
+    `# Ficha de entrega - ${markdownText(business.name)}`,
+    "",
+    `Fecha: ${exportedAt}`,
+    `Estado: ${report.ready ? "Lista para revision final" : "Pendiente de correcciones"}`,
+    `Score de entrega: ${report.score}%`,
+    `Categoria: ${markdownText(business.category)}`,
+    `Ubicacion: ${markdownText(business.location || business.address || "Sin ubicacion definida")}`,
+    "",
+    "## Archivos incluidos",
+    "",
+    "- `index.html`: web standalone lista para abrir o subir a hosting.",
+    "- `business.json`: datos completos del negocio para mantenimiento futuro.",
+    "- `ficha-entrega.md`: resumen de preparacion y siguiente paso.",
+    "- `cambios.md`: cambios principales aplicados en esta entrega.",
+    "",
+    "## Siguiente paso",
+    "",
+    report.nextStep,
+    "",
+    "## Checklist",
+    ""
+  ];
+
+  report.groups.forEach((group) => {
+    lines.push(`### ${markdownText(group.label)}`, "");
+    group.items.forEach((item) => {
+      lines.push(`- [${item.status === "done" ? "x" : " "}] ${markdownText(item.label)} (${item.status})`);
+    });
+    lines.push("");
+  });
+
+  return lines.join("\n").trim() + "\n";
+}
+
+function buildDeliveryChangelog(business, report, exportedAt) {
+  const visibleSections = normalizeSectionOrder(business.sectionOrder, DEFAULT_SECTION_ORDER)
+    .filter((key) => isSectionVisible(sectionBaseKey(key), business));
+  const assets = estimateDeliveryAssets(business);
+  const integrations = [
+    business.showBooking ? "reservas" : "",
+    business.showLeadForm ? "formulario de lead" : "",
+    business.chatbot?.enabled ? "chatbot" : "",
+    business.commerce?.enabled ? "tienda online" : "",
+    business.google?.enabled ? "Google" : ""
+  ].filter(Boolean);
+
+  return [
+    `# Cambios de entrega - ${markdownText(business.name)}`,
+    "",
+    `Fecha: ${exportedAt}`,
+    "",
+    "- Web standalone generada desde el renderizador compartido de preview y exportacion.",
+    `- ${visibleSections.length} secciones visibles preparadas: ${visibleSections.map(sectionBaseKey).join(", ")}.`,
+    `- Direccion visual: ${business.theme}, ${business.artDirection}, contenido ${business.contentMode}.`,
+    `- Activos principales: ${assets.imageCount} imagen(es), ${assets.gallery} en galeria, ${assets.localMediaCount} embebida(s) en base64.`,
+    `- Integraciones activas: ${integrations.length ? integrations.join(", ") : "sin integraciones activas"}.`,
+    `- Estado Entrega Pro: ${report.ready ? "listo" : "pendiente"} con score ${report.score}%.`,
+    "",
+    "## Avisos abiertos",
+    "",
+    ...(report.validation.warnings.length
+      ? report.validation.warnings.map((issue) => `- ${markdownText(issue.message)}`)
+      : ["- Sin avisos tecnicos principales."])
+  ].join("\n").trim() + "\n";
+}
+
+function markdownText(value) {
+  return String(value ?? "")
+    .replace(/\r?\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function createZipBlob(files) {
+  const chunks = [];
+  const centralDirectory = [];
+  const now = new Date();
+  const dos = toDosDateTime(now);
+  let offset = 0;
+
+  files.forEach((file) => {
+    const nameBytes = encodeUtf8(file.name);
+    const contentBytes = encodeUtf8(file.content);
+    const crc = crc32(contentBytes);
+    const localHeader = concatBytes(
+      u32(0x04034b50),
+      u16(20),
+      u16(0x0800),
+      u16(0),
+      u16(dos.time),
+      u16(dos.date),
+      u32(crc),
+      u32(contentBytes.length),
+      u32(contentBytes.length),
+      u16(nameBytes.length),
+      u16(0)
+    );
+
+    chunks.push(localHeader, nameBytes, contentBytes);
+    centralDirectory.push({ nameBytes, crc, size: contentBytes.length, offset });
+    offset += localHeader.length + nameBytes.length + contentBytes.length;
+  });
+
+  const centralOffset = offset;
+  centralDirectory.forEach((entry) => {
+    const header = concatBytes(
+      u32(0x02014b50),
+      u16(20),
+      u16(20),
+      u16(0x0800),
+      u16(0),
+      u16(dos.time),
+      u16(dos.date),
+      u32(entry.crc),
+      u32(entry.size),
+      u32(entry.size),
+      u16(entry.nameBytes.length),
+      u16(0),
+      u16(0),
+      u16(0),
+      u16(0),
+      u32(0),
+      u32(entry.offset)
+    );
+    chunks.push(header, entry.nameBytes);
+    offset += header.length + entry.nameBytes.length;
+  });
+
+  const centralSize = offset - centralOffset;
+  chunks.push(concatBytes(
+    u32(0x06054b50),
+    u16(0),
+    u16(0),
+    u16(centralDirectory.length),
+    u16(centralDirectory.length),
+    u32(centralSize),
+    u32(centralOffset),
+    u16(0)
+  ));
+
+  return new Blob(chunks, { type: "application/zip" });
+}
+
+function encodeUtf8(value) {
+  return new TextEncoder().encode(String(value ?? ""));
+}
+
+function concatBytes(...parts) {
+  const size = parts.reduce((total, part) => total + part.length, 0);
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+
+  parts.forEach((part) => {
+    bytes.set(part, offset);
+    offset += part.length;
+  });
+
+  return bytes;
+}
+
+function u16(value) {
+  const bytes = new Uint8Array(2);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, value, true);
+  return bytes;
+}
+
+function u32(value) {
+  const bytes = new Uint8Array(4);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, value >>> 0, true);
+  return bytes;
+}
+
+function toDosDateTime(date) {
+  const year = Math.max(1980, date.getFullYear());
+  return {
+    time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+    date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate()
+  };
+}
+
+function crc32(bytes) {
+  let crc = 0xffffffff;
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    crc ^= bytes[index];
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+    }
+  }
+
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
 function downloadBusinessData(business) {
   const payload = {
     version: DATA_VERSION,
@@ -3257,7 +4492,9 @@ function withBusinessDefaults(business = {}) {
     showMenu: hasOwn("showMenu") ? Boolean(business.showMenu) : isFoodCategory(base.category),
     sectionOrder: normalizeSectionOrder(base.sectionOrder, DEFAULT_SECTION_ORDER),
     blockVariants: normalizeBlockVariants(base.blockVariants),
-    mediaMetadata: normalizeMediaMetadata(base.mediaMetadata)
+    mediaMetadata: normalizeMediaMetadata(base.mediaMetadata),
+    textStyles: normalizeTextStyles(base.textStyles),
+    buttonStyles: normalizeButtonStyles(base.buttonStyles)
   };
 }
 
@@ -3299,10 +4536,77 @@ function normalizeMediaMetadata(value = {}) {
   return Object.fromEntries(Object.entries(value || {})
     .filter(([url, metadata]) => normalizeImage(url, "") && metadata && typeof metadata === "object")
     .slice(0, 40)
-    .map(([url, metadata]) => [url, {
-      alt: String(metadata.alt || "").trim().slice(0, 180),
-      position: allowedPositions.includes(metadata.position) ? metadata.position : "center center"
-    }]));
+    .map(([url, metadata]) => {
+      const normalized = {
+        alt: String(metadata.alt || "").trim().slice(0, 180),
+        position: allowedPositions.includes(metadata.position) ? metadata.position : "center center"
+      };
+      const license = String(metadata.license || "").trim().slice(0, 40);
+      const sourceUrl = normalizeOptionalUrl(metadata.sourceUrl);
+      const provider = String(metadata.provider || "").trim().slice(0, 80);
+      const creator = String(metadata.creator || "").trim().slice(0, 80);
+      if (license) normalized.license = license;
+      if (sourceUrl) normalized.sourceUrl = sourceUrl;
+      if (provider) normalized.provider = provider;
+      if (creator) normalized.creator = creator;
+      return [url, normalized];
+    }));
+}
+
+function readTextStyles(value) {
+  if (value && typeof value === "object") {
+    return normalizeTextStyles(value);
+  }
+  try {
+    return normalizeTextStyles(JSON.parse(String(value || "{}")));
+  } catch (error) {
+    return {};
+  }
+}
+
+function normalizeTextStyles(value = {}) {
+  return Object.fromEntries(Object.entries(value || {})
+    .filter(([key, style]) => isTextStyleKey(key) && style && typeof style === "object")
+    .slice(0, 120)
+    .map(([key, style]) => [key, normalizeTextStyle(style)])
+    .filter(([, style]) => Object.keys(style).length));
+}
+
+function normalizeTextStyle(style = {}) {
+  const normalized = {};
+  const color = normalizeColor(style.color);
+  const opacity = clampNumber(numberOr(style.opacity, 1), 0.35, 1);
+  const size = clampNumber(numberOr(style.size, 1), 0.8, 1.45);
+  const letterSpacing = clampNumber(numberOr(style.letterSpacing, 0), -0.02, 0.08);
+  const weight = ["400", "700", "900"].includes(String(style.weight)) ? String(style.weight) : "";
+
+  if (color) normalized.color = color;
+  if (Math.abs(opacity - 1) > 0.001) normalized.opacity = Number(opacity.toFixed(2));
+  if (Math.abs(size - 1) > 0.001) normalized.size = Number(size.toFixed(2));
+  if (weight) normalized.weight = weight;
+  if (style.italic === true) normalized.italic = true;
+  if (Math.abs(letterSpacing) > 0.001) normalized.letterSpacing = Number(letterSpacing.toFixed(3));
+
+  return normalized;
+}
+
+function isTextStyleKey(key) {
+  return /^(field|list):[a-zA-Z0-9:_-]+$/.test(String(key || ""));
+}
+
+function normalizeColor(value) {
+  const color = String(value || "").trim();
+  return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : "";
+}
+
+function rgbToHex(value) {
+  const match = String(value || "").match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if (!match) {
+    return normalizeColor(value);
+  }
+  return `#${[match[1], match[2], match[3]]
+    .map((part) => Number(part).toString(16).padStart(2, "0"))
+    .join("")}`;
 }
 
 function mergeMediaMetadata(url, changes = {}) {

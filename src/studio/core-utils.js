@@ -21,6 +21,7 @@
     clampNumber,
     normalizeChoice,
     normalizeSectionOrder,
+    sectionBaseKey,
     splitTitleBody,
     normalizeImage,
     normalizeUrl,
@@ -181,18 +182,31 @@
       ? value
       : String(value || "").split(/[\s,|]+/);
     const valid = new Set(allowed);
-    const seen = new Set();
+    const seenTokens = new Set();
+    const seenBases = new Set();
     const ordered = source
       .map((item) => String(item || "").trim())
-      .filter((item) => valid.has(item) && !seen.has(item) && seen.add(item));
+      .filter((item) => {
+        const base = sectionBaseKey(item);
+        if (!valid.has(base) || seenTokens.has(item)) {
+          return false;
+        }
+        seenTokens.add(item);
+        seenBases.add(base);
+        return true;
+      });
 
     allowed.forEach((item) => {
-      if (!seen.has(item)) {
+      if (!seenBases.has(item)) {
         ordered.push(item);
       }
     });
 
     return ordered;
+  }
+
+  function sectionBaseKey(value) {
+    return String(value || "").trim().split("__copy")[0];
   }
 
   function splitTitleBody(value) {

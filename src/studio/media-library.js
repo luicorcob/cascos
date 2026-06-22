@@ -69,6 +69,10 @@
         width: Math.max(0, Number(input.width || 0)),
         height: Math.max(0, Number(input.height || 0)),
         alt: String(input.alt || "").trim().slice(0, 180),
+        license: String(input.license || "").trim().slice(0, 40),
+        sourceUrl: String(input.sourceUrl || "").trim().slice(0, 500),
+        provider: String(input.provider || "").trim().slice(0, 80),
+        creator: String(input.creator || "").trim().slice(0, 80),
         createdAt: new Date().toISOString()
       };
       persist([...items, item]);
@@ -86,6 +90,10 @@
         ...items[index],
         name: String(changes.name ?? items[index].name).trim().slice(0, 80) || items[index].name,
         alt: String(changes.alt ?? items[index].alt ?? "").trim().slice(0, 180),
+        license: String(changes.license ?? items[index].license ?? "").trim().slice(0, 40),
+        sourceUrl: String(changes.sourceUrl ?? items[index].sourceUrl ?? "").trim().slice(0, 500),
+        provider: String(changes.provider ?? items[index].provider ?? "").trim().slice(0, 80),
+        creator: String(changes.creator ?? items[index].creator ?? "").trim().slice(0, 80),
         width: Math.max(0, Number(changes.width ?? items[index].width ?? 0)),
         height: Math.max(0, Number(changes.height ?? items[index].height ?? 0)),
         updatedAt: new Date().toISOString()
