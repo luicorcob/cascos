@@ -1,8 +1,8 @@
-# LocalLift Reservas
+# DLS Reservas · Digital Local Sites
 
 ## Una presencia digital preparada para conseguir solicitudes de cita
 
-LocalLift Reservas ayuda a peluquerias, barberias y centros de estetica a convertir las visitas que llegan desde Google, Instagram o recomendaciones en mensajes y solicitudes de cita.
+DLS Reservas ayuda a peluquerias, barberias y centros de estetica a convertir las visitas que llegan desde Google, Instagram o recomendaciones en mensajes y solicitudes de cita.
 
 En siete dias entregamos una web moderna, clara y adaptada a movil. El negocio no tiene que aprender a disenar ni administrar otra herramienta.
 

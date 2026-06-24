@@ -32,7 +32,7 @@ legal especifica antes de cobrar.
 
 ## 2. Objeto y alcance
 
-El prestador entregara `LocalLift Reservas` para `[NEGOCIO]` con el alcance
+El prestador entregara `DLS Reservas` para `[NEGOCIO]` con el alcance
 descrito en `docs/ventas/OFERTA_LOCAL_LIFT_RESERVAS.md` y en la propuesta aceptada.
 
 Incluye:
@@ -85,7 +85,7 @@ WhatsApp, horarios, mapa, servicios y textos legales antes de publicar.
 
 El cliente conserva la titularidad de sus materiales. La propuesta debe indicar
 por escrito que elementos creados por el prestador se entregan al cliente y que
-componentes reutilizables de LocalLift permanecen bajo titularidad del
+componentes reutilizables de DLS permanecen bajo titularidad del
 prestador.
 
 ## 6. Revision, aceptacion y publicacion

@@ -59,6 +59,8 @@ const {
   BLOCK_LIBRARY,
   DEFAULT_BLOCK_VARIANTS,
   LAYOUT_RECIPES,
+  QUICK_CREATIVE_DIRECTIONS,
+  QUICK_ACTION_RECIPES,
   demoBusiness,
   sectorPresets,
   defaultSectorPreset,
@@ -231,7 +233,7 @@ init();
 
 function init() {
   if (!form || !sitePreview || !previewTitle || !previewMetrics || !statusLine || !deviceFrame) {
-    document.body.innerHTML = '<main class="boot-error"><h1>No se pudo iniciar LocalLift Studio</h1><p>Faltan elementos esenciales de la interfaz. Revisa index.html.</p></main>';
+    document.body.innerHTML = '<main class="boot-error"><h1>No se pudo iniciar DLS Studio</h1><p>Faltan elementos esenciales de la interfaz. Revisa index.html.</p></main>';
     return;
   }
 
@@ -2347,7 +2349,7 @@ function renderFromForm() {
       topbarProjectName.textContent = currentBusiness.name;
     }
     if (frameAddress) {
-      frameAddress.textContent = `locallift.site/${slugify(currentBusiness.name || "nuevo-negocio")}`;
+      frameAddress.textContent = `digitallocalsites.com/${slugify(currentBusiness.name || "nuevo-negocio")}`;
     }
     renderPreviewMetrics(currentBusiness);
     renderQualityPanel(currentBusiness);
@@ -2420,15 +2422,15 @@ function applyQuickCommand() {
   const command = normalizeText(input?.value || "");
 
   if (!command) {
-    setStatus("Escribe un comando rapido: mas premium, vender reservas, sin mapa...");
+    setStatus("Escribe un comando rapido: refina la marca, prioriza reservas, sin mapa...");
     return;
   }
 
   const actions = [];
 
-  if (matchesAny(command, ["premium", "lujo", "elegante", "caro"])) actions.push("premium");
-  if (matchesAny(command, ["limpio", "minimal", "simple", "sobrio"])) actions.push("minimal");
-  if (matchesAny(command, ["urgencia", "urgente", "oferta", "promocion"])) actions.push("urgent");
+  if (matchesAny(command, ["premium", "lujo", "elegante", "caro", "refinar", "refina", "marca cuidada"])) actions.push("premium");
+  if (matchesAny(command, ["limpio", "minimal", "simple", "sobrio", "simplificar", "simplifica"])) actions.push("minimal");
+  if (matchesAny(command, ["urgencia", "urgente", "oferta", "promocion", "acelerar", "decision rapida"])) actions.push("urgent");
   if (matchesAny(command, ["confianza", "resena", "resenas", "opiniones", "google"])) actions.push("trust");
   if (matchesAny(command, ["reserva", "reservas", "cita", "agenda"])) actions.push("booking");
   if (matchesAny(command, ["pedido", "pedidos", "delivery", "comida", "whatsapp"])) actions.push("food");
@@ -2446,7 +2448,7 @@ function applyQuickCommand() {
   if (matchesAny(command, ["mostrar todo", "activar todo", "todo visible"])) actions.push("showAll");
 
   if (!actions.length) {
-    setStatus("No entendi el comando. Prueba: mas premium, vender reservas, sin mapa, mostrar todo.");
+    setStatus("No entendi el comando. Prueba: refina la marca, prioriza reservas, sin mapa, mostrar todo.");
     return;
   }
 
@@ -2460,6 +2462,22 @@ function applyQuickAction(action) {
   runQuickMutation(() => mutateQuickAction(action), quickActionLabel(action));
 }
 
+function applyQuickRecipe({ values = {}, radios = {}, checks = {}, blocks = {}, sectionOrder } = {}) {
+  setValue("designPack", "custom");
+  Object.entries(values).forEach(([field, value]) => setValue(field, value));
+  Object.entries(radios).forEach(([field, value]) => setRadioValue(field, value));
+  Object.entries(checks).forEach(([field, value]) => setChecked(field, value));
+
+  if (Object.keys(blocks).length) {
+    const currentBlocks = readBlockVariants(form.elements.blockVariants?.value);
+    setValue("blockVariants", JSON.stringify({ ...currentBlocks, ...blocks }));
+  }
+
+  if (Array.isArray(sectionOrder) && sectionOrder.length) {
+    setValue("sectionOrder", sectionOrder.join(","));
+  }
+}
+
 function mutateQuickAction(action) {
   const business = businessFromForm();
   const name = business.name || "tu negocio";
@@ -2468,118 +2486,98 @@ function mutateQuickAction(action) {
 
   const actions = {
     surprise: () => {
-      const packNames = Object.keys(designPacks);
-      const currentPack = form.elements.designPack?.value;
-      const availablePacks = packNames.filter((packName) => packName !== currentPack);
-      const packName = availablePacks[Math.floor(Math.random() * availablePacks.length)] || packNames[0];
-      const pack = designPacks[packName];
-      const accentVariations = {
-        boutique: ["#151816", "#384b44", "#8b4f42"],
-        impact: ["#ff3d81", "#8c5cff", "#00a896"],
-        clear: ["#2f6fed", "#16866f", "#c54a32"],
-        commerce: ["#ff6a00", "#d83b27", "#19826b"],
-        mobileFirst: ["#0f8f8f", "#3568a8", "#b14968"],
-        localWarm: ["#cf3f2e", "#a65b2f", "#357b68"]
-      };
-      const accents = accentVariations[packName] || [pack.accent];
-
-      applyDesignPackValues(packName, pack);
-      setValue("accent", accents[Math.floor(Math.random() * accents.length)]);
-      setChecked("showGallery", true);
-      setChecked("showTrustRail", true);
-      setChecked("showConversionDock", true);
+      applyQuickRecipe(QUICK_CREATIVE_DIRECTIONS[Math.floor(Math.random() * QUICK_CREATIVE_DIRECTIONS.length)]);
     },
     premium: () => {
-      setValue("designPack", "custom");
-      setRadioValue("artDirection", "atelier");
-      setRadioValue("contentMode", "visual");
-      setRadioValue("theme", "luxe");
-      setRadioValue("typography", "editorial");
-      setRadioValue("motion", "cinematic");
-      setRadioValue("visualShape", "clean");
-      setRadioValue("contentDensity", "spacious");
-      setValue("accent", "#111316");
-      setValue("intensity", 82);
-      setChecked("premiumEffects", true);
-      setValue("tagline", `${name}: una experiencia local con presencia de marca premium`);
-      setValue("servicesHeading", "Una propuesta cuidada desde el primer vistazo.");
-      setValue("trustHeading", "La confianza se nota antes de llamar.");
+      applyQuickRecipe(QUICK_ACTION_RECIPES.premium);
     },
     minimal: () => {
-      setValue("designPack", "custom");
-      setRadioValue("artDirection", "editorial");
-      setRadioValue("contentMode", "visual");
-      setRadioValue("theme", "aurora");
-      setRadioValue("typography", "modern");
-      setRadioValue("motion", "soft");
-      setRadioValue("visualShape", "sharp");
-      setRadioValue("contentDensity", "compact");
-      setValue("intensity", 50);
-      setChecked("premiumEffects", false);
-      setValue("servicesHeading", "Todo lo importante, sin ruido.");
-      setValue("servicesIntro", "Servicios, horario, ubicacion y contacto quedan claros para decidir rapido.");
+      applyQuickRecipe(QUICK_ACTION_RECIPES.minimal);
     },
     urgent: () => {
-      setRadioValue("artDirection", "poster");
-      setRadioValue("contentMode", "visual");
-      setChecked("showAnnouncement", true);
-      setValue("announcement", `Plazas y horarios limitados esta semana en ${name}.`);
-      setValue("bookingLabel", "Reservar hoy");
-      setValue("leadFormCta", "Quiero respuesta rapida");
-      setValue("conversionGoal", `Generar solicitudes inmediatas para ${category} en ${location}`);
-      setChecked("showLeadForm", true);
-      setChecked("showConversionDock", true);
+      applyQuickRecipe({
+        values: {
+          announcement: `Disponibilidad actualizada esta semana en ${name}.`,
+          bookingLabel: "Consultar disponibilidad",
+          leadFormCta: "Recibir respuesta",
+          conversionGoal: `Facilitar una decision rapida para ${category} en ${location}`,
+          intensity: 50,
+          fontScale: 95,
+          layoutScale: 95
+        },
+        radios: {
+          artDirection: "editorial", contentMode: "balanced", typography: "modern", motion: "soft",
+          contentDensity: "compact", heroSize: "compact", contentWidth: "standard", imageRatio: "wide"
+        },
+        checks: {
+          showAnnouncement: true, showBooking: true, showLeadForm: true, showConversionDock: true,
+          showTrustRail: true, showTestimonials: true, showResourceMarquee: false, premiumEffects: false
+        },
+        blocks: { hero: "split", services: "list", gallery: "grid", testimonials: "quotes", contact: "banner" },
+        sectionOrder: ["booking", "services", "testimonials", "lead", "gallery", "features", "faq", "map", "menu", "store"]
+      });
     },
     trust: () => {
-      setRadioValue("artDirection", "editorial");
-      setRadioValue("contentMode", "balanced");
-      setChecked("showTrustRail", true);
-      setChecked("showTestimonials", true);
-      setChecked("showFaq", true);
-      setChecked("googleEnabled", true);
-      setValue("trustHeading", "Confianza clara antes de decidir.");
-      setValue("trustIntro", "Opiniones, preguntas frecuentes y datos de contacto reducen dudas y acercan al cliente al siguiente paso.");
-      setValue("trustBadges", [
-        "Resenas y prueba social visibles",
-        "Contacto directo y respuesta rapida",
-        "Ubicacion verificada en mapa",
-        "FAQ preparada para resolver dudas"
-      ].join("\n"));
+      applyQuickRecipe(QUICK_ACTION_RECIPES.trust);
     },
     booking: () => {
-      setRadioValue("artDirection", "cinematic");
-      setRadioValue("contentMode", "visual");
-      setChecked("showBooking", true);
-      setChecked("showLeadForm", true);
-      setChecked("showConversionDock", true);
-      setValue("bookingLabel", "Reservar / pedir cita");
-      setValue("conversionGoal", `Convertir visitas en reservas para ${name}`);
-      setValue("leadFormTitle", "Pide disponibilidad sin llamadas innecesarias.");
-      setValue("leadFormIntro", "Deja fecha, servicio y contacto. El negocio recibe una solicitud preparada para responder rapido.");
-      setValue("leadFormCta", "Consultar disponibilidad");
+      applyQuickRecipe({
+        values: {
+          bookingLabel: "Consultar disponibilidad",
+          conversionGoal: `Convertir visitas en reservas para ${name}`,
+          leadFormCta: "Consultar disponibilidad",
+          intensity: 50,
+          fontScale: 95,
+          layoutScale: 95
+        },
+        radios: {
+          artDirection: "editorial", contentMode: "balanced", typography: "modern", motion: "soft",
+          contentDensity: "compact", heroSize: "compact", contentWidth: "standard", imageRatio: "wide"
+        },
+        checks: {
+          showBooking: true, showLeadForm: true, showConversionDock: true,
+          showTrustRail: true, showTestimonials: true, showResourceMarquee: false
+        },
+        blocks: { hero: "split", services: "list", gallery: "grid", testimonials: "quotes", contact: "banner" },
+        sectionOrder: ["services", "booking", "testimonials", "lead", "gallery", "features", "faq", "map", "menu", "store"]
+      });
     },
     food: () => {
-      setValue("designPack", "custom");
-      setRadioValue("artDirection", "poster");
-      setRadioValue("contentMode", "visual");
-      setRadioValue("theme", "neon");
-      setRadioValue("motion", "bold");
-      setRadioValue("contentDensity", "compact");
-      setValue("accent", "#ff6a00");
-      setValue("bookingLabel", "Pedir ahora");
-      setValue("announcement", "Pide por WhatsApp y recoge sin esperas.");
-      setChecked("showAnnouncement", true);
-      setChecked("showConversionDock", true);
-      setChecked("showMenu", true);
-      setChecked("commerceEnabled", true);
-      setValue("servicesHeading", "Menu claro para decidir rapido.");
-      setValue("conversionGoal", `Pedidos, recogida y llamadas para ${name}`);
+      applyQuickRecipe({
+        values: {
+          bookingLabel: "Hacer un pedido",
+          announcement: "Carta y disponibilidad actualizadas para pedidos.",
+          conversionGoal: `Pedidos, recogida y consultas para ${name}`,
+          intensity: 55,
+          fontScale: 95,
+          layoutScale: 95
+        },
+        radios: {
+          artDirection: "mosaic", contentMode: "balanced", typography: "modern", motion: "cinematic",
+          contentDensity: "compact", heroSize: "balanced", contentWidth: "wide", imageRatio: "wide"
+        },
+        checks: {
+          showAnnouncement: true, showBooking: true, showConversionDock: true, showMenu: true,
+          commerceEnabled: true, showGallery: true, showResourceMarquee: false, premiumEffects: true
+        },
+        blocks: { hero: "collage", services: "list", gallery: "mosaic", testimonials: "cards", contact: "compact" },
+        sectionOrder: ["menu", "services", "gallery", "testimonials", "booking", "lead", "map", "features", "faq", "store"]
+      });
     },
     store: () => {
-      setRadioValue("artDirection", "mosaic");
-      setRadioValue("contentMode", "visual");
-      setChecked("commerceEnabled", true);
-      setChecked("showConversionDock", true);
+      applyQuickRecipe({
+        values: { intensity: 50, fontScale: 95, layoutScale: 95 },
+        radios: {
+          artDirection: "mosaic", contentMode: "balanced", typography: "modern", motion: "soft",
+          contentDensity: "compact", heroSize: "balanced", contentWidth: "wide", imageRatio: "square"
+        },
+        checks: {
+          commerceEnabled: true, showConversionDock: true, showGallery: true,
+          showTrustRail: true, showResourceMarquee: false
+        },
+        blocks: { hero: "split", services: "cards", gallery: "grid", testimonials: "cards", contact: "compact" },
+        sectionOrder: ["store", "services", "testimonials", "gallery", "features", "faq", "map", "booking", "lead", "menu"]
+      });
       setValue("commerceTitle", "Compra online");
       setValue(
         "commerceIntro",
@@ -2590,74 +2588,32 @@ function mutateQuickAction(action) {
         setValue("commerceProducts", serializeProducts(demoBusiness.commerce.products));
       }
       setValue("conversionGoal", `Vender productos online para ${name}`);
-      setValue("announcement", "Compra online activa con pago seguro.");
+      setValue("announcement", "Catalogo disponible con compra online.");
       setChecked("showAnnouncement", true);
     },
     local: () => {
-      setRadioValue("artDirection", "cinematic");
-      setRadioValue("contentMode", "balanced");
-      setChecked("showMap", true);
-      setChecked("googleEnabled", true);
-      setValue("servicesIntro", `Una web pensada para que clientes de ${location} entiendan rapido que ofrece ${name}, como llegar y como contactar.`);
-      setValue("directionsNote", `Ubicacion visible para llegar rapido desde ${location}, consultar ruta y evitar dudas antes de visitar.`);
-      setValue("contactHeading", "Ven al local o escribe antes de pasar.");
+      applyQuickRecipe(QUICK_ACTION_RECIPES.local);
     },
     mobile: () => {
-      setRadioValue("artDirection", "poster");
-      setRadioValue("contentMode", "visual");
-      setRadioValue("contentDensity", "compact");
-      setRadioValue("visualShape", "rounded");
-      setRadioValue("heroSize", "compact");
-      setRadioValue("contentWidth", "focused");
-      setRadioValue("imageRatio", "square");
-      setValue("fontScale", 100);
-      setValue("layoutScale", 88);
-      setChecked("showConversionDock", true);
-      setChecked("showLeadForm", true);
-      setValue("bookingLabel", "Contactar ahora");
+      applyQuickRecipe(QUICK_ACTION_RECIPES.mobile);
       setDeviceSize("mobile");
     },
     showcase: () => {
-      setValue("designPack", "custom");
-      setRadioValue("artDirection", "mosaic");
-      setRadioValue("contentMode", "visual");
-      setRadioValue("contentDensity", "compact");
-      setRadioValue("imageRatio", "wide");
-      setRadioValue("contentWidth", "wide");
-      setRadioValue("heroSize", "immersive");
-      setRadioValue("motion", "bold");
-      setChecked("showGallery", true);
-      setChecked("showTrustRail", true);
-      setChecked("showResourceMarquee", false);
-      setChecked("showFaq", false);
-      setChecked("showLeadForm", false);
-      setChecked("showConversionDock", true);
-      setValue("servicesHeading", "Lo esencial, visto al instante.");
-      setValue("servicesIntro", "Menos texto, mas imagen, CTA claro y prueba visual.");
-      setValue("trustHeading", "Confianza de un vistazo.");
-      setValue("trustIntro", "Resenas breves y senales claras para decidir rapido.");
-      setValue("conversionGoal", `Mostrar ${name} de forma visual y llevar a contacto rapido`);
+      applyQuickRecipe(QUICK_ACTION_RECIPES.showcase);
     },
     biggerType: () => {
       setValue("designPack", "custom");
-      setValue("fontScale", Math.min(120, numberOr(form.elements.fontScale.value, 100) + 10));
-      setRadioValue("typography", "modern");
-      setValue("intensity", Math.max(60, numberOr(form.elements.intensity.value, 78)));
+      setValue("fontScale", Math.min(110, numberOr(form.elements.fontScale.value, 100) + 5));
+      setRadioValue("contentMode", "balanced");
     },
     moreSpace: () => {
-      setValue("designPack", "custom");
-      setRadioValue("contentDensity", "spacious");
-      setRadioValue("heroSize", "immersive");
-      setRadioValue("contentWidth", "wide");
-      setValue("layoutScale", Math.min(120, numberOr(form.elements.layoutScale.value, 100) + 10));
+      applyQuickRecipe({
+        values: { layoutScale: Math.min(110, numberOr(form.elements.layoutScale.value, 100) + 5) },
+        radios: { contentDensity: "balanced", heroSize: "balanced", contentWidth: "standard" }
+      });
     },
     wideImages: () => {
-      setValue("designPack", "custom");
-      setRadioValue("artDirection", "cinematic");
-      setChecked("showGallery", true);
-      setRadioValue("imageRatio", "wide");
-      setRadioValue("contentWidth", "wide");
-      setRadioValue("heroSize", "balanced");
+      applyQuickRecipe(QUICK_ACTION_RECIPES.wideImages);
     },
     hideMap: () => setChecked("showMap", false),
     hideBot: () => setChecked("chatbotEnabled", false),
@@ -2812,23 +2768,23 @@ function setRadioValue(name, value) {
 
 function quickActionLabel(action) {
   return {
-    surprise: "Nueva direccion creativa generada.",
-    premium: "Variante aplicada: mas premium.",
-    minimal: "Variante aplicada: mas limpia.",
-    urgent: "Variante aplicada: mas urgencia comercial.",
-    trust: "Variante aplicada: mas confianza.",
-    booking: "Variante aplicada: vender reservas.",
-    food: "Variante aplicada: pedidos rapidos.",
-    local: "Variante aplicada: mas local y mapa.",
-    mobile: "Variante aplicada: modo movil.",
-    showcase: "Variante aplicada: escaparate visual.",
-    biggerType: "Variante aplicada: letras mas grandes.",
-    moreSpace: "Variante aplicada: mas aire y dimensiones amplias.",
-    wideImages: "Variante aplicada: fotos panoramicas.",
+    surprise: "Nueva direccion creativa, con ritmo y escala contenidos.",
+    premium: "Marca refinada con jerarquia editorial y contraste sereno.",
+    minimal: "Composicion simplificada sin perder informacion util.",
+    urgent: "Decision acelerada mediante orden, disponibilidad y CTA; sin gritar.",
+    trust: "Confianza reforzada con prueba social, FAQ y ubicacion.",
+    booking: "Reservas priorizadas en el recorrido de la pagina.",
+    food: "Pedidos y carta situados antes en el recorrido.",
+    local: "Cercania y ubicacion ganan protagonismo.",
+    mobile: "Experiencia optimizada para movil.",
+    showcase: "Las imagenes lideran la composicion.",
+    biggerType: "Lectura mejorada con un ajuste tipografico moderado.",
+    moreSpace: "Ritmo y respiracion ajustados sin sobredimensionar.",
+    wideImages: "Composicion adaptada a fotografia panoramica.",
     hideMap: "Mapa ocultado.",
     hideBot: "Bot ocultado.",
     hideGallery: "Galeria ocultada.",
-    store: "Variante aplicada: tienda online.",
+    store: "Tienda y catalogo priorizados en el recorrido.",
     showAll: "Todas las secciones clave activadas."
   }[action] || "Cambio rapido aplicado.";
 }
@@ -3864,6 +3820,7 @@ function attachGeneratedInteractions(container, business) {
   runSplitting(container);
   runVanillaTilt(container, business);
   runAtropos(container, business);
+  attachGalleryAutoplay(container, root);
   attachStore(container, business);
   attachChatbot(container);
   attachPublicBookingForms(container, business);
@@ -3952,6 +3909,83 @@ function attachGeneratedInteractions(container, business) {
       card.style.setProperty("--lift", "0px");
     });
   };
+}
+
+function attachGalleryAutoplay(container, root) {
+  if (!root.classList.contains("block-gallery-marquee")
+    || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  container.querySelectorAll(".gallery-track").forEach((track) => {
+    const items = Array.from(track.querySelectorAll(".gallery-item:not(.is-gallery-clone)"));
+    if (items.length < 2) {
+      return;
+    }
+
+    let activeIndex = 0;
+    let resumeAt = 0;
+    let interacting = false;
+
+    const pauseBriefly = () => {
+      interacting = false;
+      resumeAt = performance.now() + 5000;
+    };
+    const itemScrollLeft = (item) => {
+      const trackRect = track.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
+      const paddingLeft = Number.parseFloat(window.getComputedStyle(track).paddingLeft) || 0;
+      return track.scrollLeft + itemRect.left - trackRect.left - paddingLeft;
+    };
+    const updateActiveIndex = () => {
+      activeIndex = items.reduce((closestIndex, item, index) => (
+        Math.abs(itemScrollLeft(item) - track.scrollLeft)
+          < Math.abs(itemScrollLeft(items[closestIndex]) - track.scrollLeft)
+          ? index
+          : closestIndex
+      ), 0);
+    };
+
+    track.addEventListener("pointerdown", () => {
+      interacting = true;
+    }, { passive: true });
+    track.addEventListener("pointerup", () => {
+      updateActiveIndex();
+      pauseBriefly();
+    }, { passive: true });
+    track.addEventListener("pointercancel", pauseBriefly, { passive: true });
+    track.addEventListener("wheel", () => {
+      updateActiveIndex();
+      pauseBriefly();
+    }, { passive: true });
+
+    const advance = () => {
+      if (!track.isConnected) {
+        return;
+      }
+
+      const styles = window.getComputedStyle(track);
+      const usesNativeScroll = styles.animationName === "none"
+        && ["auto", "scroll"].includes(styles.overflowX)
+        && track.scrollWidth > track.clientWidth;
+      const trackRect = track.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const isVisible = trackRect.bottom > containerRect.top && trackRect.top < containerRect.bottom;
+
+      if (usesNativeScroll && isVisible && !interacting
+        && performance.now() >= resumeAt && !document.hidden) {
+        activeIndex = (activeIndex + 1) % items.length;
+        track.scrollTo({
+          left: itemScrollLeft(items[activeIndex]),
+          behavior: "smooth"
+        });
+      }
+
+      window.setTimeout(advance, 4200);
+    };
+
+    window.setTimeout(advance, 4200);
+  });
 }
 
 function attachTracking(container, business) {
@@ -4312,7 +4346,7 @@ function downloadBusinessData(business) {
   };
   downloadBlob(
     new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }),
-    `${slugify(business.name || "locallift-datos")}.locallift.json`
+    `${slugify(business.name || "dls-datos")}.dls.json`
   );
 }
 

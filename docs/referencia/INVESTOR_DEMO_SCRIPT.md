@@ -1,6 +1,6 @@
 # Guion de demo para inversores
 
-> Funcion: material para presentar LocalLift a inversores. No es el guion
+> Funcion: material para presentar DLS a inversores. No es el guion
 > comercial activo para clientes ni crea prioridades.
 
 ## Preparacion
@@ -12,7 +12,7 @@
 
 ## Apertura
 
-"LocalLift convierte negocios locales en experiencias digitales listas para vender: web premium, chatbot, reservas, enlaces, SEO local y mantenimiento recurrente. No vendemos un editor; vendemos el resultado funcionando."
+"DLS convierte negocios locales en experiencias digitales listas para vender: web premium, chatbot, reservas, enlaces, SEO local y mantenimiento recurrente. No vendemos un editor; vendemos el resultado funcionando."
 
 ## Demo de 5 minutos
 
@@ -37,7 +37,7 @@
 
 ### Por que no lo hace Wix?
 
-Wix vende herramienta. LocalLift vende implementacion verticalizada, chatbot, conversion local y mantenimiento. El cliente local no quiere construir: quiere que le lleguen reservas y mensajes.
+Wix vende herramienta. DLS vende implementacion verticalizada, chatbot, conversion local y mantenimiento. El cliente local no quiere construir: quiere que le lleguen reservas y mensajes.
 
 ### Como escala?
 

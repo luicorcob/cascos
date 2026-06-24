@@ -17,7 +17,7 @@ const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 const adminToken = process.env.STORE_ADMIN_TOKEN || "";
 const orderEmailTo = process.env.ORDER_EMAIL_TO || "";
 const resendApiKey = process.env.RESEND_API_KEY || "";
-const orderEmailFrom = process.env.ORDER_EMAIL_FROM || "LocalLift Store <orders@example.com>";
+const orderEmailFrom = process.env.ORDER_EMAIL_FROM || "DLS Store <orders@example.com>";
 const checkoutTtlMinutes = Number(process.env.CHECKOUT_TTL_MINUTES || 45);
 const maxCheckoutPerMinute = Number(process.env.CHECKOUT_RATE_LIMIT || 30);
 const maxCartPerMinute = Number(process.env.CART_RATE_LIMIT || 90);
@@ -217,7 +217,7 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`LocalLift Commerce API running at http://${host}:${port}`);
+  console.log(`DLS Commerce API running at http://${host}:${port}`);
   if (!isAdminTokenConfigured()) console.warn("SECURITY: set STORE_ADMIN_TOKEN with at least 32 characters before using admin routes.");
   if (!stripeWebhookSecret) console.warn("SECURITY: set STRIPE_WEBHOOK_SECRET before accepting Stripe webhooks.");
   if (allowAnyCorsOrigin) console.warn("SECURITY: CORS_ORIGIN=* is for local development only. Use explicit origins in production.");
@@ -574,7 +574,7 @@ function buildStripeLineItems(order) {
   if (!order.taxIncluded && order.totals.tax > 0) {
     lines.push({
       name: `Impuestos (${order.totals.taxRatePercent}%)`,
-      description: "Impuestos calculados por LocalLift Commerce",
+      description: "Impuestos calculados por DLS Commerce",
       amountCents: toCents(order.totals.tax)
     });
   }
@@ -987,7 +987,7 @@ function normalizeDb(data) {
 
 function defaultSettings() {
   return {
-    businessName: "LocalLift Store",
+    businessName: "DLS Store",
     orderEmail: orderEmailTo,
     currency: normalizeCurrency(process.env.STORE_CURRENCY || "EUR"),
     taxRatePercent: Number(process.env.STORE_TAX_RATE || 21),

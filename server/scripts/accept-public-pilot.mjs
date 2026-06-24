@@ -19,7 +19,7 @@ async function main() {
   const demoResponse = await fetch(demoUrl, { redirect: "follow" });
   assert(demoResponse.ok, `Demo URL returned ${demoResponse.status}`);
   const demoHtml = await demoResponse.text();
-  assert(/LocalLift|sitePreview|Luma Studio/i.test(demoHtml), "Demo URL does not look like LocalLift");
+  assert(/DLS|sitePreview|Luma Studio/i.test(demoHtml), "Demo URL does not look like DLS");
 
   const privacyResponse = await fetch(privacyUrl, { redirect: "follow" });
   assert(privacyResponse.ok, `Privacy URL returned ${privacyResponse.status}`);

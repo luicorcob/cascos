@@ -131,7 +131,7 @@ function renderPage({ body, toc }) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LocalLift Studio - Memoria TFG</title>
+    <title>DLS Studio - Memoria TFG</title>
     <style>
       :root {
         --ink: #171513;
@@ -352,7 +352,7 @@ function renderPage({ body, toc }) {
     <div class="page">
       <section class="cover">
         <span class="label">Memoria tecnica y funcional</span>
-        <h1>LocalLift Studio</h1>
+        <h1>DLS Studio · Digital Local Sites</h1>
         <p>Documentacion profesional tipo TFG sobre una plataforma de digitalizacion integral para negocios locales: web, CRM, reservas, tienda, chatbot, analitica, despliegue y roadmap.</p>
         <div class="meta-grid">
           <span><small>Fecha</small><b>26/05/2026</b></span>

@@ -1,4 +1,4 @@
-# Playbook Google gestionado - LocalLift
+# Playbook Google gestionado — DLS
 
 Objetivo: que el cliente no solo tenga una web bonita, sino una operacion Google completa: correo profesional, perfil de empresa, reservas, reseñas y reporte mensual.
 

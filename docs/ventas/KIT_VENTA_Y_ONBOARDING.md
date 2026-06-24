@@ -84,13 +84,13 @@ Acordar una fecha y hora exactas para responder.
 
 ## Mensaje tras aceptar
 
-> Gracias por confiar en LocalLift Reservas. Para reservar la fecha necesitamos el deposito de 245 EUR. En cuanto quede confirmado, te envio el onboarding y fijamos la revision de la primera version movil dentro de las siguientes 72 horas desde que recibamos todo el material.
+> Gracias por confiar en DLS Reservas. Para reservar la fecha necesitamos el deposito de 245 EUR. En cuanto quede confirmado, te envio el onboarding y fijamos la revision de la primera version movil dentro de las siguientes 72 horas desde que recibamos todo el material.
 
 ## Confirmacion de deposito
 
 Enviar en menos de una hora:
 
-> Deposito recibido. Empezamos hoy con LocalLift Reservas para [NEGOCIO]. La primera version movil se entregara antes de [FECHA Y HORA], siempre que recibamos el material completo antes de [FECHA Y HORA]. La publicacion esta prevista para [FECHA]. Incluye una ronda de cambios.
+> Deposito recibido. Empezamos hoy con DLS Reservas para [NEGOCIO]. La primera version movil se entregara antes de [FECHA Y HORA], siempre que recibamos el material completo antes de [FECHA Y HORA]. La publicacion esta prevista para [FECHA]. Incluye una ronda de cambios.
 
 Adjuntar o enlazar:
 
@@ -140,7 +140,7 @@ confirmado los campos marcados, impuestos, facturacion y clausulas aplicables.
 
 ## Email de propuesta
 
-Asunto: `Propuesta LocalLift Reservas para [NEGOCIO]`
+Asunto: `Propuesta DLS Reservas para [NEGOCIO]`
 
 > Hola [NOMBRE],
 >

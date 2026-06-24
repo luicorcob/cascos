@@ -1,6 +1,6 @@
 # Lanzamiento del primer piloto online
 
-Objetivo: publicar LocalLift para que un negocio real pueda recibir leads o reservas desde una URL online y gestionarlos desde el portal.
+Objetivo: publicar DLS para que un negocio real pueda recibir leads o reservas desde una URL online y gestionarlos desde el portal.
 
 ## Resultado esperado
 

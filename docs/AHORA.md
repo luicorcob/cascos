@@ -2,12 +2,12 @@
 
 Ultima actualizacion: 16 de junio de 2026.
 
-Este es el panel de mando canonico de LocalLift. Las ventas y el despliegue
+Este es el panel de mando canonico de DLS. Las ventas y el despliegue
 publico quedan pospuestos mientras se madura el producto.
 
 ## Objetivo activo
 
-Convertir LocalLift Studio en una herramienta de creacion web mantenible,
+Convertir DLS Studio en una herramienta de creacion web mantenible,
 segura al editar y suficientemente clara para trabajar sin improvisar.
 
 Resultados que definen el exito de esta etapa:

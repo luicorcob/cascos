@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { handleBookingApi, isBookingApiRequest } from "./api/booking-api.mjs";
 import { handleBusinessApi, isBusinessApiRequest } from "./api/business-api.mjs";
 import { handleContactApi, isContactApiRequest } from "./api/contact-api.mjs";
+import { handleDiscoveryApi, isDiscoveryApiRequest } from "./api/discovery-api.mjs";
 import { handleEventApi, isEventApiRequest } from "./api/event-api.mjs";
 import { handleHealthApi, isHealthApiRequest } from "./api/health-api.mjs";
 import { handleGoogleApi, isGoogleApiRequest } from "./api/google-api.mjs";
@@ -94,6 +95,11 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (isDiscoveryApiRequest(requestUrl.pathname)) {
+      await handleDiscoveryApi(request, response, apiContext);
+      return;
+    }
+
     if (isBusinessApiRequest(requestUrl.pathname)) {
       await handleBusinessApi(request, response, apiContext);
       return;
@@ -153,7 +159,7 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`LocalLift Studio running at http://${host}:${port}`);
+  console.log(`DLS Studio running at http://${host}:${port}`);
 });
 
 server.on("error", (error) => {

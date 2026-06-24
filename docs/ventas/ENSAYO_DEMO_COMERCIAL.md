@@ -1,6 +1,6 @@
 # Ensayo de demo comercial
 
-Objetivo: enseñar el resultado de LocalLift en diez minutos, validar encaje y
+Objetivo: enseñar el resultado de DLS en diez minutos, validar encaje y
 pedir una decision concreta sin recorrer el editor ni improvisar promesas.
 
 Estado: guion y hoja de medicion preparados. Ensayo humano pendiente.

@@ -1,12 +1,12 @@
 :root {
-  --bg: #f5f1e8;
-  --ink: #171513;
-  --muted: #69645d;
-  --paper: #fffdf7;
-  --panel: rgba(255, 253, 247, 0.88);
-  --line: rgba(23, 21, 19, 0.13);
-  --accent: #c94432;
-  --teal: #0f766e;
+  --bg: #f3f2f8;
+  --ink: #14131b;
+  --muted: #686673;
+  --paper: #ffffff;
+  --panel: rgba(255, 255, 255, 0.9);
+  --line: rgba(28, 24, 44, 0.13);
+  --accent: #b5229b;
+  --teal: #087fae;
   --green: #16745c;
   --blue: #2563eb;
   --amber: #9a6500;
@@ -72,6 +72,8 @@ a {
   padding: 20px;
   overflow-y: auto;
   border-right: 1px solid var(--line);
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, #08c8ff, #7655ff, #ff2fcf) 1;
   background: var(--panel);
   backdrop-filter: blur(16px);
 }
@@ -91,14 +93,14 @@ a {
 }
 
 .brand-mark {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
+  display: block;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(118, 85, 255, 0.18);
   border-radius: var(--radius);
-  background: var(--ink);
-  color: #fffaf0;
-  font-weight: 950;
+  background: #050509;
+  object-fit: cover;
+  box-shadow: 0 0 18px rgba(0, 158, 230, 0.14), 0 0 22px rgba(255, 47, 207, 0.1);
 }
 
 .eyebrow {

@@ -6,6 +6,9 @@ const ADMIN_TOKEN_ENV_KEYS = ["LOCALLIFT_ADMIN_TOKEN", "ADMIN_API_TOKEN"];
 export function isAdminApiRequest(pathname) {
   return pathname === "/api/businesses"
     || pathname.startsWith("/api/businesses/")
+    || pathname.startsWith("/api/discovery/")
+    || pathname === "/api/leads"
+    || pathname === "/api/studio/from-opportunity"
     || (pathname.startsWith("/api/google/") && pathname !== "/api/google/oauth/callback");
 }
 
@@ -26,7 +29,7 @@ export function requireAdminApiAuth(request, response, context) {
     ...context.baseHeaders,
     ...corsHeaders(context),
     "Content-Type": "application/json; charset=utf-8",
-    "WWW-Authenticate": 'Bearer realm="LocalLift Admin API"'
+    "WWW-Authenticate": 'Bearer realm="DLS Admin API"'
   });
   response.end(JSON.stringify({
     error: "Admin API token required",

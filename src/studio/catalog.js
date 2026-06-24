@@ -97,6 +97,123 @@
     }
   ];
 
+  const QUICK_CREATIVE_DIRECTIONS = [
+    {
+      values: { intensity: 45, fontScale: 95, layoutScale: 100 },
+      radios: {
+        artDirection: "editorial", contentMode: "balanced", theme: "editorial", typography: "editorial",
+        motion: "soft", contentDensity: "balanced", visualShape: "sharp", heroSize: "balanced",
+        contentWidth: "standard", imageRatio: "portrait"
+      },
+      checks: { premiumEffects: true, showGallery: true, showTrustRail: true, showTestimonials: true },
+      blocks: { hero: "oval", services: "list", gallery: "grid", testimonials: "quotes", contact: "split" }
+    },
+    {
+      values: { intensity: 55, fontScale: 95, layoutScale: 100 },
+      radios: {
+        artDirection: "mosaic", contentMode: "balanced", theme: "aurora", typography: "modern",
+        motion: "cinematic", contentDensity: "balanced", visualShape: "rounded", heroSize: "balanced",
+        contentWidth: "wide", imageRatio: "square"
+      },
+      checks: { premiumEffects: true, showGallery: true, showTrustRail: true, showTestimonials: true },
+      blocks: { hero: "collage", services: "spotlight", gallery: "mosaic", testimonials: "cards", contact: "compact" }
+    },
+    {
+      values: { intensity: 40, fontScale: 95, layoutScale: 105 },
+      radios: {
+        artDirection: "atelier", contentMode: "balanced", theme: "luxe", typography: "editorial",
+        motion: "cinematic", contentDensity: "balanced", visualShape: "clean", heroSize: "balanced",
+        contentWidth: "focused", imageRatio: "wide"
+      },
+      checks: { premiumEffects: true, showGallery: true, showTrustRail: true, showTestimonials: true },
+      blocks: { hero: "split", services: "list", gallery: "marquee", testimonials: "quotes", contact: "split" }
+    }
+  ];
+
+  const QUICK_ACTION_RECIPES = {
+    premium: {
+      values: { intensity: 45, fontScale: 95, layoutScale: 100 },
+      radios: {
+        artDirection: "atelier", contentMode: "balanced", theme: "luxe", typography: "editorial",
+        motion: "cinematic", visualShape: "clean", contentDensity: "balanced", heroSize: "balanced",
+        contentWidth: "standard", imageRatio: "portrait"
+      },
+      checks: {
+        premiumEffects: true, showGallery: true, showTrustRail: true, showTestimonials: true,
+        showResourceMarquee: false
+      },
+      blocks: { hero: "collage", services: "list", gallery: "mosaic", testimonials: "quotes", contact: "split" },
+      sectionOrder: ["services", "gallery", "features", "testimonials", "booking", "lead", "faq", "map", "menu", "store"]
+    },
+    minimal: {
+      values: { intensity: 35, fontScale: 95, layoutScale: 95 },
+      radios: {
+        artDirection: "editorial", contentMode: "balanced", theme: "aurora", typography: "modern",
+        motion: "soft", visualShape: "sharp", contentDensity: "compact", heroSize: "compact",
+        contentWidth: "standard", imageRatio: "wide"
+      },
+      checks: { premiumEffects: false, showResourceMarquee: false },
+      blocks: { hero: "split", services: "list", gallery: "grid", testimonials: "quotes", contact: "compact" }
+    },
+    trust: {
+      values: { intensity: 40, fontScale: 95, layoutScale: 100 },
+      radios: {
+        artDirection: "editorial", contentMode: "balanced", typography: "editorial", motion: "soft",
+        contentDensity: "balanced", heroSize: "balanced", contentWidth: "standard", imageRatio: "portrait"
+      },
+      checks: {
+        showTrustRail: true, showTestimonials: true, showFaq: true, showMap: true,
+        googleEnabled: true, showResourceMarquee: false
+      },
+      blocks: { hero: "oval", services: "list", gallery: "grid", testimonials: "quotes", contact: "split" },
+      sectionOrder: ["services", "testimonials", "faq", "map", "booking", "lead", "gallery", "features", "menu", "store"]
+    },
+    local: {
+      values: { intensity: 45, fontScale: 95, layoutScale: 100 },
+      radios: {
+        artDirection: "editorial", contentMode: "balanced", typography: "editorial", motion: "soft",
+        contentDensity: "balanced", heroSize: "balanced", contentWidth: "standard", imageRatio: "portrait"
+      },
+      checks: {
+        showMap: true, googleEnabled: true, showTrustRail: true,
+        showTestimonials: true, showResourceMarquee: false
+      },
+      blocks: { hero: "oval", services: "list", gallery: "grid", testimonials: "quotes", contact: "split" },
+      sectionOrder: ["services", "map", "gallery", "testimonials", "features", "booking", "lead", "faq", "menu", "store"]
+    },
+    mobile: {
+      values: { bookingLabel: "Contactar", intensity: 40, fontScale: 95, layoutScale: 90 },
+      radios: {
+        artDirection: "editorial", contentMode: "balanced", typography: "modern", motion: "soft",
+        contentDensity: "compact", visualShape: "rounded", heroSize: "compact",
+        contentWidth: "focused", imageRatio: "square"
+      },
+      checks: {
+        showConversionDock: true, showLeadForm: true, showResourceMarquee: false,
+        premiumEffects: false
+      },
+      blocks: { hero: "split", services: "list", gallery: "grid", testimonials: "cards", contact: "compact" }
+    },
+    showcase: {
+      values: { intensity: 55, fontScale: 95, layoutScale: 100 },
+      radios: {
+        artDirection: "mosaic", contentMode: "visual", typography: "modern", motion: "cinematic",
+        contentDensity: "balanced", imageRatio: "wide", contentWidth: "wide", heroSize: "balanced"
+      },
+      checks: {
+        premiumEffects: true, showGallery: true, showTrustRail: true, showTestimonials: true,
+        showResourceMarquee: false, showFaq: false, showLeadForm: false, showConversionDock: true
+      },
+      blocks: { hero: "collage", services: "spotlight", gallery: "mosaic", testimonials: "quotes", contact: "compact" },
+      sectionOrder: ["gallery", "services", "testimonials", "features", "map", "booking", "lead", "faq", "menu", "store"]
+    },
+    wideImages: {
+      radios: { artDirection: "editorial", imageRatio: "wide", contentWidth: "wide", heroSize: "balanced" },
+      checks: { showGallery: true },
+      blocks: { hero: "split", gallery: "grid" }
+    }
+  };
+
   const demoBusiness = {
     name: "Brasa Norte",
     category: "Restaurante de fuego lento",
@@ -986,11 +1103,11 @@
       accent2: "#23d5ab"
     },
     luxe: {
-      bg: "#f8f6ee",
-      paper: "#ffffff",
-      ink: "#111316",
-      muted: "#5c626a",
-      accent2: "#0f8f8f"
+      bg: "#f3f1ea",
+      paper: "#fbfaf6",
+      ink: "#272a28",
+      muted: "#6d706c",
+      accent2: "#7f8f84"
     }
   };
 
@@ -1210,6 +1327,8 @@
     BLOCK_LIBRARY,
     DEFAULT_BLOCK_VARIANTS,
     LAYOUT_RECIPES,
+    QUICK_CREATIVE_DIRECTIONS,
+    QUICK_ACTION_RECIPES,
     demoBusiness,
     sectorPresets,
     defaultSectorPreset,

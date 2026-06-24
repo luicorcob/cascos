@@ -3,11 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LocalLift Studio - creador de webs para negocios locales</title>
+    <title>DLS Studio — Digital Local Sites</title>
     <meta
       name="description"
-      content="Base profesional para crear webs dinamicas de negocios locales con datos, fotos, enlaces y animaciones premium."
+      content="DLS Studio crea y opera sitios digitales profesionales para negocios locales."
     >
+    <meta name="theme-color" content="#050509">
+    <link rel="icon" type="image/png" href="Logo.png">
     <link rel="stylesheet" href="src/styles.css?v=20260622-2">
     <link rel="stylesheet" href="src/studio-redesign.css?v=20260622-2">
     <link rel="stylesheet" href="assets/vendor/atropos.min.css">
@@ -19,11 +21,11 @@
     <div class="cursor-glow" aria-hidden="true"></div>
 
     <header class="studio-topbar">
-      <a class="topbar-brand" href="index.html" aria-label="LocalLift Studio">
-        <span class="topbar-brand-mark" aria-hidden="true">L</span>
+      <a class="topbar-brand" href="index.html" aria-label="DLS Studio — Digital Local Sites">
+        <img class="topbar-brand-mark" src="Logo.png" alt="" aria-hidden="true">
         <span>
-          <strong>LocalLift</strong>
-          <small>Studio</small>
+          <strong>DLS</strong>
+          <small>Digital Local Sites</small>
         </span>
       </a>
 
@@ -35,6 +37,7 @@
       </div>
 
       <nav class="topbar-links" aria-label="Herramientas del negocio">
+        <a href="pages/business-radar.html">DLS Radar</a>
         <a href="pages/onboarding.html">Brief + Google</a>
         <a href="pages/business-dashboard.html">Portal</a>
         <a href="pages/store-admin.html">Tienda</a>
@@ -64,7 +67,7 @@
     <main class="studio-shell">
       <aside class="control-panel" aria-label="Panel de configuracion">
         <div class="brand-lockup">
-          <span class="brand-mark" aria-hidden="true">LL</span>
+          <img class="brand-mark" src="Logo.png" alt="" aria-hidden="true">
           <div>
             <p class="eyebrow">Mesa de produccion</p>
             <h1>Convierte un negocio en una marca digital</h1>
@@ -81,6 +84,7 @@
         </div>
 
         <div class="workspace-links" aria-label="Material de presentacion">
+          <a href="pages/business-radar.html">Radar de negocios</a>
           <a href="pages/investor.html">Pitch inversores</a>
           <a href="pages/onboarding.html">Brief + Google Ops</a>
           <a href="pages/store-admin.html">Admin tienda</a>
@@ -136,25 +140,25 @@
           </div>
 
           <div class="quick-command">
-            <input id="quickCommandInput" type="text" placeholder="Ej: más premium, centrada en reservas...">
+            <input id="quickCommandInput" type="text" placeholder="Ej: refina la marca, prioriza reservas...">
             <button class="mini-action is-strong" id="quickCommandButton" type="button">Aplicar</button>
           </div>
 
           <div class="quick-group" aria-label="Variantes instantaneas">
-            <button class="quick-action quick-action-featured" type="button" data-quick-action="surprise">Generar variacion</button>
-            <button class="quick-action" type="button" data-quick-action="premium">Mas premium</button>
-            <button class="quick-action" type="button" data-quick-action="minimal">Mas limpio</button>
-            <button class="quick-action" type="button" data-quick-action="urgent">Mas urgencia</button>
-            <button class="quick-action" type="button" data-quick-action="trust">Mas confianza</button>
-            <button class="quick-action" type="button" data-quick-action="booking">Vender reservas</button>
-            <button class="quick-action" type="button" data-quick-action="food">Pedidos rapidos</button>
-            <button class="quick-action" type="button" data-quick-action="store">Tienda online</button>
-            <button class="quick-action" type="button" data-quick-action="local">Mas local</button>
-            <button class="quick-action" type="button" data-quick-action="mobile">Modo movil</button>
-            <button class="quick-action" type="button" data-quick-action="showcase">Escaparate visual</button>
-            <button class="quick-action" type="button" data-quick-action="biggerType">Letra grande</button>
-            <button class="quick-action" type="button" data-quick-action="moreSpace">Mas aire</button>
-            <button class="quick-action" type="button" data-quick-action="wideImages">Fotos anchas</button>
+            <button class="quick-action quick-action-featured" type="button" data-quick-action="surprise">Nueva direccion</button>
+            <button class="quick-action" type="button" data-quick-action="premium">Refinar marca</button>
+            <button class="quick-action" type="button" data-quick-action="minimal">Simplificar</button>
+            <button class="quick-action" type="button" data-quick-action="urgent">Acelerar decision</button>
+            <button class="quick-action" type="button" data-quick-action="trust">Reforzar confianza</button>
+            <button class="quick-action" type="button" data-quick-action="booking">Priorizar reservas</button>
+            <button class="quick-action" type="button" data-quick-action="food">Facilitar pedidos</button>
+            <button class="quick-action" type="button" data-quick-action="store">Activar tienda</button>
+            <button class="quick-action" type="button" data-quick-action="local">Enfatizar cercania</button>
+            <button class="quick-action" type="button" data-quick-action="mobile">Optimizar movil</button>
+            <button class="quick-action" type="button" data-quick-action="showcase">Dar peso a las fotos</button>
+            <button class="quick-action" type="button" data-quick-action="biggerType">Mejorar lectura</button>
+            <button class="quick-action" type="button" data-quick-action="moreSpace">Dar mas aire</button>
+            <button class="quick-action" type="button" data-quick-action="wideImages">Formato panoramico</button>
           </div>
 
           <div class="quick-toggle-grid" aria-label="Activar secciones">
@@ -646,8 +650,8 @@
                 <input name="googleWorkspaceDomain" type="text" placeholder="tunegocio.com">
               </label>
               <label>
-                Email gestor LocalLift autorizado
-                <input name="googleManagerEmail" type="email" placeholder="gestor@locallift...">
+                Email gestor DLS autorizado
+                <input name="googleManagerEmail" type="email" placeholder="gestor@digitallocalsites.com">
               </label>
             </fieldset>
             <label class="toggle-row">
@@ -1009,7 +1013,7 @@
         <div class="device-frame" data-size="mobile">
           <div class="frame-browserbar" aria-hidden="true">
             <span class="frame-dots"><i></i><i></i><i></i></span>
-            <span class="frame-address" id="frameAddress">locallift.site/luma-studio</span>
+            <span class="frame-address" id="frameAddress">digitallocalsites.com/luma-studio</span>
             <span class="frame-secure">Live</span>
           </div>
           <div id="sitePreview" class="site-preview" aria-live="polite"></div>

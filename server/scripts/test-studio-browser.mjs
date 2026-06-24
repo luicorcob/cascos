@@ -62,6 +62,14 @@ try {
   assert.ok(await evaluate('document.querySelectorAll("[data-edit-image-field], [data-edit-image-list]").length > 4'));
   assert.ok(await evaluate('document.querySelectorAll("[data-edit-link-field], [data-edit-link-list]").length > 3'));
   assert.ok(await evaluate('document.querySelectorAll("[data-block-section][data-block-variant]").length >= 13'));
+  await evaluate('document.querySelector(\'[data-block-section="gallery"][data-block-variant="marquee"]\').click()');
+  await waitForExpression('document.querySelector(".generated-site").classList.contains("block-gallery-marquee")');
+  await evaluate('document.querySelector(".gallery-band").scrollIntoView({ block: "center" })');
+  const galleryScrollBefore = await evaluate('document.querySelector(".gallery-track").scrollLeft');
+  await delay(4500);
+  const galleryScrollAfter = await evaluate('document.querySelector(".gallery-track").scrollLeft');
+  assert.ok(galleryScrollAfter > galleryScrollBefore, "The mobile gallery carousel should advance automatically");
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".gallery-item.is-gallery-clone")).display'), "none");
   assert.equal(await evaluate('document.querySelectorAll("#heroLayoutPicker .hero-layout-option").length'), 5);
   await evaluate('document.querySelector(\'#heroLayoutPicker [data-block-variant="collage"]\').click()');
   await waitForExpression('document.querySelector(".generated-site").classList.contains("block-hero-collage")');
@@ -90,6 +98,26 @@ try {
   await waitForExpression('document.querySelector("#businessForm").elements.tagline.value !== "Texto editado desde preview"');
   await evaluate('document.querySelector("#quickRedoButton").click()');
   await waitForExpression('document.querySelector("#businessForm").elements.tagline.value === "Texto editado desde preview"');
+  await evaluate('document.querySelector(\'[data-quick-action="premium"]\').click()');
+  await waitForExpression('document.querySelector(".generated-site").classList.contains("block-hero-collage")');
+  assert.ok(await evaluate('document.querySelector(".generated-site").classList.contains("art-atelier")'));
+  assert.equal(await evaluate('document.querySelector("#businessForm").elements.fontScale.value'), "95");
+  assert.equal(await evaluate('document.querySelector("#businessForm").elements.intensity.value'), "45");
+  assert.equal(
+    await evaluate('document.querySelector("#businessForm").elements.tagline.value'),
+    "Texto editado desde preview",
+    "Brand refinement must preserve the business voice"
+  );
+  await evaluate('document.querySelector(\'[data-quick-action="urgent"]\').click()');
+  await waitForExpression('document.querySelector(".generated-site").classList.contains("block-hero-split")');
+  assert.ok(await evaluate('document.querySelector(".generated-site").classList.contains("art-editorial")'));
+  assert.equal(await evaluate('document.querySelector(".generated-site").classList.contains("art-poster")'), false);
+  assert.equal(await evaluate('document.querySelector("#businessForm").elements.sectionOrder.value.startsWith("booking")'), true);
+  assert.equal(await evaluate('document.querySelector("#businessForm").elements.showBooking.checked'), true);
+  await evaluate('document.querySelector("#quickUndoButton").click()');
+  await waitForExpression('document.querySelector(".generated-site").classList.contains("block-hero-collage")');
+  await evaluate('document.querySelector("#quickUndoButton").click()');
+  await waitForExpression('!document.querySelector(".generated-site").classList.contains("block-hero-collage")');
 
   const serviceCountBefore = await evaluate('document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/).filter(Boolean).length');
   await evaluate('document.querySelector(\'[data-preview-section-action="add-item"][data-section-key="services"]\').click()');

@@ -804,9 +804,9 @@ function eventFromPayload(payload, business) {
   }
 
   return {
-    summary: cleanText(payload.summary, 500) || `Reserva LocalLift - ${cleanText(payload.customerName, 200) || "Cliente"}`,
+    summary: cleanText(payload.summary, 500) || `Reserva DLS - ${cleanText(payload.customerName, 200) || "Cliente"}`,
     description: [
-      "Reserva creada desde LocalLift.",
+      "Reserva creada desde DLS.",
       payload.service ? `Servicio: ${cleanText(payload.service, 500)}` : "",
       payload.customerName ? `Cliente: ${cleanText(payload.customerName, 500)}` : "",
       payload.phone ? `Telefono: ${cleanText(payload.phone, 200)}` : "",
@@ -819,7 +819,7 @@ function eventFromPayload(payload, business) {
     attendees: payload.email ? [{ email: cleanText(payload.email, 320) }] : undefined,
     extendedProperties: {
       private: {
-        source: "locallift",
+        source: "dls",
         businessId: business.id,
         leadId: cleanText(payload.leadId, 300)
       }

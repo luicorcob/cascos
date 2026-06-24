@@ -187,6 +187,16 @@ const collageHtml = renderer.renderSite({
 assert.match(collageHtml, /aria-label="Galeria destacada de portada"/);
 assert.match(collageHtml, /data-edit-image-field="heroImage"/);
 assert.match(collageHtml, /data-edit-image-list="gallery" data-edit-index="0"/);
+assert.doesNotMatch(collageHtml, /class="hero-art-monogram"/, "The floating collage omits oversized initials");
+assert.match(collageHtml, /class="site-logo-mark">LS<\/span>/, "The small navigation logo remains visible");
+
+const clinicCollageHtml = renderer.renderSite({
+  ...demoBusiness,
+  name: "Clínica Alba",
+  blockVariants: { ...demoBusiness.blockVariants, hero: "collage" }
+});
+assert.doesNotMatch(clinicCollageHtml, /class="hero-art-monogram"/, "The floating collage omits oversized initials for every business");
+assert.match(clinicCollageHtml, /class="site-logo-mark">CA<\/span>/, "The small navigation logo remains visible");
 
 const customButtonHtml = renderer.renderSite({
   ...demoBusiness,

@@ -26,7 +26,7 @@ Domicilio: [DOMICILIO CLIENTE]
 Email: [EMAIL CLIENTE]
 
 CONCEPTO
-Anticipo del 50% para el servicio LocalLift Reservas de [NEGOCIO],
+Anticipo del 50% para el servicio DLS Reservas de [NEGOCIO],
 segun propuesta y condiciones version [VERSION] aceptadas el [FECHA].
 
 Cantidad: 1

@@ -1,4 +1,4 @@
-# LocalLift - propuesta para negocios locales
+# DLS · Digital Local Sites — propuesta para negocios locales
 
 ## Que hacemos
 

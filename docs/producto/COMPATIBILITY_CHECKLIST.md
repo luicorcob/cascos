@@ -1,6 +1,6 @@
 # Compatibility checklist
 
-Objetivo: mantener LocalLift estable en moviles, tablets, desktop y navegadores
+Objetivo: mantener DLS estable en moviles, tablets, desktop y navegadores
 modernos con degradacion razonable.
 
 Ultima ejecucion local: 12 de junio de 2026.

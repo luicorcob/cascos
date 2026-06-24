@@ -4,8 +4,8 @@
 
 html {
   min-height: 100%;
-  background: #f7f2e6;
-  color: #171513;
+  background: #f4f2f8;
+  color: #15131b;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -36,8 +36,9 @@ body {
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
   background:
-    linear-gradient(135deg, rgba(207, 63, 46, 0.16), transparent 45%),
-    #111316;
+    radial-gradient(circle at 12% 14%, rgba(0, 184, 255, 0.2), transparent 30%),
+    radial-gradient(circle at 88% 34%, rgba(255, 47, 207, 0.18), transparent 34%),
+    linear-gradient(145deg, #050509, #0e0b18 70%, #160a13);
   color: #fffaf0;
 }
 
@@ -47,9 +48,24 @@ body {
   text-decoration: none;
 }
 
+.dls-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dls-home img {
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  object-fit: cover;
+  box-shadow: 0 0 20px rgba(0, 184, 255, 0.2), 0 0 24px rgba(255, 47, 207, 0.12);
+}
+
 .eyebrow {
   margin: clamp(60px, 12vw, 130px) 0 12px;
-  color: #5cffc6;
+  color: #39d8ff;
   font-size: 0.76rem;
   font-weight: 950;
   letter-spacing: 0.08em;
@@ -84,8 +100,8 @@ body {
   padding: 0 14px;
   border: 1px solid rgba(255, 250, 240, 0.24);
   border-radius: 8px;
-  background: #5cffc6;
-  color: #07100d;
+  background: linear-gradient(110deg, #0bbce9, #7655ff 50%, #e92bc2);
+  color: #ffffff;
   font: inherit;
   font-weight: 950;
   text-decoration: none;

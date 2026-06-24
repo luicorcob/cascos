@@ -8,7 +8,7 @@ try {
     const endpoint = new URL(url);
     assert.equal(endpoint.hostname, "commons.wikimedia.org");
     assert.match(endpoint.searchParams.get("gsrsearch"), /bookstore interior/);
-    assert.match(options.headers["User-Agent"], /LocalLift-Studio/);
+    assert.match(options.headers["User-Agent"], /DLS-Studio/);
     return {
       ok: true,
       json: async () => ({

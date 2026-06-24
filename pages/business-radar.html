@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DLS Radar — Negocios sin web</title>
+    <meta
+      name="description"
+      content="Encuentra negocios locales sin web, prioriza oportunidades y crea una propuesta en DLS Studio."
+    >
+    <meta name="theme-color" content="#07070b">
+    <meta name="dls-discovery-mode" content="openstreetmap">
+    <link rel="icon" type="image/png" href="../Logo.png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="../src/styles/business-radar.css?v=20260624-2">
+  </head>
+  <body>
+    <div class="radar-ambient radar-ambient-one" aria-hidden="true"></div>
+    <div class="radar-ambient radar-ambient-two" aria-hidden="true"></div>
+
+    <header class="radar-topbar">
+      <a class="radar-brand" href="../index.html" aria-label="DLS Studio">
+        <img src="../Logo.png" alt="">
+        <span><strong>DLS</strong><small>Radar de Negocios</small></span>
+      </a>
+
+      <nav class="radar-nav" aria-label="Herramientas DLS">
+        <a href="../index.html">Studio</a>
+        <a href="business-dashboard.html">Portal</a>
+        <a href="store-admin.html">Tienda</a>
+        <a href="business-dashboard.html#overview">Dashboard</a>
+      </nav>
+
+      <div class="provider-pill" id="providerPill" title="Proveedor de descubrimiento activo">
+        <span aria-hidden="true"></span>
+        <span id="providerLabel">Datos reales · OpenStreetMap</span>
+      </div>
+    </header>
+
+    <main class="radar-shell">
+      <section class="radar-hero" aria-labelledby="radarTitle">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> Prospección local inteligente</p>
+          <h1 id="radarTitle">Radar de negocios <em>sin web</em></h1>
+          <p class="hero-subtitle">
+            Descubre negocios reales en directorios geográficos y detecta cuáles no tienen una web declarada en su ficha pública.
+          </p>
+          <p class="hero-product-line">Encuentra. Crea la propuesta. Vende más rápido.</p>
+        </div>
+
+        <form class="radar-search-card" id="radarSearchForm" novalidate>
+          <div class="search-card-glow" aria-hidden="true"></div>
+          <div class="search-main-field">
+            <label for="cityInput">Ciudad, pueblo o barrio</label>
+            <div class="input-with-icon">
+              <span class="field-icon" aria-hidden="true">⌖</span>
+              <input
+                id="cityInput"
+                name="city"
+                type="search"
+                placeholder="Ej. Santander, Comillas, Madrid Chamberí..."
+                autocomplete="address-level2"
+                maxlength="100"
+                required
+              >
+            </div>
+            <div class="recent-searches" id="recentSearches" aria-label="Búsquedas recientes"></div>
+          </div>
+
+          <div class="search-filters">
+            <label>
+              <span>Tipo de negocio</span>
+              <select id="categorySelect" name="category">
+                <option value="all">Todos los negocios</option>
+                <option value="restaurant">Restaurantes</option>
+                <option value="bar">Bares</option>
+                <option value="hairdresser">Peluquerías</option>
+                <option value="clinic">Clínicas</option>
+                <option value="dentist">Dentistas</option>
+                <option value="workshop">Talleres</option>
+                <option value="store">Tiendas</option>
+                <option value="gym">Gimnasios</option>
+                <option value="cafe">Cafeterías</option>
+                <option value="hotel">Hoteles</option>
+                <option value="real_estate">Inmobiliarias</option>
+              </select>
+            </label>
+            <label>
+              <span>Radio de búsqueda</span>
+              <select id="radiusSelect" name="radius">
+                <option value="1000">1 km</option>
+                <option value="3000" selected>3 km</option>
+                <option value="5000">5 km</option>
+                <option value="10000">10 km</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="search-actions">
+            <button class="primary-button" id="searchButton" type="submit">
+              <span class="button-radar-icon" aria-hidden="true"></span>
+              Buscar oportunidades
+            </button>
+            <button class="secondary-button" id="demoButton" type="button">Ver ejemplo</button>
+          </div>
+          <p class="form-error" id="formError" role="alert" hidden></p>
+        </form>
+      </section>
+
+      <section class="metrics-grid" id="metricsGrid" aria-label="Resumen de oportunidades" hidden>
+        <article class="metric-card metric-primary">
+          <span>Negocios encontrados</span><strong id="metricFound">0</strong><small>en el área analizada</small>
+        </article>
+        <article class="metric-card metric-pink">
+          <span>Sin web declarada</span><strong id="metricNoWeb">0</strong><small>en la fuente consultada</small>
+        </article>
+        <article class="metric-card metric-blue">
+          <span>Con teléfono</span><strong id="metricPhone">0</strong><small>contactables ahora</small>
+        </article>
+        <article class="metric-card metric-green">
+          <span>Oportunidades calientes</span><strong id="metricHot">0</strong><small>score de 80 o más</small>
+        </article>
+        <article class="metric-card metric-violet">
+          <span>Score medio</span><strong id="metricAverage">0</strong><small>sobre 100 puntos</small>
+        </article>
+      </section>
+
+      <section class="screen-state initial-state" id="initialState">
+        <div class="state-orbit" aria-hidden="true"><span></span><i></i><b></b></div>
+        <p class="eyebrow"><span></span> DLS Radar listo</p>
+        <h2>Introduce una localidad para descubrir negocios sin web.</h2>
+        <p>Analizaremos presencia digital, señales de demanda y facilidad de contacto para ordenar las mejores oportunidades.</p>
+        <div class="state-features" aria-label="Qué analiza DLS Radar">
+          <span>Presencia web</span><span>Reseñas</span><span>Contacto</span><span>Potencial</span>
+        </div>
+      </section>
+
+      <section class="screen-state loading-state" id="loadingState" aria-live="polite" hidden>
+        <div class="loading-orbit" aria-hidden="true"><span></span><i></i></div>
+        <h2>Analizando presencia digital local...</h2>
+        <p id="loadingCopy">Localizando negocios y calculando su potencial comercial.</p>
+        <div class="skeleton-row" aria-hidden="true">
+          <i></i><i></i><i></i>
+        </div>
+      </section>
+
+      <section class="screen-state empty-state" id="emptyState" hidden>
+        <span class="state-icon" aria-hidden="true">⌁</span>
+        <h2>No hemos encontrado oportunidades claras en esta búsqueda.</h2>
+        <p>Prueba otra categoría o amplía el radio.</p>
+        <button class="secondary-button" id="emptyDemoButton" type="button">Ver un ejemplo</button>
+      </section>
+
+      <section class="screen-state error-state" id="errorState" hidden>
+        <span class="state-icon" aria-hidden="true">!</span>
+        <h2>No se pudo completar la búsqueda.</h2>
+        <p id="errorMessage">Revisa la conexión o la configuración de la API.</p>
+        <div class="backend-help" id="backendHelp" hidden>
+          <strong>El Radar necesita el servidor DLS</strong>
+          <span>Abre una terminal en el proyecto y ejecuta:</span>
+          <code>npm.cmd start</code>
+          <a href="http://127.0.0.1:5173/pages/business-radar.html">Abrir DLS Radar en el servidor correcto ↗</a>
+        </div>
+        <button class="secondary-button" id="retryButton" type="button">Reintentar</button>
+      </section>
+
+      <div id="resultsArea" hidden>
+        <section class="recommendations-section" aria-labelledby="recommendationsTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow"><span></span> Selección automática</p>
+              <h2 id="recommendationsTitle">Oportunidades recomendadas por DLS</h2>
+            </div>
+            <p>Las tres propuestas con más señales de conversión.</p>
+          </div>
+          <div class="recommendations-grid" id="recommendationsGrid"></div>
+        </section>
+
+        <section class="workspace-section" aria-labelledby="workspaceTitle">
+          <div class="section-heading workspace-heading">
+            <div>
+              <p class="eyebrow"><span></span> Explorador de mercado</p>
+              <h2 id="workspaceTitle">Negocios en <span id="resultCity">tu zona</span></h2>
+            </div>
+            <label class="priority-toggle">
+              <input id="priorityToggle" type="checkbox" checked>
+              <span aria-hidden="true"></span>
+              Sin web declarada
+            </label>
+          </div>
+
+          <div class="radar-workspace">
+            <div class="business-column">
+              <div class="list-toolbar">
+                <p><strong id="visibleCount">0</strong> oportunidades visibles</p>
+                <label>
+                  <span class="sr-only">Ordenar resultados</span>
+                  <select id="sortSelect">
+                    <option value="score">Mayor oportunidad</option>
+                    <option value="reviews">Más reseñas</option>
+                    <option value="rating">Mejor valoración</option>
+                    <option value="name">Nombre A–Z</option>
+                  </select>
+                </label>
+              </div>
+              <div class="business-list" id="businessList"></div>
+              <div class="list-empty" id="listEmpty" hidden>
+                No hay resultados con este filtro. Desactiva “Solo sin web propia”.
+              </div>
+            </div>
+
+            <aside class="map-panel" aria-label="Mapa de oportunidades">
+              <div class="map-toolbar">
+                <div><span class="live-dot"></span><strong>Mapa de oportunidad</strong></div>
+                <span id="mapAreaLabel">Radio 3 km</span>
+              </div>
+              <div class="map-stage">
+                <div class="opportunity-map" id="opportunityMap" aria-label="Mapa cartográfico interactivo"></div>
+                <div class="map-data-notice" id="mapDataNotice" hidden></div>
+              </div>
+              <div class="map-legend" aria-label="Leyenda del mapa">
+                <span><i class="legend-hot"></i> Muy caliente</span>
+                <span><i class="legend-no-web"></i> Web no declarada</span>
+                <span><i class="legend-low"></i> Con web / menor prioridad</span>
+              </div>
+              <p class="map-note" id="mapSourceNote">Mapa y datos © OpenStreetMap contributors. La ausencia de web significa que no está declarada en la fuente, no una verificación absoluta.</p>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="../src/shared/api-config.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="../src/radar/opportunity-score.js?v=20260624-2"></script>
+    <script src="../src/radar/pitch-generator.js?v=20260624-2"></script>
+    <script src="../src/radar/discovery-provider.js?v=20260624-2"></script>
+    <script src="../src/radar/business-radar.js?v=20260624-2"></script>
+  </body>
+</html>

@@ -1,4 +1,4 @@
-# Alta productiva de Google para LocalLift
+# Alta productiva de Google para DLS
 
 Esta guia deja operativo el backend Google multi-negocio incluido en el
 servidor principal. El codigo ya cubre OAuth persistente, refresh automatico,
@@ -55,7 +55,7 @@ https://TU_DOMINIO/api/google/oauth/callback
 El URI usado en `GOOGLE_OAUTH_REDIRECT_URI` debe coincidir caracter por
 caracter con uno de los autorizados en Google Cloud.
 
-Scopes que solicita LocalLift de forma incremental:
+Scopes que solicita DLS de forma incremental:
 
 ```text
 https://www.googleapis.com/auth/calendar.events

@@ -1,10 +1,10 @@
-# Plan de accion comercial - LocalLift Studio
+# Plan de accion comercial — DLS Studio
 
 > Estado: documento de referencia. No crea tareas activas. Consulta
 > `docs/AHORA.md` y el plan vinculante
 > `docs/activo/PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md`.
 
-Objetivo: convertir LocalLift Studio en un producto vendible para negocios locales que quieren mas llamadas, reservas, confianza y presencia digital sin tener que aprender herramientas.
+Objetivo: convertir DLS Studio en un producto vendible para negocios locales que quieren mas llamadas, reservas, confianza y presencia digital sin tener que aprender herramientas.
 
 ## Lectura del mercado
 
@@ -25,7 +25,7 @@ Conclusion: el negocio local no compra "tecnologia"; compra menos friccion, mas 
 
 ## Posicionamiento recomendado
 
-Nombre comercial sugerido: **LocalLift**
+Nombre comercial: **DLS (Digital Local Sites)**
 
 Frase:
 
@@ -117,7 +117,7 @@ Condiciones:
 
 ## Producto minimo competitivo
 
-Antes de vender fuerte, LocalLift debe tener:
+Antes de vender fuerte, DLS debe tener:
 
 - Editor de negocio con datos completos.
 - Preview desktop/tablet/movil.
@@ -138,7 +138,7 @@ Antes de vender fuerte, LocalLift debe tener:
 - Anadir selector de sector.
 - Mejorar exportacion con nombre de archivo, metadata SEO y schema local business.
 - Crear formulario de onboarding en HTML o Google Forms.
-- Preparar una pagina de venta propia de LocalLift.
+- Preparar una pagina de venta propia de DLS.
 
 ### Semana 2 - Conversion y confianza
 
@@ -190,7 +190,7 @@ Instagram no sustituye una web: no organiza horarios, servicios, reservas, SEO l
 
 "Wix es mas barato."
 
-Wix vende una herramienta. LocalLift vende el resultado hecho, conectado y mantenido. El coste real de Wix aparece cuando el negocio tiene que escribir textos, elegir estructura, optimizar movil, configurar SEO, enlaces, reservas y mantenimiento.
+Wix vende una herramienta. DLS vende el resultado hecho, conectado y mantenido. El coste real de Wix aparece cuando el negocio tiene que escribir textos, elegir estructura, optimizar movil, configurar SEO, enlaces, reservas y mantenimiento.
 
 "No necesito chatbot."
 

@@ -1,6 +1,6 @@
 # Guia de despliegue inicial
 
-Esta guia deja LocalLift Studio listo para pasar de demo local a piloto online. La web exportada puede vivir en hosting estatico, pero las funciones operativas necesitan un backend Node activo.
+Esta guia deja DLS Studio listo para pasar de demo local a piloto online. La web exportada puede vivir en hosting estatico, pero las funciones operativas necesitan un backend Node activo.
 
 ## Que necesita servidor
 
@@ -58,7 +58,7 @@ Si publicas la web o el dashboard en Vercel, Netlify o Cloudflare Pages y la API
 https://www.cliente.com/pages/business-dashboard.html?apiBase=https://tu-api.onrender.com
 ```
 
-Al abrir con `apiBase`, LocalLift guarda esa URL en `localStorage` para ese navegador. Tambien puedes pegarla en el campo `URL API` del dashboard.
+Al abrir con `apiBase`, DLS guarda esa URL en `localStorage` para ese navegador. Tambien puedes pegarla en el campo `URL API` del dashboard.
 
 Orden de prioridad:
 

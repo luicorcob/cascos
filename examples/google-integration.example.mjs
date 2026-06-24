@@ -175,9 +175,9 @@ async function handleBooking(request, response) {
 
   const calendarId = encodeURIComponent(payload.calendarId || defaultCalendarId);
   const event = {
-    summary: payload.summary || `Reserva LocalLift - ${payload.customerName || "Cliente"}`,
+    summary: payload.summary || `Reserva DLS - ${payload.customerName || "Cliente"}`,
     description: [
-      "Reserva creada desde LocalLift.",
+      "Reserva creada desde DLS.",
       payload.service ? `Servicio: ${payload.service}` : "",
       payload.customerName ? `Cliente: ${payload.customerName}` : "",
       payload.phone ? `Telefono: ${payload.phone}` : "",
@@ -195,7 +195,7 @@ async function handleBooking(request, response) {
     attendees: payload.email ? [{ email: payload.email }] : undefined,
     extendedProperties: {
       private: {
-        source: "locallift",
+        source: "dls",
         leadId: payload.leadId || ""
       }
     }

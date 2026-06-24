@@ -55,7 +55,7 @@ No se prospectan durante este plan:
 
 ### Oferta unica
 
-Nombre comercial: **LocalLift Reservas**.
+Nombre comercial: **DLS Reservas**.
 
 Promesa:
 
@@ -355,7 +355,7 @@ En menos de una hora:
 
 ### Dia 1
 
-- Crear negocio en LocalLift.
+- Crear negocio en DLS.
 - Cargar identidad, servicios, horarios y contacto.
 - Elegir una direccion visual.
 - Configurar CTA principal.

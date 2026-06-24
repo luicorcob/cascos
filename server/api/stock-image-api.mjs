@@ -78,7 +78,7 @@ async function fetchWikimedia(query, page, pageSize) {
   endpoint.searchParams.set("formatversion", "2");
   const payload = await fetchJson(endpoint, {
     Accept: "application/json",
-    "User-Agent": "LocalLift-Studio/1.0 image-catalog"
+    "User-Agent": "DLS-Studio/1.0 image-catalog"
   });
   const pages = Array.isArray(payload.query?.pages) ? payload.query.pages : [];
   const results = pages.map((item) => normalizeWikimediaItem(item, query)).filter(Boolean);

@@ -1,4 +1,4 @@
-# Documentacion de LocalLift
+# Documentacion de DLS · Digital Local Sites
 
 Empieza siempre por [`AHORA.md`](AHORA.md). Es el unico documento que responde
 a estas preguntas:
@@ -50,7 +50,7 @@ Calidad y decisiones funcionales del producto:
 
 ### `operaciones/`
 
-Como publicar, validar y mantener LocalLift:
+Como publicar, validar y mantener DLS:
 
 - Despliegue y lanzamiento del piloto.
 - Runbook operativo.

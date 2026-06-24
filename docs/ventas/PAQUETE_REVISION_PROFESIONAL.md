@@ -23,9 +23,9 @@ sin enviar documentos aislados ni preguntas ambiguas.
 
 ## Preguntas para asesoria legal
 
-1. Que texto de privacidad y aviso legal necesita la web de LocalLift.
+1. Que texto de privacidad y aviso legal necesita la web de DLS.
 2. Que texto necesita cada web de cliente y quien figura como responsable.
-3. Si LocalLift actua como encargado de tratamiento y que acuerdo hace falta.
+3. Si DLS actua como encargado de tratamiento y que acuerdo hace falta.
 4. Como regular cancelacion, devolucion, retrasos y falta de materiales.
 5. Que limites de responsabilidad y jurisdiccion son adecuados.
 6. Como registrar de forma valida la aceptacion de propuesta y condiciones.
@@ -46,4 +46,3 @@ sin enviar documentos aislados ni preguntas ambiguas.
 - [ ] Condiciones de servicio aprobadas.
 - [ ] Respuesta fiscal recibida y plantilla de factura corregida.
 - [ ] Medio de cobro aprobado y verificado.
-

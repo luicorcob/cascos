@@ -481,7 +481,7 @@
 
           <footer class="site-footer">
             <span>${escapeHtml(business.name)} - ${escapeHtml(business.location || "Negocio local")}</span>
-            <span>Web generada con LocalLift Studio</span>
+            <span>Web creada con DLS · Digital Local Sites</span>
           </footer>
           ${business.showConversionDock ? renderConversionDock(business, google) : ""}
           ${renderChatbotWidget(business, { services: allServices, features: allFeatures, hours, faqs: allFaqs, links, chatbot, google, commerce })}
@@ -516,7 +516,6 @@
                 <figure class="hero-art-card hero-art-card-tertiary" data-atropos-offset="9">
                   ${renderEditableImage(business, images[2].url, `${business.name} - imagen destacada 3`, { ...images[2].options, sizes: "22vw" })}
                 </figure>
-                <span class="hero-art-monogram" data-atropos-offset="12">${escapeHtml(initials(business.name))}</span>
                 <span class="hero-art-label" data-atropos-offset="7">${escapeHtml(business.location || business.category)}</span>
               </div>
             </div>

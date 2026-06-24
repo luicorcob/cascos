@@ -1,4 +1,6 @@
-# LocalLift Studio
+# DLS Studio · Digital Local Sites
+
+DLS es la plataforma para crear y operar sitios digitales de negocios locales. El rebranding conserva temporalmente identificadores tecnicos `LocalLift*`, claves `locallift_*`, cabeceras y variables de entorno antiguas para mantener compatibilidad con despliegues y datos ya guardados.
 
 Base web para digitalizar negocios locales: el cliente entrega datos, fotos y enlaces; la herramienta genera una web premium, dinamica y exportable como HTML completo.
 
@@ -28,7 +30,7 @@ Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
 
 Para simular produccion o subir el backend, usa `npm run start:prod` con las variables de `.env.example`. Este comando valida `NODE_ENV=production`, `HOST=0.0.0.0`, token admin, CORS HTTPS y ruta de base persistente antes de arrancar.
 
-Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=https://tu-api.com` o pega esa URL en el campo `URL API` del dashboard. LocalLift la guarda en el navegador y la usa para leads, reservas, eventos, dashboard y reportes.
+Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=https://tu-api.com` o pega esa URL en el campo `URL API` del dashboard. DLS la guarda en el navegador y la usa para leads, reservas, eventos, dashboard y reportes.
 
 ## Formato de datos
 
@@ -343,14 +345,14 @@ Blindaje incluido:
 
 ## Mapa y Google
 
-La pestana `Google` permite configurar Google Maps URL, URL embed de mapa, nota de llegada/parking, enlace de resenas y URL de reserva. Si no hay URL embed, LocalLift genera un iframe de mapa con direccion, ciudad y nombre del negocio.
+La pestana `Google` permite configurar Google Maps URL, URL embed de mapa, nota de llegada/parking, enlace de resenas y URL de reserva. Si no hay URL embed, DLS genera un iframe de mapa con direccion, ciudad y nombre del negocio.
 
 ## Demo en vivo
 
 El panel `Demo en vivo` permite aplicar cambios sin navegar por todas las pestanas:
 
-- Variantes: mas premium, mas limpio, mas urgencia, mas confianza, vender reservas, pedidos rapidos, mas local y modo movil.
-- Comandos: escribe frases como `mas premium`, `vender reservas`, `sin mapa`, `sin bot`, `mostrar todo`.
+- Direcciones: refinar marca, simplificar, acelerar decision, reforzar confianza, priorizar reservas, facilitar pedidos, enfatizar cercania y optimizar movil.
+- Comandos: escribe frases como `refina la marca`, `prioriza reservas`, `sin mapa`, `sin bot`, `mostrar todo` (los comandos anteriores siguen siendo compatibles).
 - Toggles de seccion: anuncio, beneficios, confianza, galeria, resenas, FAQ, mapa, lead, bot, tienda y dock.
 - Deshacer/Rehacer para probar cambios delante del cliente sin perder la version anterior.
 

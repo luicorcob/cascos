@@ -45,14 +45,14 @@ const checks = [
 const failed = checks.filter((check) => !check.ok);
 
 if (failed.length) {
-  console.error("LocalLift deploy env check failed:");
+  console.error("DLS deploy env check failed:");
   failed.forEach((check) => {
     console.error(`- ${check.name}: ${check.message}`);
   });
   process.exit(1);
 }
 
-console.log("LocalLift deploy env check passed.");
+console.log("DLS deploy env check passed.");
 
 function hasLongToken(value) {
   return clean(value).length >= MIN_TOKEN_LENGTH;

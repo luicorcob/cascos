@@ -67,7 +67,7 @@ function renderReport(report) {
   const metrics = report.metrics || {};
   const business = report.business || {};
 
-  document.title = `Reporte ${business.name || "LocalLift"} - ${report.period?.month || ""}`;
+  document.title = `Reporte ${business.name || "DLS"} - ${report.period?.month || ""}`;
   refs.title.textContent = business.name || "Reporte mensual";
   refs.subtitle.textContent = [
     report.period?.month ? `Periodo ${report.period.month}` : "",

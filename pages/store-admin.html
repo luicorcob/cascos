@@ -3,16 +3,18 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LocalLift Store Console</title>
+    <title>DLS Store Console</title>
+    <meta name="theme-color" content="#050509">
+    <link rel="icon" type="image/png" href="../Logo.png">
     <style>
       :root {
-        --bg: #f4f1ea;
-        --ink: #161615;
-        --muted: #6d675e;
-        --paper: #fffaf0;
-        --panel: rgba(255, 250, 240, 0.84);
-        --line: rgba(22, 22, 21, 0.14);
-        --accent: #cf3f2e;
+        --bg: #f3f2f8;
+        --ink: #14131b;
+        --muted: #686673;
+        --paper: #ffffff;
+        --panel: rgba(255, 255, 255, 0.88);
+        --line: rgba(28, 24, 44, 0.14);
+        --accent: #b5229b;
         --ok: #16745c;
         --warn: #996b00;
         --radius: 8px;
@@ -76,6 +78,26 @@
         font-weight: 950;
         letter-spacing: 0.08em;
         text-transform: uppercase;
+      }
+
+      .store-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .store-brand img {
+        width: 52px;
+        height: 52px;
+        border: 1px solid rgba(118, 85, 255, 0.18);
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 0 18px rgba(0, 158, 230, 0.16), 0 0 22px rgba(255, 47, 207, 0.1);
+      }
+
+      .store-brand .eyebrow {
+        margin: 0;
       }
 
       h1,
@@ -393,7 +415,7 @@
     <main class="shell">
       <aside class="side">
         <div>
-          <p class="eyebrow">LocalLift Commerce</p>
+          <div class="store-brand"><img src="../Logo.png" alt="DLS"><p class="eyebrow">DLS Commerce</p></div>
           <h1>Store Console</h1>
         </div>
 

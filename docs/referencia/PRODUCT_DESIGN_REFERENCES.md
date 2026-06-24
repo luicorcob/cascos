@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-LocalLift Studio no debe venderse como un editor generico. Debe sentirse como una mesa de produccion que permite preparar, presentar y entregar una web comercial para un negocio local en una sola sesion.
+DLS Studio no debe venderse como un editor generico. Debe sentirse como una mesa de produccion que permite preparar, presentar y entregar una web comercial para un negocio local en una sola sesion.
 
 La sensacion de "creado con IA" se consigue mediante velocidad, buenas decisiones predeterminadas y variaciones estructuradas. No depende de generar HTML arbitrario.
 

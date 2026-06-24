@@ -1,4 +1,4 @@
-# LocalLift - investor memo
+# DLS · Digital Local Sites — investor memo
 
 > Funcion: material para conversaciones con inversores. No es un plan
 > operativo ni crea prioridades.
@@ -7,7 +7,7 @@
 
 Los negocios locales no necesitan otro constructor web. Necesitan una presencia digital que convierta: web premium, reservas, WhatsApp, Google Maps, fotos, SEO local, FAQ y atencion automatizada.
 
-LocalLift empaqueta esa necesidad en un producto vendible por sectores, con entrega rapida y mensualidad recurrente.
+DLS empaqueta esa necesidad en un producto vendible por sectores, con entrega rapida y mensualidad recurrente.
 
 ## Problema
 
@@ -23,7 +23,7 @@ Resultado: baja confianza, perdida de reservas y demasiada atencion manual.
 
 ## Solucion
 
-LocalLift Studio convierte los datos del negocio en una web premium exportable:
+DLS Studio convierte los datos del negocio en una web premium exportable:
 
 - Editor de negocio.
 - Demos por sector.
