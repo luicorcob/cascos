@@ -88,6 +88,10 @@ const deliveryReport = document.querySelector("#deliveryReport");
 const statusLine = document.querySelector("#statusLine");
 const deviceFrame = document.querySelector(".device-frame");
 const cursorGlow = document.querySelector(".cursor-glow");
+const introGate = document.querySelector("#introGate");
+const introStartButton = document.querySelector("#introStartButton");
+const introHub = document.querySelector("#introHub");
+const introHubBackButton = document.querySelector("#introHubBackButton");
 const importDataInput = document.querySelector("#importDataInput");
 const topbarProjectName = document.querySelector("#topbarProjectName");
 const frameAddress = document.querySelector("#frameAddress");
@@ -250,6 +254,7 @@ function init() {
   bindActions();
   bindPresentationMode();
   bindCursor();
+  bindIntroGate();
   fillForm(currentBusiness);
   syncSegmentedControls();
   syncDesignPackState();
@@ -1874,6 +1879,99 @@ function bindPresentationMode() {
   });
 }
 
+function bindIntroGate() {
+  if (!introGate) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const skipIntro = ["1", "true", "yes"].includes(String(params.get("skipIntro") || "").toLowerCase());
+  const presentationLaunch = ["1", "true", "yes"].includes(String(params.get("presentation") || "").toLowerCase());
+  const automatedLaunch = navigator.webdriver === true;
+
+  if (skipIntro || presentationLaunch || automatedLaunch) {
+    introGate.hidden = true;
+    document.body.classList.add("is-intro-complete");
+    return;
+  }
+
+  document.body.classList.add("is-intro-active");
+
+  const showDestinationHub = () => {
+    if (!introHub) {
+      enterStudio();
+      return;
+    }
+
+    introHub.hidden = false;
+    introGate.classList.add("is-choosing");
+    introGate.querySelector(".intro-gate-content")?.setAttribute("aria-hidden", "true");
+    (introHub.querySelector(".intro-destination-card") || introHub.querySelector("button"))?.focus({ preventScroll: true });
+  };
+
+  const showLogoIntro = () => {
+    if (!introHub) {
+      return;
+    }
+
+    introGate.classList.remove("is-choosing");
+    introGate.querySelector(".intro-gate-content")?.removeAttribute("aria-hidden");
+    window.setTimeout(() => {
+      if (!introGate.classList.contains("is-choosing")) {
+        introHub.hidden = true;
+        introStartButton?.focus({ preventScroll: true });
+      }
+    }, 260);
+  };
+
+  const enterStudio = () => {
+    if (introGate.hidden || introGate.classList.contains("is-closing")) {
+      return;
+    }
+
+    introGate.classList.add("is-closing");
+    document.body.classList.remove("is-intro-active");
+    document.body.classList.add("is-intro-complete");
+
+    let fallbackTimer = 0;
+    const finish = () => {
+      window.clearTimeout(fallbackTimer);
+      introGate.hidden = true;
+      document.querySelector("#studioWorkspace")?.focus({ preventScroll: true });
+    };
+
+    const finishOnAnimation = (event) => {
+      if (event.target !== introGate) {
+        return;
+      }
+
+      introGate.removeEventListener("animationend", finishOnAnimation);
+      finish();
+    };
+
+    introGate.addEventListener("animationend", finishOnAnimation);
+    fallbackTimer = window.setTimeout(finish, 900);
+  };
+
+  introStartButton?.addEventListener("click", showDestinationHub);
+  introHubBackButton?.addEventListener("click", showLogoIntro);
+  introHub?.querySelector('[data-intro-destination="studio"]')?.addEventListener("click", (event) => {
+    event.preventDefault();
+    enterStudio();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.body.classList.contains("is-intro-active")) {
+      if (introGate.classList.contains("is-choosing")) {
+        showLogoIntro();
+        return;
+      }
+
+      showDestinationHub();
+    }
+  });
+}
+
 function applyLaunchView() {
   const params = new URLSearchParams(window.location.search);
   const requestedView = params.get("view");
@@ -2975,7 +3073,7 @@ function getQualityChecks(business) {
     { label: "Minimo 3 servicios y 3 fotos", done: business.services.length >= 3 && business.gallery.length >= 3 },
     { label: "Prueba social y confianza visibles", done: business.testimonials.length >= 2 && business.trustBadges.length >= 2 },
     { label: "FAQ preparada para reducir llamadas", done: business.faqs.length >= 2 },
-    { label: "Mapa, ruta o resenas conectables", done: Boolean(business.google?.enabled && (business.google.mapsUrl || business.google.mapEmbedUrl || business.google.reviewUrl)) },
+    { label: "Mapa, ruta o resenas visibles", done: Boolean(business.google?.enabled && (business.google.mapsUrl || business.google.mapEmbedUrl || business.google.reviewUrl)) },
     { label: "Chatbot o formulario de lead activo", done: Boolean(business.chatbot?.enabled || business.showLeadForm) },
     { label: "Privacidad enlazada para formularios", done: Boolean((!business.showLeadForm && !business.showBooking) || business.privacyUrl) }
   ];
@@ -3062,11 +3160,12 @@ function updateScrollProgress(container, root) {
 
   const max = container.scrollHeight - container.clientHeight;
   const progress = max > 0 ? container.scrollTop / max : 0;
+  container.style.setProperty("--preview-viewport-height", `${container.clientHeight}px`);
   root.style.setProperty("--scroll-progress", progress.toFixed(4));
   root.style.setProperty("--preview-viewport-height", `${container.clientHeight}px`);
 }
 
-function fixPreviewFloatingControls(root) {
+function fixPreviewFloatingControls(container, root) {
   const controls = root.querySelectorAll(":scope > .conversion-dock, :scope > .chatbot-widget");
 
   if (!controls.length) {
@@ -3075,8 +3174,12 @@ function fixPreviewFloatingControls(root) {
 
   const layer = document.createElement("div");
   layer.className = "preview-floating-layer";
+  const rootStyle = root.getAttribute("style");
+  if (rootStyle) {
+    layer.setAttribute("style", rootStyle);
+  }
   controls.forEach((control) => layer.appendChild(control));
-  root.prepend(layer);
+  container.prepend(layer);
 }
 
 function updatePreviewParallax(container, business) {
@@ -3816,7 +3919,7 @@ function attachGeneratedInteractions(container, business) {
     return;
   }
 
-  fixPreviewFloatingControls(root);
+  fixPreviewFloatingControls(container, root);
   runSplitting(container);
   runVanillaTilt(container, business);
   runAtropos(container, business);

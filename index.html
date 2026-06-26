@@ -10,15 +10,165 @@
     >
     <meta name="theme-color" content="#050509">
     <link rel="icon" type="image/png" href="Logo.png">
-    <link rel="stylesheet" href="src/styles.css?v=20260622-2">
-    <link rel="stylesheet" href="src/studio-redesign.css?v=20260622-2">
+    <link rel="stylesheet" href="src/styles.css?v=20260626-1">
+    <link rel="stylesheet" href="src/studio-redesign.css?v=20260626-3">
     <link rel="stylesheet" href="assets/vendor/atropos.min.css">
     <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
-    <link rel="stylesheet" href="src/generated-responsive.css?v=20260610-3">
-    <link rel="stylesheet" href="src/hero-layouts-responsive.css?v=20260622-2">
+    <link rel="stylesheet" href="src/generated-responsive.css?v=20260626-1">
+    <link rel="stylesheet" href="src/hero-layouts-responsive.css?v=20260626-1">
   </head>
   <body>
     <div class="cursor-glow" aria-hidden="true"></div>
+
+    <section class="intro-gate" id="introGate" aria-label="Entrada DLS Studio">
+      <div class="intro-gate-lines" aria-hidden="true"></div>
+      <div class="intro-gate-content">
+        <div class="intro-logo-stage">
+          <svg class="intro-logo-svg" viewBox="0 0 1180 760" role="img" aria-label="DLS Digital Local Sites">
+            <defs>
+              <linearGradient id="introFrameGradient" x1="118" y1="126" x2="1050" y2="612" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#18d9ff"></stop>
+                <stop offset="0.32" stop-color="#654dff"></stop>
+                <stop offset="0.68" stop-color="#ff2fcf"></stop>
+                <stop offset="1" stop-color="#ff8a18"></stop>
+              </linearGradient>
+              <linearGradient id="introDGradient" x1="78" y1="484" x2="540" y2="484" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#18efff"></stop>
+                <stop offset="0.58" stop-color="#1e7dff"></stop>
+                <stop offset="1" stop-color="#8b58ff"></stop>
+              </linearGradient>
+              <linearGradient id="introLGradient" x1="442" y1="492" x2="784" y2="492" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#e12eff"></stop>
+                <stop offset="0.42" stop-color="#ff2fcf"></stop>
+                <stop offset="1" stop-color="#ff3a88"></stop>
+              </linearGradient>
+              <linearGradient id="introSGradient" x1="708" y1="508" x2="1084" y2="508" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#ff315f"></stop>
+                <stop offset="0.52" stop-color="#ff6a00"></stop>
+                <stop offset="1" stop-color="#ffe24a"></stop>
+              </linearGradient>
+              <linearGradient id="introCursorGradient" x1="896" y1="584" x2="1086" y2="746" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#ff42d3"></stop>
+                <stop offset="0.44" stop-color="#ffffff"></stop>
+                <stop offset="1" stop-color="#18d9ff"></stop>
+              </linearGradient>
+            </defs>
+
+            <g class="intro-window-mark">
+              <path class="intro-tube intro-frame-tube" pathLength="1" d="M146 284V190C146 150 178 118 218 118H910L982 190H1034V586C1034 626 1002 658 962 658H218C178 658 146 626 146 586V454"></path>
+              <path class="intro-tube intro-frame-detail" pathLength="1" d="M146 196H334L368 150H902L974 224H1034"></path>
+              <path class="intro-tube intro-frame-detail intro-frame-accent" pathLength="1" d="M422 184H856"></path>
+              <path class="intro-tube intro-frame-shadow" pathLength="1" d="M390 214H888"></path>
+              <circle class="intro-dot intro-dot-red" cx="206" cy="164" r="13"></circle>
+              <circle class="intro-dot intro-dot-amber" cx="256" cy="164" r="13"></circle>
+              <circle class="intro-dot intro-dot-cyan" cx="306" cy="164" r="13"></circle>
+            </g>
+
+            <g class="intro-wordmark">
+              <g class="intro-letter intro-letter-d">
+                <path class="intro-letter-fill" d="M110 304H380C482 304 552 376 552 478C552 596 470 660 344 660H108L154 552H340C404 552 446 524 450 478C454 430 420 404 352 404H76L110 304Z"></path>
+                <path class="intro-tube intro-letter-line" pathLength="1" d="M110 304H380C482 304 552 376 552 478C552 596 470 660 344 660H108L154 552H340C404 552 446 524 450 478C454 430 420 404 352 404H76L110 304Z"></path>
+                <path class="intro-tube intro-letter-inner" pathLength="1" d="M174 464H330C366 464 388 481 386 512C383 546 350 568 306 568H142L174 464Z"></path>
+              </g>
+
+              <g class="intro-letter intro-letter-l">
+                <path class="intro-letter-fill" d="M510 304H598L558 552H760L720 660H450L510 304Z"></path>
+                <path class="intro-tube intro-letter-line" pathLength="1" d="M510 304H598L558 552H760L720 660H450L510 304Z"></path>
+                <path class="intro-tube intro-letter-inner" pathLength="1" d="M548 338L508 620H704"></path>
+              </g>
+
+              <g class="intro-letter intro-letter-s">
+                <path class="intro-letter-fill" d="M820 304H1078L1038 408H836C798 408 770 426 766 456C762 488 788 508 834 508H966C1044 508 1086 556 1072 618C1058 684 1000 714 914 714H704L748 608H946C986 608 1014 592 1018 562C1022 532 996 518 946 518H812C734 518 690 472 704 406C718 342 762 304 820 304Z"></path>
+                <path class="intro-tube intro-letter-line" pathLength="1" d="M820 304H1078L1038 408H836C798 408 770 426 766 456C762 488 788 508 834 508H966C1044 508 1086 556 1072 618C1058 684 1000 714 914 714H704L748 608H946C986 608 1014 592 1018 562C1022 532 996 518 946 518H812C734 518 690 472 704 406C718 342 762 304 820 304Z"></path>
+                <path class="intro-tube intro-letter-inner" pathLength="1" d="M842 452H1008M780 560H966"></path>
+              </g>
+            </g>
+
+            <g class="intro-cursor-mark">
+              <path class="intro-tube intro-cursor-ray" pathLength="1" d="M984 584V552M1012 594L1036 572M958 596L936 574M1032 628H1064M942 628H910"></path>
+              <path class="intro-cursor-fill" d="M960 612L1080 684L1020 706L1056 778L1010 800L976 728L928 772L960 612Z"></path>
+              <path class="intro-tube intro-cursor-line" pathLength="1" d="M960 612L1080 684L1020 706L1056 778L1010 800L976 728L928 772L960 612Z"></path>
+            </g>
+
+            <g class="intro-subline">
+              <path class="intro-tube intro-subline-left" pathLength="1" d="M202 720H262"></path>
+              <text x="330" y="732">DIGITAL LOCAL SITES</text>
+              <path class="intro-tube intro-subline-right" pathLength="1" d="M884 720H952"></path>
+            </g>
+          </svg>
+        </div>
+        <button class="intro-start-button" id="introStartButton" type="button" aria-controls="introHub">
+          <span>Start</span>
+        </button>
+      </div>
+
+      <div class="intro-hub" id="introHub" aria-label="Elegir destino DLS" hidden>
+        <div class="intro-hub-head">
+          <div class="intro-hub-brand" aria-label="DLS Digital Local Sites">
+            <span>DLS</span>
+            <strong>Command Center</strong>
+          </div>
+          <button class="intro-hub-back" id="introHubBackButton" type="button">Volver</button>
+        </div>
+
+        <div class="intro-hub-copy">
+          <p class="intro-hub-kicker">Selecciona destino</p>
+          <h1>Donde quieres trabajar hoy?</h1>
+          <p>Entra al modulo exacto de produccion, prospeccion u operacion.</p>
+        </div>
+
+        <div class="intro-destination-grid">
+          <a class="intro-destination-card is-primary" href="#studioWorkspace" data-intro-destination="studio">
+            <span class="intro-destination-index">01</span>
+            <span class="intro-destination-label">Produccion</span>
+            <strong>DLS Studio</strong>
+            <span>Editor visual para crear, pulir y exportar webs premium.</span>
+            <em>Entrar al Studio</em>
+          </a>
+
+          <a class="intro-destination-card" href="pages/business-radar.html">
+            <span class="intro-destination-index">02</span>
+            <span class="intro-destination-label">Prospeccion</span>
+            <strong>DLS Radar</strong>
+            <span>Detecta negocios, oportunidades y prioridades comerciales.</span>
+            <em>Abrir Radar</em>
+          </a>
+
+          <a class="intro-destination-card" href="pages/onboarding.html">
+            <span class="intro-destination-index">03</span>
+            <span class="intro-destination-label">Brief</span>
+            <strong>Brief + Google</strong>
+            <span>Captura datos, prepara Google Ops y ordena el arranque.</span>
+            <em>Iniciar brief</em>
+          </a>
+
+          <a class="intro-destination-card" href="pages/business-dashboard.html">
+            <span class="intro-destination-index">04</span>
+            <span class="intro-destination-label">Operacion</span>
+            <strong>Portal</strong>
+            <span>Gestiona actividad, contactos, reservas y estado del negocio.</span>
+            <em>Abrir portal</em>
+          </a>
+
+          <a class="intro-destination-card" href="pages/store-admin.html">
+            <span class="intro-destination-index">05</span>
+            <span class="intro-destination-label">Comercio</span>
+            <strong>Tienda</strong>
+            <span>Administra catalogo, productos, pedidos y checkout.</span>
+            <em>Gestionar tienda</em>
+          </a>
+
+          <a class="intro-destination-card" href="pages/investor.html">
+            <span class="intro-destination-index">06</span>
+            <span class="intro-destination-label">Vision</span>
+            <strong>Pitch</strong>
+            <span>Abre la narrativa de producto, mercado y ejecucion.</span>
+            <em>Ver pitch</em>
+          </a>
+        </div>
+      </div>
+    </section>
+    <noscript><style>.intro-gate{display:none!important}</style></noscript>
 
     <header class="studio-topbar">
       <a class="topbar-brand" href="index.html" aria-label="DLS Studio — Digital Local Sites">
@@ -64,7 +214,7 @@
       </div>
     </header>
 
-    <main class="studio-shell">
+    <main class="studio-shell" id="studioWorkspace" tabindex="-1">
       <aside class="control-panel" aria-label="Panel de configuracion">
         <div class="brand-lockup">
           <img class="brand-mark" src="Logo.png" alt="" aria-hidden="true">
@@ -1040,6 +1190,6 @@
     <script src="src/studio/quality-control.js?v=20260622-1"></script>
     <script src="src/studio/renderer.js?v=20260622-2"></script>
     <script src="src/studio/exporter.js?v=20260622-1"></script>
-    <script src="src/app.js?v=20260622-2"></script>
+    <script src="src/app.js?v=20260626-3"></script>
   </body>
 </html>
