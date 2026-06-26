@@ -4,7 +4,7 @@
   const SCORE = window.DLSRadarScore;
   const PITCH = window.DLSRadarPitch;
   const DISCOVERY = window.DLSBusinessDiscovery;
-  const CACHE_KEY = "dls-radar-search-cache-v2";
+  const CACHE_KEY = "dls-radar-search-cache-v3";
   const RECENT_KEY = "dls-radar-recent-searches-v1";
   const LEADS_KEY = "dls-radar-leads";
   const BRIEF_KEY = "dls-radar-studio-brief";
@@ -250,6 +250,14 @@
       rating: Number(business.rating || 0),
       reviews: Number(business.reviews || business.userRatingCount || 0),
       websiteStatus: SCORE.normalizeStatus(business.websiteStatus),
+      website: String(business.website || ""),
+      socialUrl: String(business.socialUrl || ""),
+      alternativeUrl: String(business.alternativeUrl || ""),
+      mapsUrl: String(business.mapsUrl || ""),
+      sourceLabel: String(business.sourceLabel || ""),
+      providerId: String(business.providerId || ""),
+      businessStatus: String(business.businessStatus || ""),
+      openingHours: normalizeOpeningHours(business.openingHours || business.hours || business.regularOpeningHours?.weekdayDescriptions),
       coordinates: business.coordinates || null
     };
     normalized.opportunityScore = SCORE.calculateOpportunityScore(normalized);
@@ -350,6 +358,7 @@
           <span>Score DLS</span><strong>${business.opportunityScore}</strong><small>${business.opportunityLevel.label}</small>
           <i><b style="width:${business.opportunityScore}%"></b></i>
         </div>
+        ${renderBusinessDetails(business)}
         <div class="business-actions">
           <button class="create-button" type="button" data-action="create" data-id="${escapeAttr(business.id)}">Crear web</button>
           <button type="button" data-action="lead" data-id="${escapeAttr(business.id)}" ${isAdded ? "disabled" : ""}>${isAdded ? "Lead añadido" : "Añadir a leads"}</button>
@@ -358,6 +367,62 @@
         </div>
       </article>
     `;
+  }
+
+  function renderBusinessDetails(business, options = {}) {
+    const rows = businessDetailRows(business);
+    const className = ["business-details", options.className].filter(Boolean).map(escapeAttr).join(" ");
+    return `
+      <details class="${className}">
+        <summary>${escapeHtml(options.summary || "Ver informacion completa")}</summary>
+        <dl class="business-detail-grid">
+          ${rows.map((row) => `
+            <div class="business-detail-item ${row.multiline ? "is-multiline" : ""}">
+              <dt>${escapeHtml(row.label)}</dt>
+              <dd>${renderDetailValue(row)}</dd>
+            </div>
+          `).join("")}
+        </dl>
+      </details>
+    `;
+  }
+
+  function businessDetailRows(business) {
+    const website = websiteMeta(business);
+    const webUrl = safeExternalUrl(business.website);
+    const socialUrl = safeExternalUrl(business.socialUrl || business.alternativeUrl);
+    const sourceUrl = safeExternalUrl(business.mapsUrl);
+    const hours = Array.isArray(business.openingHours) ? business.openingHours : [];
+    const coordinates = Number.isFinite(business.coordinates?.lat) && Number.isFinite(business.coordinates?.lng)
+      ? `${business.coordinates.lat.toFixed(5)}, ${business.coordinates.lng.toFixed(5)}`
+      : "";
+    const rows = [
+      { label: "Nombre", value: business.name },
+      { label: "Categoria", value: business.category },
+      { label: "Direccion", value: business.address || "No declarada" },
+      { label: "Localidad", value: business.city || "No declarada" },
+      { label: "Telefono", value: business.phone || "No visible", href: business.phone ? `tel:${phoneHref(business.phone)}` : "" },
+      { label: "Horario", value: hours.length ? hours : "No declarado", multiline: hours.length > 1 }
+    ];
+    if (business.businessStatus) rows.push({ label: "Estado", value: formatBusinessStatus(business.businessStatus) });
+    rows.push({ label: "Web", value: webUrl ? business.website : website.label, href: webUrl });
+    if (socialUrl) rows.push({ label: "Red social", value: business.socialUrl || business.alternativeUrl, href: socialUrl });
+    if (sourceUrl) rows.push({ label: "Ficha original", value: business.provider === "places" ? "Google Maps" : "OpenStreetMap", href: sourceUrl });
+    rows.push({ label: "Fuente", value: business.sourceLabel || state.sourceLabel || sourceProviderLabel(business.provider) });
+    if (business.providerId) rows.push({ label: "ID fuente", value: business.providerId });
+    if (coordinates) rows.push({ label: "Coordenadas", value: coordinates });
+    return rows;
+  }
+
+  function renderDetailValue(row) {
+    const values = (Array.isArray(row.value) ? row.value : [row.value]).map((item) => String(item || "").trim()).filter(Boolean);
+    const fallback = values.length ? values : ["No disponible"];
+    const content = row.multiline
+      ? `<span class="business-detail-lines">${fallback.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</span>`
+      : escapeHtml(fallback.join(", "));
+    if (!row.href) return content;
+    const target = /^https?:\/\//i.test(row.href) ? ' target="_blank" rel="noreferrer"' : "";
+    return `<a href="${escapeAttr(row.href)}"${target}>${content}</a>`;
   }
 
   function renderMap(visible = getVisibleBusinesses()) {
@@ -471,6 +536,7 @@
         <h3>${escapeHtml(business.name)}</h3>
         <span class="website-badge website-${website.key}">${website.label}</span>
         <p class="popup-address">${escapeHtml(business.address)}</p>
+        ${renderBusinessDetails(business, { className: "popup-details", summary: "Informacion de la ficha" })}
         <div class="popup-score"><span>Score de oportunidad</span><strong>${business.opportunityScore}/100</strong></div>
         <div class="popup-actions">
           <button class="compact-primary" type="button" data-action="proposal" data-id="${escapeAttr(business.id)}">Crear propuesta</button>
@@ -549,6 +615,11 @@
       phone: business.phone,
       rating: business.rating,
       reviews: business.reviews,
+      openingHours: business.openingHours,
+      website: business.website,
+      socialUrl: business.socialUrl,
+      mapsUrl: business.mapsUrl,
+      providerId: business.providerId,
       websiteStatus: business.websiteStatus,
       opportunityScore: business.opportunityScore,
       source: "Radar de Negocios",
@@ -612,6 +683,12 @@
       phone: business.phone,
       rating: business.rating,
       reviews: business.reviews,
+      openingHours: business.openingHours,
+      website: business.website,
+      socialUrl: business.socialUrl,
+      mapsUrl: business.mapsUrl,
+      providerId: business.providerId,
+      businessStatus: business.businessStatus,
       websiteStatus: business.websiteStatus,
       opportunityScore: business.opportunityScore,
       provider: business.provider,
@@ -642,6 +719,7 @@
       phone: business.phone,
       email: "",
       address: business.address,
+      hours: business.openingHours,
       services,
       features: [
         reputationFeature,
@@ -787,6 +865,30 @@
     if (status === "website") return { key: "website", label: "Tiene web" };
     if (status === "social") return { key: "social", label: "Solo redes" };
     return { key: "unverified", label: "No verificado" };
+  }
+
+  function normalizeOpeningHours(value) {
+    if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 14);
+    const text = String(value || "").trim();
+    if (!text) return [];
+    return text.split(/\s*;\s*/).map((item) => item.trim()).filter(Boolean).slice(0, 14);
+  }
+
+  function formatBusinessStatus(value) {
+    const status = String(value || "").trim().toUpperCase();
+    const labels = {
+      OPERATIONAL: "Operativo",
+      CLOSED_TEMPORARILY: "Cerrado temporalmente",
+      CLOSED_PERMANENTLY: "Cerrado permanentemente"
+    };
+    return labels[status] || status.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  function sourceProviderLabel(providerName) {
+    if (providerName === "places") return "Google Places";
+    if (providerName === "openstreetmap") return "OpenStreetMap";
+    if (providerName === "demo") return "Ejemplo simulado";
+    return "Fuente geografica";
   }
 
   function categoryLabel(key) { return DISCOVERY.CATEGORY_LABELS[key] || "Todos los negocios"; }

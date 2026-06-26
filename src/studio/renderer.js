@@ -275,6 +275,7 @@
         ? `<a class="site-cta magnetic primary-site-action" href="${escapeAttr(business.bookingUrl)}" data-track="booking_click" data-edit-link-field="booking" data-edit-button-style="primary">${escapeHtml(bookingLabel)}</a>`
         : "";
       const resourcePills = buildResourcePills(business, services, links);
+      const proofItems = buildProofItems(business, services, gallery, google, commerce);
       const sectionBlocks = {
         services: `
           <section class="site-section" id="servicios" data-section-key="services">
@@ -421,31 +422,14 @@
           </header>
 
           <section class="proof-strip" aria-label="Datos destacados">
+            ${proofItems.map((item) => `
             <div class="proof-item reveal">
-              <span class="proof-number">${services.length}</span>
-              <span class="proof-label">servicios clave</span>
-            </div>
-            <div class="proof-item reveal">
-              <span class="proof-number">${gallery.length}</span>
-              <span class="proof-label">momentos visuales</span>
-            </div>
-            <div class="proof-item reveal">
-              <span class="proof-number">24/7</span>
-              <span class="proof-label">abierto digitalmente</span>
-            </div>
-            ${commerce.enabled ? `
-            <div class="proof-item reveal">
-              <span class="proof-number">${escapeHtml(commerce.products.length)}</span>
-              <span class="proof-label">${contentMode === "visual" ? "productos online" : "productos listos para carrito, pago seguro y gestion de pedidos"}</span>
-            </div>` : ""}
-            ${google.enabled && google.rating ? `
-            <div class="proof-item reveal">
-              <span class="proof-number">${escapeHtml(google.rating.toFixed ? google.rating.toFixed(1) : google.rating)}</span>
-              <span class="proof-label">${contentMode === "visual" ? `${escapeHtml(google.reviewCount || 0)} resenas` : `rating Google con ${escapeHtml(google.reviewCount || 0)} resenas conectables`}</span>
-            </div>` : ""}
+              <span class="proof-number">${escapeHtml(item.value)}</span>
+              <span class="proof-label">${escapeHtml(item.label)}</span>
+            </div>`).join("")}
           </section>
 
-          ${business.showResourceMarquee ? `<section class="resource-marquee" aria-label="Recursos digitales incluidos">
+          ${business.showResourceMarquee ? `<section class="resource-marquee" aria-label="Informacion destacada del negocio">
             <div class="resource-marquee-track">
               ${[...resourcePills, ...resourcePills].map((item) => `<span class="resource-pill">${escapeHtml(item)}</span>`).join("")}
             </div>
@@ -1031,19 +1015,83 @@
       }[tone] || "Cercano y util";
     }
 
+    function buildProofItems(business, services, gallery, google, commerce) {
+      const reviewCount = Number(google?.reviewCount || 0);
+      const rating = Number(google?.rating || 0);
+      const items = [
+        services.length ? {
+          value: String(services.length),
+          label: services.length === 1 ? "servicio explicado" : "servicios explicados"
+        } : null,
+        google?.enabled && reviewCount > 0 ? {
+          value: String(reviewCount),
+          label: "resenas en Google"
+        } : null,
+        google?.enabled && !reviewCount && rating > 0 ? {
+          value: `${rating.toFixed(1)}/5`,
+          label: "valoracion en Google"
+        } : null,
+        business.showBooking && business.bookingUrl ? {
+          value: "1 clic",
+          label: `${proofActionLabel(business.bookingLabel)} desde la web`
+        } : null,
+        !business.showBooking && business.phone ? {
+          value: "Tel.",
+          label: "llamada directa"
+        } : null,
+        !business.showBooking && !business.phone && business.email ? {
+          value: "Email",
+          label: "contacto claro"
+        } : null,
+        commerce.enabled && commerce.products.length ? {
+          value: String(commerce.products.length),
+          label: commerce.products.length === 1 ? "producto consultable" : "productos consultables"
+        } : null,
+        business.showGallery && gallery.length >= 3 ? {
+          value: String(gallery.length),
+          label: "fotos reales del negocio"
+        } : null,
+        business.showMap && (business.address || business.location || google?.mapsUrl) ? {
+          value: "Mapa",
+          label: "ubicacion y como llegar"
+        } : null,
+        business.hours.length ? {
+          value: "Horario",
+          label: "dias y horas visibles"
+        } : null
+      ].filter(Boolean);
+
+      const seen = new Set();
+      return items
+        .filter((item) => {
+          const key = item.label.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 5);
+    }
+
+    function proofActionLabel(value) {
+      const label = textOr(value, "reservar")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+      return label.length > 24 ? "reserva o contacto" : label;
+    }
+
     function buildResourcePills(business, services, links) {
       const basics = [
-        business.showBooking ? "Reserva directa" : "Contacto claro",
-        business.phone ? "Llamada en un toque" : "CTA principal",
-        business.address ? "Mapa y direccion" : business.location || "Zona destacada",
-        business.google?.mapEmbedUrl || business.address ? "Mapa embebido" : "",
+        business.showBooking ? "Reservas online" : "Contacto directo",
+        business.phone ? "Llamar ahora" : "Contacto principal",
+        business.address ? "Como llegar" : business.location || "Zona destacada",
+        business.hours.length ? "Horario visible" : "",
+        business.showGallery && business.gallery.length ? "Fotos del negocio" : "",
+        business.google?.rating ? "Resenas de clientes" : "",
+        business.chatbot?.enabled ? "Dudas frecuentes" : "",
+        business.showLeadForm ? "Formulario rapido" : "",
         business.commerce?.enabled ? "Tienda online" : "",
-        business.commerce?.checkoutEndpoint ? "Checkout Stripe" : "",
-        "Galeria viva",
-        "SEO local",
-        "Animacion premium",
-        "Mobile first",
-        "Carga rapida"
+        business.commerce?.checkoutEndpoint ? "Pago online" : ""
       ];
       const servicePills = services.slice(0, 3).map((item) => splitTitleBody(item).title);
       const linkPills = links.slice(0, 2).map((item) => item.label);
@@ -1053,11 +1101,11 @@
     function buildTrustBadges(business, google) {
       return [
         google?.rating ? `${Number(google.rating).toFixed(1)}/5 en Google` : "",
-        business.bookingUrl && business.bookingUrl !== "#contacto" ? "CTA directo activo" : "",
-        business.chatbot?.enabled ? "Asistente instantaneo" : "",
-        business.commerce?.enabled ? "Pago online preparado" : "",
-        business.showLeadForm ? "Captura de leads" : "",
-        business.gallery.length >= 3 ? "Galeria preparada" : ""
+        business.bookingUrl && business.bookingUrl !== "#contacto" ? "Reserva online visible" : "",
+        business.chatbot?.enabled ? "Dudas frecuentes resueltas" : "",
+        business.commerce?.enabled ? "Pago online disponible" : "",
+        business.showLeadForm ? "Formulario de contacto" : "",
+        business.gallery.length >= 3 ? "Fotos reales del negocio" : ""
       ].filter(Boolean).slice(0, 5);
     }
 

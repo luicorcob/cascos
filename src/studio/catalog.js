@@ -275,10 +275,10 @@
       }
     ],
     trustBadges: [
-      "4.8 en Google con resenas conectables",
+      "4.8/5 en Google",
       "Reserva en menos de un minuto",
       "Carta, ubicacion y redes siempre visibles",
-      "Chatbot preparado para horarios y reservas"
+      "Dudas de horarios y reservas resueltas"
     ],
     links: [
       { label: "Instagram", url: "https://instagram.com/" },
@@ -660,7 +660,7 @@
         "Clases early morning"
       ],
       features: [
-        "Captura de leads con prueba gratuita",
+        "Prueba gratuita visible para reservar sin llamar",
         "Horarios y clases explicados sin friccion",
         "Prueba social con comunidad y resultados",
         "Chatbot para resolver dudas antes de visitar"
@@ -827,7 +827,7 @@
         "Servicios explicados para que el cliente sepa si puede resolverlo alli",
         "WhatsApp preparado para pedir impresiones o consultar stock",
         "Secciones adaptables para campana escolar, navidad o vuelta a clase",
-        "SEO local para busquedas de copisteria, papeleria y material escolar"
+        "Textos preparados para que te encuentren al buscar copisteria o material escolar"
       ],
       hours: ["Lunes a viernes: 09:00-14:00 / 17:00-20:30", "Sabado: 10:00-14:00", "Domingo cerrado"],
       testimonials: [
@@ -1003,7 +1003,7 @@
         "Categorias ordenadas para que un surtido amplio parezca facil de comprar",
         "Bloques de temporada que se cambian sin redisenar toda la web",
         "Contacto directo para preguntar stock y ahorrar desplazamientos",
-        "SEO local para captar busquedas de bazar, hogar, ferreteria y regalos"
+        "Textos preparados para que te encuentren al buscar bazar, hogar o regalos"
       ],
       hours: ["Lunes a sabado: 09:30-21:00", "Domingo: 10:30-14:00", "Festivos: consultar en Google"],
       testimonials: [

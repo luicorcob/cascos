@@ -171,6 +171,18 @@ assert.match(html, /data-edit-link-field="booking"/);
 assert.match(html, /data-edit-button-style="primary"/);
 assert.match(html, /data-edit-link-list="links" data-edit-index="0"/);
 assert.match(html, /data-section-key="services"/);
+assert.match(html, /servicios explicados/);
+assert.match(html, /resenas en Google/);
+assert.match(html, /reservar desde la web/);
+assert.doesNotMatch(html, /momentos visuales|abierto digitalmente|CTA directo activo|Asistente instantaneo|Captura de leads|Galeria preparada|Animacion premium|Mobile first|Carga rapida|SEO local/);
+
+const generatedTrustHtml = renderer.renderSite({
+  ...demoBusiness,
+  trustBadges: []
+});
+assert.match(generatedTrustHtml, /Reserva online visible/);
+assert.match(generatedTrustHtml, /Dudas frecuentes resueltas/);
+assert.match(generatedTrustHtml, /Formulario de contacto/);
 
 for (const heroVariant of ["cinematic", "split", "collage", "oval", "minimal"]) {
   const variantHtml = renderer.renderSite({
@@ -264,7 +276,8 @@ assert.doesNotMatch(visualHtml, /data-edit-list="services" data-edit-index="3"/)
 assert.doesNotMatch(visualHtml, /data-edit-list="features" data-edit-index="2"/);
 assert.doesNotMatch(visualHtml, /data-edit-list="faqs" data-edit-index="2"/);
 assert.match(visualHtml, /Uno dos tres cuatro cinco seis siete ocho nueve diez once doce\.\.\./);
-assert.match(visualHtml, /25 resenas/);
+assert.match(visualHtml, /<span class="proof-number">25<\/span>/);
+assert.match(visualHtml, /resenas en Google/);
 assert.doesNotMatch(visualHtml, /rating Google con 25 resenas conectables/);
 
 const reorderedHtml = renderer.renderSite({

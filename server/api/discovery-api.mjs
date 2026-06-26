@@ -156,8 +156,10 @@ async function searchGooglePlaces({ city, category, radius }) {
       "X-Goog-Api-Key": apiKey,
       "X-Goog-FieldMask": [
         "places.id", "places.displayName", "places.formattedAddress", "places.location",
-        "places.rating", "places.userRatingCount", "places.nationalPhoneNumber",
-        "places.websiteUri", "places.googleMapsUri", "places.primaryType", "places.types"
+        "places.rating", "places.userRatingCount", "places.internationalPhoneNumber",
+        "places.nationalPhoneNumber", "places.websiteUri", "places.googleMapsUri",
+        "places.primaryType", "places.types", "places.businessStatus",
+        "places.regularOpeningHours"
       ].join(",")
     },
     body: JSON.stringify({
@@ -183,7 +185,7 @@ async function searchGooglePlaces({ city, category, radius }) {
       categoryKey: category === "all" ? place.primaryType || "local" : category,
       city,
       address: cleanText(place.formattedAddress, 360),
-      phone: cleanText(place.nationalPhoneNumber, 80),
+      phone: cleanText(place.internationalPhoneNumber || place.nationalPhoneNumber, 80),
       rating: Number(place.rating || 0),
       reviews: Number(place.userRatingCount || 0),
       websiteStatus: website ? "website" : "none",
@@ -193,6 +195,8 @@ async function searchGooglePlaces({ city, category, radius }) {
       alternativeUrl: "",
       coordinates: place.location ? { lat: Number(place.location.latitude), lng: Number(place.location.longitude) } : null,
       mapsUrl: cleanText(place.googleMapsUri, 500),
+      openingHours: cleanTextList(place.regularOpeningHours?.weekdayDescriptions, 14, 180),
+      businessStatus: cleanText(place.businessStatus, 80),
       sourceLabel: "Google Places",
       provider: "places"
     };
@@ -542,6 +546,7 @@ async function createStudioBrief(request, response, context) {
   const categoryKey = normalize(source.categoryKey || category);
   const isFood = includesAny(categoryKey, ["restaurant", "restaurante", "bar", "cafe", "cafeteria"]);
   const isAppointment = includesAny(categoryKey, ["clinic", "clinica", "dentist", "dentista", "hairdresser", "peluqueria", "gym", "gimnasio"]);
+  const openingHours = cleanTextList(source.openingHours || source.hours, 14, 180);
   const studioBusiness = {
     name: businessName,
     category,
@@ -552,6 +557,7 @@ async function createStudioBrief(request, response, context) {
     announcement: "Nueva web en preparación · propuesta creada desde DLS Radar",
     phone,
     address: cleanText(source.address, 360),
+    hours: openingHours,
     services: suggestedServices(categoryKey),
     features: [
       source.reviews ? `Reputación local con ${Number(source.reviews)} reseñas` : "Presencia verificada en un directorio geográfico",
@@ -602,6 +608,11 @@ function normalizeLead(source = {}) {
     city: cleanText(source.city, 100),
     address: cleanText(source.address, 360),
     phone: cleanText(source.phone, 80),
+    openingHours: cleanTextList(source.openingHours || source.hours, 14, 180),
+    website: cleanText(source.website, 500),
+    socialUrl: cleanText(source.socialUrl || source.alternativeUrl, 500),
+    mapsUrl: cleanText(source.mapsUrl, 500),
+    providerId: cleanText(source.providerId, 180),
     rating: clamp(Number(source.rating || 0), 0, 5),
     reviews: Math.max(0, Math.round(Number(source.reviews || 0))),
     websiteStatus: cleanText(source.websiteStatus, 30) || "unverified",
@@ -621,6 +632,12 @@ function normalizeBrief(source, fallback) {
     category: cleanText(source.category || fallback.category, 120),
     address: cleanText(source.address, 360),
     phone: cleanText(source.phone, 80),
+    openingHours: cleanTextList(source.openingHours || source.hours, 14, 180),
+    website: cleanText(source.website, 500),
+    socialUrl: cleanText(source.socialUrl || source.alternativeUrl, 500),
+    mapsUrl: cleanText(source.mapsUrl, 500),
+    providerId: cleanText(source.providerId, 180),
+    businessStatus: cleanText(source.businessStatus, 80),
     rating: Number(source.rating || 0),
     reviews: Math.max(0, Math.round(Number(source.reviews || 0))),
     websiteStatus: cleanText(source.websiteStatus, 30) || "unverified",
@@ -717,6 +734,12 @@ function humanizeType(value) {
 
 function firstText(...values) {
   return values.map((value) => cleanText(value, 500)).find(Boolean) || "";
+}
+
+function cleanTextList(values, maxItems = 12, maxText = 180) {
+  if (Array.isArray(values)) return values.map((value) => cleanText(value, maxText)).filter(Boolean).slice(0, maxItems);
+  const text = cleanText(values, maxItems * maxText);
+  return text ? text.split(/\s*;\s*/).map((value) => cleanText(value, maxText)).filter(Boolean).slice(0, maxItems) : [];
 }
 
 function distanceMeters(left, right) {

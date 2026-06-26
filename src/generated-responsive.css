@@ -133,8 +133,8 @@ body:has(> .generated-site) {
 
   .generated-site:not(.art-poster):not(.art-mosaic) .hero-section::after {
     background:
-      linear-gradient(0deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.12) 84%),
-      linear-gradient(90deg, rgba(0, 0, 0, 0.4), transparent 76%);
+      linear-gradient(0deg, rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.08) 84%),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.24), transparent 76%);
   }
 
   .generated-site .hero-content,
@@ -499,11 +499,11 @@ body:has(> .generated-site) {
   .site-preview .generated-site .conversion-dock {
     position: absolute;
     right: auto;
-    top: calc(var(--preview-viewport-height, 720px) - 8px);
-    bottom: auto;
+    top: auto;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     width: calc(100% - 16px);
     margin: 0;
-    transform: translateY(-100%);
+    transform: none;
   }
 
   .generated-site .conversion-dock a {
@@ -528,10 +528,10 @@ body:has(> .generated-site) {
   .site-preview .generated-site .chatbot-widget {
     position: absolute;
     right: 8px;
-    top: calc(var(--preview-viewport-height, 720px) - 72px);
-    bottom: auto;
+    top: auto;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     margin: 0;
-    transform: translateY(-100%);
+    transform: none;
   }
 
   .generated-site .chatbot-launcher {
@@ -557,8 +557,8 @@ body:has(> .generated-site) {
   }
 
   .site-preview .generated-site .chatbot-widget.is-open {
-    top: calc(var(--preview-viewport-height, 720px) - 8px);
-    bottom: auto;
+    top: auto;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   }
 
   .generated-site .chatbot-panel {
@@ -665,8 +665,8 @@ body:has(> .generated-site) {
   .generated-site.art-editorial .hero-section::after {
     display: block;
     background:
-      linear-gradient(0deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.16) 82%),
-      linear-gradient(90deg, rgba(0, 0, 0, 0.36), transparent);
+      linear-gradient(0deg, rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.08) 82%),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.22), transparent);
   }
 
   .generated-site.art-editorial .hero-content {

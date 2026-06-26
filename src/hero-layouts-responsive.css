@@ -22,6 +22,9 @@
     display: block;
     inset: 0;
     z-index: -1;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.3), transparent 74%),
+      linear-gradient(0deg, rgba(0, 0, 0, 0.44), transparent 64%);
   }
 
   .generated-site.block-hero-cinematic .hero-content {
@@ -146,6 +149,9 @@
   display: block;
   inset: 0;
   z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.3), transparent 74%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.44), transparent 64%);
 }
 
 .device-frame[data-size="mobile"] .site-preview .generated-site.block-hero-cinematic .hero-content {
