@@ -50,8 +50,8 @@
           ? normalizeMenuItems(business.menuItems)
           : (grounded ? [] : (isFoodCategory(base.category) ? normalizeMenuItems(demoBusiness.menuItems) : [])),
         conversionGoal: hasOwn("conversionGoal")
-          ? textOr(business.conversionGoal, `Convertir visitas en clientes para ${base.category || "negocio local"}`)
-          : `Convertir visitas en clientes para ${base.category || "negocio local"}`,
+          ? textOr(business.conversionGoal, `Reservas, consultas y contacto directo para ${base.category || "negocio local"}`)
+          : `Reservas, consultas y contacto directo para ${base.category || "negocio local"}`,
         announcement: hasOwn("announcement") ? String(business.announcement || "").trim() : "",
         trustBadges,
         bookingLabel: textOr(base.bookingLabel, demoBusiness.bookingLabel),

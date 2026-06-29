@@ -29,15 +29,30 @@ assert.deepEqual(core.normalizeSectionOrder(["services", "services__copy1", "faq
   "faq",
   "gallery"
 ]);
-assert.deepEqual(core.groupMenuItems([
+const groupedMenu = core.groupMenuItems([
   { category: "Cafe", name: "Solo", price: "1,50" },
-  { category: "Cafe", name: "Leche", price: 2 }
-]), [{
-  category: "Cafe",
-  items: [
-    { category: "Cafe", name: "Solo", price: 1.5, description: "" },
-    { category: "Cafe", name: "Leche", price: 2, description: "" }
-  ]
-}]);
+  { category: "Cafe", name: "Leche", price: 2, allergens: ["lactosa", "frutos secos", "SO2"] }
+]);
+assert.equal(groupedMenu[0].category, "Cafe");
+assert.deepEqual(groupedMenu[0].items.map(({ category, name, price, description, allergens }) => ({
+  category,
+  name,
+  price,
+  description,
+  allergens
+})), [
+  { category: "Cafe", name: "Solo", price: 1.5, description: "", allergens: [] },
+  { category: "Cafe", name: "Leche", price: 2, description: "", allergens: ["leche", "frutos-cascara", "sulfitos"] }
+]);
+assert.deepEqual(core.normalizeMenuAllergens(["gluten", "lactosa", "frutos secos", "SO2", "desconocido"]), [
+  "gluten",
+  "leche",
+  "frutos-cascara",
+  "sulfitos"
+]);
+assert.equal(core.getMenuAllergen("molusco").symbol, "ML");
+const parsedMenu = core.parseMenuItems("Entrantes|Croqueta|3,50|Bechamel|CR|true|gluten, leche");
+assert.deepEqual(parsedMenu[0].allergens, ["gluten", "leche"]);
+assert.match(core.serializeMenuItems(parsedMenu), /"allergens": \[/);
 
 console.log("Studio core utility tests passed.");

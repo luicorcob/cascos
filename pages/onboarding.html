@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Brief cliente y Google Ops — DLS</title>
+    <title>Brief cliente y Google Ops - DLS</title>
     <meta name="description" content="Formulario de briefing y guia de Google Ops para crear y operar un sitio con DLS.">
     <meta name="theme-color" content="#050509">
     <link rel="icon" type="image/png" href="../Logo.png">
@@ -16,78 +16,306 @@
         <p class="eyebrow">Brief cliente + Google Ops</p>
         <h1>Recopila todo lo necesario para entregar una web premium en 7 dias.</h1>
         <p>
-          Este formulario sirve como guion de onboarding. Incluye los datos que necesitamos del cliente y, dentro del apartado de Google, el flujo operativo para poner en marcha Workspace, Business Profile, resenas y reservas.
+          Este formulario sirve como guion de onboarding. Cuando los campos clave esten completos, DLS Studio puede generar una primera web adaptada a la categoria, el objetivo de conversion y el contenido real del cliente.
         </p>
         <div class="brief-actions">
+          <button id="generateWebsiteButton" type="button">Generar web</button>
           <button id="copyBriefButton" type="button">Copiar brief</button>
-          <button type="button" onclick="window.print()">Imprimir</button>
+          <button id="printBriefButton" type="button">Imprimir</button>
         </div>
+        <p class="brief-status" id="briefStatus" role="status">Completa los campos marcados para activar un brief listo para generar.</p>
       </header>
 
-      <form class="brief-form">
+      <form class="brief-form" id="briefForm" novalidate>
         <section>
           <h2>1. Identidad</h2>
-          <label>Nombre comercial <input type="text" placeholder="Ej: Brasa Norte"></label>
-          <label>Categoria <input type="text" placeholder="Restaurante, clinica, peluqueria..."></label>
-          <label>Ciudad/zona <input type="text" placeholder="Santander, Valencia, Madrid..."></label>
-          <label>Frase principal <textarea rows="3" placeholder="Que deberia entender el cliente en 5 segundos?"></textarea></label>
+          <label>
+            Nombre comercial
+            <input name="businessName" type="text" autocomplete="organization" placeholder="Ej: Brasa Norte" required>
+          </label>
+          <div class="field-block" id="categoryFieldBlock">
+            <label>
+              Categoria
+              <select name="categoryPreset" required>
+                <option value="">Selecciona una categoria</option>
+                <option value="restaurant">Restaurante</option>
+                <option value="cafe">Cafeteria / bar</option>
+                <option value="beauty">Peluqueria y belleza</option>
+                <option value="health">Clinica / salud</option>
+                <option value="retail">Comercio local</option>
+                <option value="professional">Servicios profesionales</option>
+                <option value="construction">Reformas / construccion</option>
+                <option value="education">Academia / formacion</option>
+                <option value="accommodation">Hotel / alojamiento</option>
+                <option value="gym">Gimnasio / deporte</option>
+                <option value="local">Negocio local general</option>
+                <option value="custom">Otra categoria</option>
+              </select>
+            </label>
+            <label class="category-custom" id="categoryCustomLabel" hidden>
+              Categoria personalizada
+              <input name="categoryCustom" type="text" placeholder="Ej: Floristeria, taller, inmobiliaria...">
+            </label>
+          </div>
+          <label>
+            Ciudad o zona
+            <input name="location" type="text" autocomplete="address-level2" placeholder="Santander, Valencia, Madrid..." required>
+          </label>
+          <label>
+            Frase principal
+            <textarea name="tagline" rows="3" placeholder="Que deberia entender el cliente en 5 segundos?" required></textarea>
+          </label>
+          <label>
+            Descripcion principal
+            <textarea name="description" rows="4" placeholder="Que hace el negocio, para quien y por que merece la pena?" required></textarea>
+          </label>
         </section>
 
         <section>
           <h2>2. Conversion</h2>
-          <label>Objetivo principal <input type="text" placeholder="Reservas, llamadas, WhatsApp, formularios..."></label>
-          <label>URL de reserva o WhatsApp <input type="url" placeholder="https://wa.me/..."></label>
-          <label>Telefono <input type="tel"></label>
-          <label>Email <input type="email"></label>
-          <label>Direccion exacta <input type="text"></label>
+          <label>
+            Objetivo principal
+            <select name="conversionGoal" required>
+              <option value="">Selecciona el objetivo</option>
+              <option>Reservas</option>
+              <option>Llamadas</option>
+              <option>WhatsApp</option>
+              <option>Formularios de contacto</option>
+              <option>Pedidos online</option>
+              <option>Visitas al local</option>
+              <option>Solicitudes de presupuesto</option>
+            </select>
+          </label>
+          <label>
+            URL de reserva o WhatsApp
+            <input name="bookingUrl" type="url" inputmode="url" placeholder="https://wa.me/...">
+          </label>
+          <label>
+            Texto del boton principal
+            <input name="bookingLabel" type="text" placeholder="Reservar ahora">
+          </label>
+          <div class="two-columns">
+            <label>
+              Telefono
+              <input name="phone" type="tel" autocomplete="tel" placeholder="+34 ...">
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" autocomplete="email" placeholder="hola@tunegocio.com">
+            </label>
+          </div>
+          <label>
+            Direccion exacta
+            <input name="address" type="text" autocomplete="street-address" required>
+          </label>
+          <label>
+            URL de privacidad
+            <input name="privacyUrl" type="url" inputmode="url" placeholder="https://tuweb.com/privacidad" required>
+          </label>
         </section>
 
         <section>
           <h2>3. Contenido</h2>
-          <label>Servicios principales <textarea rows="5" placeholder="Uno por linea"></textarea></label>
-          <label>Diferenciales <textarea rows="4" placeholder="Por que deberian elegirte?"></textarea></label>
-          <label>Horario <textarea rows="4"></textarea></label>
-          <label>Preguntas frecuentes <textarea rows="5" placeholder="Pregunta | Respuesta"></textarea></label>
-          <label>Testimonios <textarea rows="4" placeholder="Nombre | Texto"></textarea></label>
+          <label>
+            Servicios principales
+            <textarea name="services" rows="6" placeholder="Uno por linea. Minimo 3 servicios." required></textarea>
+          </label>
+          <label>
+            Diferenciales
+            <textarea name="features" rows="4" placeholder="Uno por linea. Por que deberian elegirte?" required></textarea>
+          </label>
+          <fieldset class="hours-fieldset" id="hoursFieldset">
+            <legend>Horario</legend>
+            <div class="hours-presets" aria-label="Plantillas de horario">
+              <button type="button" data-hours-preset="standard">Laboral</button>
+              <button type="button" data-hours-preset="hospitality">Hosteleria</button>
+              <button type="button" data-hours-preset="appointments">Citas</button>
+              <button type="button" data-hours-preset="weekend">Fin de semana</button>
+            </div>
+            <div class="hours-grid" id="hoursGrid">
+              <div class="hours-head" aria-hidden="true">
+                <span>Dia</span>
+                <span>Apertura</span>
+                <span>Cierre</span>
+                <span>Segundo turno</span>
+                <span>Cerrado</span>
+              </div>
+              <div class="hours-row" data-day="Lunes">
+                <strong>Lunes</strong>
+                <input name="mondayOpen" type="time" aria-label="Lunes apertura">
+                <input name="mondayClose" type="time" aria-label="Lunes cierre">
+                <span class="split-hours"><input name="mondayOpen2" type="time" aria-label="Lunes segunda apertura"><input name="mondayClose2" type="time" aria-label="Lunes segundo cierre"></span>
+                <label class="closed-toggle"><input name="mondayClosed" type="checkbox"> Cerrado</label>
+              </div>
+              <div class="hours-row" data-day="Martes">
+                <strong>Martes</strong>
+                <input name="tuesdayOpen" type="time" aria-label="Martes apertura">
+                <input name="tuesdayClose" type="time" aria-label="Martes cierre">
+                <span class="split-hours"><input name="tuesdayOpen2" type="time" aria-label="Martes segunda apertura"><input name="tuesdayClose2" type="time" aria-label="Martes segundo cierre"></span>
+                <label class="closed-toggle"><input name="tuesdayClosed" type="checkbox"> Cerrado</label>
+              </div>
+              <div class="hours-row" data-day="Miercoles">
+                <strong>Miercoles</strong>
+                <input name="wednesdayOpen" type="time" aria-label="Miercoles apertura">
+                <input name="wednesdayClose" type="time" aria-label="Miercoles cierre">
+                <span class="split-hours"><input name="wednesdayOpen2" type="time" aria-label="Miercoles segunda apertura"><input name="wednesdayClose2" type="time" aria-label="Miercoles segundo cierre"></span>
+                <label class="closed-toggle"><input name="wednesdayClosed" type="checkbox"> Cerrado</label>
+              </div>
+              <div class="hours-row" data-day="Jueves">
+                <strong>Jueves</strong>
+                <input name="thursdayOpen" type="time" aria-label="Jueves apertura">
+                <input name="thursdayClose" type="time" aria-label="Jueves cierre">
+                <span class="split-hours"><input name="thursdayOpen2" type="time" aria-label="Jueves segunda apertura"><input name="thursdayClose2" type="time" aria-label="Jueves segundo cierre"></span>
+                <label class="closed-toggle"><input name="thursdayClosed" type="checkbox"> Cerrado</label>
+              </div>
+              <div class="hours-row" data-day="Viernes">
+                <strong>Viernes</strong>
+                <input name="fridayOpen" type="time" aria-label="Viernes apertura">
+                <input name="fridayClose" type="time" aria-label="Viernes cierre">
+                <span class="split-hours"><input name="fridayOpen2" type="time" aria-label="Viernes segunda apertura"><input name="fridayClose2" type="time" aria-label="Viernes segundo cierre"></span>
+                <label class="closed-toggle"><input name="fridayClosed" type="checkbox"> Cerrado</label>
+              </div>
+              <div class="hours-row" data-day="Sabado">
+                <strong>Sabado</strong>
+                <input name="saturdayOpen" type="time" aria-label="Sabado apertura">
+                <input name="saturdayClose" type="time" aria-label="Sabado cierre">
+                <span class="split-hours"><input name="saturdayOpen2" type="time" aria-label="Sabado segunda apertura"><input name="saturdayClose2" type="time" aria-label="Sabado segundo cierre"></span>
+                <label class="closed-toggle"><input name="saturdayClosed" type="checkbox"> Cerrado</label>
+              </div>
+              <div class="hours-row" data-day="Domingo">
+                <strong>Domingo</strong>
+                <input name="sundayOpen" type="time" aria-label="Domingo apertura">
+                <input name="sundayClose" type="time" aria-label="Domingo cierre">
+                <span class="split-hours"><input name="sundayOpen2" type="time" aria-label="Domingo segunda apertura"><input name="sundayClose2" type="time" aria-label="Domingo segundo cierre"></span>
+                <label class="closed-toggle"><input name="sundayClosed" type="checkbox"> Cerrado</label>
+              </div>
+            </div>
+            <label>
+              Notas de horario
+              <textarea name="hoursNotes" rows="2" placeholder="Citas bajo reserva, festivos, vacaciones, turnos especiales..."></textarea>
+            </label>
+          </fieldset>
+          <label>
+            Preguntas frecuentes
+            <textarea name="faqs" rows="5" placeholder="Pregunta | Respuesta" required></textarea>
+          </label>
+          <label>
+            Testimonios
+            <textarea name="testimonials" rows="4" placeholder="Nombre | Texto"></textarea>
+          </label>
         </section>
 
         <section>
           <h2>4. Recursos</h2>
-          <label>Enlaces sociales <textarea rows="4" placeholder="Instagram | URL"></textarea></label>
-          <label>Fotos disponibles <textarea rows="4" placeholder="Drive, Dropbox, Canva, Instagram, web actual..."></textarea></label>
-          <label>Referencias visuales <textarea rows="3" placeholder="Webs que te gustan o marcas de referencia"></textarea></label>
+          <label>
+            Imagen principal
+            <input name="heroImage" type="url" inputmode="url" placeholder="https://.../foto-principal.jpg">
+          </label>
+          <label>
+            Galeria
+            <textarea name="gallery" rows="4" placeholder="Una URL de imagen por linea"></textarea>
+          </label>
+          <label>
+            Enlaces sociales
+            <textarea name="links" rows="4" placeholder="Instagram | URL"></textarea>
+          </label>
+          <label>
+            Fotos disponibles
+            <textarea name="photoSources" rows="4" placeholder="Drive, Dropbox, Canva, Instagram, web actual..."></textarea>
+          </label>
+          <label>
+            Referencias visuales
+            <textarea name="visualReferences" rows="3" placeholder="Webs que te gustan o marcas de referencia"></textarea>
+          </label>
         </section>
 
         <section>
           <h2>5. Chatbot</h2>
-          <label>Nombre del asistente <input type="text" placeholder="Ej: AlbaBot"></label>
-          <label>Tono <input type="text" placeholder="Directo, cercano, premium..."></label>
-          <label>Preguntas que debe responder <textarea rows="5" placeholder="Horarios, reservas, precios orientativos, ubicacion..."></textarea></label>
-          <label>Cuando debe derivar a humano? <textarea rows="3"></textarea></label>
+          <label>
+            Nombre del asistente
+            <input name="chatbotName" type="text" placeholder="Ej: AlbaBot">
+          </label>
+          <label>
+            Tono
+            <select name="chatbotTone">
+              <option value="cercano">Cercano</option>
+              <option value="directo">Directo</option>
+              <option value="premium">Premium</option>
+            </select>
+          </label>
+          <label>
+            Preguntas que debe responder
+            <textarea name="chatbotQuestions" rows="5" placeholder="Horarios, reservas, precios orientativos, ubicacion..." required></textarea>
+          </label>
+          <label>
+            Cuando debe derivar a humano?
+            <textarea name="chatbotHandoff" rows="3" placeholder="Precios cerrados, urgencias, cambios de reserva..."></textarea>
+          </label>
         </section>
 
         <section>
           <h2>6. Entrega y aprobacion</h2>
-          <label>Dominio actual o deseado <input type="text" placeholder="tunegocio.com"></label>
-          <label>Persona que aprueba la web <input type="text" placeholder="Nombre y cargo"></label>
-          <label>Competidores o referencias locales <textarea rows="4" placeholder="Negocios cercanos, webs que conviene superar..."></textarea></label>
-          <label>Restricciones legales o de marca <textarea rows="3" placeholder="Textos obligatorios, logos, colores, privacidad, disclaimers..."></textarea></label>
+          <label>
+            Dominio actual o deseado
+            <input name="domain" type="text" placeholder="tunegocio.com">
+          </label>
+          <label>
+            Persona que aprueba la web
+            <input name="approver" type="text" placeholder="Nombre y cargo" required>
+          </label>
+          <label>
+            Competidores o referencias locales
+            <textarea name="competitors" rows="4" placeholder="Negocios cercanos, webs que conviene superar..."></textarea>
+          </label>
+          <label>
+            Restricciones legales o de marca
+            <textarea name="brandRestrictions" rows="3" placeholder="Textos obligatorios, logos, colores, privacidad, disclaimers..."></textarea>
+          </label>
         </section>
 
         <section id="google-gestionado" class="google-brief-section">
           <h2>7. Google gestionado</h2>
-          <label>Dominio para correo profesional <input type="text" placeholder="tunegocio.com"></label>
-          <label>Correo profesional deseado <input type="email" placeholder="info@tunegocio.com"></label>
-          <label>Quien sera propietario/admin de Google Workspace? <input type="text" placeholder="Nombre, email y telefono"></label>
-          <label>Google Business Profile existe? <input type="text" placeholder="Si/No, enlace, propietario actual..."></label>
-          <label>Acceso que nos puede dar <textarea rows="3" placeholder="Manager de Business Profile, admin Workspace, Calendar, permisos de reseñas..."></textarea></label>
-          <label>Reglas de reservas/citas <textarea rows="4" placeholder="Duracion por servicio, margen entre citas, horarios, quien confirma..."></textarea></label>
-          <label>Mensaje para pedir resenas <textarea rows="3" placeholder="Gracias por venir. Nos ayudas dejando una resena aqui: {reviewUrl}"></textarea></label>
+          <label>
+            Dominio para correo profesional
+            <input name="googleWorkspaceDomain" type="text" placeholder="tunegocio.com">
+          </label>
+          <label>
+            Correo profesional deseado
+            <input name="googleWorkspaceEmail" type="email" placeholder="info@tunegocio.com">
+          </label>
+          <label>
+            Propietario/admin de Google Workspace
+            <input name="googleAdmin" type="text" placeholder="Nombre, email y telefono">
+          </label>
+          <label>
+            Google Business Profile existe?
+            <input name="googleProfileStatus" type="text" placeholder="Si/No, enlace, propietario actual...">
+          </label>
+          <label>
+            Google Maps URL
+            <input name="googleMapsUrl" type="url" inputmode="url" placeholder="https://maps.google.com/...">
+          </label>
+          <label>
+            URL para dejar resena
+            <input name="googleReviewUrl" type="url" inputmode="url" placeholder="https://g.page/r/...">
+          </label>
+          <label>
+            Acceso que nos puede dar
+            <textarea name="googleAccess" rows="3" placeholder="Manager de Business Profile, admin Workspace, Calendar, permisos de resenas..."></textarea>
+          </label>
+          <label>
+            Reglas de reservas/citas
+            <textarea name="googleBookingRules" rows="4" placeholder="Duracion por servicio, margen entre citas, horarios, quien confirma..."></textarea>
+          </label>
+          <label>
+            Mensaje para pedir resenas
+            <textarea name="googleReviewRequestTemplate" rows="3" placeholder="Gracias por venir. Nos ayudas dejando una resena aqui: {reviewUrl}"></textarea>
+          </label>
 
           <details class="google-ops-details" id="google-ops-info">
             <summary>
               <span>
-                <strong>Más información sobre Google Ops</strong>
+                <strong>Mas informacion sobre Google Ops</strong>
                 <small>Ver el proceso, los permisos necesarios y el entregable</small>
               </span>
             </summary>
@@ -97,7 +325,7 @@
                 <span class="google-ops-step">01</span>
                 <div>
                   <h3>Correo profesional</h3>
-                  <p>Se crea en Google Workspace, no como Gmail personal. Requiere el dominio del cliente, alta de Workspace, facturacion y permisos de administrador.</p>
+                  <p>Se crea en Google Workspace, no como Gmail personal. Requiere dominio, alta de Workspace, facturacion y permisos de administrador.</p>
                   <ul>
                     <li>Definir cuentas como info@, reservas@, hola@ o citas@.</li>
                     <li>Configurar firma, recuperacion, reenvios y cambio de contrasena.</li>
@@ -169,24 +397,306 @@
         </section>
       </form>
     </main>
+
     <script>
-      document.querySelector("#copyBriefButton")?.addEventListener("click", async () => {
-        const sections = Array.from(document.querySelectorAll(".brief-form section")).map((section) => {
-          const title = section.querySelector("h2")?.textContent?.trim() || "Seccion";
-          const rows = Array.from(section.querySelectorAll("label")).map((label) => {
-            const field = label.querySelector("input, textarea");
-            const labelText = Array.from(label.childNodes)
-              .filter((node) => node.nodeType === Node.TEXT_NODE)
-              .map((node) => node.textContent.trim())
-              .filter(Boolean)
-              .join(" ");
-            return `- ${labelText}: ${field?.value?.trim() || "[pendiente]"}`;
-          });
-          return `${title}\n${rows.join("\n")}`;
-        });
-        await navigator.clipboard.writeText(sections.join("\n\n"));
-        document.querySelector("#copyBriefButton").textContent = "Brief copiado";
+      const BRIEF_HANDOFF_STORAGE_KEY = "locallift-studio-brief-handoff";
+      const form = document.querySelector("#briefForm");
+      const statusLine = document.querySelector("#briefStatus");
+      const categoryCustomLabel = document.querySelector("#categoryCustomLabel");
+      const categoryFieldBlock = document.querySelector("#categoryFieldBlock");
+      const hoursFieldset = document.querySelector("#hoursFieldset");
+      const dayFields = [
+        ["monday", "Lunes"],
+        ["tuesday", "Martes"],
+        ["wednesday", "Miercoles"],
+        ["thursday", "Jueves"],
+        ["friday", "Viernes"],
+        ["saturday", "Sabado"],
+        ["sunday", "Domingo"]
+      ];
+
+      const categoryConfigs = {
+        restaurant: {
+          category: "Restaurante local",
+          designPack: "boutique",
+          theme: "luxe",
+          artDirection: "atelier",
+          contentMode: "balanced",
+          accent: "#cf3f2e",
+          bookingLabel: "Reservar mesa",
+          servicesHeading: "Carta, reservas y experiencia",
+          trustHeading: "Antes de venir",
+          contactHeading: "Reserva, llama o ven.",
+          leadFormTitle: "Consulta disponibilidad",
+          leadFormIntro: "Dinos dia, hora, numero de personas y cualquier detalle importante. Te contestamos con la mejor opcion disponible.",
+          leadFormCta: "Solicitar disponibilidad",
+          showMenu: true,
+          sectionOrder: ["services", "menu", "gallery", "testimonials", "booking", "lead", "faq", "map", "features", "store"],
+          blockVariants: { hero: "split", services: "list", gallery: "mosaic", testimonials: "quotes", contact: "split" },
+          heroImage: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        cafe: {
+          category: "Cafeteria y bar",
+          designPack: "localWarm",
+          theme: "editorial",
+          artDirection: "editorial",
+          contentMode: "balanced",
+          accent: "#b4532a",
+          bookingLabel: "Contactar",
+          servicesHeading: "Cafe, desayunos y momentos",
+          trustHeading: "Lo que se nota al entrar",
+          contactHeading: "Ven o escribe.",
+          leadFormTitle: "Pregunta disponibilidad",
+          leadFormIntro: "Cuentanos que necesitas y te respondemos con horario, reserva o encargo.",
+          leadFormCta: "Enviar consulta",
+          showMenu: true,
+          sectionOrder: ["services", "menu", "gallery", "map", "testimonials", "booking", "lead", "faq", "features", "store"],
+          blockVariants: { hero: "oval", services: "cards", gallery: "grid", testimonials: "cards", contact: "compact" },
+          heroImage: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        beauty: {
+          category: "Peluqueria y belleza",
+          designPack: "boutique",
+          theme: "editorial",
+          artDirection: "atelier",
+          contentMode: "visual",
+          accent: "#b2477b",
+          bookingLabel: "Reservar cita",
+          servicesHeading: "Servicios para verte y sentirte mejor",
+          trustHeading: "Antes y despues con criterio",
+          contactHeading: "Reserva tu cita.",
+          leadFormTitle: "Cuentanos que necesitas",
+          leadFormIntro: "Comparte servicio, fecha ideal y referencias. Te responderemos con la mejor opcion.",
+          leadFormCta: "Pedir cita",
+          showMenu: false,
+          sectionOrder: ["gallery", "services", "testimonials", "booking", "lead", "faq", "map", "features", "menu", "store"],
+          blockVariants: { hero: "collage", services: "spotlight", gallery: "mosaic", testimonials: "quotes", contact: "split" },
+          heroImage: "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        health: {
+          category: "Clinica de salud y bienestar",
+          designPack: "clear",
+          theme: "luxe",
+          artDirection: "editorial",
+          contentMode: "detailed",
+          accent: "#0f8f8f",
+          bookingLabel: "Pedir cita",
+          servicesHeading: "Especialidades y atencion",
+          trustHeading: "Confianza desde el primer contacto",
+          contactHeading: "Pide cita con contexto.",
+          leadFormTitle: "Solicita cita",
+          leadFormIntro: "Indica especialidad, disponibilidad y motivo de consulta para orientarte mejor.",
+          leadFormCta: "Enviar solicitud",
+          showMenu: false,
+          sectionOrder: ["services", "booking", "lead", "testimonials", "faq", "map", "gallery", "features", "menu", "store"],
+          blockVariants: { hero: "split", services: "cards", gallery: "grid", testimonials: "quotes", contact: "split" },
+          heroImage: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        retail: {
+          category: "Comercio local",
+          designPack: "commerce",
+          theme: "aurora",
+          artDirection: "mosaic",
+          contentMode: "visual",
+          accent: "#2f6fed",
+          bookingLabel: "Ver disponibilidad",
+          servicesHeading: "Productos, asesoramiento y compra local",
+          trustHeading: "Compra con trato cercano",
+          contactHeading: "Visita o pregunta.",
+          leadFormTitle: "Pregunta por un producto",
+          leadFormIntro: "Dinos que buscas y te confirmamos disponibilidad, precio orientativo o alternativas.",
+          leadFormCta: "Consultar producto",
+          showMenu: false,
+          sectionOrder: ["gallery", "services", "features", "lead", "map", "testimonials", "faq", "booking", "menu", "store"],
+          blockVariants: { hero: "collage", services: "cards", gallery: "mosaic", testimonials: "cards", contact: "compact" },
+          heroImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        professional: {
+          category: "Servicios profesionales",
+          designPack: "clear",
+          theme: "editorial",
+          artDirection: "editorial",
+          contentMode: "detailed",
+          accent: "#3657d6",
+          bookingLabel: "Solicitar consulta",
+          servicesHeading: "Servicios claros, proceso simple",
+          trustHeading: "Rigor y respuesta",
+          contactHeading: "Hablemos del proyecto.",
+          leadFormTitle: "Solicita una primera consulta",
+          leadFormIntro: "Explica tu caso y te responderemos con los siguientes pasos.",
+          leadFormCta: "Solicitar consulta",
+          showMenu: false,
+          sectionOrder: ["services", "features", "lead", "testimonials", "faq", "map", "gallery", "booking", "menu", "store"],
+          blockVariants: { hero: "minimal", services: "list", gallery: "grid", testimonials: "quotes", contact: "split" },
+          heroImage: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        construction: {
+          category: "Reformas y construccion",
+          designPack: "impact",
+          theme: "carbon",
+          artDirection: "cinematic",
+          contentMode: "balanced",
+          accent: "#d66b22",
+          bookingLabel: "Pedir presupuesto",
+          servicesHeading: "Reformas con seguimiento",
+          trustHeading: "Presupuesto, plazos y oficio",
+          contactHeading: "Cuentanos la reforma.",
+          leadFormTitle: "Pide presupuesto",
+          leadFormIntro: "Describe el trabajo, zona y fechas. Te responderemos con el siguiente paso.",
+          leadFormCta: "Solicitar presupuesto",
+          showMenu: false,
+          sectionOrder: ["services", "gallery", "features", "lead", "testimonials", "faq", "map", "booking", "menu", "store"],
+          blockVariants: { hero: "cinematic", services: "spotlight", gallery: "grid", testimonials: "cards", contact: "split" },
+          heroImage: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        education: {
+          category: "Academia y formacion",
+          designPack: "clear",
+          theme: "aurora",
+          artDirection: "editorial",
+          contentMode: "detailed",
+          accent: "#2d7d46",
+          bookingLabel: "Pedir informacion",
+          servicesHeading: "Cursos, clases y seguimiento",
+          trustHeading: "Aprendizaje con estructura",
+          contactHeading: "Pregunta por plazas.",
+          leadFormTitle: "Solicita informacion",
+          leadFormIntro: "Indica curso, nivel y disponibilidad para orientarte.",
+          leadFormCta: "Pedir informacion",
+          showMenu: false,
+          sectionOrder: ["services", "lead", "faq", "testimonials", "gallery", "map", "features", "booking", "menu", "store"],
+          blockVariants: { hero: "split", services: "cards", gallery: "grid", testimonials: "quotes", contact: "split" },
+          heroImage: "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        accommodation: {
+          category: "Hotel y alojamiento",
+          designPack: "boutique",
+          theme: "luxe",
+          artDirection: "cinematic",
+          contentMode: "visual",
+          accent: "#8d6b2f",
+          bookingLabel: "Reservar estancia",
+          servicesHeading: "Habitaciones, descanso y experiencia local",
+          trustHeading: "Todo claro antes de llegar",
+          contactHeading: "Reserva tu estancia.",
+          leadFormTitle: "Consulta disponibilidad",
+          leadFormIntro: "Dinos fechas, personas y preferencias para confirmar la mejor opcion.",
+          leadFormCta: "Consultar fechas",
+          showMenu: false,
+          sectionOrder: ["gallery", "services", "booking", "lead", "testimonials", "faq", "map", "features", "menu", "store"],
+          blockVariants: { hero: "cinematic", services: "cards", gallery: "mosaic", testimonials: "quotes", contact: "split" },
+          heroImage: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        gym: {
+          category: "Gimnasio y deporte",
+          designPack: "impact",
+          theme: "neon",
+          artDirection: "kinetic",
+          contentMode: "balanced",
+          accent: "#7cfd4f",
+          bookingLabel: "Probar una clase",
+          servicesHeading: "Entrena con energia y seguimiento",
+          trustHeading: "Comunidad, tecnica y constancia",
+          contactHeading: "Empieza esta semana.",
+          leadFormTitle: "Reserva una prueba",
+          leadFormIntro: "Dinos objetivo, experiencia y horario ideal para recomendarte la clase adecuada.",
+          leadFormCta: "Pedir prueba",
+          showMenu: false,
+          sectionOrder: ["services", "gallery", "booking", "lead", "testimonials", "faq", "map", "features", "menu", "store"],
+          blockVariants: { hero: "cinematic", services: "spotlight", gallery: "marquee", testimonials: "cards", contact: "compact" },
+          heroImage: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        local: {
+          category: "Negocio local",
+          designPack: "localWarm",
+          theme: "aurora",
+          artDirection: "editorial",
+          contentMode: "balanced",
+          accent: "#cf3f2e",
+          bookingLabel: "Contactar",
+          servicesHeading: "Servicios principales",
+          trustHeading: "Cercania y confianza",
+          contactHeading: "Contacta con nosotros.",
+          leadFormTitle: "Cuentanos que necesitas",
+          leadFormIntro: "Deja tus datos y el equipo te respondera con contexto.",
+          leadFormCta: "Enviar consulta",
+          showMenu: false,
+          sectionOrder: ["services", "features", "gallery", "lead", "testimonials", "faq", "map", "booking", "menu", "store"],
+          blockVariants: { hero: "split", services: "cards", gallery: "grid", testimonials: "cards", contact: "compact" },
+          heroImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1800&q=85",
+          gallery: [
+            "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80"
+          ]
+        }
+      };
+
+      categoryConfigs.custom = categoryConfigs.local;
+
+      form?.addEventListener("input", () => {
+        syncCategoryField();
+        syncClosedRows();
+        updateBriefStatus();
       });
+      form?.addEventListener("change", () => {
+        syncCategoryField();
+        syncClosedRows();
+        updateBriefStatus();
+      });
+      document.querySelector("#copyBriefButton")?.addEventListener("click", copyBrief);
+      document.querySelector("#printBriefButton")?.addEventListener("click", () => window.print());
+      document.querySelector("#generateWebsiteButton")?.addEventListener("click", generateWebsiteFromBrief);
+      document.querySelectorAll("[data-hours-preset]").forEach((button) => {
+        button.addEventListener("click", () => {
+          applyHoursPreset(button.dataset.hoursPreset);
+          updateBriefStatus();
+        });
+      });
+
+      syncCategoryField();
+      syncClosedRows();
+      updateBriefStatus();
 
       const googleOpsDetails = document.querySelector("#google-ops-info");
       const revealGoogleOps = () => {
@@ -197,6 +707,450 @@
 
       revealGoogleOps();
       window.addEventListener("hashchange", revealGoogleOps);
+
+      async function copyBrief() {
+        const sections = Array.from(document.querySelectorAll(".brief-form section")).map((section) => {
+          const title = section.querySelector("h2")?.textContent?.trim() || "Seccion";
+          const rows = Array.from(section.querySelectorAll("label")).map((label) => {
+            const field = label.querySelector("input, textarea, select");
+            if (!field) return "";
+            const labelText = Array.from(label.childNodes)
+              .filter((node) => node.nodeType === Node.TEXT_NODE)
+              .map((node) => node.textContent.trim())
+              .filter(Boolean)
+              .join(" ");
+            return `- ${labelText}: ${readFieldValue(field) || "[pendiente]"}`;
+          }).filter(Boolean);
+          if (section.contains(hoursFieldset)) {
+            rows.push(`- Horario estructurado: ${buildHours().join(" / ") || "[pendiente]"}`);
+          }
+          return `${title}\n${rows.join("\n")}`;
+        });
+        await navigator.clipboard.writeText(sections.join("\n\n"));
+        const button = document.querySelector("#copyBriefButton");
+        if (button) button.textContent = "Brief copiado";
+        setStatus("Brief copiado al portapapeles.", "ok");
+      }
+
+      function generateWebsiteFromBrief() {
+        const validation = validateBrief({ reveal: true });
+        if (!validation.ok) {
+          setStatus(validation.message, "error");
+          validation.firstField?.focus({ preventScroll: true });
+          validation.firstField?.scrollIntoView({ block: "center" });
+          return;
+        }
+
+        const business = buildBusinessPayload();
+        localStorage.setItem(BRIEF_HANDOFF_STORAGE_KEY, JSON.stringify({
+          version: 1,
+          source: "brief",
+          createdAt: new Date().toISOString(),
+          business
+        }));
+        setStatus("Brief completo. Abriendo Studio con la web generada...", "ok");
+        window.location.href = "../index.html?fromBrief=1&skipIntro=1&view=desktop";
+      }
+
+      function buildBusinessPayload() {
+        const category = getSelectedCategory();
+        const config = categoryConfigs[category.key] || categoryConfigs.local;
+        const name = value("businessName");
+        const location = value("location");
+        const phone = value("phone");
+        const email = value("email");
+        const bookingUrl = normalizeUrl(value("bookingUrl")) || buildWhatsappUrl(phone) || "#contacto";
+        const gallery = unique([
+          ...parseImageLines(value("gallery")),
+          ...parseImageLines(value("photoSources")),
+          ...(config.gallery || [])
+        ]).slice(0, 12);
+        const heroImage = normalizeImage(value("heroImage")) || gallery[0] || config.heroImage;
+        const links = parsePairs(value("links"), "Enlace", "#");
+        const googleMapsUrl = normalizeUrl(value("googleMapsUrl"));
+        const googleReviewUrl = normalizeUrl(value("googleReviewUrl"));
+
+        if (googleMapsUrl && !links.some((item) => item.label.toLowerCase().includes("google"))) {
+          links.push({ label: "Google Maps", url: googleMapsUrl });
+        }
+
+        return {
+          name,
+          category: category.label || config.category,
+          location,
+          tagline: value("tagline"),
+          description: value("description"),
+          conversionGoal: `${value("conversionGoal")} para ${category.label || config.category}`,
+          announcement: buildAnnouncement(category, value("visualReferences"), value("brandRestrictions")),
+          phone,
+          email,
+          address: value("address"),
+          services: parseLines(value("services")).slice(0, 9),
+          features: parseLines(value("features")).slice(0, 8),
+          hours: buildHours().slice(0, 8),
+          testimonials: parsePairs(value("testimonials"), "Cliente", "Una experiencia excelente").slice(0, 6),
+          faqs: parsePairs(value("faqs"), "Pregunta", "Respuesta").slice(0, 8),
+          trustBadges: buildTrustBadges(category, value("features"), googleReviewUrl),
+          links: links.slice(0, 8),
+          heroImage,
+          gallery,
+          mediaMetadata: heroImage ? { [heroImage]: { alt: `Imagen principal de ${name}` } } : {},
+          designPack: config.designPack,
+          artDirection: config.artDirection,
+          contentMode: config.contentMode,
+          theme: config.theme,
+          motion: category.key === "gym" || category.key === "construction" ? "bold" : "cinematic",
+          typography: category.key === "professional" || category.key === "health" ? "editorial" : "modern",
+          contentDensity: category.key === "health" || category.key === "professional" ? "balanced" : "balanced",
+          visualShape: category.key === "beauty" || category.key === "local" ? "rounded" : "clean",
+          heroSize: category.key === "accommodation" || category.key === "restaurant" ? "immersive" : "balanced",
+          contentWidth: category.key === "retail" || category.key === "gym" ? "wide" : "standard",
+          imageRatio: category.key === "professional" ? "wide" : "portrait",
+          accent: config.accent,
+          intensity: category.key === "gym" ? 88 : category.key === "health" ? 68 : 78,
+          fontScale: 100,
+          layoutScale: 100,
+          premiumEffects: true,
+          showAnnouncement: true,
+          showResourceMarquee: false,
+          showTrustRail: true,
+          showGallery: gallery.length > 0,
+          showTestimonials: Boolean(value("testimonials").trim()),
+          showFaq: true,
+          showMap: Boolean(value("address") || location || googleMapsUrl),
+          showConversionDock: true,
+          showBooking: bookingUrl !== "#contacto",
+          bookingUrl,
+          bookingLabel: value("bookingLabel") || config.bookingLabel,
+          showLeadForm: true,
+          leadFormTitle: config.leadFormTitle,
+          leadFormIntro: config.leadFormIntro,
+          leadFormCta: config.leadFormCta,
+          privacyUrl: normalizeUrl(value("privacyUrl")),
+          servicesHeading: config.servicesHeading,
+          servicesIntro: buildServicesIntro(category, value("services")),
+          trustHeading: config.trustHeading,
+          trustIntro: "Hemos reunido la informacion clave para que el cliente pueda decidir rapido y contactar sin friccion.",
+          contactHeading: config.contactHeading,
+          sectionOrder: config.sectionOrder,
+          blockVariants: config.blockVariants,
+          showMenu: Boolean(config.showMenu),
+          menuTitle: category.key === "restaurant" || category.key === "cafe" ? "Carta y destacados" : "Servicios destacados",
+          menuIntro: "Seleccion principal preparada desde el brief. Ajusta platos, precios y alergenos en el Studio si hace falta.",
+          menuCurrency: "EUR",
+          menuItems: [],
+          google: {
+            enabled: Boolean(googleMapsUrl || googleReviewUrl || value("googleWorkspaceEmail") || value("googleProfileStatus")),
+            workspaceEmail: value("googleWorkspaceEmail"),
+            workspaceDomain: value("googleWorkspaceDomain") || value("domain"),
+            managerEmail: "",
+            placeId: "",
+            mapsUrl: googleMapsUrl,
+            mapEmbedUrl: "",
+            directionsNote: value("address") ? `Direccion indicada en brief: ${value("address")}` : "",
+            reviewUrl: googleReviewUrl,
+            reviewRequestTemplate: value("googleReviewRequestTemplate"),
+            appointmentUrl: bookingUrl === "#contacto" ? "" : bookingUrl,
+            bookingRules: value("googleBookingRules"),
+            rating: 0,
+            reviewCount: 0,
+            calendarId: "primary",
+            businessProfileAccountId: "",
+            businessProfileLocationId: "",
+            ownerAdmin: value("googleAdmin"),
+            profileStatus: value("googleProfileStatus"),
+            accessNotes: value("googleAccess")
+          },
+          chatbot: {
+            enabled: true,
+            name: value("chatbotName") || `${name.replace(/\s+/g, "")}Bot`,
+            tone: value("chatbotTone") || "cercano",
+            greeting: `Hola, soy el asistente de ${name}. Te ayudo con servicios, horarios, reservas, ubicacion y contacto.`,
+            quickPrompts: buildQuickPrompts(value("chatbotQuestions")),
+            handoffLabel: config.bookingLabel,
+            handoffRules: value("chatbotHandoff"),
+            endpoint: ""
+          },
+          commerce: {
+            enabled: false,
+            title: "Compra online",
+            intro: "Productos preparados para compra online.",
+            currency: "EUR",
+            orderEmail: email,
+            checkoutEndpoint: "",
+            productsEndpoint: "",
+            successUrl: "",
+            cancelUrl: "",
+            termsUrl: "",
+            privacyUrl: normalizeUrl(value("privacyUrl")),
+            deliveryMode: "Recogida o entrega bajo confirmacion",
+            products: []
+          },
+          briefMeta: {
+            approver: value("approver"),
+            domain: value("domain"),
+            competitors: value("competitors"),
+            brandRestrictions: value("brandRestrictions"),
+            visualReferences: value("visualReferences"),
+            photoSources: value("photoSources")
+          }
+        };
+      }
+
+      function validateBrief({ reveal = false } = {}) {
+        form.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
+        categoryFieldBlock?.classList.remove("is-invalid");
+        hoursFieldset?.classList.remove("is-invalid");
+
+        const requiredFields = Array.from(form.querySelectorAll("[required]"))
+          .filter((field) => !field.closest("[hidden]"));
+        let firstField = null;
+        const missing = requiredFields.filter((field) => !readFieldValue(field).trim());
+        missing.forEach((field) => {
+          field.setAttribute("aria-invalid", "true");
+          firstField ||= field;
+        });
+
+        if (getSelectedCategory().key === "custom" && !value("categoryCustom")) {
+          const customField = form.elements.categoryCustom;
+          customField?.setAttribute("aria-invalid", "true");
+          categoryFieldBlock?.classList.add("is-invalid");
+          firstField ||= customField;
+        }
+
+        if (parseLines(value("services")).length < 3) {
+          const field = form.elements.services;
+          field?.setAttribute("aria-invalid", "true");
+          firstField ||= field;
+        }
+
+        if (!buildHours().length) {
+          hoursFieldset?.classList.add("is-invalid");
+          firstField ||= hoursFieldset?.querySelector("input, textarea");
+        }
+
+        if (!value("phone") && !value("email") && !value("bookingUrl")) {
+          ["phone", "email", "bookingUrl"].forEach((name) => form.elements[name]?.setAttribute("aria-invalid", "true"));
+          firstField ||= form.elements.phone;
+        }
+
+        const ok = !firstField;
+        if (reveal && !ok) {
+          form.classList.add("show-validation");
+        }
+
+        return {
+          ok,
+          firstField,
+          message: ok
+            ? "Brief completo. Listo para generar."
+            : "Faltan campos clave: identidad, categoria, contenido, horario, contacto o privacidad."
+        };
+      }
+
+      function updateBriefStatus() {
+        const requiredFields = Array.from(form.querySelectorAll("[required]"))
+          .filter((field) => !field.closest("[hidden]"));
+        const completed = requiredFields.filter((field) => readFieldValue(field).trim()).length;
+        const hasContact = Boolean(value("phone") || value("email") || value("bookingUrl"));
+        const hasHours = buildHours().length > 0;
+        const serviceCount = parseLines(value("services")).length;
+        const ready = validateBrief({ reveal: false }).ok;
+        document.querySelector("#generateWebsiteButton")?.classList.toggle("is-ready", ready);
+        setStatus(
+          ready
+            ? "Brief completo. Ya puedes generar la web."
+            : `${completed}/${requiredFields.length} campos clave. ${hasContact ? "Contacto ok" : "Falta contacto"} / ${hasHours ? "Horario ok" : "Falta horario"} / ${serviceCount}/3 servicios.`,
+          ready ? "ok" : ""
+        );
+      }
+
+      function setStatus(message, tone = "") {
+        if (!statusLine) return;
+        statusLine.textContent = message;
+        statusLine.dataset.tone = tone;
+      }
+
+      function syncCategoryField() {
+        const isCustom = form.elements.categoryPreset?.value === "custom";
+        categoryCustomLabel.hidden = !isCustom;
+        form.elements.categoryCustom.toggleAttribute("required", isCustom);
+      }
+
+      function syncClosedRows() {
+        dayFields.forEach(([key]) => {
+          const closed = form.elements[`${key}Closed`]?.checked;
+          [`${key}Open`, `${key}Close`, `${key}Open2`, `${key}Close2`].forEach((name) => {
+            const field = form.elements[name];
+            if (!field) return;
+            field.disabled = closed;
+            if (closed) field.value = "";
+          });
+        });
+      }
+
+      function applyHoursPreset(preset) {
+        const values = {
+          standard: {
+            monday: ["09:00", "14:00", "16:00", "20:00"],
+            tuesday: ["09:00", "14:00", "16:00", "20:00"],
+            wednesday: ["09:00", "14:00", "16:00", "20:00"],
+            thursday: ["09:00", "14:00", "16:00", "20:00"],
+            friday: ["09:00", "14:00", "16:00", "20:00"],
+            saturdayClosed: true,
+            sundayClosed: true
+          },
+          hospitality: {
+            mondayClosed: true,
+            tuesday: ["13:00", "16:00", "20:00", "23:30"],
+            wednesday: ["13:00", "16:00", "20:00", "23:30"],
+            thursday: ["13:00", "16:00", "20:00", "23:30"],
+            friday: ["13:00", "16:00", "20:00", "00:30"],
+            saturday: ["13:00", "16:30", "20:00", "00:30"],
+            sunday: ["13:00", "17:00", "", ""]
+          },
+          appointments: {
+            monday: ["10:00", "14:00", "16:00", "20:00"],
+            tuesday: ["10:00", "14:00", "16:00", "20:00"],
+            wednesday: ["10:00", "14:00", "16:00", "20:00"],
+            thursday: ["10:00", "14:00", "16:00", "20:00"],
+            friday: ["10:00", "14:00", "16:00", "19:00"],
+            saturday: ["10:00", "14:00", "", ""],
+            sundayClosed: true
+          },
+          weekend: {
+            mondayClosed: true,
+            tuesdayClosed: true,
+            wednesdayClosed: true,
+            thursday: ["17:00", "21:00", "", ""],
+            friday: ["17:00", "00:00", "", ""],
+            saturday: ["11:00", "00:00", "", ""],
+            sunday: ["11:00", "18:00", "", ""]
+          }
+        }[preset] || {};
+
+        dayFields.forEach(([key]) => {
+          form.elements[`${key}Closed`].checked = Boolean(values[`${key}Closed`]);
+          const hours = values[key] || ["", "", "", ""];
+          form.elements[`${key}Open`].value = hours[0] || "";
+          form.elements[`${key}Close`].value = hours[1] || "";
+          form.elements[`${key}Open2`].value = hours[2] || "";
+          form.elements[`${key}Close2`].value = hours[3] || "";
+        });
+        syncClosedRows();
+      }
+
+      function buildHours() {
+        const rows = dayFields.map(([key, label]) => {
+          if (form.elements[`${key}Closed`]?.checked) {
+            return `${label}: cerrado`;
+          }
+          const first = formatRange(value(`${key}Open`), value(`${key}Close`));
+          const second = formatRange(value(`${key}Open2`), value(`${key}Close2`));
+          if (!first && !second) return "";
+          return `${label}: ${[first, second].filter(Boolean).join(" / ")}`;
+        }).filter(Boolean);
+        return [...rows, ...parseLines(value("hoursNotes"))];
+      }
+
+      function formatRange(start, end) {
+        if (!start || !end) return "";
+        return `${start}-${end}`;
+      }
+
+      function getSelectedCategory() {
+        const key = value("categoryPreset") || "local";
+        const custom = value("categoryCustom");
+        const option = form.elements.categoryPreset?.selectedOptions?.[0];
+        return {
+          key,
+          label: key === "custom" && custom ? custom : (categoryConfigs[key]?.category || option?.textContent?.trim() || "Negocio local")
+        };
+      }
+
+      function buildAnnouncement(category, references, restrictions) {
+        const chunks = [];
+        if (references) chunks.push("Inspiracion visual definida desde el brief");
+        if (restrictions) chunks.push("Marca y textos obligatorios revisados");
+        if (!chunks.length) chunks.push(`Nueva web preparada para ${category.label}`);
+        return chunks.join(" / ");
+      }
+
+      function buildServicesIntro(category, servicesText) {
+        const count = parseLines(servicesText).length;
+        return `${count} servicio${count === 1 ? "" : "s"} clave para presentar ${category.label.toLowerCase()} con informacion clara, accion rapida y confianza.`;
+      }
+
+      function buildTrustBadges(category, featuresText, reviewUrl) {
+        const fromFeatures = parseLines(featuresText).slice(0, 3);
+        return unique([
+          ...fromFeatures,
+          `Especialistas en ${category.label}`,
+          reviewUrl ? "Resenas de Google listas para activar" : "Contacto directo con el negocio",
+          "Respuesta rapida desde la web"
+        ]).slice(0, 6);
+      }
+
+      function buildQuickPrompts(text) {
+        const prompts = parseLines(text)
+          .map((line) => line.replace(/[?.!]+$/g, "").trim())
+          .filter(Boolean)
+          .slice(0, 6);
+        return prompts.length ? prompts : ["Quiero reservar", "Ver horario", "Servicios", "Ubicacion"];
+      }
+
+      function parseLines(text) {
+        return String(text || "").split(/\r?\n+/).map((line) => line.trim()).filter(Boolean);
+      }
+
+      function parsePairs(text, fallbackLeft, fallbackRight) {
+        return parseLines(text).map((line) => {
+          const parts = line.split("|").map((part) => part.trim());
+          return {
+            name: parts[0] || fallbackLeft,
+            label: parts[0] || fallbackLeft,
+            question: parts[0] || fallbackLeft,
+            text: parts.slice(1).join(" | ") || fallbackRight,
+            answer: parts.slice(1).join(" | ") || fallbackRight,
+            url: normalizeUrl(parts.slice(1).join(" | ") || "#")
+          };
+        });
+      }
+
+      function parseImageLines(text) {
+        return parseLines(text).map(normalizeImage).filter(Boolean);
+      }
+
+      function normalizeImage(url) {
+        const value = normalizeUrl(url);
+        return /^(https?:\/\/|data:image\/)/i.test(value) ? value : "";
+      }
+
+      function normalizeUrl(url) {
+        return String(url || "").trim();
+      }
+
+      function buildWhatsappUrl(phone) {
+        const digits = String(phone || "").replace(/\D/g, "");
+        if (!digits) return "";
+        const normalized = digits.startsWith("34") ? digits : `34${digits}`;
+        return `https://wa.me/${normalized}`;
+      }
+
+      function unique(items) {
+        return Array.from(new Set(items.filter(Boolean)));
+      }
+
+      function value(name) {
+        const field = form.elements[name];
+        return readFieldValue(field);
+      }
+
+      function readFieldValue(field) {
+        if (!field) return "";
+        if (field.type === "checkbox") return field.checked ? "Si" : "";
+        return String(field.value || "").trim();
+      }
     </script>
   </body>
 </html>

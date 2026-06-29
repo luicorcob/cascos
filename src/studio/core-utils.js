@@ -1,14 +1,37 @@
 (function (global) {
   const studio = global.LocalLiftStudio = global.LocalLiftStudio || {};
+  const ALLERGEN_ICON_BASE = "Alergenos/";
+  const MENU_ALLERGENS = Object.freeze([
+    { id: "gluten", label: "Gluten", symbol: "GL", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoGluten-Gluten_icon-icons.com_67600.png` },
+    { id: "crustaceos", label: "Crustaceos", symbol: "CR", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoCrustaceo-Crustaceans_icon-icons.com_67603.png` },
+    { id: "huevos", label: "Huevos", symbol: "HU", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoHuevo-Egg_icon-icons.com_67598.png` },
+    { id: "pescado", label: "Pescado", symbol: "PE", icon: `${ALLERGEN_ICON_BASE}Fish_icon-icons.com_67594.png` },
+    { id: "cacahuetes", label: "Cacahuetes", symbol: "CA", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoCacahuete-Peanuts_icon-icons.com_67604.png` },
+    { id: "soja", label: "Soja", symbol: "SO", icon: `${ALLERGEN_ICON_BASE}Soy_icon-icons.com_67593.png` },
+    { id: "leche", label: "Leche / lactosa", symbol: "LA", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoLacteos-DairyProducts_icon-icons.com_67597.png` },
+    { id: "frutos-cascara", label: "Frutos de cascara", symbol: "FC", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoFrutosCascaraPeelFruits_icon-icons.com_67601.png` },
+    { id: "apio", label: "Apio", symbol: "AP", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoApio-Celery_icon-icons.com_67605.png` },
+    { id: "mostaza", label: "Mostaza", symbol: "MO", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoMostaza-Mustard_icon-icons.com_67595.png` },
+    { id: "sesamo", label: "Sesamo", symbol: "SE", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoGranosSesamo-SesameGrains_icon-icons.com_67599.png` },
+    { id: "sulfitos", label: "Sulfitos", symbol: "SO2", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoDioxidoAzufreSulfitosSulfurDioxideSulphites_icon-icons.com_67602.png` },
+    { id: "altramuces", label: "Altramuces", symbol: "AL", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoAltramuces-Lupins_icon-icons.com_67606.png` },
+    { id: "moluscos", label: "Moluscos", symbol: "ML", icon: `${ALLERGEN_ICON_BASE}IconoAlergenoMoluscos-Mollusks_icon-icons.com_67596.png` }
+  ].map(Object.freeze));
+  const MENU_ALLERGEN_IDS = new Set(MENU_ALLERGENS.map((allergen) => allergen.id));
+  const MENU_ALLERGEN_ALIASES = buildMenuAllergenAliases();
 
   studio.core = {
     parseLines,
     cloneData,
     parsePairs,
+    menuAllergens: MENU_ALLERGENS,
     serializeMenuItems,
     parseMenuItems,
     normalizeMenuItems,
     normalizeMenuItem,
+    normalizeMenuAllergens,
+    normalizeMenuAllergenId,
+    getMenuAllergen,
     groupMenuItems,
     isFoodCategory,
     parsePrice,
@@ -70,6 +93,7 @@
         precio: item.price,
         cat: item.category,
         emoji: item.emoji,
+        allergens: item.allergens,
         featured: item.featured
       })),
       null,
@@ -98,8 +122,8 @@
 
     return parseLines(value)
       .map((line, index) => {
-        const [category, name, price, description = "", emoji = "", featured = ""] = line.split("|").map((part) => part.trim());
-        return normalizeMenuItem({ category, name, price, description, emoji, featured }, index);
+        const [category, name, price, description = "", emoji = "", featured = "", allergens = ""] = line.split("|").map((part) => part.trim());
+        return normalizeMenuItem({ category, name, price, description, emoji, featured, allergens }, index);
       })
       .filter((item) => item.name && item.price > 0);
   }
@@ -137,6 +161,7 @@
     const name = textOr(item.name, "");
     const id = textOr(item.id, slugify(`${category}-${name}`) || `plato-${index + 1}`);
     const emoji = textOr(item.emoji ?? item.icon, "🍽");
+    const allergens = normalizeMenuAllergens(item.allergens ?? item.alergenos ?? item.allergenos ?? item.allergensIds ?? item.allergenIds ?? item.traces);
     const featured = item.featured === true
       || item.featured === "true"
       || item.featured === "on"
@@ -153,8 +178,115 @@
       description,
       desc: description,
       emoji,
+      allergens,
       featured
     };
+  }
+
+  function normalizeMenuAllergens(value = []) {
+    let source = [];
+
+    if (Array.isArray(value)) {
+      source = value;
+    } else if (value && typeof value === "object") {
+      source = [value];
+    } else {
+      const text = String(value || "").trim();
+      if (!text) {
+        return [];
+      }
+
+      if (text.startsWith("[")) {
+        try {
+          return normalizeMenuAllergens(JSON.parse(text));
+        } catch (error) {
+          return [];
+        }
+      }
+
+      source = text.split(/\s*[,;|]\s*/).filter(Boolean);
+    }
+
+    const selected = new Set(source.map(normalizeMenuAllergenId).filter(Boolean));
+    return MENU_ALLERGENS.map((allergen) => allergen.id).filter((id) => selected.has(id));
+  }
+
+  function normalizeMenuAllergenId(value) {
+    const raw = value && typeof value === "object"
+      ? value.id ?? value.allergen ?? value.key ?? value.label ?? value.name
+      : value;
+    const key = menuAllergenAliasKey(raw);
+    return MENU_ALLERGEN_ALIASES[key] || (MENU_ALLERGEN_IDS.has(key) ? key : "");
+  }
+
+  function getMenuAllergen(value) {
+    const id = normalizeMenuAllergenId(value);
+    return MENU_ALLERGENS.find((allergen) => allergen.id === id) || null;
+  }
+
+  function buildMenuAllergenAliases() {
+    const aliases = {};
+    const add = (alias, id) => {
+      const key = menuAllergenAliasKey(alias);
+      if (key && MENU_ALLERGEN_IDS.has(id)) {
+        aliases[key] = id;
+      }
+    };
+
+    MENU_ALLERGENS.forEach((allergen) => {
+      add(allergen.id, allergen.id);
+      add(allergen.label, allergen.id);
+      add(allergen.symbol, allergen.id);
+    });
+
+    Object.entries({
+      "cereales": "gluten",
+      "cereales con gluten": "gluten",
+      "trigo": "gluten",
+      "centeno": "gluten",
+      "cebada": "gluten",
+      "avena": "gluten",
+      "espelta": "gluten",
+      "kamut": "gluten",
+      "crustaceo": "crustaceos",
+      "marisco": "crustaceos",
+      "mariscos": "crustaceos",
+      "huevo": "huevos",
+      "egg": "huevos",
+      "fish": "pescado",
+      "cacahuete": "cacahuetes",
+      "mani": "cacahuetes",
+      "soya": "soja",
+      "lactosa": "leche",
+      "lacteo": "leche",
+      "lacteos": "leche",
+      "frutos secos": "frutos-cascara",
+      "fruto seco": "frutos-cascara",
+      "frutos con cascara": "frutos-cascara",
+      "nueces": "frutos-cascara",
+      "almendras": "frutos-cascara",
+      "avellanas": "frutos-cascara",
+      "pistachos": "frutos-cascara",
+      "ajonjoli": "sesamo",
+      "dioxido de azufre": "sulfitos",
+      "dioxido de azufre y sulfitos": "sulfitos",
+      "so2": "sulfitos",
+      "sulphites": "sulfitos",
+      "sulfites": "sulfitos",
+      "altramuz": "altramuces",
+      "lupino": "altramuces",
+      "lupin": "altramuces",
+      "molusco": "moluscos"
+    }).forEach(([alias, id]) => add(alias, id));
+
+    return aliases;
+  }
+
+  function menuAllergenAliasKey(value) {
+    return normalizeText(value)
+      .replace(/&/g, " y ")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
   }
 
   function groupMenuItems(items = []) {
@@ -279,8 +411,63 @@
 
     return {
       title: text,
-      body: "Presentado con texto breve, visual y enfocado a que el cliente de el siguiente paso."
+      body: serviceBodyForTitle(text)
     };
+  }
+
+  function serviceBodyForTitle(value) {
+    const title = textOr(value, "Servicio");
+    const key = normalizeText(title);
+    const exact = {
+      "carta y especialidades": "Platos de temporada, raciones para compartir y sugerencias de la casa explicadas sin rodeos.",
+      "reservas": "Escribenos con dia, hora y numero de personas; te confirmamos la mesa en cuanto revisemos disponibilidad.",
+      "menus para grupos": "Preparamos menus cerrados para comidas de empresa, cumpleanos y reuniones con antelacion.",
+      "eventos": "Abrimos el espacio para celebraciones privadas, copas y reuniones con menu acordado.",
+      "opciones especiales": "Si vienes con alergias o preferencias, avisanos y te orientamos con la carta.",
+      "primera consulta": "Revisamos tu caso con calma y te indicamos el siguiente paso antes de empezar cualquier tratamiento.",
+      "tratamientos y especialidades": "Te explicamos cada tratamiento, duracion aproximada y cuidados necesarios antes de reservar.",
+      "tratamientos": "Trabajamos el tratamiento que necesitas con diagnostico previo y seguimiento cercano.",
+      "seguimiento": "Acompanamos la evolucion con revisiones claras y pautas faciles de seguir en casa.",
+      "cita previa": "Reserva tu hora por telefono o WhatsApp y ven sin esperas innecesarias.",
+      "atencion personalizada": "Te atendemos con tiempo, escuchando lo que necesitas y ajustando el servicio a tu caso.",
+      "corte y peinado": "Corte adaptado a tu pelo, tu rutina y el acabado que quieres llevar cada dia.",
+      "coloracion": "Color, mechas o matiz con prueba de tono y cuidado para mantener el brillo.",
+      "novias y eventos": "Peinados y preparacion para bodas, fiestas y citas senaladas con reserva anticipada.",
+      "reserva de cita": "Mandanos el servicio que quieres y buscamos el hueco que mejor encaje contigo.",
+      "mantenimiento": "Revisamos puntos clave del vehiculo y te avisamos antes de hacer cualquier trabajo extra.",
+      "diagnostico": "Comprobamos la averia con herramientas de taller y te damos una explicacion clara.",
+      "reparaciones": "Trabajamos frenos, motor, electricidad y desgaste habitual con presupuesto previo.",
+      "neumaticos": "Cambio, equilibrado y revision de presion segun uso, medida y temporada.",
+      "presupuesto sin compromiso": "Cuentanos que necesitas y te orientamos con precio y plazo antes de empezar.",
+      "venta de propiedades": "Preparamos la vivienda, filtramos visitas y acompanamos la venta hasta la firma.",
+      "alquiler": "Gestionamos visitas, documentacion y condiciones para alquilar con tranquilidad.",
+      "valoracion": "Valoramos tu inmueble con datos de la zona y estado real de la vivienda.",
+      "captacion": "Si quieres vender, revisamos tu caso y te decimos como podemos ayudarte.",
+      "asesoramiento": "Resolvemos dudas de precio, plazos y documentacion antes de tomar una decision.",
+      "servicio principal": "Cuida lo que necesitas con atencion directa, explicacion clara y trato cercano.",
+      "presupuesto": "Te damos una orientacion de precio y plazo antes de confirmar el encargo.",
+      "contacto directo": "Llama o escribe por WhatsApp y te respondemos en cuanto estemos disponibles."
+    };
+
+    if (exact[key]) return exact[key];
+    if (key.includes("carta") || key.includes("menu")) return "Consulta platos, precios y sugerencias antes de venir o pedir para llevar.";
+    if (key.includes("reserva") || key.includes("cita")) return "Escribenos con el dia que prefieres y te confirmamos disponibilidad cuanto antes.";
+    if (key.includes("grupo")) return "Organizamos mesas y menus para grupos con aviso previo y trato directo.";
+    if (key.includes("whatsapp")) return "Mandanos los datos por WhatsApp y te respondemos con la opcion mas practica.";
+    if (key.includes("delivery") || key.includes("recoger") || key.includes("pedido")) return "Preparamos tu pedido para recoger o enviar segun disponibilidad del dia.";
+    if (key.includes("stock")) return "Consultanos disponibilidad antes de desplazarte y te confirmamos si lo tenemos en tienda.";
+    if (key.includes("color") || key.includes("balayage")) return "Revisamos tu base, el tono que buscas y el mantenimiento antes de aplicar color.";
+    if (key.includes("impres") || key.includes("copia")) return "Imprimimos en blanco y negro o color, con opciones para trabajos, apuntes y oficina.";
+
+    return `Trabajamos ${title.toLowerCase()} con atencion directa, tiempos claros y cuidado en cada detalle.`;
+  }
+
+  function normalizeText(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
   }
 
   function normalizeImage(value, fallback) {

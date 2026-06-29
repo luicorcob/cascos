@@ -618,7 +618,7 @@ function renderBookings(model) {
   const calendar = renderBookingCalendar(model);
 
   if (!model.bookings.length) {
-    container.innerHTML = `${form}${agendaTools}${calendar}${emptyState("Sin reservas", "Crea una cita manual o usa el endpoint publico para recibir reservas desde la web.")}`;
+    container.innerHTML = `${form}${agendaTools}${calendar}${emptyState("Sin reservas", "Crea una cita manual o usa el endpoint publico para recibir reservas.")}`;
     return;
   }
 

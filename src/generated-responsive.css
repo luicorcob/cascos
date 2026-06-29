@@ -884,14 +884,44 @@ body:has(> .generated-site) {
   }
 
   .generated-site .menu-item {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 12px;
-    padding: 18px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 12px 13px;
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .generated-site .menu-item-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.18rem;
+  }
+
+  .generated-site .menu-item h4 {
+    font-size: clamp(1.18rem, 8vw, 1.55rem);
+    line-height: 1.12;
+  }
+
+  .generated-site .menu-item p {
+    max-width: none;
+    font-size: 0.9rem;
+    line-height: 1.52;
+  }
+
+  .generated-site .menu-allergen-list {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .generated-site .menu-allergen-badge {
+    width: 32px;
+    height: 32px;
   }
 
   .generated-site .menu-price {
     grid-column: 2;
     justify-self: start;
+    padding-top: 2px;
+    font-size: 0.9rem;
   }
 
   .generated-site .menu-section-separator {
@@ -957,4 +987,153 @@ body:has(> .generated-site) {
   border: 1px solid color-mix(in srgb, var(--on-accent), transparent 72%);
   background: var(--accent);
   color: var(--on-accent);
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-dish-grid {
+  grid-template-columns: 1fr;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-item {
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 12px 13px;
+  min-height: 0;
+  padding: 16px;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-item.is-featured {
+  grid-column: auto;
+  min-height: 0;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-item-icon {
+  width: 38px;
+  height: 38px;
+  font-size: 1.18rem;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-item h4 {
+  font-size: clamp(1.18rem, 8vw, 1.55rem);
+  line-height: 1.12;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-item p {
+  max-width: none;
+  font-size: 0.9rem;
+  line-height: 1.52;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-allergen-list {
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-allergen-badge {
+  width: 32px;
+  height: 32px;
+}
+
+.device-frame[data-size="mobile"] .site-preview .generated-site .menu-price {
+  grid-column: 2;
+  justify-self: start;
+  padding-top: 2px;
+  font-size: 0.9rem;
+}
+
+.site-preview .preview-floating-layer > .conversion-dock,
+.site-preview > .preview-floating-layer > .conversion-dock,
+.site-preview .conversion-dock,
+.conversion-dock {
+  border: 1px solid rgba(23, 21, 19, 0.2) !important;
+  background: #fffaf0 !important;
+  box-shadow: 0 18px 52px rgba(23, 21, 19, 0.28) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.site-preview .preview-floating-layer > .conversion-dock a,
+.site-preview > .preview-floating-layer > .conversion-dock a,
+.site-preview .conversion-dock a,
+.conversion-dock a {
+  min-height: 44px !important;
+  border: 1px solid rgba(23, 21, 19, 0.22) !important;
+  border-radius: calc(var(--site-radius, 8px) - 2px) !important;
+  background: #171513 !important;
+  color: #fffaf0 !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22) !important;
+  font-weight: 950 !important;
+  opacity: 1 !important;
+}
+
+.generated-site[data-primary-button-custom="true"] .primary-site-action,
+.generated-site .primary-site-action,
+.site-preview .generated-site .primary-site-action,
+.site-preview .preview-floating-layer > .conversion-dock a:first-child,
+.site-preview > .preview-floating-layer > .conversion-dock a:first-child,
+.site-preview .conversion-dock a:first-child,
+.conversion-dock a:first-child {
+  border-color: rgba(255, 250, 240, 0.38) !important;
+  background: linear-gradient(135deg, var(--accent, #cf3f2e), color-mix(in srgb, var(--accent, #cf3f2e), #171513 24%)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--accent, #cf3f2e), transparent 60%) !important;
+  opacity: 1 !important;
+}
+
+.site-preview .preview-floating-layer > .chatbot-widget,
+.site-preview > .preview-floating-layer > .chatbot-widget,
+.site-preview .chatbot-widget,
+.chatbot-widget {
+  --chatbot-surface: #fffaf0;
+  --chatbot-card: #ffffff;
+  --chatbot-ink: #171513;
+  --chatbot-muted: #5f574f;
+  --chatbot-line: rgba(23, 21, 19, 0.18);
+}
+
+.site-preview .preview-floating-layer > .chatbot-widget .chatbot-launcher,
+.site-preview > .preview-floating-layer > .chatbot-widget .chatbot-launcher,
+.site-preview .chatbot-launcher,
+.chatbot-launcher {
+  border: 1px solid rgba(255, 250, 240, 0.28) !important;
+  background: linear-gradient(135deg, #171513, color-mix(in srgb, var(--accent, #cf3f2e), #171513 58%)) !important;
+  color: #fffaf0 !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent, #cf3f2e), #ffffff 18%),
+    0 18px 48px rgba(0, 0, 0, 0.38) !important;
+  opacity: 1 !important;
+}
+
+.site-preview .preview-floating-layer > .chatbot-widget .chatbot-launcher small,
+.site-preview > .preview-floating-layer > .chatbot-widget .chatbot-launcher small,
+.site-preview .chatbot-launcher small,
+.chatbot-launcher small {
+  color: rgba(255, 250, 240, 0.78);
+}
+
+.site-preview .preview-floating-layer > .chatbot-widget .chatbot-panel,
+.site-preview > .preview-floating-layer > .chatbot-widget .chatbot-panel,
+.site-preview .chatbot-panel,
+.chatbot-panel {
+  border: 1px solid var(--chatbot-line, rgba(23, 21, 19, 0.18)) !important;
+  background: var(--chatbot-surface, #fffaf0) !important;
+  color: var(--chatbot-ink, #171513) !important;
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.46) !important;
+  opacity: 1 !important;
+}
+
+.site-preview .chatbot-header,
+.site-preview .chatbot-messages,
+.site-preview .chatbot-prompts,
+.site-preview .chatbot-form {
+  background: var(--chatbot-surface, #fffaf0) !important;
+}
+
+.site-preview .chat-message.is-bot,
+.site-preview .chatbot-prompts button,
+.site-preview .chatbot-form input,
+.chat-message.is-bot,
+.chatbot-prompts button,
+.chatbot-form input {
+  border-color: var(--chatbot-line, rgba(23, 21, 19, 0.18)) !important;
+  background: var(--chatbot-card, #ffffff) !important;
+  color: var(--chatbot-ink, #171513) !important;
 }

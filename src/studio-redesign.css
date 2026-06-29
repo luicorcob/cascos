@@ -2150,120 +2150,159 @@ textarea:focus-visible {
 }
 
 .store-product {
-  width: 58px;
-  height: 68px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 60px;
+  height: 72px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.74) 0 8px, transparent 9px),
-    linear-gradient(180deg, rgba(255, 177, 27, 0.78), rgba(255, 47, 116, 0.34)),
-    rgba(9, 10, 18, 0.82);
-  box-shadow: 0 0 24px rgba(255, 177, 27, 0.3);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 28%),
+    linear-gradient(135deg, rgba(255, 177, 27, 0.82), rgba(255, 47, 116, 0.4)),
+    rgba(9, 10, 18, 0.86);
+  box-shadow:
+    0 0 24px rgba(255, 177, 27, 0.26),
+    inset 0 -22px 32px rgba(9, 10, 18, 0.28);
+  overflow: hidden;
   animation: introProductPass 3.1s ease-in-out infinite;
 }
 
+.store-product::before,
+.store-product::after {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  content: "";
+}
+
+.store-product::before {
+  top: 12px;
+  height: 24px;
+  border-radius: 5px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent),
+    rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.store-product::after {
+  bottom: 12px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.54);
+  box-shadow:
+    0 -10px 0 -1px rgba(255, 255, 255, 0.3),
+    22px 0 0 -1px rgba(24, 217, 255, 0.5);
+}
+
 .store-product-a {
-  top: 18px;
+  top: 16px;
   right: 112px;
 }
 
 .store-product-b {
-  top: 40px;
+  top: 38px;
   right: 64px;
   animation-delay: 0.42s;
 }
 
 .store-product-c {
-  top: 26px;
+  top: 24px;
   right: 16px;
   animation-delay: 0.84s;
 }
 
 .store-scan {
-  top: 12px;
-  right: 8px;
-  width: 174px;
+  top: 18px;
+  right: 10px;
+  width: 176px;
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, transparent, #ffffff, #18d9ff, transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.86), #18d9ff, transparent);
   box-shadow:
-    0 0 20px #18d9ff,
-    0 80px 0 rgba(24, 217, 255, 0.16);
+    0 0 18px rgba(24, 217, 255, 0.72),
+    0 78px 0 rgba(24, 217, 255, 0.12);
   animation: introStoreScan 1.85s ease-in-out infinite;
 }
 
 .store-checkout {
   right: 12px;
   bottom: 10px;
-  width: 154px;
-  height: 10px;
-  border-radius: 999px;
+  width: 156px;
+  height: 18px;
+  border-radius: 6px;
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 10px, transparent 10px 19px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 22px, transparent 22px 30px, rgba(255, 255, 255, 0.16) 30px 42px, transparent 42px 50px),
+    linear-gradient(90deg, rgba(24, 217, 255, 0.24), rgba(255, 47, 116, 0.18)),
     rgba(255, 255, 255, 0.06);
-  box-shadow: 0 0 18px rgba(255, 47, 116, 0.28);
+  box-shadow:
+    0 0 18px rgba(255, 47, 116, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .pitch-bars {
-  right: 24px;
-  bottom: 12px;
-  width: 130px;
-  height: 96px;
+  right: 20px;
+  bottom: 16px;
+  width: 142px;
+  height: 98px;
   background:
-    linear-gradient(180deg, transparent 60%, rgba(255, 138, 24, 0.86) 60%),
-    linear-gradient(180deg, transparent 42%, rgba(255, 47, 207, 0.76) 42%),
-    linear-gradient(180deg, transparent 24%, rgba(24, 217, 255, 0.78) 24%);
-  background-position: 8px 0, 52px 0, 96px 0;
-  background-size: 28px 100%;
+    linear-gradient(180deg, transparent 62%, rgba(255, 138, 24, 0.88) 62%),
+    linear-gradient(180deg, transparent 42%, rgba(255, 47, 207, 0.78) 42%),
+    linear-gradient(180deg, transparent 26%, rgba(24, 217, 255, 0.78) 26%);
+  background-position: 10px 0, 58px 0, 106px 0;
+  background-size: 34px 100%;
   background-repeat: no-repeat;
-  filter: drop-shadow(0 0 18px rgba(255, 47, 207, 0.38));
+  filter: drop-shadow(0 0 16px rgba(255, 47, 207, 0.34));
   animation: introBarsRise 2.8s ease-in-out infinite;
 }
 
 .pitch-line {
   right: 14px;
-  bottom: 26px;
-  width: 164px;
-  height: 86px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
-  border-left: 2px solid rgba(255, 255, 255, 0.12);
+  bottom: 16px;
+  width: 170px;
+  height: 112px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 100% 28px, 42px 100%;
+  opacity: 0.88;
 }
 
 .pitch-line::before {
   position: absolute;
-  inset: 8px 0 0 8px;
-  background: linear-gradient(135deg, transparent 0 27%, #ff8a18 28% 30%, transparent 31% 47%, #ff2fcf 48% 50%, transparent 51% 67%, #18d9ff 68% 70%, transparent 71%);
-  filter: drop-shadow(0 0 10px rgba(255, 47, 207, 0.65));
-  clip-path: inset(0 100% 0 0);
+  inset: 14px 8px 20px 10px;
+  background: linear-gradient(90deg, #ff8a18, #ff2fcf 54%, #18d9ff);
+  clip-path: polygon(0 72%, 28% 54%, 49% 60%, 74% 28%, 100% 12%, 100% 18%, 74% 34%, 49% 66%, 28% 60%, 0 78%);
+  filter: drop-shadow(0 0 8px rgba(24, 217, 255, 0.58));
   content: "";
-  animation: introPitchTrace 2.45s ease-in-out infinite;
+  animation: introPitchGlow 2.45s ease-in-out infinite;
 }
 
 .pitch-node {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ffffff;
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
   box-shadow:
-    0 0 12px #ffffff,
-    0 0 24px var(--destination-b);
+    0 0 10px rgba(255, 255, 255, 0.55),
+    0 0 18px var(--destination-b);
   animation: introNodePulse 2s ease-in-out infinite;
 }
 
 .pitch-node-a {
-  right: 122px;
-  top: 74px;
+  right: 126px;
+  top: 82px;
 }
 
 .pitch-node-b {
-  right: 74px;
-  top: 46px;
+  right: 78px;
+  top: 54px;
   animation-delay: 0.42s;
 }
 
 .pitch-node-c {
-  right: 26px;
-  top: 22px;
+  right: 30px;
+  top: 28px;
   animation-delay: 0.84s;
 }
 
@@ -2466,15 +2505,16 @@ textarea:focus-visible {
   }
 }
 
-@keyframes introPitchTrace {
+@keyframes introPitchGlow {
   0%,
-  18% {
-    clip-path: inset(0 100% 0 0);
+  100% {
+    opacity: 0.72;
+    filter: drop-shadow(0 0 7px rgba(24, 217, 255, 0.44));
   }
 
-  72%,
-  100% {
-    clip-path: inset(0 0 0 0);
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(255, 47, 207, 0.62));
   }
 }
 
@@ -3940,12 +3980,123 @@ input[type="color"] {
 }
 
 .menu-product-desc,
-.menu-product-featured {
+.menu-product-featured,
+.menu-product-allergens {
   grid-column: 1 / -1;
 }
 
 .menu-product-featured {
   margin-top: 2px;
+}
+
+.menu-product-allergens {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #e0e4df;
+  border-radius: 5px;
+  background: #f7faf8;
+}
+
+.menu-product-allergens legend {
+  padding: 0 5px;
+  color: #59635d;
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.menu-allergen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.menu-allergen-option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px;
+  border: 1px solid #dfe5df;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #38413b;
+  cursor: pointer;
+}
+
+.menu-allergen-option:has(input:checked) {
+  border-color: #16866f;
+  background: #eaf7f2;
+  color: #116b59;
+}
+
+.menu-allergen-option input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.menu-allergen-symbol {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 3px;
+  border: 1px solid #cfd8d2;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #116b59;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.menu-allergen-symbol .menu-allergen-icon,
+.menu-product-allergen-list .menu-allergen-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.menu-allergen-label {
+  overflow: hidden;
+  min-width: 0;
+  color: inherit;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-product-allergen-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.menu-product-allergen-list .menu-allergen-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 3px;
+  border: 1px solid #bfd2ca;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #116b59;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .menu-save-button {
@@ -3958,7 +4109,8 @@ input[type="color"] {
   .menu-admin-head,
   .menu-product-modal-head,
   .menu-product-row,
-  .menu-product-form-grid {
+  .menu-product-form-grid,
+  .menu-allergen-grid {
     grid-template-columns: 1fr;
   }
 

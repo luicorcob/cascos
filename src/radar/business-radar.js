@@ -706,16 +706,16 @@
     const services = serviceSuggestions(category);
     const sourceLabel = business.sourceLabel || (business.provider === "places" ? "Google Places" : "OpenStreetMap");
     const reputationFeature = business.rating
-      ? `Reputación local: ${business.rating.toFixed(1)} estrellas y ${business.reviews} reseñas`
-      : `Presencia verificada en ${sourceLabel}`;
+      ? `Valoracion de clientes: ${business.rating.toFixed(1)} estrellas y ${business.reviews} resenas`
+      : `Estamos localizados en ${sourceLabel}`;
     return {
       name: business.name,
       category: business.category,
       location: business.city,
       tagline: brief.suggestedPositioning,
-      description: `${business.name} es un negocio local de ${business.category.toLowerCase()} en ${business.city}. Esta propuesta convierte su reputación local en una experiencia digital clara, fiable y orientada a contacto.`,
-      conversionGoal: `${brief.suggestedCTA} y convertir búsquedas locales en clientes`,
-      announcement: "Nueva web en preparación · propuesta creada desde DLS Radar",
+      description: `En ${business.name} te atendemos en ${business.city} con servicios de ${business.category.toLowerCase()} y contacto directo para resolver lo que necesitas.`,
+      conversionGoal: `${brief.suggestedCTA} y atender consultas de ${business.city}`,
+      announcement: `Ya puedes contactar con ${business.name} para consultar horario, ubicacion y disponibilidad.`,
       phone: business.phone,
       email: "",
       address: business.address,
@@ -723,9 +723,9 @@
       services,
       features: [
         reputationFeature,
-        "Contacto y ubicación visibles desde cualquier dispositivo",
-        `${brief.suggestedCTA} como acción principal de la experiencia`,
-        "Contenido preparado para posicionamiento y confianza local"
+        `Estamos en ${business.city} y te indicamos como llegar`,
+        `${brief.suggestedCTA} con respuesta directa del equipo`,
+        "Servicios, horario y contacto explicados con claridad"
       ],
       testimonials: [],
       trustBadges: business.rating ? [`${business.rating.toFixed(1)} en Google`, `${business.reviews} reseñas locales`, "Contacto directo", `Ubicación en ${business.city}`] : [`Ficha en ${sourceLabel}`, "Ubicación real", `Presencia en ${business.city}`],
@@ -762,12 +762,48 @@
   }
 
   function serviceSuggestions(category) {
-    if (includesAny(category, ["restaurant", "bar", "cafe", "cafeteria"])) return ["Carta y especialidades", "Reservas", "Menús para grupos", "Eventos", "Opciones especiales"];
-    if (includesAny(category, ["clinic", "clinica", "dentist", "dentista"])) return ["Primera consulta", "Tratamientos y especialidades", "Seguimiento", "Cita previa", "Atención personalizada"];
-    if (includesAny(category, ["hairdresser", "peluqueria"])) return ["Corte y peinado", "Coloración", "Tratamientos", "Eventos", "Reserva de cita"];
-    if (includesAny(category, ["workshop", "taller"])) return ["Mantenimiento", "Diagnóstico", "Reparaciones", "Neumáticos", "Presupuesto sin compromiso"];
-    if (includesAny(category, ["real_estate", "inmobiliaria"])) return ["Venta de propiedades", "Alquiler", "Valoración", "Captación", "Asesoramiento"];
-    return ["Servicio principal", "Atención personalizada", "Presupuesto", "Asesoramiento", "Contacto directo"];
+    if (includesAny(category, ["restaurant", "bar", "cafe", "cafeteria"])) return [
+      "Carta y especialidades: platos principales, sugerencias de temporada y opciones para compartir.",
+      "Reservas: mesas por telefono o WhatsApp con dia, hora y numero de personas.",
+      "Menus para grupos: propuesta cerrada para celebraciones, empresa o reuniones familiares.",
+      "Eventos: espacio y servicio para comidas, copas o encuentros privados con aviso previo.",
+      "Opciones especiales: alternativas para alergias o preferencias si avisas al reservar."
+    ];
+    if (includesAny(category, ["clinic", "clinica", "dentist", "dentista"])) return [
+      "Primera consulta: valoracion inicial con explicacion clara del siguiente paso.",
+      "Tratamientos y especialidades: atencion por area con duracion y cuidados indicados antes de reservar.",
+      "Seguimiento: revisiones para comprobar evolucion y ajustar recomendaciones.",
+      "Cita previa: reserva por telefono o WhatsApp para evitar esperas.",
+      "Atencion personalizada: trato cercano desde recepcion hasta la salida."
+    ];
+    if (includesAny(category, ["hairdresser", "peluqueria"])) return [
+      "Corte y peinado: estilo adaptado a tu pelo, rutina y acabado deseado.",
+      "Coloracion: tono, matiz o balayage con asesoramiento antes de aplicar.",
+      "Tratamientos: hidratacion, brillo y reparacion segun el estado del cabello.",
+      "Novias y eventos: preparacion con cita reservada y referencias previas.",
+      "Reserva de cita: dinos servicio y disponibilidad para buscar hueco."
+    ];
+    if (includesAny(category, ["workshop", "taller"])) return [
+      "Mantenimiento: revision de puntos clave y aviso antes de cualquier trabajo extra.",
+      "Diagnostico: localizacion de averias con explicacion clara del problema.",
+      "Reparaciones: trabajos de mecanica, electricidad y desgaste habitual con presupuesto previo.",
+      "Neumaticos: cambio, equilibrado y revision de presion segun medida.",
+      "Presupuesto sin compromiso: orientacion de precio y plazo antes de confirmar."
+    ];
+    if (includesAny(category, ["real_estate", "inmobiliaria"])) return [
+      "Venta de propiedades: acompanamiento desde la valoracion hasta la firma.",
+      "Alquiler: visitas, documentacion y condiciones explicadas con claridad.",
+      "Valoracion: precio orientativo segun zona, estado y demanda.",
+      "Captacion: revision de tu vivienda para decidir como ponerla en mercado.",
+      "Asesoramiento: dudas de plazos, impuestos y documentacion antes de decidir."
+    ];
+    return [
+      "Servicio principal: atencion directa para resolver lo que necesitas.",
+      "Atencion personalizada: escuchamos tu caso y te orientamos sin rodeos.",
+      "Presupuesto: precio y plazo claros antes de empezar.",
+      "Asesoramiento: recomendaciones practicas segun tu situacion.",
+      "Contacto directo: llama o escribe por WhatsApp y te respondemos cuanto antes."
+    ];
   }
 
   function showState(next) {

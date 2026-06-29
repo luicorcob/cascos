@@ -31,7 +31,7 @@ const demoBusiness = {
   features: ["Atencion: Cercana"],
   hours: ["Lunes a viernes: 10:00-20:00"],
   testimonials: [{ name: "Ana", text: "Muy bien" }],
-  faqs: [{ question: "Como reservo?", answer: "Desde la web." }],
+  faqs: [{ question: "Como reservo?", answer: "Escribenos por WhatsApp." }],
   trustBadges: ["Profesionales"],
   links: [{ label: "Instagram", url: "https://example.com" }],
   gallery: ["https://example.com/1.jpg"],
@@ -173,7 +173,7 @@ assert.match(html, /data-edit-link-list="links" data-edit-index="0"/);
 assert.match(html, /data-section-key="services"/);
 assert.match(html, /servicios explicados/);
 assert.match(html, /resenas en Google/);
-assert.match(html, /reservar desde la web/);
+assert.match(html, /reservar aqui/);
 assert.doesNotMatch(html, /momentos visuales|abierto digitalmente|CTA directo activo|Asistente instantaneo|Captura de leads|Galeria preparada|Animacion premium|Mobile first|Carga rapida|SEO local/);
 
 const generatedTrustHtml = renderer.renderSite({
@@ -183,6 +183,24 @@ const generatedTrustHtml = renderer.renderSite({
 assert.match(generatedTrustHtml, /Reserva online visible/);
 assert.match(generatedTrustHtml, /Dudas frecuentes resueltas/);
 assert.match(generatedTrustHtml, /Formulario de contacto/);
+
+const menuHtml = renderer.renderSite({
+  ...demoBusiness,
+  showMenu: true,
+  menuItems: core.normalizeMenuItems([
+    {
+      category: "Entrantes",
+      name: "Croqueta",
+      price: 3.5,
+      description: "Bechamel lenta",
+      allergens: ["gluten", "leche"]
+    }
+  ])
+});
+assert.match(menuHtml, /class="menu-allergen-list"/);
+assert.match(menuHtml, /class="menu-allergen-icon"/);
+assert.match(menuHtml, /IconoAlergenoGluten-Gluten_icon-icons\.com_67600\.png/);
+assert.match(menuHtml, /aria-label="Leche \/ lactosa"/);
 
 for (const heroVariant of ["cinematic", "split", "collage", "oval", "minimal"]) {
   const variantHtml = renderer.renderSite({

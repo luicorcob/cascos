@@ -21,6 +21,8 @@
     } = dependencies;
     const {
       groupMenuItems,
+      normalizeMenuAllergens = () => [],
+      getMenuAllergen = () => null,
       formatMoney,
       splitTitleBody,
       textOr,
@@ -414,7 +416,7 @@
                 ${bookingButton}
                 <a class="ghost-link magnetic" href="#contacto">Ver contacto</a>
               </div>
-              <div class="hero-conversion reveal" aria-label="Resumen de conversion">
+              <div class="hero-conversion reveal" aria-label="Resumen del negocio">
                 <span ${fieldTextAttrs(business, "conversionGoal")}>${escapeHtml(business.conversionGoal)}</span>
                 ${google.enabled && google.rating ? `<strong>${escapeHtml(Number(google.rating).toFixed(1))}/5 Google</strong>` : `<strong>${escapeHtml(services.length)} servicios</strong>`}
               </div>
@@ -638,6 +640,7 @@
                         <div class="menu-item-copy">
                           <h4>${escapeHtml(item.name)}</h4>
                           ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
+                          ${renderMenuAllergenBadges(item.allergens)}
                           ${item.featured ? '<span class="menu-featured-label">Destacado</span>' : ""}
                         </div>
                         <strong class="menu-price">${escapeHtml(formatMoney(item.price, business.menuCurrency))}</strong>
@@ -649,6 +652,30 @@
             </div>
           </div>
         </section>
+      `;
+    }
+
+    function renderMenuAllergenBadges(value) {
+      const allergens = normalizeMenuAllergens(value)
+        .map((id) => getMenuAllergen(id))
+        .filter(Boolean);
+
+      if (!allergens.length) {
+        return "";
+      }
+
+      const label = allergens.map((allergen) => allergen.label).join(", ");
+      return `
+        <div class="menu-allergen-list" aria-label="Alergenos: ${escapeAttr(label)}">
+          ${allergens.map((allergen) => `
+            <span class="menu-allergen-badge" title="${escapeAttr(allergen.label)}" aria-label="${escapeAttr(allergen.label)}">
+              ${allergen.icon
+                ? `<img class="menu-allergen-icon" src="${escapeAttr(allergen.icon)}" alt="" loading="lazy">`
+                : `<span aria-hidden="true">${escapeHtml(allergen.symbol)}</span>`}
+              <span class="sr-only">${escapeHtml(allergen.label)}</span>
+            </span>
+          `).join("")}
+        </div>
       `;
     }
 
@@ -1047,7 +1074,7 @@
         } : null,
         business.showBooking && business.bookingUrl ? {
           value: "1 clic",
-          label: `${proofActionLabel(business.bookingLabel)} desde la web`
+          label: `${proofActionLabel(business.bookingLabel)} aqui`
         } : null,
         !business.showBooking && business.phone ? {
           value: "Tel.",

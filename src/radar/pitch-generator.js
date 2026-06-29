@@ -5,20 +5,20 @@
     const proof = buildProof(business);
     const value = getCategoryValue(category);
 
-    return `Hola, he visto ${name} en Google Maps y me ha llamado la atención que todavía no tengáis una web propia. ${proof} Una web sencilla con ${value} podría ayudaros a convertir más búsquedas locales en clientes. Puedo prepararos una demo visual sin compromiso.`;
+    return `Hola, he visto ${name} en Google Maps y me ha llamado la atencion que todavia no tengais una web propia. ${proof} Con una pagina sencilla, quien os encuentre podria ver ${value} y contactar sin dar vueltas. Puedo prepararos una demo visual sin compromiso.`;
   }
 
   function getSuggestedPositioning(business = {}) {
     const city = clean(business.city) || "la zona";
     const category = normalize(business.categoryKey || business.category);
     if (includesAny(category, ["restaurant", "restaurante", "bar", "cafe", "cafeteria"])) {
-      return `El lugar de ${city} que convierte búsquedas de “dónde comer” en reservas directas.`;
+      return `Comer bien en ${city}: carta clara, mesa reservada y trato cercano.`;
     }
     if (includesAny(category, ["clinic", "clinica", "dentist", "dentista"])) {
       return `Atención profesional y cercana en ${city}, con servicios claros y cita fácil.`;
     }
     if (includesAny(category, ["hairdresser", "peluqueria", "beauty"])) {
-      return `Resultados que se ven, confianza local y reserva de cita sin fricción.`;
+      return `Peluqueria y belleza en ${city}, con cita facil y resultados cuidados.`;
     }
     if (includesAny(category, ["workshop", "taller"])) {
       return `El taller de confianza en ${city}: servicios transparentes y contacto rápido.`;

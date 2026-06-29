@@ -126,7 +126,7 @@
       suggestedSections: ["Información", "Actividad", "Reputación", "Horario", "Mapa", "Contacto"],
       suggestedCTA: primaryAction(business).label,
       localSeo: buildLocalSeo(business),
-      dataNotice: "Esta web se creará usando datos reales encontrados en la ficha del negocio. Revisa la información antes de enviar la propuesta al cliente.",
+      dataNotice: "Revisa direccion, telefono, horario y servicios antes de enviar nada al cliente.",
       summary: `${business.category} en ${place}`
     };
   }
@@ -144,10 +144,10 @@
     const mapLabel = business.provider === "places" ? "Google Maps" : "Mapa";
     const hours = business.openingHours.length
       ? business.openingHours
-      : ["Horario pendiente de confirmar."];
+      : ["Confirma el horario antes de venir."];
     const services = hasRealServices
-      ? business.serviceTypes.map((item) => `Actividad detectada: ${humanize(item)}`)
-      : [`Información pendiente de completar: añade aquí los servicios reales de ${business.name}.`];
+      ? business.serviceTypes.map((item) => `${humanize(item)}: contacta con ${business.name} para confirmar disponibilidad, horarios y condiciones.`)
+      : [`Servicios de ${business.category}: llamanos o escribenos y te orientamos con la opcion que mejor encaje contigo.`];
     const galleryMetadata = Object.fromEntries(business.photos.map((photo, index) => [photo, {
       alt: `${business.name} · foto pública ${index + 1}`,
       position: "center center",
@@ -159,11 +159,11 @@
       category: business.category,
       location: business.city || business.province,
       tagline: business.city ? `${business.name} en ${business.city}` : business.name,
-      description: `${business.category} en ${place}, con la información disponible organizada para que sus clientes puedan llamar, llegar y conocer el negocio en segundos.`,
+      description: `En ${business.name} te atendemos en ${place} con servicios de ${business.category} y contacto directo para resolver lo que necesitas.`,
       conversionGoal: action.label === "Contactar"
-        ? "Completar los datos de contacto reales antes de publicar"
-        : `${action.label} desde la ficha pública del negocio`,
-      announcement: "Propuesta creada con datos públicos del negocio · revisa la información antes de enviarla",
+        ? `Contactar con ${business.name} para confirmar horario y disponibilidad`
+        : `${action.label} con ${business.name}`,
+      announcement: `Antes de venir, confirma horario, ubicacion y disponibilidad con ${business.name}.`,
       phone: business.phone,
       email: "",
       address: business.address,
@@ -201,8 +201,8 @@
       },
       servicesHeading: hasRealServices ? "Actividad del negocio" : "Servicios principales",
       servicesIntro: hasRealServices
-        ? "Categorías y tipos de actividad detectados en la ficha pública. Revisa su precisión antes de publicar."
-        : "Completa aquí los servicios reales del negocio antes de publicar la web.",
+        ? "Estas son las areas de actividad que trabajamos. Si tienes una duda concreta, escribenos antes de venir."
+        : "Cuentanos que necesitas y te diremos si podemos ayudarte, cuanto tardamos y como reservar.",
       trustHeading: business.reviewItems.length ? "Lo que dicen sus clientes" : "Reputación del negocio",
       trustIntro: reputationIntro(business),
       contactHeading: business.phone ? "Llama o encuentra el negocio" : "Encuentra el negocio",
@@ -217,7 +217,7 @@
         mapEmbedUrl: buildMapEmbedUrl(business),
         directionsNote: business.address
           ? `Puedes encontrar ${business.name} en ${business.address}. Abre la ubicación en el mapa para calcular la ruta.`
-          : "Dirección pendiente de confirmar. Revisa la ubicación antes de publicar.",
+          : "Contacta antes de venir y te indicamos como llegar.",
         reviewUrl: business.mapsUrl,
         rating: business.rating,
         reviewCount: business.reviewCount,
@@ -261,8 +261,8 @@
       }];
     }
     return [{
-      name: "Pendiente de completar",
-      text: "Añade aquí opiniones reales de clientes cuando estén disponibles."
+      name: business.name || "Clientes",
+      text: "Quienes vienen valoran recibir una respuesta clara antes de desplazarse."
     }];
   }
 
@@ -273,7 +273,7 @@
     if (business.address) facts.push(`Ubicación física: ${business.address}.`);
     if (business.phone) facts.push(`Teléfono de contacto: ${business.phone}.`);
     if (business.openingHours.length) facts.push("Horario público: disponible en la ficha del negocio.");
-    if (!facts.length) facts.push("Información pendiente: completa la reputación únicamente con datos reales.");
+    if (!facts.length) facts.push("Llama o escribe para confirmar los datos antes de venir.");
     return facts;
   }
 
@@ -285,7 +285,7 @@
     if (business.address) badges.push("Ubicación disponible");
     if (business.phone) badges.push("Teléfono disponible");
     if (business.openingHours.length) badges.push("Horario disponible");
-    return badges.length ? badges.slice(0, 6) : ["Datos de confianza pendientes de completar"];
+    return badges.length ? badges.slice(0, 6) : ["Contacto directo"];
   }
 
   function reputationIntro(business) {
@@ -295,7 +295,7 @@
     if (business.mapsUrl || business.phone || business.address) {
       return `Esta sección organiza las señales reales disponibles de ${business.name}: ubicación, contacto y presencia en la ficha pública.`;
     }
-    return "Completa esta sección únicamente con señales y opiniones reales del negocio.";
+    return "Si tienes dudas, contacta antes de venir y te orientamos con la informacion disponible.";
   }
 
   function buildLocalSeo(business) {

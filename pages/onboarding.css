@@ -78,10 +78,35 @@ body {
   line-height: 0.94;
 }
 
-.brief-hero p:last-child {
+.brief-hero > p:not(.eyebrow):not(.brief-status) {
   max-width: 620px;
   color: rgba(255, 250, 240, 0.78);
   line-height: 1.7;
+}
+
+.brief-status {
+  max-width: 620px;
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 250, 240, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 250, 240, 0.82);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.brief-status[data-tone="ok"] {
+  border-color: rgba(92, 255, 198, 0.45);
+  background: rgba(92, 255, 198, 0.12);
+  color: #dcfff5;
+}
+
+.brief-status[data-tone="error"] {
+  border-color: rgba(255, 119, 119, 0.55);
+  background: rgba(255, 119, 119, 0.14);
+  color: #fff0f0;
 }
 
 .brief-actions {
@@ -113,6 +138,10 @@ body {
   color: #fffaf0;
 }
 
+.brief-actions button.is-ready {
+  box-shadow: 0 0 0 4px rgba(92, 255, 198, 0.16), 0 18px 50px rgba(11, 188, 233, 0.2);
+}
+
 .brief-form {
   display: grid;
   gap: 18px;
@@ -139,6 +168,35 @@ label {
   color: #6d675e;
   font-size: 0.84rem;
   font-weight: 900;
+}
+
+.field-block {
+  display: grid;
+  gap: 12px;
+}
+
+.two-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+fieldset {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid rgba(23, 21, 19, 0.12);
+  border-radius: 8px;
+  background: rgba(247, 242, 230, 0.68);
+}
+
+legend {
+  padding: 0 6px;
+  color: #171513;
+  font-size: 0.9rem;
+  font-weight: 950;
 }
 
 .brief-form p,
@@ -220,7 +278,7 @@ label {
 }
 
 .google-ops-details[open] summary::after {
-  content: "−";
+  content: "-";
 }
 
 .google-ops-details summary span,
@@ -291,7 +349,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   font-size: 16px;
   border: 1px solid rgba(23, 21, 19, 0.14);
@@ -302,9 +361,18 @@ textarea {
   outline: none;
 }
 
-input {
+input,
+select {
   min-height: 42px;
   padding: 0 12px;
+}
+
+select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #171513 50%), linear-gradient(135deg, #171513 50%, transparent 50%);
+  background-position: calc(100% - 18px) 18px, calc(100% - 12px) 18px;
+  background-repeat: no-repeat;
+  background-size: 6px 6px, 6px 6px;
 }
 
 textarea {
@@ -313,25 +381,226 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   border-color: #cf3f2e;
   box-shadow: 0 0 0 4px rgba(207, 63, 46, 0.12);
 }
 
+[aria-invalid="true"],
+.is-invalid {
+  border-color: #c81e1e !important;
+  box-shadow: 0 0 0 4px rgba(200, 30, 30, 0.12) !important;
+}
+
+.hours-fieldset.is-invalid {
+  outline: 2px solid rgba(200, 30, 30, 0.55);
+  outline-offset: 2px;
+}
+
+.hours-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hours-presets button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(23, 21, 19, 0.14);
+  border-radius: 8px;
+  background: #fffdf6;
+  color: #171513;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.hours-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.hours-head,
+.hours-row {
+  display: grid;
+  grid-template-columns: minmax(86px, 0.9fr) minmax(98px, 1fr) minmax(98px, 1fr) minmax(190px, 1.5fr) minmax(96px, 0.8fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.hours-head {
+  color: #6d675e;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.hours-row {
+  padding: 10px;
+  border: 1px solid rgba(23, 21, 19, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.hours-row strong {
+  color: #171513;
+  font-size: 0.86rem;
+}
+
+.hours-row input[type="time"] {
+  min-height: 38px;
+  padding: 0 8px;
+}
+
+.split-hours {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.closed-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  color: #171513;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.closed-toggle input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.hours-row:has(.closed-toggle input:checked) {
+  opacity: 0.72;
+}
+
 @media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    min-height: auto;
+    background: #ffffff !important;
+    color: #171513 !important;
+  }
+
   .brief-shell {
     display: block;
+    min-height: auto;
   }
 
   .brief-hero {
     position: relative;
+    top: auto;
     height: auto;
+    min-height: 0;
+    padding: 0 0 10mm;
+    overflow: visible;
     color: #171513;
     background: #ffffff;
   }
 
-  .brief-actions {
+  .dls-home img {
+    width: 34px;
+    height: 34px;
+    box-shadow: none;
+  }
+
+  .eyebrow {
+    margin: 12mm 0 4mm;
+    color: #171513;
+  }
+
+  .brief-hero h1 {
+    font-size: 28pt;
+    line-height: 1;
+  }
+
+  .brief-hero > p:not(.eyebrow):not(.brief-status) {
+    color: #34302b;
+  }
+
+  .brief-actions,
+  .brief-status,
+  .hours-presets {
+    display: none !important;
+  }
+
+  .brief-form {
+    display: block;
+    padding: 0;
+  }
+
+  .brief-form section {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    margin: 0 0 7mm;
+    padding: 7mm;
+    border-color: #bdb8b0;
+    background: #ffffff;
+  }
+
+  label,
+  fieldset,
+  .hours-row,
+  .google-ops-guide article {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  fieldset {
+    background: #ffffff;
+  }
+
+  input,
+  textarea,
+  select {
+    min-height: 26px;
+    border-color: #918b83;
+    background: #ffffff !important;
+    color: #171513 !important;
+    box-shadow: none !important;
+  }
+
+  textarea {
+    min-height: 48px;
+  }
+
+  .hours-head,
+  .hours-row {
+    grid-template-columns: 70px 82px 82px minmax(138px, 1fr) 70px;
+    gap: 5px;
+  }
+
+  .hours-row {
+    padding: 6px;
+  }
+
+  .google-ops-details summary {
+    color: #171513;
+    background: #ffffff;
+    border: 1px solid #bdb8b0;
+  }
+
+  .google-ops-details summary small {
+    color: #34302b;
+  }
+
+  .google-ops-details summary::after {
     display: none;
+  }
+
+  .google-ops-guide,
+  .google-ops-guide article {
+    background: #ffffff;
+    border-color: #bdb8b0;
   }
 }
 
@@ -346,9 +615,40 @@ textarea:focus {
     overflow-y: visible;
     scrollbar-gutter: auto;
   }
+
+  .hours-head {
+    display: none;
+  }
+
+  .hours-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hours-row strong,
+  .split-hours,
+  .closed-toggle {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 560px) {
+  .two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .brief-actions {
+    display: grid;
+  }
+
+  .brief-actions button,
+  .brief-actions a {
+    width: 100%;
+  }
+
+  .hours-row {
+    grid-template-columns: 1fr;
+  }
+
   .google-ops-details summary {
     align-items: flex-start;
   }

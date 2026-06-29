@@ -2,10 +2,13 @@ const {
   parseLines,
   cloneData,
   parsePairs,
+  menuAllergens,
   serializeMenuItems,
   parseMenuItems,
   normalizeMenuItems,
   normalizeMenuItem,
+  normalizeMenuAllergens,
+  getMenuAllergen,
   groupMenuItems,
   isFoodCategory,
   parsePrice,
@@ -75,6 +78,7 @@ const {
 
 const STORAGE_KEY = "locallift-studio-business";
 const DRAFT_STORAGE_KEY = "locallift-studio-draft";
+const BRIEF_HANDOFF_STORAGE_KEY = "locallift-studio-brief-handoff";
 const API_RECORD_KEY = "locallift-studio-business-api-record";
 const DATA_VERSION = 6;
 
@@ -131,6 +135,7 @@ const menuProductModalTitle = document.querySelector("#menuProductModalTitle");
 const closeMenuProductModalButton = document.querySelector("#closeMenuProductModalButton");
 const cancelMenuProductButton = document.querySelector("#cancelMenuProductButton");
 const saveMenuProductButton = document.querySelector("#saveMenuProductButton");
+const menuProductAllergens = document.querySelector("#menuProductAllergens");
 const menuCategoryOptions = document.querySelector("#menuCategoryOptions");
 const previewInspectorLinkLabel = document.querySelector("#previewInspectorLinkLabel");
 const previewInspectorLinkUrl = document.querySelector("#previewInspectorLinkUrl");
@@ -155,6 +160,7 @@ const menuProductFields = {
   emoji: document.querySelector("#menuProductEmoji"),
   featured: document.querySelector("#menuProductFeatured")
 };
+let menuProductAllergenFields = [];
 
 let previewObserver;
 const editorHistory = createHistory({ limit: 60, clone: cloneData });
@@ -262,6 +268,13 @@ function init() {
     return;
   }
 
+  const briefLaunchBusiness = consumeBriefHandoff();
+  if (briefLaunchBusiness) {
+    currentBusinessRecord = null;
+    storeApiRecord(null);
+    currentBusiness = briefLaunchBusiness;
+  }
+
   bindTabs();
   bindViewportButtons();
   bindPresetButtons();
@@ -287,6 +300,9 @@ function init() {
   updateHistoryButtons();
   renderFromForm();
   applyLaunchView();
+  if (briefLaunchBusiness) {
+    setStatus(`Brief importado: ${currentBusiness.name}. Web generada y lista para revisar.`);
+  }
   form.addEventListener("input", (event) => {
     if (event.target.closest("#menuProductModal")) {
       return;
@@ -2180,7 +2196,7 @@ function getPreviewTextLabel(element) {
       announcement: "Anuncio superior",
       tagline: "Titular principal",
       description: "Descripcion",
-      conversionGoal: "Objetivo de conversion",
+      conversionGoal: "Objetivo principal",
       servicesHeading: "Titular de servicios",
       servicesIntro: "Intro de servicios",
       trustHeading: "Titular de confianza",
@@ -2316,6 +2332,31 @@ function bindIntroGate() {
       showDestinationHub();
     }
   });
+}
+
+function consumeBriefHandoff() {
+  const params = new URLSearchParams(window.location.search);
+  const fromBrief = ["1", "true", "yes"].includes(String(params.get("fromBrief") || "").toLowerCase());
+
+  if (!fromBrief) {
+    return null;
+  }
+
+  try {
+    const raw = localStorage.getItem(BRIEF_HANDOFF_STORAGE_KEY);
+    localStorage.removeItem(BRIEF_HANDOFF_STORAGE_KEY);
+
+    if (!raw) {
+      setStatus("No se encontro un brief para importar. Se mantiene la demo actual.");
+      return null;
+    }
+
+    const payload = JSON.parse(raw);
+    return normalizeImportedBusiness(payload.business || payload);
+  } catch (error) {
+    setStatus("No se pudo importar el brief. Se mantiene la demo actual.");
+    return null;
+  }
 }
 
 function applyLaunchView() {
@@ -2666,6 +2707,7 @@ function bindMenuProductEditor() {
     return;
   }
 
+  renderMenuProductAllergenOptions();
   setMenuProductFieldsDisabled(true);
 
   addMenuProductButton.addEventListener("click", () => openMenuProductModal());
@@ -2716,13 +2758,16 @@ function renderMenuProductEditor() {
     return;
   }
 
-  menuProductList.innerHTML = menu.map((item) => `
+  menuProductList.innerHTML = menu.map((item) => {
+    const allergenBadges = renderMenuProductAllergenBadges(item.allergens, "menu-product-allergen-list");
+    return `
     <article class="menu-product-row" role="listitem">
       <span class="menu-product-icon" aria-hidden="true">${escapeHtml(item.emoji)}</span>
       <div class="menu-product-copy">
         <h3>${escapeHtml(item.name)}</h3>
         <p>${escapeHtml(item.category)}${item.featured ? " · Destacado" : ""}</p>
         <span>${escapeHtml(item.description)}</span>
+        ${allergenBadges}
       </div>
       <strong class="menu-product-price">${escapeHtml(formatMoney(item.price, form.elements.menuCurrency?.value || "EUR"))}</strong>
       <div class="menu-product-row-actions" aria-label="Acciones de ${escapeAttr(item.name)}">
@@ -2730,7 +2775,8 @@ function renderMenuProductEditor() {
         <button class="menu-icon-button is-danger" type="button" data-menu-action="delete" data-menu-id="${escapeAttr(item.id)}" aria-label="Eliminar ${escapeAttr(item.name)}">×</button>
       </div>
     </article>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function renderMenuCategoryOptions() {
@@ -2744,12 +2790,62 @@ function renderMenuCategoryOptions() {
     .join("");
 }
 
+function renderMenuProductAllergenOptions() {
+  if (!menuProductAllergens) {
+    return;
+  }
+
+  menuProductAllergens.innerHTML = (menuAllergens || []).map((allergen) => `
+    <label class="menu-allergen-option" title="${escapeAttr(allergen.label)}">
+      <input type="checkbox" value="${escapeAttr(allergen.id)}" data-menu-allergen-field disabled>
+      <span class="menu-allergen-symbol" aria-hidden="true">
+        ${allergen.icon
+          ? `<img class="menu-allergen-icon" src="${escapeAttr(allergen.icon)}" alt="" loading="lazy">`
+          : escapeHtml(allergen.symbol)}
+      </span>
+      <span class="menu-allergen-label">${escapeHtml(allergen.label)}</span>
+    </label>
+  `).join("");
+  menuProductAllergenFields = Array.from(menuProductAllergens.querySelectorAll("[data-menu-allergen-field]"));
+}
+
+function renderMenuProductAllergenBadges(value, className = "menu-product-allergen-list") {
+  const allergens = normalizeMenuAllergens(value)
+    .map((id) => getMenuAllergen(id))
+    .filter(Boolean);
+
+  if (!allergens.length) {
+    return "";
+  }
+
+  const label = allergens.map((allergen) => allergen.label).join(", ");
+  return `
+    <div class="${escapeAttr(className)}" aria-label="Alergenos: ${escapeAttr(label)}">
+      ${allergens.map((allergen) => `
+        <span class="menu-allergen-badge" title="${escapeAttr(allergen.label)}" aria-label="${escapeAttr(allergen.label)}">
+          ${allergen.icon
+            ? `<img class="menu-allergen-icon" src="${escapeAttr(allergen.icon)}" alt="" loading="lazy">`
+            : `<span aria-hidden="true">${escapeHtml(allergen.symbol)}</span>`}
+          <span class="sr-only">${escapeHtml(allergen.label)}</span>
+        </span>
+      `).join("")}
+    </div>
+  `;
+}
+
 function syncMenuProductField() {
   setValue("menuItems", serializeMenuItems(menu));
 }
 
+function getMenuProductControls() {
+  return [
+    ...Object.values(menuProductFields),
+    ...menuProductAllergenFields
+  ].filter(Boolean);
+}
+
 function setMenuProductFieldsDisabled(disabled) {
-  Object.values(menuProductFields).forEach((field) => {
+  getMenuProductControls().forEach((field) => {
     if (field) {
       field.disabled = disabled;
     }
@@ -2771,6 +2867,10 @@ function openMenuProductModal(item = null) {
   menuProductFields.category.value = item?.category || item?.cat || "";
   menuProductFields.emoji.value = item?.emoji || "🍽";
   menuProductFields.featured.checked = Boolean(item?.featured);
+  const selectedAllergens = normalizeMenuAllergens(item?.allergens);
+  menuProductAllergenFields.forEach((field) => {
+    field.checked = selectedAllergens.includes(field.value);
+  });
   menuProductModal.scrollIntoView({ behavior: "smooth", block: "start" });
   window.setTimeout(() => menuProductFields.name?.focus(), 120);
 }
@@ -2781,7 +2881,7 @@ function closeMenuProductModal() {
   }
 
   menuProductModal.hidden = true;
-  Object.values(menuProductFields).forEach((field) => {
+  getMenuProductControls().forEach((field) => {
     if (!field) return;
     if (field.type === "checkbox") {
       field.checked = false;
@@ -2819,6 +2919,9 @@ function saveMenuProduct() {
     precio: parsePrice(menuProductFields.price.value),
     cat: menuProductFields.category.value,
     emoji: menuProductFields.emoji.value,
+    allergens: menuProductAllergenFields
+      .filter((field) => field.checked)
+      .map((field) => field.value),
     featured: menuProductFields.featured.checked
   }, menu.length);
   const existingIndex = menu.findIndex((item) => item.id === dish.id);
@@ -3137,7 +3240,7 @@ function mutateQuickAction(action) {
           announcement: `Disponibilidad actualizada esta semana en ${name}.`,
           bookingLabel: "Consultar disponibilidad",
           leadFormCta: "Recibir respuesta",
-          conversionGoal: `Facilitar una decision rapida para ${category} en ${location}`,
+          conversionGoal: `Disponibilidad y contacto directo para ${category} en ${location}`,
           intensity: 50,
           fontScale: 95,
           layoutScale: 95
@@ -3161,7 +3264,7 @@ function mutateQuickAction(action) {
       applyQuickRecipe({
         values: {
           bookingLabel: "Consultar disponibilidad",
-          conversionGoal: `Convertir visitas en reservas para ${name}`,
+          conversionGoal: `Reservas y consultas por WhatsApp para ${name}`,
           leadFormCta: "Consultar disponibilidad",
           intensity: 50,
           fontScale: 95,
@@ -3224,7 +3327,7 @@ function mutateQuickAction(action) {
       if (!form.elements.commerceProducts.value.trim()) {
         setValue("commerceProducts", serializeProducts(demoBusiness.commerce.products));
       }
-      setValue("conversionGoal", `Vender productos online para ${name}`);
+      setValue("conversionGoal", `Compra online y consultas de producto para ${name}`);
       setValue("announcement", "Catalogo disponible con compra online.");
       setChecked("showAnnouncement", true);
     },
@@ -3528,7 +3631,7 @@ function buildDeliveryReport(business) {
     validation,
     title: ready ? "Entrega preparada" : "Entrega no lista",
     summary: ready
-      ? "La web supera los bloqueos criticos y puede exportarse para revision final."
+      ? "La entrega supera los bloqueos criticos y puede exportarse para revision final."
       : "Hay bloqueos o carencias que conviene resolver antes de mandar nada al cliente.",
     nextStep: ready
       ? "Exporta el HTML y guarda el JSON del negocio para poder mantener esta entrega."
@@ -3607,10 +3710,10 @@ function applyFormValidation(validation) {
 function getQualityChecks(business) {
   const checks = [
     { label: "Marca, categoria y ciudad definidas", done: Boolean(business.name && business.category && business.location) },
-    { label: "Objetivo de conversion claro", done: Boolean(business.conversionGoal) },
+    { label: "Objetivo principal claro", done: Boolean(business.conversionGoal) },
     { label: "CTA principal con enlace real", done: Boolean(business.bookingUrl && business.bookingUrl !== "#contacto") },
     { label: "Minimo 3 servicios y 3 fotos", done: business.services.length >= 3 && business.gallery.length >= 3 },
-    { label: "Prueba social y confianza visibles", done: business.testimonials.length >= 2 && business.trustBadges.length >= 2 },
+    { label: "Resenas y confianza visibles", done: business.testimonials.length >= 2 && business.trustBadges.length >= 2 },
     { label: "FAQ preparada para reducir llamadas", done: business.faqs.length >= 2 },
     { label: "Mapa, ruta o resenas visibles", done: Boolean(business.google?.enabled && (business.google.mapsUrl || business.google.mapEmbedUrl || business.google.reviewUrl)) },
     { label: "Chatbot o formulario de lead activo", done: Boolean(business.chatbot?.enabled || business.showLeadForm) },
@@ -4296,11 +4399,11 @@ function generateLocalChatbotReply(message, context, history = []) {
         source: "chatbot",
         leadEndpoint: context.chatbot?.leadEndpoint || ""
       });
-      return `Perfecto. He detectado datos de reserva y los dejo preparados para el negocio.\n\nResumen recibido: ${quickLead.message}\n\n${buildNextStepLine(context)}\n\n${contact}`;
+      return `Perfecto. Hemos recibido los datos de reserva.\n\nResumen recibido: ${quickLead.message}\n\n${buildNextStepLine(context)}\n\n${contact}`;
     }
 
     return business.bookingUrl && business.bookingUrl !== "#contacto"
-      ? `Puedes reservar desde aqui: ${business.bookingUrl}\n\nSi quieres, dime nombre, dia/hora y telefono, y dejo el lead preparado para el negocio.`
+      ? `Puedes reservar desde aqui: ${business.bookingUrl}\n\nSi prefieres, dime nombre, dia, hora y telefono para que podamos responderte con disponibilidad.`
       : `Para reservar, dime nombre, dia/hora y telefono. Tambien puedes contactar directamente:\n${contact}`;
   }
 
@@ -4320,7 +4423,7 @@ function generateLocalChatbotReply(message, context, history = []) {
   if (matchesAny(text, ["servicio", "menu", "carta", "tratamiento", "producto", "precio", "ofrece"])) {
     return context.services.length
       ? `Estos son algunos servicios destacados:\n${context.services.map((item) => `- ${splitTitleBody(item).title}`).join("\n")}\n\n${buildSoftLeadPrompt(context)}\n\n${contact}`
-      : `Todavia no hay servicios detallados en la web. ${contact}`;
+      : `Todavia no hay servicios detallados publicados. ${contact}`;
   }
 
   if (matchesAny(text, ["telefono", "llamar", "email", "correo", "contacto", "whatsapp"])) {
@@ -4330,7 +4433,7 @@ function generateLocalChatbotReply(message, context, history = []) {
   if (matchesAny(text, ["instagram", "redes", "tiktok", "facebook", "fotos", "galeria"])) {
     return context.links.length
       ? `Puedes ver mas aqui:\n${context.links.map((link) => `- ${link.label}: ${link.url}`).join("\n")}`
-      : "Ahora mismo no hay redes enlazadas, pero puedes usar el contacto principal de la web.";
+      : "Ahora mismo no hay redes enlazadas, pero puedes usar el contacto principal.";
   }
 
   if (matchesAny(text, ["resena", "reseña", "opinion", "opiniones", "rating", "valoracion", "valoración"])) {
@@ -5123,9 +5226,9 @@ function withBusinessDefaults(business = {}) {
     menuItems: hasOwn("menuItems")
       ? normalizeMenuItems(business.menuItems)
       : (isFoodCategory(base.category) ? normalizeMenuItems(demoBusiness.menuItems) : []),
-    conversionGoal: hasOwn("conversionGoal")
-      ? textOr(business.conversionGoal, `Convertir visitas en clientes para ${base.category || "negocio local"}`)
-      : `Convertir visitas en clientes para ${base.category || "negocio local"}`,
+        conversionGoal: hasOwn("conversionGoal")
+          ? textOr(business.conversionGoal, `Reservas, consultas y contacto directo para ${base.category || "negocio local"}`)
+          : `Reservas, consultas y contacto directo para ${base.category || "negocio local"}`,
     announcement: hasOwn("announcement") ? String(business.announcement || "").trim() : "",
     trustBadges,
     bookingLabel: textOr(base.bookingLabel, demoBusiness.bookingLabel),

@@ -220,25 +220,25 @@
     location: "Santander",
     tagline: "Cocina local con alma de brasas",
     description:
-      "Un restaurante de barrio convertido en destino: producto cantabrico, parrilla vista, reservas faciles y una experiencia digital que hace que apetezca venir antes de probar el primer plato.",
+      "Cocina de barrio con producto cantabrico, parrilla vista y mesas pensadas para venir sin prisa.",
     conversionGoal: "Reservas de mesa, grupos y eventos privados por WhatsApp",
     announcement: "Nueva carta de temporada y reservas de grupo abiertas esta semana",
     phone: "+34 942 000 123",
     email: "reservas@brasanorte.es",
     address: "Calle del Mercado 18, Santander",
     services: [
-      "Menu degustacion de temporada",
-      "Parrilla de carne y pescado",
-      "Reservas para grupos",
-      "Carta de vinos locales",
-      "Take away premium",
-      "Eventos privados"
+      "Menu degustacion de temporada: una seleccion de platos de mercado para probar la cocina de la casa sin tener que elegir.",
+      "Parrilla de carne y pescado: piezas al fuego con guarniciones sencillas y punto ajustado a tu gusto.",
+      "Reservas para grupos: mesas para celebraciones, empresa o comidas familiares con menu acordado si hace falta.",
+      "Carta de vinos locales: referencias de la zona para acompanar carnes, pescados y platos de temporada.",
+      "Take away premium: platos preparados para recoger en el local, con hora pactada y emplatado cuidado.",
+      "Eventos privados: abrimos el comedor para reuniones cerradas con propuesta de comida y bebida a medida."
     ],
     features: [
       "Producto de proveedores cercanos con carta que cambia cada semana",
-      "Reservas conectadas a WhatsApp, Google Maps y redes sociales",
-      "Galeria visual preparada para destacar platos, local y equipo",
-      "Secciones modulares para escalar desde una web simple hasta una presencia completa"
+      "Reservas por WhatsApp con confirmacion del equipo",
+      "Parrilla vista, comedor recogido y equipo de sala atento",
+      "Menus para grupos con opciones de carne, pescado y platos para compartir"
     ],
     hours: [
       "Lunes cerrado",
@@ -249,29 +249,29 @@
     testimonials: [
       {
         name: "Laura M.",
-        text: "La web transmite exactamente lo que se vive en el local. Reserve en dos clicks."
+        text: "Reserve para seis por WhatsApp y nos prepararon un menu de temporada muy redondo."
       },
       {
         name: "Diego R.",
-        text: "Fotos, carta, ubicacion y redes en una experiencia muy limpia. Parece una marca grande."
+        text: "La carne salio al punto y nos recomendaron un vino de Cantabria que fue perfecto."
       },
       {
         name: "Marta S.",
-        text: "El movimiento al hacer scroll hace que todo se sienta cuidado, pero sigue siendo facil encontrar lo importante."
+        text: "Fuimos con dos ninos y nos buscaron una mesa comoda sin complicarlo."
       }
     ],
     faqs: [
       {
         question: "Se puede reservar online?",
-        answer: "Si. El boton principal puede apuntar a WhatsApp, CoverManager, Google Calendar o cualquier sistema de reservas."
+        answer: "Si. Escribenos por WhatsApp con dia, hora y numero de personas y te confirmamos disponibilidad."
       },
       {
-        question: "La web sirve para otros sectores?",
-        answer: "Si. Cambiando textos, fotos y secciones funciona para clinicas, peluquerias, gimnasios, academias, talleres o tiendas."
+        question: "Teneis menu para grupos?",
+        answer: "Si. Para grupos podemos preparar un menu cerrado con entrantes, principal, bebida y postre."
       },
       {
-        question: "Se puede entregar como HTML?",
-        answer: "Si. El exportador descarga una pagina completa con estilos y animaciones listas para subir a hosting."
+        question: "Hay opciones para alergias?",
+        answer: "Si. Avisanos al reservar y te indicamos que platos encajan mejor segun la alergia o preferencia."
       }
     ],
     trustBadges: [
@@ -302,17 +302,17 @@
     showBooking: true,
     bookingUrl: "https://wa.me/34942000123",
     bookingLabel: "Reservar ahora",
-    servicesHeading: "Lo que el cliente entiende en segundos.",
+    servicesHeading: "Carta, brasas y reservas",
     servicesIntro:
-      "La web prioriza decision rapida: que haces, por que elegirte, como se reserva y que sensacion transmite el negocio.",
-    trustHeading: "Confianza antes de llamar.",
+      "Trabajamos con producto cercano, fuego lento y platos pensados para compartir en mesa.",
+    trustHeading: "Antes de venir",
     trustIntro:
-      "Testimonios, preguntas frecuentes y enlaces reducen friccion para quien te descubre por primera vez.",
+      "Si tienes dudas sobre horarios, grupos o alergias, escribenos y te respondemos antes de reservar.",
     contactHeading: "Ven, reserva o escribe.",
     showLeadForm: true,
-    leadFormTitle: "Recibe disponibilidad y propuesta en minutos.",
+    leadFormTitle: "Consulta disponibilidad",
     leadFormIntro:
-      "Deja tus datos y el equipo recibe un lead preparado con servicio, fecha orientativa y canal de contacto.",
+      "Dinos dia, hora, numero de personas y cualquier detalle importante. Te contestamos con la mejor opcion disponible.",
     leadFormCta: "Solicitar disponibilidad",
     privacyUrl: "",
     designPack: "custom",
@@ -348,6 +348,7 @@
         name: "Ostra valenciana con ajoblanco",
         precio: 7.5,
         desc: "Ostra fresca, ajoblanco de almendra marcona, uva encurtida y aceite de cebollino.",
+        allergens: ["moluscos", "frutos-cascara"],
         emoji: "🦪",
         featured: true
       },
@@ -357,6 +358,7 @@
         name: "Tomate rosa, ventresca y piparra",
         precio: 16.8,
         desc: "Tomate de temporada, ventresca del norte, piparra suave y jugo de aceituna arbequina.",
+        allergens: ["pescado"],
         emoji: "🍅",
         featured: false
       },
@@ -366,6 +368,7 @@
         name: "Croqueta cremosa de jamon iberico",
         precio: 12.5,
         desc: "Bechamel lenta, jamon iberico de bellota y velo crujiente de pan artesano.",
+        allergens: ["gluten", "leche"],
         emoji: "🥘",
         featured: false
       },
@@ -375,6 +378,7 @@
         name: "Arroz seco de gamba roja",
         precio: 26.9,
         desc: "Fondo tostado de marisco, gamba roja de Denia y alioli ahumado de azafran.",
+        allergens: ["crustaceos", "pescado", "huevos"],
         emoji: "🦐",
         featured: true
       },
@@ -384,6 +388,7 @@
         name: "Lubina salvaje a la brasa",
         precio: 29.4,
         desc: "Lubina de lonja, emulsion de citricos, hinojo asado y salicornia.",
+        allergens: ["pescado"],
         emoji: "🐟",
         featured: false
       },
@@ -393,6 +398,7 @@
         name: "Pluma iberica lacada",
         precio: 27.2,
         desc: "Pluma iberica, jugo reducido de PX, berenjena asada y almendra tostada.",
+        allergens: ["frutos-cascara", "sulfitos"],
         emoji: "🥩",
         featured: true
       },
@@ -402,6 +408,7 @@
         name: "Canelon de carrillera al vino tinto",
         precio: 21.6,
         desc: "Pasta fina, carrillera melosa, crema de apionabo y queso curado de oveja.",
+        allergens: ["gluten", "leche", "apio"],
         emoji: "🍷",
         featured: false
       },
@@ -411,6 +418,7 @@
         name: "Crema catalana de naranja amarga",
         precio: 8.9,
         desc: "Crema sedosa, caramelo quebrado, naranja amarga y flor de sal.",
+        allergens: ["huevos", "leche"],
         emoji: "🍊",
         featured: false
       }
@@ -526,23 +534,23 @@
       location: "Valencia",
       tagline: "Atencion medica cercana, clara y sin esperas innecesarias",
       description:
-        "Una clinica privada con reserva online, especialidades visibles, equipo humano y un asistente que resuelve dudas frecuentes antes de llamar.",
+        "Clinica privada para consultas, revisiones y tratamientos con cita previa y trato cercano desde recepcion.",
       phone: "+34 960 000 245",
       email: "hola@clinicaalba.es",
       address: "Avenida del Turia 42, Valencia",
       services: [
-        "Medicina general",
-        "Fisioterapia y rehabilitacion",
-        "Analiticas y revisiones",
-        "Nutricion clinica",
-        "Psicologia",
-        "Teleconsulta"
+        "Medicina general: primera valoracion, seguimiento de sintomas y derivacion si hace falta.",
+        "Fisioterapia y rehabilitacion: sesiones para dolor, movilidad y recuperacion despues de una lesion.",
+        "Analiticas y revisiones: controles preventivos con indicaciones claras antes y despues de la prueba.",
+        "Nutricion clinica: pautas realistas para mejorar habitos, digestiones o composicion corporal.",
+        "Psicologia: acompanamiento profesional para ansiedad, estres, duelo y etapas de cambio.",
+        "Teleconsulta: consulta online para revisiones y dudas que no necesitan desplazamiento."
       ],
       features: [
-        "Reservas rapidas por especialidad y profesional",
-        "Preguntas frecuentes para reducir llamadas repetidas",
-        "Confianza visual con equipo, instalaciones y protocolos",
-        "Contacto directo para pacientes nuevos y recurrentes"
+        "Citas por especialidad y profesional",
+        "Recepcion disponible para orientar a pacientes nuevos",
+        "Instalaciones limpias, protocolos claros y equipo colegiado",
+        "Contacto directo para revisar horarios, seguros y preparacion"
       ],
       hours: [
         "Lunes a viernes: 08:00-21:00",
@@ -551,7 +559,7 @@
       ],
       testimonials: [
         { name: "Paciente verificado", text: "Encontre la especialidad, pedi cita y llegue con todo claro." },
-        { name: "Ana P.", text: "La informacion esta ordenada y transmite mucha confianza." },
+        { name: "Ana P.", text: "Me explicaron el tratamiento con calma y sali sabiendo los siguientes pasos." },
         { name: "Carlos G.", text: "El asistente me resolvio horarios y ubicacion al momento." }
       ],
       faqs: [
@@ -606,28 +614,28 @@
       location: "Sevilla",
       tagline: "Belleza con agenda llena, experiencia cuidada y reserva facil",
       description:
-        "Un estudio de belleza con servicios claros, fotos aspiracionales, reservas por WhatsApp y chatbot para resolver dudas de tratamientos.",
+        "Estudio de peluqueria y belleza para color, corte, manicura y preparacion de eventos con cita previa.",
       phone: "+34 954 000 781",
       email: "citas@lumastudio.es",
       address: "Zona Nervion, Sevilla",
       services: [
-        "Coloracion y balayage",
-        "Corte y styling",
-        "Tratamientos capilares",
-        "Manicura premium",
-        "Maquillaje social",
-        "Novias y eventos"
+        "Coloracion y balayage: estudiamos tu base y buscamos un tono que puedas mantener bien.",
+        "Corte y styling: corte adaptado a tu pelo, tu rutina y el acabado que quieres llevar.",
+        "Tratamientos capilares: hidratacion, reparacion y brillo segun el estado del cabello.",
+        "Manicura premium: esmaltado cuidado, retirada correcta y acabado limpio para varios dias.",
+        "Maquillaje social: preparacion para bodas, cenas y eventos con prueba si la necesitas.",
+        "Novias y eventos: peinado y maquillaje con calendario cerrado para llegar tranquila."
       ],
       features: [
-        "Galeria antes/despues preparada para redes y conversion",
+        "Antes y despues reales para elegir referencias con criterio",
         "Reserva en un toque desde movil",
-        "FAQ de duracion, cuidados y preparacion",
-        "Estetica premium sin perder claridad comercial"
+        "Indicaciones de duracion, cuidados y preparacion",
+        "Trato cuidado sin perder naturalidad"
       ],
       hours: ["Martes a viernes: 10:00-20:00", "Sabado: 09:30-15:00", "Domingo y lunes cerrado"],
       testimonials: [
         { name: "Sara L.", text: "Reserve balayage desde el movil y llegue sabiendo precio orientativo y duracion." },
-        { name: "Irene M.", text: "La web se siente igual de cuidada que el salon." },
+        { name: "Irene M.", text: "El salon es tranquilo, puntual y cuidan mucho el acabado." },
         { name: "Paula C.", text: "El bot respondio mis dudas antes de pedir cita." }
       ],
       faqs: [
@@ -683,28 +691,28 @@
       location: "Bilbao",
       tagline: "Entrenamiento de alto impacto con comunidad y seguimiento real",
       description:
-        "Un gimnasio boutique con clases, entrenadores, horarios, prueba gratuita y chatbot para convertir curiosos en leads.",
+        "Gimnasio boutique con clases en grupos reducidos, entrenadores presentes y prueba para empezar sin compromiso.",
       phone: "+34 944 000 618",
       email: "hola@distritofit.es",
       address: "Plaza Nueva 7, Bilbao",
       services: [
-        "Entrenamiento funcional",
-        "Fuerza en grupos reducidos",
-        "Plan personal",
-        "Nutricion deportiva",
-        "Prueba gratuita",
-        "Clases early morning"
+        "Entrenamiento funcional: sesiones dinamicas para ganar fuerza, movilidad y resistencia.",
+        "Fuerza en grupos reducidos: tecnica vigilada y cargas adaptadas a tu nivel.",
+        "Plan personal: rutina ajustada a objetivos, lesiones previas y disponibilidad semanal.",
+        "Nutricion deportiva: pautas sencillas para acompanar entrenamiento y recuperacion.",
+        "Prueba gratuita: ven a una clase, conoce el metodo y decide despues.",
+        "Clases early morning: entrenamientos a primera hora para empezar el dia con energia."
       ],
       features: [
         "Prueba gratuita visible para reservar sin llamar",
-        "Horarios y clases explicados sin friccion",
-        "Prueba social con comunidad y resultados",
-        "Chatbot para resolver dudas antes de visitar"
+        "Horarios y clases explicados con claridad",
+        "Comunidad cercana y resultados visibles con constancia",
+        "Dudas de nivel, material y horarios resueltas antes de venir"
       ],
       hours: ["Lunes a viernes: 06:30-22:00", "Sabado: 08:00-14:00", "Domingo: clases especiales"],
       testimonials: [
         { name: "Javi R.", text: "Vi horarios, probe una clase y me apunte esa semana." },
-        { name: "Nerea S.", text: "La web explica perfecto el metodo y transmite energia." },
+        { name: "Nerea S.", text: "El metodo se entiende desde la primera clase y el grupo engancha." },
         { name: "Unai T.", text: "El bot me ayudo a elegir clase inicial." }
       ],
       faqs: [
@@ -774,19 +782,19 @@
       features: [
         "Carta, horario y ubicacion visibles desde el primer pantallazo",
         "Boton directo para reservar mesa o escribir por WhatsApp",
-        "Promos de tardeo y eventos destacadas sin rehacer la web",
+        "Promos de tardeo y eventos anunciadas con tiempo",
         "Fotos del local, barra y platos para vender ambiente antes de llegar"
       ],
       hours: ["Lunes a jueves: 12:00-00:00", "Viernes y sabado: 12:00-02:30", "Domingo: 12:00-18:00"],
       testimonials: [
         { name: "Rocio M.", text: "Vimos la promo de tapas y reservamos mesa para ocho en un minuto." },
-        { name: "Alvaro C.", text: "La web deja claro el ambiente, la carta y como llegar." },
+        { name: "Alvaro C.", text: "Fuimos por las tapas y nos quedamos a las copas; muy buen ambiente." },
         { name: "Mesa 14", text: "El bot nos confirmo horario del partido y contacto directo." }
       ],
       faqs: [
         { question: "Se puede reservar mesa?", answer: "Si. Usa el boton principal o escribe por WhatsApp con dia, hora y personas." },
         { question: "Teneis terraza?", answer: "Si, hay terraza sujeta a disponibilidad y clima." },
-        { question: "Poneis partidos?", answer: "Si, los eventos deportivos se anuncian en la web y redes." }
+        { question: "Poneis partidos?", answer: "Si, solemos anunciar los partidos destacados y conviene reservar si venis en grupo." }
       ],
       links: [
         { label: "Instagram", url: "https://instagram.com/" },
@@ -811,10 +819,10 @@
       bookingLabel: "Reservar mesa",
       servicesHeading: "Carta, promos y reservas en primer plano.",
       servicesIntro:
-        "Para bares conviene ensenar rapido que se puede tomar, cuando ir, que ambiente hay y como reservar sin llamar.",
+        "Tapas de temporada, copas preparadas con calma y mesas para venir en pareja o con grupo.",
       trustHeading: "Ambiente probado antes de entrar.",
       trustIntro:
-        "Fotos, opiniones y dudas frecuentes convierten busquedas de ultima hora en visitas reales.",
+        "Te contamos horario, terraza, partidos y disponibilidad antes de que vengas.",
       contactHeading: "Reserva mesa o ven directo.",
       typography: "compact",
       contentDensity: "compact",
@@ -860,10 +868,10 @@
         "Regalo y detalle: tarjetas, envoltorio y pequenos accesorios"
       ],
       features: [
-        "Servicios explicados para que el cliente sepa si puede resolverlo alli",
+        "Impresiones, encuadernaciones y material explicados con precios claros cuando es posible",
         "WhatsApp preparado para pedir impresiones o consultar stock",
-        "Secciones adaptables para campana escolar, navidad o vuelta a clase",
-        "Textos preparados para que te encuentren al buscar copisteria o material escolar"
+        "Campana escolar, navidad y vuelta a clase con productos destacados",
+        "Atencion cercana para familias, estudiantes y pequenos negocios"
       ],
       hours: ["Lunes a viernes: 09:00-14:00 / 17:00-20:30", "Sabado: 10:00-14:00", "Domingo cerrado"],
       testimonials: [
@@ -874,7 +882,7 @@
       faqs: [
         { question: "Puedo enviar archivos antes de ir?", answer: "Si. Envia el archivo por WhatsApp e indica formato, copias y hora de recogida." },
         { question: "Haceis encuadernaciones?", answer: "Si, con varias opciones segun disponibilidad." },
-        { question: "Teneis material escolar todo el ano?", answer: "Si, y se pueden destacar campanas concretas en la web." }
+        { question: "Teneis material escolar todo el ano?", answer: "Si. Tambien preparamos productos especiales para vuelta al cole, navidad y examenes." }
       ],
       links: [
         { label: "WhatsApp", url: "https://wa.me/34976000384" },
@@ -899,10 +907,10 @@
       bookingLabel: "Pedir encargo",
       servicesHeading: "Servicios cotidianos explicados sin vueltas.",
       servicesIntro:
-        "La web convierte dudas repetidas en acciones: imprimir, reservar material, consultar stock o llegar al local.",
+        "Imprime, encuaderna, consulta material o mandanos tu archivo antes de pasar por tienda.",
       trustHeading: "Cercania para familias y negocios.",
       trustIntro:
-        "Resenas y preguntas frecuentes reducen llamadas y ayudan a preparar encargos antes de pasar por tienda.",
+        "Si necesitas preparar un encargo, dinos formato, copias y hora de recogida.",
       contactHeading: "Envia el archivo o ven a tienda.",
       typography: "modern",
       contentDensity: "balanced",
@@ -935,7 +943,7 @@
       location: "Murcia",
       tagline: "Pedidos rapidos, menu claro y clientes con hambre a un toque",
       description:
-        "Un local de kebab con carta directa, fotos de platos, horarios amplios, pedidos por WhatsApp y enlaces a delivery para vender desde busqueda local.",
+        "Kebab, durum, platos combinados y menus para comer en el local, recoger o pedir a domicilio.",
       phone: "+34 868 000 719",
       email: "pedidos@anatoliakebab.es",
       address: "Avenida Libertad 14, Murcia",
@@ -950,7 +958,7 @@
       features: [
         "Carta sencilla con productos estrella y precios faciles de actualizar",
         "Botones de pedido para WhatsApp, llamada o plataforma delivery",
-        "Fotos apetecibles para convertir visitas desde Google Maps",
+        "Fotos claras de kebab, durum, platos y menus completos",
         "Horario nocturno destacado para captar busquedas de ultima hora"
       ],
       hours: ["Lunes a jueves: 12:00-01:00", "Viernes y sabado: 12:00-03:00", "Domingo: 13:00-01:00"],
@@ -962,7 +970,7 @@
       faqs: [
         { question: "Puedo pedir para recoger?", answer: "Si. Escribe por WhatsApp con el pedido y la hora aproximada." },
         { question: "Teneis opciones vegetarianas?", answer: "Si, se pueden destacar falafel, ensaladas y platos sin carne." },
-        { question: "Repartis a domicilio?", answer: "La web puede enlazar telefono, WhatsApp o plataformas de delivery." }
+        { question: "Repartis a domicilio?", answer: "Trabajamos con telefono, WhatsApp y plataformas de reparto segun disponibilidad del dia." }
       ],
       links: [
         { label: "WhatsApp", url: "https://wa.me/34868000719" },
@@ -987,10 +995,10 @@
       bookingLabel: "Pedir ahora",
       servicesHeading: "Menu claro para decidir rapido.",
       servicesIntro:
-        "En comida rapida la conversion depende de ver carta, precio, horario y boton de pedido sin friccion.",
+        "Elige kebab, durum, plato o menu; te indicamos precio, extras y tiempo aproximado.",
       trustHeading: "Antojo, prueba social y contacto.",
       trustIntro:
-        "Las resenas y FAQs resuelven dudas de alergenos, recogida y delivery antes de que el cliente se marche.",
+        "Pregunta por alergenos, recogida o reparto y te orientamos antes de hacer el pedido.",
       contactHeading: "Pide, recoge o llama.",
       typography: "compact",
       contentDensity: "compact",
@@ -1037,20 +1045,20 @@
       ],
       features: [
         "Categorias ordenadas para que un surtido amplio parezca facil de comprar",
-        "Bloques de temporada que se cambian sin redisenar toda la web",
+        "Productos de temporada para playa, colegio, carnaval, navidad y jardin",
         "Contacto directo para preguntar stock y ahorrar desplazamientos",
-        "Textos preparados para que te encuentren al buscar bazar, hogar o regalos"
+        "Atencion directa para encontrar hogar, regalo, ferreteria basica o papeleria"
       ],
       hours: ["Lunes a sabado: 09:30-21:00", "Domingo: 10:30-14:00", "Festivos: consultar en Google"],
       testimonials: [
         { name: "Elena P.", text: "Pregunte si tenian el producto y pase a recogerlo." },
-        { name: "Ruben D.", text: "La web ordena muy bien todo lo que venden." },
+        { name: "Ruben D.", text: "Entre por una cosa de ferreteria y encontre tambien material para casa." },
         { name: "Cliente local", text: "Las ofertas y horarios se ven rapido desde el movil." }
       ],
       faqs: [
         { question: "Puedo consultar stock?", answer: "Si. Envia foto o descripcion por WhatsApp y el equipo confirma disponibilidad." },
         { question: "Actualizais ofertas?", answer: "Si, las secciones se pueden adaptar por temporada o campana." },
-        { question: "Abreis domingos?", answer: "Depende de la semana. La web puede enlazar el horario actualizado de Google." }
+        { question: "Abreis domingos?", answer: "Depende de la semana. Si tienes duda, escribenos o revisa el horario actualizado antes de venir." }
       ],
       links: [
         { label: "WhatsApp", url: "https://wa.me/34965000527" },
@@ -1075,10 +1083,10 @@
       bookingLabel: "Consultar stock",
       servicesHeading: "Categorias amplias, compra sencilla.",
       servicesIntro:
-        "Un bazar necesita ordenar mucho surtido, destacar temporada y facilitar consultas de stock desde el movil.",
+        "Tenemos hogar, cocina, papeleria, ferreteria basica y temporada para resolver compras del dia a dia.",
       trustHeading: "Disponibilidad antes de desplazarse.",
       trustIntro:
-        "Las preguntas frecuentes y enlaces directos evitan viajes en falso y convierten busquedas cercanas.",
+        "Antes de venir puedes preguntar stock, horario o medida para ahorrar el desplazamiento.",
       contactHeading: "Pregunta stock o ven al local.",
       typography: "modern",
       contentDensity: "balanced",

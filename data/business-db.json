@@ -43,17 +43,17 @@
         "category": "Restaurante de fuego lento",
         "location": "Santander",
         "tagline": "Cocina local con alma de brasas",
-        "description": "Restaurante de barrio con producto local, reservas faciles y presencia digital premium.",
+        "description": "Restaurante de barrio con producto local, brasas y mesas para venir con calma.",
         "conversionGoal": "Reservas de mesa, grupos y eventos privados por WhatsApp",
         "phone": "+34 942 000 123",
         "email": "reservas@brasanorte.es",
         "address": "Calle del Mercado 18, Santander",
         "bookingUrl": "https://wa.me/34942000123",
         "services": [
-          "Menu degustacion de temporada",
-          "Parrilla de carne y pescado",
-          "Reservas para grupos",
-          "Take away premium"
+          "Menu degustacion de temporada: platos de mercado para probar la cocina de la casa sin tener que elegir.",
+          "Parrilla de carne y pescado: piezas al fuego con guarniciones sencillas y punto ajustado a tu gusto.",
+          "Reservas para grupos: mesas para celebraciones, empresa o comidas familiares con menu acordado.",
+          "Take away premium: platos preparados para recoger en el local con hora pactada."
         ],
         "trustBadges": [
           "4.8/5 en Google",
@@ -108,25 +108,25 @@
         "category": "Restaurante de fuego lento",
         "location": "Santander",
         "tagline": "Cocina local con alma de brasas",
-        "description": "Un restaurante de barrio convertido en destino: producto cantabrico, parrilla vista, reservas faciles y una experiencia digital que hace que apetezca venir antes de probar el primer plato.",
+        "description": "Cocina de barrio con producto cantabrico, parrilla vista y mesas pensadas para venir sin prisa.",
         "conversionGoal": "Reservas de mesa, grupos y eventos privados por WhatsApp",
         "announcement": "Nueva carta de temporada y reservas de grupo abiertas esta semana",
         "phone": "+34 942 000 123",
         "email": "reservas@brasanorte.es",
         "address": "Calle del Mercado 18, Santander",
         "services": [
-          "Menu degustacion de temporada",
-          "Parrilla de carne y pescado",
-          "Reservas para grupos",
-          "Carta de vinos locales",
-          "Take away premium",
-          "Eventos privados"
+          "Menu degustacion de temporada: una seleccion de platos de mercado para probar la cocina de la casa sin tener que elegir.",
+          "Parrilla de carne y pescado: piezas al fuego con guarniciones sencillas y punto ajustado a tu gusto.",
+          "Reservas para grupos: mesas para celebraciones, empresa o comidas familiares con menu acordado si hace falta.",
+          "Carta de vinos locales: referencias de la zona para acompanar carnes, pescados y platos de temporada.",
+          "Take away premium: platos preparados para recoger en el local, con hora pactada y emplatado cuidado.",
+          "Eventos privados: abrimos el comedor para reuniones cerradas con propuesta de comida y bebida a medida."
         ],
         "features": [
           "Producto de proveedores cercanos con carta que cambia cada semana",
-          "Reservas conectadas a WhatsApp, Google Maps y redes sociales",
-          "Galeria visual preparada para destacar platos, local y equipo",
-          "Secciones modulares para escalar desde una web simple hasta una presencia completa"
+          "Reservas por WhatsApp con confirmacion del equipo",
+          "Parrilla vista, comedor recogido y equipo de sala atento",
+          "Menus para grupos con opciones de carne, pescado y platos para compartir"
         ],
         "hours": [
           "Lunes cerrado",
@@ -137,29 +137,29 @@
         "testimonials": [
           {
             "name": "Laura M.",
-            "text": "La web transmite exactamente lo que se vive en el local. Reserve en dos clicks."
+            "text": "Reserve para seis por WhatsApp y nos prepararon un menu de temporada muy redondo."
           },
           {
             "name": "Diego R.",
-            "text": "Fotos, carta, ubicacion y redes en una experiencia muy limpia. Parece una marca grande."
+            "text": "La carne salio al punto y nos recomendaron un vino de Cantabria que fue perfecto."
           },
           {
             "name": "Marta S.",
-            "text": "El movimiento al hacer scroll hace que todo se sienta cuidado, pero sigue siendo facil encontrar lo importante."
+            "text": "Fuimos con dos ninos y nos buscaron una mesa comoda sin complicarlo."
           }
         ],
         "faqs": [
           {
             "question": "Se puede reservar online?",
-            "answer": "Si. El boton principal puede apuntar a WhatsApp, CoverManager, Google Calendar o cualquier sistema de reservas."
+            "answer": "Si. Escribenos por WhatsApp con dia, hora y numero de personas y te confirmamos disponibilidad."
           },
           {
-            "question": "La web sirve para otros sectores?",
-            "answer": "Si. Cambiando textos, fotos y secciones funciona para clinicas, peluquerias, gimnasios, academias, talleres o tiendas."
+            "question": "Teneis menu para grupos?",
+            "answer": "Si. Para grupos podemos preparar un menu cerrado con entrantes, principal, bebida y postre."
           },
           {
-            "question": "Se puede entregar como HTML?",
-            "answer": "Si. El exportador descarga una pagina completa con estilos y animaciones listas para subir a hosting."
+            "question": "Hay opciones para alergias?",
+            "answer": "Si. Avisanos al reservar y te indicamos que platos encajan mejor segun la alergia o preferencia."
           }
         ],
         "trustBadges": [
@@ -198,14 +198,14 @@
         "showBooking": true,
         "bookingUrl": "https://wa.me/34942000123",
         "bookingLabel": "Reservar ahora",
-        "servicesHeading": "Lo que el cliente entiende en segundos.",
-        "servicesIntro": "La web prioriza decision rapida: que haces, por que elegirte, como se reserva y que sensacion transmite el negocio.",
-        "trustHeading": "Confianza antes de llamar.",
-        "trustIntro": "Testimonios, preguntas frecuentes y enlaces reducen friccion para quien te descubre por primera vez.",
+        "servicesHeading": "Carta, brasas y reservas",
+        "servicesIntro": "Trabajamos con producto cercano, fuego lento y platos pensados para compartir en mesa.",
+        "trustHeading": "Antes de venir",
+        "trustIntro": "Si tienes dudas sobre horarios, grupos o alergias, escribenos y te respondemos antes de reservar.",
         "contactHeading": "Ven, reserva o escribe.",
         "showLeadForm": true,
-        "leadFormTitle": "Recibe disponibilidad y propuesta en minutos.",
-        "leadFormIntro": "Deja tus datos y el equipo recibe un lead preparado con servicio, fecha orientativa y canal de contacto.",
+        "leadFormTitle": "Consulta disponibilidad",
+        "leadFormIntro": "Dinos dia, hora, numero de personas y cualquier detalle importante. Te contestamos con la mejor opcion disponible.",
         "leadFormCta": "Solicitar disponibilidad",
         "designPack": "custom",
         "typography": "modern",
@@ -364,7 +364,7 @@
         }
       },
       "settings": {
-        "primaryGoal": "Convertir visitas en clientes para Peluqueria y belleza",
+        "primaryGoal": "Reservas y consultas por WhatsApp para peluqueria y belleza",
         "source": "studio",
         "updatedFromStudioAt": "2026-06-11T23:32:16.670Z"
       },
@@ -373,25 +373,25 @@
         "category": "Peluqueria y belleza",
         "location": "Sevilla",
         "tagline": "Belleza con agenda llena, experiencia cuidada y reserva facil",
-        "description": "Un estudio de belleza con servicios claros, fotos aspiracionales, reservas por WhatsApp y chatbot para resolver dudas de tratamientos.",
-        "conversionGoal": "Convertir visitas en clientes para Peluqueria y belleza",
+        "description": "Estudio de peluqueria y belleza para color, corte, manicura y preparacion de eventos con cita previa.",
+        "conversionGoal": "Reservas y consultas por WhatsApp para peluqueria y belleza",
         "announcement": "",
         "phone": "+34 954 000 781",
         "email": "citas@lumastudio.es",
         "address": "Zona Nervion, Sevilla",
         "services": [
-          "Coloracion y balayage",
-          "Corte y styling",
-          "Tratamientos capilares",
-          "Manicura premium",
-          "Maquillaje social",
-          "Novias y eventos"
+          "Coloracion y balayage: estudiamos tu base y buscamos un tono que puedas mantener bien.",
+          "Corte y styling: corte adaptado a tu pelo, tu rutina y el acabado que quieres llevar.",
+          "Tratamientos capilares: hidratacion, reparacion y brillo segun el estado del cabello.",
+          "Manicura premium: esmaltado cuidado, retirada correcta y acabado limpio para varios dias.",
+          "Maquillaje social: preparacion para bodas, cenas y eventos con prueba si la necesitas.",
+          "Novias y eventos: peinado y maquillaje con calendario cerrado para llegar tranquila."
         ],
         "features": [
-          "Galeria antes/despues preparada para redes y conversion",
+          "Antes y despues reales para elegir referencias con criterio",
           "Reserva en un toque desde movil",
-          "FAQ de duracion, cuidados y preparacion",
-          "Estetica premium sin perder claridad comercial"
+          "Indicaciones de duracion, cuidados y preparacion",
+          "Trato cuidado sin perder naturalidad"
         ],
         "hours": [
           "Martes a viernes: 10:00-20:00",
@@ -405,7 +405,7 @@
           },
           {
             "name": "Irene M.",
-            "text": "La web se siente igual de cuidada que el salon."
+            "text": "El salon es tranquilo, puntual y cuidan mucho el acabado."
           },
           {
             "name": "Paula C.",
@@ -461,14 +461,14 @@
         "showBooking": true,
         "bookingUrl": "https://wa.me/34954000781",
         "bookingLabel": "Reservar ahora",
-        "servicesHeading": "Lo que el cliente entiende en segundos.",
-        "servicesIntro": "La web prioriza decision rapida: que haces, por que elegirte, como se reserva y que sensacion transmite el negocio.",
-        "trustHeading": "Confianza antes de llamar.",
-        "trustIntro": "Testimonios, preguntas frecuentes y enlaces reducen friccion para quien te descubre por primera vez.",
+        "servicesHeading": "Pelo, manicura y maquillaje",
+        "servicesIntro": "Trabajamos cada cita con diagnostico previo, tiempo suficiente y cuidados para que el resultado dure.",
+        "trustHeading": "Antes de reservar",
+        "trustIntro": "Te orientamos sobre duracion, mantenimiento y preparacion para que vengas con todo claro.",
         "contactHeading": "Ven, reserva o escribe.",
         "showLeadForm": true,
-        "leadFormTitle": "Recibe disponibilidad y propuesta en minutos.",
-        "leadFormIntro": "Deja tus datos y el equipo recibe un lead preparado con servicio, fecha orientativa y canal de contacto.",
+        "leadFormTitle": "Pide tu cita",
+        "leadFormIntro": "Dinos que servicio quieres, tu disponibilidad y si traes alguna referencia. Te responderemos con huecos posibles.",
         "leadFormCta": "Solicitar disponibilidad",
         "privacyUrl": "pages/privacy-demo.html",
         "designPack": "custom",
@@ -635,7 +635,7 @@
         }
       },
       "settings": {
-        "primaryGoal": "Reservar mesa y convertir búsquedas locales en clientes",
+        "primaryGoal": "Reservar mesa y atender consultas en Sevilla",
         "source": "studio",
         "updatedFromStudioAt": "2026-06-29T02:17:38.629Z"
       },
@@ -643,25 +643,25 @@
         "name": "El Cuelgue de Santi Temblador",
         "category": "Restaurante",
         "location": "Sevilla",
-        "tagline": "El lugar de Sevilla que convierte búsquedas de “dónde comer” en reservas directas.",
-        "description": "El Cuelgue de Santi Temblador es un negocio local de restaurante en Sevilla. Esta propuesta convierte su presencia local en una experiencia digital clara y orientada a contacto.",
-        "conversionGoal": "Reservar mesa y convertir búsquedas locales en clientes",
-        "announcement": "Nueva web en preparación · propuesta creada desde DLS Radar",
+        "tagline": "Comida en Sevilla con carta clara, mesa reservada y trato cercano.",
+        "description": "En El Cuelgue de Santi Temblador te atendemos en Sevilla con cocina de restaurante, reservas por WhatsApp y trato directo.",
+        "conversionGoal": "Reservar mesa y atender consultas en Sevilla",
+        "announcement": "Ya puedes reservar mesa o consultar disponibilidad para venir esta semana.",
         "phone": "+34 634 42 73 25",
         "email": "reservas@brasanorte.es",
         "address": "Calle Valle 2, 41003, Sevilla",
         "services": [
-          "Carta y especialidades",
-          "Reservas",
-          "Menús para grupos",
-          "Eventos",
-          "Opciones especiales"
+          "Carta y especialidades: platos de la casa, sugerencias de temporada y opciones para compartir.",
+          "Reservas: mesas por WhatsApp con dia, hora y numero de personas.",
+          "Menus para grupos: propuesta cerrada para celebraciones, empresa o reuniones familiares.",
+          "Eventos: espacio y servicio para comidas, copas o encuentros privados con aviso previo.",
+          "Opciones especiales: alternativas para alergias o preferencias si avisas al reservar."
         ],
         "features": [
-          "Presencia verificada en un directorio geográfico",
-          "Contacto y ubicación visibles desde cualquier dispositivo",
-          "Reservar mesa como acción principal",
-          "Contenido preparado para confianza y búsqueda local"
+          "Estamos en Calle Valle 2, en Sevilla",
+          "Reservas y consultas por WhatsApp",
+          "Horario de comidas y cenas de martes a sabado",
+          "Carta, grupos y alergias explicados antes de reservar"
         ],
         "hours": [
           "Tu-Sa 13:30-16:30,20:30-23:30"
@@ -669,29 +669,29 @@
         "testimonials": [
           {
             "name": "Laura M.",
-            "text": "La web transmite exactamente lo que se vive en el local. Reserve en dos clicks."
+            "text": "Reserve por WhatsApp para cenar y nos confirmaron mesa en el mismo dia."
           },
           {
             "name": "Diego R.",
-            "text": "Fotos, carta, ubicacion y redes en una experiencia muy limpia. Parece una marca grande."
+            "text": "La carta va directa al grano y el trato en sala fue muy cercano."
           },
           {
             "name": "Marta S.",
-            "text": "El movimiento al hacer scroll hace que todo se sienta cuidado, pero sigue siendo facil encontrar lo importante."
+            "text": "Fuimos en grupo y nos organizaron la mesa sin complicaciones."
           }
         ],
         "faqs": [
           {
             "question": "Se puede reservar online?",
-            "answer": "Si. El boton principal puede apuntar a WhatsApp, CoverManager, Google Calendar o cualquier sistema de reservas."
+            "answer": "Si. Escribenos por WhatsApp con dia, hora y numero de personas y te confirmamos disponibilidad."
           },
           {
-            "question": "La web sirve para otros sectores?",
-            "answer": "Si. Cambiando textos, fotos y secciones funciona para clinicas, peluquerias, gimnasios, academias, talleres o tiendas."
+            "question": "Teneis mesa para grupos?",
+            "answer": "Si. Para grupos es mejor escribir con antelacion e indicar hora, numero de personas y si quereis menu cerrado."
           },
           {
-            "question": "Se puede entregar como HTML?",
-            "answer": "Si. El exportador descarga una pagina completa con estilos y animaciones listas para subir a hosting."
+            "question": "Puedo avisar de alergias?",
+            "answer": "Si. Indicalo al reservar y te diremos que opciones de carta encajan mejor."
           }
         ],
         "trustBadges": [
@@ -730,14 +730,14 @@
         "showBooking": true,
         "bookingUrl": "https://wa.me/34634427325",
         "bookingLabel": "Reservar mesa",
-        "servicesHeading": "Lo que el cliente entiende en segundos.",
-        "servicesIntro": "La web prioriza decision rapida: que haces, por que elegirte, como se reserva y que sensacion transmite el negocio.",
-        "trustHeading": "Confianza antes de llamar.",
-        "trustIntro": "Testimonios, preguntas frecuentes y enlaces reducen friccion para quien te descubre por primera vez.",
+        "servicesHeading": "Carta, reservas y grupos",
+        "servicesIntro": "Ven a comer o cenar en Sevilla con platos para compartir, reservas por WhatsApp y trato cercano.",
+        "trustHeading": "Antes de venir",
+        "trustIntro": "Si tienes dudas sobre horario, grupos o alergias, escribenos y te orientamos antes de reservar.",
         "contactHeading": "Ven, reserva o escribe.",
         "showLeadForm": true,
-        "leadFormTitle": "Recibe disponibilidad y propuesta en minutos.",
-        "leadFormIntro": "Deja tus datos y el equipo recibe un lead preparado con servicio, fecha orientativa y canal de contacto.",
+        "leadFormTitle": "Consulta mesa",
+        "leadFormIntro": "Dinos dia, hora, numero de personas y cualquier detalle importante. Te contestamos con disponibilidad.",
         "leadFormCta": "Solicitar disponibilidad",
         "privacyUrl": "",
         "designPack": "custom",

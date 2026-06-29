@@ -876,10 +876,10 @@
         if (any(text, ["reserv", "cita", "mesa", "turno", "agenda", "booking"])) {
           if (/(\\+?\\d[\\d\\s().-]{7,})/.test(text)) {
             const quickLead = storeLead({ business: business.name || "", name: "Lead desde chatbot", contact: contactFrom(message), message, source: "chatbot", leadEndpoint: context.chatbot?.leadEndpoint || "" });
-            return "Perfecto. He detectado datos de reserva y los dejo preparados para el negocio.\\n\\nResumen recibido: " + quickLead.message + "\\n\\n" + nextStep(context) + "\\n\\n" + contactLine(context);
+            return "Perfecto. Hemos recibido los datos de reserva.\\n\\nResumen recibido: " + quickLead.message + "\\n\\n" + nextStep(context) + "\\n\\n" + contactLine(context);
           }
           return business.bookingUrl && business.bookingUrl !== "#contacto"
-            ? "Puedes reservar desde aqui: " + business.bookingUrl + "\\n\\nSi quieres, dime nombre, dia/hora y telefono, y dejo el lead preparado para el negocio."
+            ? "Puedes reservar desde aqui: " + business.bookingUrl + "\\n\\nSi prefieres, dime nombre, dia, hora y telefono para que podamos responderte con disponibilidad."
             : "Para reservar, dime nombre, dia/hora y telefono. Tambien puedes contactar directamente:\\n" + contactLine(context);
         }
         if (any(text, ["donde", "direccion", "ubicacion", "mapa", "llegar", "localizacion"])) {
@@ -894,13 +894,13 @@
         if (any(text, ["servicio", "menu", "carta", "tratamiento", "producto", "precio", "ofrece"])) {
           return (context.services || []).length
             ? "Estos son algunos servicios destacados:\\n" + context.services.map((item) => "- " + String(item).split(":")[0]).join("\\n") + "\\n\\n" + softLeadPrompt(context) + "\\n\\n" + contactLine(context)
-            : "Todavia no hay servicios detallados en la web. " + contactLine(context);
+            : "Todavia no hay servicios detallados publicados. " + contactLine(context);
         }
         if (any(text, ["telefono", "llamar", "email", "correo", "contacto", "whatsapp"])) return contactLine(context);
         if (any(text, ["instagram", "redes", "tiktok", "facebook", "fotos", "galeria"])) {
           return (context.links || []).length
             ? "Puedes ver mas aqui:\\n" + context.links.map((link) => "- " + link.label + ": " + link.url).join("\\n")
-            : "Ahora mismo no hay redes enlazadas, pero puedes usar el contacto principal de la web.";
+            : "Ahora mismo no hay redes enlazadas, pero puedes usar el contacto principal.";
         }
         if (any(text, ["resena", "resenas", "reseña", "reseñas", "opinion", "opiniones", "rating", "valoracion"])) {
           const google = context.google || {};
