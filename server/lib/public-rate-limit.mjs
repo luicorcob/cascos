@@ -15,13 +15,17 @@ const ROUTE_LIMITS = {
   events: {
     limit: readPositiveInteger("PUBLIC_EVENT_RATE_LIMIT", 120),
     windowMs: readPositiveInteger("PUBLIC_EVENT_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
+  },
+  discovery: {
+    limit: readPositiveInteger("PUBLIC_DISCOVERY_RATE_LIMIT", 40),
+    windowMs: readPositiveInteger("PUBLIC_DISCOVERY_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
   }
 };
 
 export function requirePublicApiRateLimit(request, response, context, pathname) {
   const route = getPublicRoute(pathname);
 
-  if (!route || request.method !== "POST") {
+  if (!route || !isRateLimitedMethod(route, request.method || "GET")) {
     return true;
   }
 
@@ -64,8 +68,20 @@ export function requirePublicApiRateLimit(request, response, context, pathname) 
 }
 
 function getPublicRoute(pathname) {
+  if (pathname === "/api/discovery/search") {
+    return "discovery";
+  }
+
   const match = String(pathname || "").match(/^\/api\/public\/[^/]+\/(leads|bookings|events)$/);
   return match?.[1] || "";
+}
+
+function isRateLimitedMethod(route, method) {
+  if (route === "discovery") {
+    return method === "GET";
+  }
+
+  return method === "POST";
 }
 
 function getClientAddress(request) {

@@ -31,6 +31,18 @@ services:
         generateValue: true
       - key: GOOGLE_MAPS_API_KEY
         sync: false
+      - key: DLS_DISCOVERY_PROVIDER
+        value: openstreetmap
+      - key: RADAR_LEADS_DB_FILE
+        value: /data/radar-leads.json
+      - key: DLS_DISCOVERY_CACHE_TTL_MS
+        value: "900000"
+      - key: DLS_RADAR_USER_AGENT
+        value: DLS-Radar/1.0 (locallift-studio-api.onrender.com)
+      - key: PUBLIC_DISCOVERY_RATE_LIMIT
+        value: "40"
+      - key: PUBLIC_DISCOVERY_RATE_LIMIT_WINDOW_MS
+        value: "600000"
       - key: CORS_ORIGIN
         value: https://locallift-studio-api.onrender.com
     disk:

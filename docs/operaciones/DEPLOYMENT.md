@@ -44,7 +44,11 @@ El repositorio ya incluye `render.yaml` para crear un servicio web Node en Rende
 - `healthCheckPath: /api/health`
 - plan `starter` y disco persistente montado en `/data`
 - `BUSINESS_DB_FILE=/data/business-db.json`
-- secretos `LOCALLIFT_ADMIN_TOKEN` y `CORS_ORIGIN` pendientes de rellenar en la plataforma
+- `DLS_DISCOVERY_PROVIDER=openstreetmap` para que el Radar use datos reales sin clave externa
+- `RADAR_LEADS_DB_FILE=/data/radar-leads.json` para guardar leads del Radar en el disco persistente
+- secretos `LOCALLIFT_ADMIN_TOKEN`, Google opcional y `CORS_ORIGIN` configurables en la plataforma
+
+El `Procfile` tambien declara `web: npm run start:prod`. Asi, si creas el servicio manualmente desde el panel de Render en vez de usar el Blueprint, Render sigue levantando el backend del Radar como proceso web.
 
 Render solo permite adjuntar discos persistentes a servicios de pago. No cambies el Blueprint a plan gratuito mientras el backend use archivos JSON para guardar datos reales.
 

@@ -6,6 +6,8 @@ Base web para digitalizar negocios locales: el cliente entrega datos, fotos y en
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/luicorcob/cascos)
 
+Para que el Radar funcione sin arrancarlo desde tu portátil, despliega este repositorio en Render como **Web Service Node** usando el botón anterior o el Blueprint `render.yaml`. No lo despliegues como Static Site: el radar necesita que Render ejecute `npm run start:prod` y sirva `/api/discovery/config`.
+
 ## Como usarlo
 
 1. Ejecuta `npm.cmd start` o abre `index.html` en el navegador.
@@ -29,7 +31,7 @@ Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
 `index.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
 `view=desktop`.
 
-Para simular produccion o subir el backend, usa `npm run start:prod` con las variables de `.env.example`. Este comando valida `NODE_ENV=production`, `HOST=0.0.0.0`, token admin, CORS HTTPS y ruta de base persistente antes de arrancar.
+Para simular produccion o subir el backend, usa `npm run start:prod` con las variables de `.env.example`. En Render ese comando queda configurado como Start Command del Web Service. Este comando valida `NODE_ENV=production`, `HOST=0.0.0.0`, token admin, CORS HTTPS y ruta de base persistente antes de arrancar.
 
 Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=https://tu-api.com` o pega esa URL en el campo `URL API` del dashboard. DLS la guarda en el navegador y la usa para leads, reservas, eventos, dashboard y reportes.
 

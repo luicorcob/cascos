@@ -6,7 +6,6 @@ const ADMIN_TOKEN_ENV_KEYS = ["LOCALLIFT_ADMIN_TOKEN", "ADMIN_API_TOKEN"];
 export function isAdminApiRequest(pathname) {
   return pathname === "/api/businesses"
     || pathname.startsWith("/api/businesses/")
-    || pathname.startsWith("/api/discovery/")
     || pathname === "/api/site-images"
     || pathname === "/api/leads"
     || pathname === "/api/studio/from-opportunity"
