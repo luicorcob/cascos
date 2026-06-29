@@ -1209,7 +1209,7 @@ textarea:focus-visible {
   display: grid;
   place-items: center;
   width: min(980px, calc(100vw - var(--intro-gate-pad) - var(--intro-gate-pad)), 108dvh);
-  aspect-ratio: 1180 / 760;
+  aspect-ratio: 1180 / 900;
   margin-top: clamp(-24px, -2vw, -8px);
   isolation: isolate;
 }
@@ -1495,7 +1495,13 @@ textarea:focus-visible {
   grid-area: 1 / 1;
   display: grid;
   width: min(1180px, calc(100vw - clamp(36px, 8vw, 96px)));
+  max-height: calc(100vh - var(--intro-gate-pad) - var(--intro-gate-pad));
+  max-height: calc(100dvh - var(--intro-gate-pad) - var(--intro-gate-pad));
   gap: clamp(18px, 3vw, 30px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-width: thin;
   opacity: 0;
   transform: translateY(28px) scale(0.985);
   animation: introHubIn 0.62s cubic-bezier(0.2, 0.84, 0.18, 1) 90ms forwards;
@@ -3765,6 +3771,201 @@ input[type="color"] {
   background: #eaf4f0;
   color: #587067;
   font-size: 0.72rem;
+}
+
+.menu-admin-panel,
+.menu-product-modal {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dce0db;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.menu-admin-head,
+.menu-product-modal-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.menu-admin-head strong,
+.menu-product-modal-head h3 {
+  margin: 0;
+  color: #1c211e;
+  font-size: 0.86rem;
+  line-height: 1.2;
+}
+
+.menu-admin-head span {
+  display: block;
+  margin-top: 3px;
+  color: #788078;
+  font-size: 0.66rem;
+  line-height: 1.35;
+}
+
+.menu-product-list {
+  display: grid;
+  gap: 8px;
+  max-height: 390px;
+  overflow-y: auto;
+}
+
+.menu-product-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 9px;
+  align-items: center;
+  padding: 9px;
+  border: 1px solid #e0e4df;
+  border-radius: 5px;
+  background: #fafbf9;
+}
+
+.menu-product-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #dde2dc;
+  border-radius: 5px;
+  background: #ffffff;
+  font-size: 1.12rem;
+}
+
+.menu-product-copy {
+  min-width: 0;
+}
+
+.menu-product-copy h3 {
+  overflow: hidden;
+  margin: 0;
+  color: #232823;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-product-copy p,
+.menu-product-copy span {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: #7b837b;
+  font-size: 0.62rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-product-copy p {
+  color: #59635d;
+  font-weight: 900;
+}
+
+.menu-product-price {
+  color: #116b59;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.menu-product-row-actions,
+.menu-product-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.menu-icon-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid #dce0db;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #59615b;
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.menu-icon-button:hover {
+  border-color: #9db4a9;
+  color: #116b59;
+}
+
+.menu-icon-button.is-danger:hover {
+  border-color: #d59999;
+  color: #a24141;
+}
+
+.menu-product-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed #d4d9d3;
+  border-radius: 5px;
+  color: #858c85;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.menu-product-modal {
+  min-height: 420px;
+  border-color: #cfd8d2;
+  background:
+    linear-gradient(135deg, rgba(22, 134, 111, 0.08), transparent 58%),
+    #ffffff;
+  box-shadow: 0 12px 38px rgba(24, 28, 24, 0.08);
+}
+
+.menu-product-modal[hidden] {
+  display: none;
+}
+
+.menu-product-form {
+  display: grid;
+  gap: 12px;
+}
+
+.menu-product-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-product-desc,
+.menu-product-featured {
+  grid-column: 1 / -1;
+}
+
+.menu-product-featured {
+  margin-top: 2px;
+}
+
+.menu-save-button {
+  border-color: #16866f;
+  background: #eaf7f2;
+  color: #116b59;
+}
+
+@media (max-width: 760px) {
+  .menu-admin-head,
+  .menu-product-modal-head,
+  .menu-product-row,
+  .menu-product-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-product-row-actions,
+  .menu-product-actions {
+    justify-content: flex-start;
+  }
 }
 
 .status-line {

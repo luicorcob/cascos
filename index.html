@@ -10,8 +10,8 @@
     >
     <meta name="theme-color" content="#050509">
     <link rel="icon" type="image/png" href="Logo.png">
-    <link rel="stylesheet" href="src/styles.css?v=20260626-1">
-    <link rel="stylesheet" href="src/studio-redesign.css?v=20260629-2">
+    <link rel="stylesheet" href="src/styles.css?v=20260629-3">
+    <link rel="stylesheet" href="src/studio-redesign.css?v=20260629-3">
     <link rel="stylesheet" href="assets/vendor/atropos.min.css">
     <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
     <link rel="stylesheet" href="src/generated-responsive.css?v=20260626-1">
@@ -24,7 +24,7 @@
       <div class="intro-gate-lines" aria-hidden="true"></div>
       <div class="intro-gate-content">
         <div class="intro-logo-stage">
-          <svg class="intro-logo-svg" viewBox="0 0 1180 760" role="img" aria-label="DLS Digital Local Sites">
+          <svg class="intro-logo-svg" viewBox="0 0 1180 900" role="img" aria-label="DLS Digital Local Sites">
             <defs>
               <linearGradient id="introFrameGradient" x1="118" y1="126" x2="1050" y2="612" gradientUnits="userSpaceOnUse">
                 <stop offset="0" stop-color="#18d9ff"></stop>
@@ -91,9 +91,9 @@
             </g>
 
             <g class="intro-subline">
-              <path class="intro-tube intro-subline-left" pathLength="1" d="M202 720H262"></path>
-              <text x="330" y="732">DIGITAL LOCAL SITES</text>
-              <path class="intro-tube intro-subline-right" pathLength="1" d="M884 720H952"></path>
+              <path class="intro-tube intro-subline-left" pathLength="1" d="M202 848H262"></path>
+              <text x="330" y="860">DIGITAL LOCAL SITES</text>
+              <path class="intro-tube intro-subline-right" pathLength="1" d="M884 848H952"></path>
             </g>
           </svg>
         </div>
@@ -983,12 +983,60 @@
               Moneda
               <input name="menuCurrency" type="text" maxlength="3" placeholder="EUR">
             </label>
-            <label>
-              Platos (categoria | nombre | precio | descripcion)
-              <textarea name="menuItems" rows="12" placeholder="Para empezar | Croquetas de vaca tudanca | 12 | Bechamel cremosa y jugo de asado&#10;Brasas | Costilla glaseada | 24 | Cocinada a baja temperatura"></textarea>
-            </label>
+            <input name="menuItems" type="hidden">
+            <section class="menu-admin-panel" aria-label="Editor de productos de la carta">
+              <div class="menu-admin-head">
+                <div>
+                  <strong>Productos de la carta</strong>
+                  <span>Las categorias se crean desde los platos.</span>
+                </div>
+                <button class="secondary-action" id="addMenuProductButton" type="button">Anadir plato</button>
+              </div>
+              <div class="menu-product-list" id="menuProductList" role="list" aria-label="Platos editables"></div>
+            </section>
+
+            <section class="menu-product-modal" id="menuProductModal" role="dialog" aria-modal="true" aria-labelledby="menuProductModalTitle" hidden>
+              <div class="menu-product-form" role="group" aria-label="Formulario de plato">
+                <div class="menu-product-modal-head">
+                  <h3 id="menuProductModalTitle">Anadir plato</h3>
+                  <button class="menu-icon-button" id="closeMenuProductModalButton" type="button" aria-label="Cerrar formulario">×</button>
+                </div>
+                <input id="menuProductId" type="hidden" data-menu-product-field disabled>
+                <div class="menu-product-form-grid">
+                  <label>
+                    Nombre
+                    <input id="menuProductName" type="text" autocomplete="off" required data-menu-product-field disabled>
+                  </label>
+                  <label>
+                    Precio
+                    <input id="menuProductPrice" type="number" min="0" step="0.10" inputmode="decimal" required data-menu-product-field disabled>
+                  </label>
+                  <label>
+                    Categoria
+                    <input id="menuProductCategory" type="text" list="menuCategoryOptions" autocomplete="off" required data-menu-product-field disabled>
+                    <datalist id="menuCategoryOptions"></datalist>
+                  </label>
+                  <label>
+                    Emoji / icono
+                    <input id="menuProductEmoji" type="text" maxlength="4" autocomplete="off" required data-menu-product-field disabled>
+                  </label>
+                  <label class="menu-product-desc">
+                    Descripcion breve
+                    <textarea id="menuProductDesc" rows="3" required data-menu-product-field disabled></textarea>
+                  </label>
+                  <label class="toggle-row menu-product-featured">
+                    <input id="menuProductFeatured" type="checkbox" data-menu-product-field disabled>
+                    Plato destacado
+                  </label>
+                </div>
+                <div class="menu-product-actions">
+                  <button class="secondary-action" id="cancelMenuProductButton" type="button">Cancelar</button>
+                  <button class="secondary-action menu-save-button" id="saveMenuProductButton" type="button">Guardar plato</button>
+                </div>
+              </div>
+            </section>
             <div class="media-note">
-              La carta es informativa y funciona sin pago online. Usa Tienda solo cuando el cliente deba anadir productos al carrito y pagar.
+              La carta se actualiza en la preview al guardar cada plato. Usa Tienda solo cuando el cliente deba anadir productos al carrito y pagar.
             </div>
           </section>
 
@@ -1239,6 +1287,6 @@
     <script src="src/studio/quality-control.js?v=20260622-1"></script>
     <script src="src/studio/renderer.js?v=20260622-2"></script>
     <script src="src/studio/exporter.js?v=20260622-1"></script>
-    <script src="src/app.js?v=20260629-2"></script>
+    <script src="src/app.js?v=20260629-3"></script>
   </body>
 </html>

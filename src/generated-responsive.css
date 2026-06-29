@@ -879,16 +879,23 @@ body:has(> .generated-site) {
     color: var(--on-accent);
   }
 
-  .generated-site .menu-category-grid {
+  .generated-site .menu-dish-grid {
     grid-template-columns: 1fr;
   }
 
-  .generated-site .menu-category {
+  .generated-site .menu-item {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
     padding: 18px;
   }
 
-  .generated-site .menu-item {
-    gap: 12px;
+  .generated-site .menu-price {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .generated-site .menu-section-separator {
+    gap: 10px;
   }
 }
 

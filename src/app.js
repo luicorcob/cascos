@@ -124,6 +124,14 @@ const stockImageResults = document.querySelector("#stockImageResults");
 const stockImageStatus = document.querySelector("#stockImageStatus");
 const stockLoadMoreButton = document.querySelector("#stockLoadMoreButton");
 const stockSiteImageButton = document.querySelector("#stockSiteImageButton");
+const addMenuProductButton = document.querySelector("#addMenuProductButton");
+const menuProductList = document.querySelector("#menuProductList");
+const menuProductModal = document.querySelector("#menuProductModal");
+const menuProductModalTitle = document.querySelector("#menuProductModalTitle");
+const closeMenuProductModalButton = document.querySelector("#closeMenuProductModalButton");
+const cancelMenuProductButton = document.querySelector("#cancelMenuProductButton");
+const saveMenuProductButton = document.querySelector("#saveMenuProductButton");
+const menuCategoryOptions = document.querySelector("#menuCategoryOptions");
 const previewInspectorLinkLabel = document.querySelector("#previewInspectorLinkLabel");
 const previewInspectorLinkUrl = document.querySelector("#previewInspectorLinkUrl");
 const previewInspectorTextSample = document.querySelector("#previewInspectorTextSample");
@@ -138,6 +146,15 @@ const previewButtonStyleEditor = createButtonStyleEditor({
   getBusiness: businessFromForm,
   onReset: resetPreviewButtonStyle
 });
+const menuProductFields = {
+  id: document.querySelector("#menuProductId"),
+  name: document.querySelector("#menuProductName"),
+  desc: document.querySelector("#menuProductDesc"),
+  price: document.querySelector("#menuProductPrice"),
+  category: document.querySelector("#menuProductCategory"),
+  emoji: document.querySelector("#menuProductEmoji"),
+  featured: document.querySelector("#menuProductFeatured")
+};
 
 let previewObserver;
 const editorHistory = createHistory({ limit: 60, clone: cloneData });
@@ -210,6 +227,7 @@ const studioExporter = createExporter({
 });
 let currentBusiness = withBusinessDefaults(draftStore.load() || cloneData(defaultSectorPreset));
 let currentBusinessRecord = null;
+let menu = normalizeMenuItems(currentBusiness.menuItems);
 let editorEditStart = null;
 let renderFrame = 0;
 let parallaxFrame = 0;
@@ -254,6 +272,7 @@ function init() {
   bindMediaManager();
   bindStockImageSearch();
   bindSiteImageGenerator();
+  bindMenuProductEditor();
   bindDirectEditing();
   bindActions();
   bindPresentationMode();
@@ -269,20 +288,35 @@ function init() {
   renderFromForm();
   applyLaunchView();
   form.addEventListener("input", (event) => {
+    if (event.target.closest("#menuProductModal")) {
+      return;
+    }
     markCustomDesignPack(event.target);
+    if (event.target?.name === "menuCurrency") {
+      renderMenuProductEditor();
+    }
     syncSegmentedControls();
     syncDesignPackState();
     syncQuickToggleState();
     scheduleRenderFromForm();
   });
   form.addEventListener("focusin", () => {
+    if (document.activeElement?.closest("#menuProductModal")) {
+      return;
+    }
     editorEditStart = cloneData(businessFromForm());
   });
   form.addEventListener("change", (event) => {
+    if (event.target.closest("#menuProductModal")) {
+      return;
+    }
     editorHistory.record(editorEditStart || currentBusiness);
     editorEditStart = null;
     updateHistoryButtons();
     markCustomDesignPack(event.target);
+    if (event.target?.name === "menuCurrency") {
+      renderMenuProductEditor();
+    }
     syncSegmentedControls();
     syncDesignPackState();
     syncQuickToggleState();
@@ -2558,7 +2592,9 @@ function fillForm(business) {
   setValue("menuTitle", resolved.menuTitle);
   setValue("menuIntro", resolved.menuIntro);
   setValue("menuCurrency", resolved.menuCurrency);
-  setValue("menuItems", serializeMenuItems(resolved.menuItems));
+  menu = normalizeMenuItems(resolved.menuItems);
+  setValue("menuItems", serializeMenuItems(menu));
+  renderMenuProductEditor();
   setChecked("googleEnabled", google.enabled);
   setValue("googleWorkspaceEmail", google.workspaceEmail);
   setValue("googleWorkspaceDomain", google.workspaceDomain);
@@ -2623,6 +2659,197 @@ function setRadio(name, value) {
   if (option) {
     option.checked = true;
   }
+}
+
+function bindMenuProductEditor() {
+  if (!menuProductList || !addMenuProductButton || !menuProductModal) {
+    return;
+  }
+
+  setMenuProductFieldsDisabled(true);
+
+  addMenuProductButton.addEventListener("click", () => openMenuProductModal());
+  closeMenuProductModalButton?.addEventListener("click", closeMenuProductModal);
+  cancelMenuProductButton?.addEventListener("click", closeMenuProductModal);
+  saveMenuProductButton?.addEventListener("click", saveMenuProduct);
+  menuProductModal.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && event.target?.tagName !== "TEXTAREA") {
+      event.preventDefault();
+      saveMenuProduct();
+    }
+  });
+
+  menuProductList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-menu-action]");
+    if (!button) {
+      return;
+    }
+
+    const item = menu.find((dish) => dish.id === button.dataset.menuId);
+    if (button.dataset.menuAction === "edit" && item) {
+      openMenuProductModal(item);
+    }
+
+    if (button.dataset.menuAction === "delete" && item) {
+      deleteMenuProduct(item);
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !menuProductModal.hidden) {
+      closeMenuProductModal();
+    }
+  });
+}
+
+function renderMenuProductEditor() {
+  if (!menuProductList) {
+    return;
+  }
+
+  menu = normalizeMenuItems(menu);
+  syncMenuProductField();
+  renderMenuCategoryOptions();
+
+  if (!menu.length) {
+    menuProductList.innerHTML = '<p class="menu-product-empty" role="listitem">Todavia no hay platos. Anade el primero para activar la carta.</p>';
+    return;
+  }
+
+  menuProductList.innerHTML = menu.map((item) => `
+    <article class="menu-product-row" role="listitem">
+      <span class="menu-product-icon" aria-hidden="true">${escapeHtml(item.emoji)}</span>
+      <div class="menu-product-copy">
+        <h3>${escapeHtml(item.name)}</h3>
+        <p>${escapeHtml(item.category)}${item.featured ? " · Destacado" : ""}</p>
+        <span>${escapeHtml(item.description)}</span>
+      </div>
+      <strong class="menu-product-price">${escapeHtml(formatMoney(item.price, form.elements.menuCurrency?.value || "EUR"))}</strong>
+      <div class="menu-product-row-actions" aria-label="Acciones de ${escapeAttr(item.name)}">
+        <button class="menu-icon-button" type="button" data-menu-action="edit" data-menu-id="${escapeAttr(item.id)}" aria-label="Editar ${escapeAttr(item.name)}">✎</button>
+        <button class="menu-icon-button is-danger" type="button" data-menu-action="delete" data-menu-id="${escapeAttr(item.id)}" aria-label="Eliminar ${escapeAttr(item.name)}">×</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderMenuCategoryOptions() {
+  if (!menuCategoryOptions) {
+    return;
+  }
+
+  const categories = [...new Set(menu.map((item) => item.category).filter(Boolean))];
+  menuCategoryOptions.innerHTML = categories
+    .map((category) => `<option value="${escapeAttr(category)}"></option>`)
+    .join("");
+}
+
+function syncMenuProductField() {
+  setValue("menuItems", serializeMenuItems(menu));
+}
+
+function setMenuProductFieldsDisabled(disabled) {
+  Object.values(menuProductFields).forEach((field) => {
+    if (field) {
+      field.disabled = disabled;
+    }
+  });
+}
+
+function openMenuProductModal(item = null) {
+  if (!menuProductModal) {
+    return;
+  }
+
+  setMenuProductFieldsDisabled(false);
+  menuProductModal.hidden = false;
+  menuProductModalTitle.textContent = item ? "Editar plato" : "Anadir plato";
+  menuProductFields.id.value = item?.id || "";
+  menuProductFields.name.value = item?.name || "";
+  menuProductFields.desc.value = item?.description || item?.desc || "";
+  menuProductFields.price.value = item ? formatPlainPrice(item.price) : "";
+  menuProductFields.category.value = item?.category || item?.cat || "";
+  menuProductFields.emoji.value = item?.emoji || "🍽";
+  menuProductFields.featured.checked = Boolean(item?.featured);
+  menuProductModal.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => menuProductFields.name?.focus(), 120);
+}
+
+function closeMenuProductModal() {
+  if (!menuProductModal) {
+    return;
+  }
+
+  menuProductModal.hidden = true;
+  Object.values(menuProductFields).forEach((field) => {
+    if (!field) return;
+    if (field.type === "checkbox") {
+      field.checked = false;
+    } else {
+      field.value = "";
+    }
+  });
+  setMenuProductFieldsDisabled(true);
+  addMenuProductButton?.focus();
+}
+
+function saveMenuProduct() {
+  const requiredFields = [
+    menuProductFields.name,
+    menuProductFields.desc,
+    menuProductFields.price,
+    menuProductFields.category,
+    menuProductFields.emoji
+  ];
+  const invalidField = requiredFields.find((field) => !field?.checkValidity());
+
+  if (invalidField) {
+    invalidField.reportValidity();
+    return;
+  }
+
+  editorHistory.record(businessFromForm());
+
+  const idBase = slugify(`${menuProductFields.category.value}-${menuProductFields.name.value}`) || "plato";
+  const id = menuProductFields.id.value || `${idBase}-${Date.now().toString(36)}`;
+  const dish = normalizeMenuItem({
+    id,
+    name: menuProductFields.name.value,
+    desc: menuProductFields.desc.value,
+    precio: parsePrice(menuProductFields.price.value),
+    cat: menuProductFields.category.value,
+    emoji: menuProductFields.emoji.value,
+    featured: menuProductFields.featured.checked
+  }, menu.length);
+  const existingIndex = menu.findIndex((item) => item.id === dish.id);
+
+  if (existingIndex >= 0) {
+    menu[existingIndex] = dish;
+  } else {
+    menu.push(dish);
+  }
+
+  menu = normalizeMenuItems(menu);
+  syncMenuProductField();
+  renderMenuProductEditor();
+  closeMenuProductModal();
+  renderFromForm();
+  updateHistoryButtons();
+  setStatus(`Carta actualizada: ${dish.name}.`);
+}
+
+function deleteMenuProduct(item) {
+  if (!window.confirm(`Eliminar "${item.name}" de la carta?`)) {
+    return;
+  }
+
+  editorHistory.record(businessFromForm());
+  menu = menu.filter((dish) => dish.id !== item.id);
+  syncMenuProductField();
+  renderMenuProductEditor();
+  renderFromForm();
+  updateHistoryButtons();
+  setStatus(`Plato eliminado: ${item.name}.`);
 }
 
 function businessFromForm() {

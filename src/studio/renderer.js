@@ -604,6 +604,15 @@
 
     function renderMenuSection(business) {
       const groups = groupMenuItems(business.menuItems);
+      const categoryNav = groups.length > 1
+        ? `
+          <nav class="menu-category-nav reveal" aria-label="Categorias de la carta">
+            ${groups.map((group) => `
+              <a href="#menu-${escapeAttr(slugify(group.category))}">${escapeHtml(group.category)}</a>
+            `).join("")}
+          </nav>
+        `
+        : "";
 
       return `
         <section class="site-section menu-section" id="carta" data-section-key="menu">
@@ -615,18 +624,23 @@
               </div>
               <p class="reveal">${escapeHtml(business.menuIntro)}</p>
             </div>
-            <div class="menu-category-grid">
+            ${categoryNav}
+            <div class="menu-category-stack">
               ${groups.map((group) => `
-                <section class="menu-category reveal" aria-labelledby="menu-${escapeAttr(slugify(group.category))}">
-                  <h3 id="menu-${escapeAttr(slugify(group.category))}">${escapeHtml(group.category)}</h3>
-                  <div class="menu-items">
+                <section class="menu-category-block reveal" id="menu-${escapeAttr(slugify(group.category))}" aria-labelledby="menu-title-${escapeAttr(slugify(group.category))}">
+                  <div class="menu-section-separator">
+                    <h3 id="menu-title-${escapeAttr(slugify(group.category))}">${escapeHtml(group.category)}</h3>
+                  </div>
+                  <div class="menu-items menu-dish-grid">
                     ${group.items.map((item) => `
-                      <article class="menu-item">
-                        <div>
+                      <article class="menu-item ${item.featured ? "is-featured" : ""}">
+                        <span class="menu-item-icon" aria-hidden="true">${escapeHtml(item.emoji || "🍽")}</span>
+                        <div class="menu-item-copy">
                           <h4>${escapeHtml(item.name)}</h4>
                           ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
+                          ${item.featured ? '<span class="menu-featured-label">Destacado</span>' : ""}
                         </div>
-                        <strong>${escapeHtml(formatMoney(item.price, business.menuCurrency))}</strong>
+                        <strong class="menu-price">${escapeHtml(formatMoney(item.price, business.menuCurrency))}</strong>
                       </article>
                     `).join("")}
                   </div>

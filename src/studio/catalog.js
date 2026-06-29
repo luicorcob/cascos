@@ -343,40 +343,76 @@
     menuCurrency: "EUR",
     menuItems: [
       {
-        category: "Para empezar",
-        name: "Croquetas de vaca tudanca",
-        price: 12,
-        description: "Bechamel cremosa, carne guisada y jugo de asado."
+        id: "ostra-valenciana-ajoblanco",
+        cat: "Entrantes",
+        name: "Ostra valenciana con ajoblanco",
+        precio: 7.5,
+        desc: "Ostra fresca, ajoblanco de almendra marcona, uva encurtida y aceite de cebollino.",
+        emoji: "🦪",
+        featured: true
       },
       {
-        category: "Para empezar",
-        name: "Puerro a la brasa",
-        price: 11.5,
-        description: "Avellana tostada, queso ahumado y vinagreta de hierbas."
+        id: "tomate-rosa-ventresca",
+        cat: "Entrantes",
+        name: "Tomate rosa, ventresca y piparra",
+        precio: 16.8,
+        desc: "Tomate de temporada, ventresca del norte, piparra suave y jugo de aceituna arbequina.",
+        emoji: "🍅",
+        featured: false
       },
       {
-        category: "Brasas",
-        name: "Costilla glaseada",
-        price: 24,
-        description: "Cocinada a baja temperatura, lacada al fuego y acompanada de patata."
+        id: "croqueta-jamon-iberico",
+        cat: "Entrantes",
+        name: "Croqueta cremosa de jamon iberico",
+        precio: 12.5,
+        desc: "Bechamel lenta, jamon iberico de bellota y velo crujiente de pan artesano.",
+        emoji: "🥘",
+        featured: false
       },
       {
-        category: "Brasas",
-        name: "Pescado del Cantabrico",
-        price: 26,
-        description: "Pieza diaria, verduras de temporada y salsa de sus espinas."
+        id: "arroz-gamba-roja",
+        cat: "Arroces y mar",
+        name: "Arroz seco de gamba roja",
+        precio: 26.9,
+        desc: "Fondo tostado de marisco, gamba roja de Denia y alioli ahumado de azafran.",
+        emoji: "🦐",
+        featured: true
       },
       {
-        category: "Postres",
-        name: "Tarta de queso ahumada",
-        price: 8,
-        description: "Cremosa, poco dulce y terminada junto a las brasas."
+        id: "lubina-salvaje-brasa",
+        cat: "Arroces y mar",
+        name: "Lubina salvaje a la brasa",
+        precio: 29.4,
+        desc: "Lubina de lonja, emulsion de citricos, hinojo asado y salicornia.",
+        emoji: "🐟",
+        featured: false
       },
       {
-        category: "Postres",
-        name: "Chocolate, sal y aceite",
-        price: 7.5,
-        description: "Chocolate intenso, escamas de sal y aceite de oliva."
+        id: "pluma-iberica-lacada",
+        cat: "Brasas",
+        name: "Pluma iberica lacada",
+        precio: 27.2,
+        desc: "Pluma iberica, jugo reducido de PX, berenjena asada y almendra tostada.",
+        emoji: "🥩",
+        featured: true
+      },
+      {
+        id: "canelon-carrillera-vino",
+        cat: "Brasas",
+        name: "Canelon de carrillera al vino tinto",
+        precio: 21.6,
+        desc: "Pasta fina, carrillera melosa, crema de apionabo y queso curado de oveja.",
+        emoji: "🍷",
+        featured: false
+      },
+      {
+        id: "crema-catalana-naranja",
+        cat: "Postres",
+        name: "Crema catalana de naranja amarga",
+        precio: 8.9,
+        desc: "Crema sedosa, caramelo quebrado, naranja amarga y flor de sal.",
+        emoji: "🍊",
+        featured: false
       }
     ],
     google: {

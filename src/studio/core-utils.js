@@ -62,21 +62,44 @@
   }
 
   function serializeMenuItems(items = []) {
-    return normalizeMenuItems(items)
-      .map((item) => [
-        item.category,
-        item.name,
-        formatPlainPrice(item.price),
-        item.description
-      ].join(" | "))
-      .join("\n");
+    return JSON.stringify(
+      normalizeMenuItems(items).map((item) => ({
+        id: item.id,
+        name: item.name,
+        desc: item.description,
+        precio: item.price,
+        cat: item.category,
+        emoji: item.emoji,
+        featured: item.featured
+      })),
+      null,
+      2
+    );
   }
 
   function parseMenuItems(value) {
+    if (Array.isArray(value)) {
+      return normalizeMenuItems(value);
+    }
+
+    const source = String(value || "").trim();
+    if (!source) {
+      return [];
+    }
+
+    if (source.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(source);
+        return normalizeMenuItems(parsed);
+      } catch (error) {
+        return [];
+      }
+    }
+
     return parseLines(value)
-      .map((line) => {
-        const [category, name, price, ...description] = line.split("|").map((part) => part.trim());
-        return normalizeMenuItem({ category, name, price, description: description.join(" | ") });
+      .map((line, index) => {
+        const [category, name, price, description = "", emoji = "", featured = ""] = line.split("|").map((part) => part.trim());
+        return normalizeMenuItem({ category, name, price, description, emoji, featured }, index);
       })
       .filter((item) => item.name && item.price > 0);
   }
@@ -86,17 +109,51 @@
       return [];
     }
 
+    const seenIds = new Set();
+
     return items
-      .map((item) => normalizeMenuItem(item))
-      .filter((item) => item.name && item.price > 0);
+      .map((item, index) => normalizeMenuItem(item, index))
+      .filter((item) => item.name && item.price > 0)
+      .map((item, index) => {
+        const fallbackId = slugify(`${item.category}-${item.name}`) || `plato-${index + 1}`;
+        const baseId = slugify(item.id || fallbackId) || fallbackId;
+        let id = baseId;
+        let suffix = 2;
+
+        while (seenIds.has(id)) {
+          id = `${baseId}-${suffix}`;
+          suffix += 1;
+        }
+
+        seenIds.add(id);
+        return { ...item, id };
+      });
   }
 
-  function normalizeMenuItem(item = {}) {
+  function normalizeMenuItem(item = {}, index = 0) {
+    const category = textOr(item.category ?? item.cat, "Carta");
+    const description = textOr(item.description ?? item.desc, "");
+    const price = parsePrice(item.price ?? item.precio);
+    const name = textOr(item.name, "");
+    const id = textOr(item.id, slugify(`${category}-${name}`) || `plato-${index + 1}`);
+    const emoji = textOr(item.emoji ?? item.icon, "🍽");
+    const featured = item.featured === true
+      || item.featured === "true"
+      || item.featured === "on"
+      || item.featured === "1"
+      || item.destacado === true;
+
     return {
-      category: textOr(item.category, "Carta"),
-      name: textOr(item.name, ""),
-      price: parsePrice(item.price),
-      description: textOr(item.description, "")
+      id,
+      category,
+      cat: category,
+      name,
+      price,
+      precio: price,
+      description,
+      desc: description,
+      emoji,
+      featured
     };
   }
 
