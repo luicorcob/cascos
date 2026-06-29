@@ -7,6 +7,7 @@ export function isAdminApiRequest(pathname) {
   return pathname === "/api/businesses"
     || pathname.startsWith("/api/businesses/")
     || pathname.startsWith("/api/discovery/")
+    || pathname === "/api/site-images"
     || pathname === "/api/leads"
     || pathname === "/api/studio/from-opportunity"
     || (pathname.startsWith("/api/google/") && pathname !== "/api/google/oauth/callback");

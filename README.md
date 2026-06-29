@@ -16,13 +16,14 @@ Base web para digitalizar negocios locales: el cliente entrega datos, fotos y en
 6. Anade, duplica, reordena o borra servicios, diferenciales, resenas, FAQ y fotos desde el lienzo.
 7. Elige bloques o aplica y guarda composiciones reutilizables sin perder contenidos.
 8. Reutiliza imagenes subidas o URLs desde `Fotos > Biblioteca de medios`.
-9. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
-10. Pulsa `Entrega Pro` para generar un preflight con bloqueos, avisos y siguientes pasos.
-11. Revisa el score de entrega; los errores criticos bloquean la exportacion.
-12. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
-13. Usa `Exportar paquete` para descargar un ZIP con HTML, `business.json`, ficha de entrega y cambios.
-14. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
-15. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
+9. Genera un set de imagenes por negocio desde `POST /api/site-images` si tienes claves de Unsplash, Pexels o Pixabay.
+10. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
+11. Pulsa `Entrega Pro` para generar un preflight con bloqueos, avisos y siguientes pasos.
+12. Revisa el score de entrega; los errores criticos bloquean la exportacion.
+13. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
+14. Usa `Exportar paquete` para descargar un ZIP con HTML, `business.json`, ficha de entrega y cambios.
+15. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
+16. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
 
 Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
 `index.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
@@ -57,6 +58,7 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 - Biblioteca de variantes para portada, servicios, galeria, resenas y contacto.
 - Composiciones reutilizables que conservan el contenido del negocio.
 - Gestor local de medios con compresion, dimensiones, texto alternativo y reutilizacion.
+- Modulo de imagenes por negocio con Unsplash, Pexels y Pixabay, creditos, alt text y foco CSS.
 - Autoguardado de borrador con recuperacion al volver a abrir el Studio.
 - Vista previa dinamica en tiempo real.
 - Ocho demos por sector: restaurante, clinica, belleza, gimnasio, bar, papeleria, kebab y bazar.
@@ -163,6 +165,28 @@ POST   http://127.0.0.1:5173/api/businesses
 GET    http://127.0.0.1:5173/api/businesses/{id-o-slug}
 PUT    http://127.0.0.1:5173/api/businesses/{id-o-slug}
 DELETE http://127.0.0.1:5173/api/businesses/{id-o-slug}/archive
+```
+
+## API de imagenes por negocio
+
+`POST /api/site-images` recibe `negocio`, `business` o un objeto plano con nombre, tipo, ubicacion, estilo, secciones y servicios. Devuelve un JSON con imagenes para `hero`, `servicios`, `galeria`, `contacto` y otras secciones compatibles, incluyendo creditos, alt text, foco CSS y query usada.
+
+El endpoint usa `UNSPLASH_ACCESS_KEY`, `PEXELS_API_KEY` y `PIXABAY_API_KEY` por ese orden. Si no hay claves o no hay resultados validos, devuelve `null` y avisos en `meta.advertencias` sin inventar URLs.
+
+```powershell
+$body = @{
+  negocio = @{
+    nombre = "Peluqueria Lucia"
+    tipo = "peluqueria"
+    descripcion = "Salon de belleza para mujer en Sevilla"
+    ubicacion = "Sevilla, Espana"
+    estilo_web = "elegante y femenino"
+    secciones = @("hero", "servicios", "galeria", "contacto")
+    servicios = @("Corte de pelo", "Coloracion profesional", "Tratamientos capilares")
+  }
+} | ConvertTo-Json -Depth 4
+
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5173/api/site-images" -Body $body -ContentType "application/json"
 ```
 
 Filtros de listado:

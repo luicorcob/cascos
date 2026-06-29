@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#050509">
     <link rel="icon" type="image/png" href="Logo.png">
     <link rel="stylesheet" href="src/styles.css?v=20260626-1">
-    <link rel="stylesheet" href="src/studio-redesign.css?v=20260626-3">
+    <link rel="stylesheet" href="src/studio-redesign.css?v=20260629-2">
     <link rel="stylesheet" href="assets/vendor/atropos.min.css">
     <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
     <link rel="stylesheet" href="src/generated-responsive.css?v=20260626-1">
@@ -118,48 +118,94 @@
         </div>
 
         <div class="intro-destination-grid">
-          <a class="intro-destination-card is-primary" href="#studioWorkspace" data-intro-destination="studio">
+          <a class="intro-destination-card is-primary is-studio" href="#studioWorkspace" data-intro-destination="studio">
             <span class="intro-destination-index">01</span>
+            <span class="intro-destination-visual intro-visual-studio" aria-hidden="true">
+              <span class="studio-monitor">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+              <span class="studio-base"></span>
+              <span class="studio-code-beam"></span>
+            </span>
             <span class="intro-destination-label">Produccion</span>
             <strong>DLS Studio</strong>
             <span>Editor visual para crear, pulir y exportar webs premium.</span>
             <em>Entrar al Studio</em>
           </a>
 
-          <a class="intro-destination-card" href="pages/business-radar.html">
+          <a class="intro-destination-card is-radar" href="pages/business-radar.html">
             <span class="intro-destination-index">02</span>
+            <span class="intro-destination-visual intro-visual-radar" aria-hidden="true">
+              <span class="radar-scope">
+                <span class="radar-sweep"></span>
+                <span class="radar-blip radar-blip-a"></span>
+                <span class="radar-blip radar-blip-b"></span>
+                <span class="radar-blip radar-blip-c"></span>
+              </span>
+            </span>
             <span class="intro-destination-label">Prospeccion</span>
             <strong>DLS Radar</strong>
             <span>Detecta negocios, oportunidades y prioridades comerciales.</span>
             <em>Abrir Radar</em>
           </a>
 
-          <a class="intro-destination-card" href="pages/onboarding.html">
+          <a class="intro-destination-card is-brief" href="pages/onboarding.html">
             <span class="intro-destination-index">03</span>
+            <span class="intro-destination-visual intro-visual-brief" aria-hidden="true">
+              <span class="brief-sheet brief-sheet-a"></span>
+              <span class="brief-sheet brief-sheet-b"></span>
+              <span class="brief-node brief-node-a"></span>
+              <span class="brief-node brief-node-b"></span>
+              <span class="brief-link"></span>
+            </span>
             <span class="intro-destination-label">Brief</span>
             <strong>Brief + Google</strong>
             <span>Captura datos, prepara Google Ops y ordena el arranque.</span>
             <em>Iniciar brief</em>
           </a>
 
-          <a class="intro-destination-card" href="pages/business-dashboard.html">
+          <a class="intro-destination-card is-portal" href="pages/business-dashboard.html">
             <span class="intro-destination-index">04</span>
+            <span class="intro-destination-visual intro-visual-portal" aria-hidden="true">
+              <span class="portal-panel portal-panel-main"></span>
+              <span class="portal-panel portal-panel-side"></span>
+              <span class="portal-flow portal-flow-a"></span>
+              <span class="portal-flow portal-flow-b"></span>
+            </span>
             <span class="intro-destination-label">Operacion</span>
             <strong>Portal</strong>
             <span>Gestiona actividad, contactos, reservas y estado del negocio.</span>
             <em>Abrir portal</em>
           </a>
 
-          <a class="intro-destination-card" href="pages/store-admin.html">
+          <a class="intro-destination-card is-store" href="pages/store-admin.html">
             <span class="intro-destination-index">05</span>
+            <span class="intro-destination-visual intro-visual-store" aria-hidden="true">
+              <span class="store-product store-product-a"></span>
+              <span class="store-product store-product-b"></span>
+              <span class="store-product store-product-c"></span>
+              <span class="store-scan"></span>
+              <span class="store-checkout"></span>
+            </span>
             <span class="intro-destination-label">Comercio</span>
             <strong>Tienda</strong>
             <span>Administra catalogo, productos, pedidos y checkout.</span>
             <em>Gestionar tienda</em>
           </a>
 
-          <a class="intro-destination-card" href="pages/investor.html">
+          <a class="intro-destination-card is-pitch" href="pages/investor.html">
             <span class="intro-destination-index">06</span>
+            <span class="intro-destination-visual intro-visual-pitch" aria-hidden="true">
+              <span class="pitch-bars"></span>
+              <span class="pitch-line"></span>
+              <span class="pitch-node pitch-node-a"></span>
+              <span class="pitch-node pitch-node-b"></span>
+              <span class="pitch-node pitch-node-c"></span>
+            </span>
             <span class="intro-destination-label">Vision</span>
             <strong>Pitch</strong>
             <span>Abre la narrativa de producto, mercado y ejecucion.</span>
@@ -517,6 +563,8 @@
             <fieldset class="media-library-panel">
               <legend>Biblioteca de medios</legend>
               <div class="media-library-actions">
+                <button class="site-image-generate-button" id="siteImageGenerateButton" type="button">Generar pack visual</button>
+                <span class="site-image-generate-status" id="siteImageGenerateStatus"></span>
                 <label class="media-upload-button">
                   Subir imagenes
                   <input id="mediaUploadInput" type="file" accept="image/*" multiple hidden>
@@ -1061,6 +1109,7 @@
                 <strong>Galeria libre 200+</strong>
                 <span id="stockImageStatus">Seleccion profesional y licencias libres</span>
               </div>
+              <button class="stock-site-image-button" id="stockSiteImageButton" type="button">Pack del negocio</button>
               <div class="stock-category-list" id="stockCategoryList" aria-label="Categorias de imagenes libres"></div>
               <div class="stock-search-row">
                 <input id="stockSearchInput" type="search" placeholder="Buscar entre miles de fotos libres">
@@ -1190,6 +1239,6 @@
     <script src="src/studio/quality-control.js?v=20260622-1"></script>
     <script src="src/studio/renderer.js?v=20260622-2"></script>
     <script src="src/studio/exporter.js?v=20260622-1"></script>
-    <script src="src/app.js?v=20260626-3"></script>
+    <script src="src/app.js?v=20260629-2"></script>
   </body>
 </html>

@@ -108,6 +108,8 @@ const mediaLibraryGrid = document.querySelector("#mediaLibrary");
 const mediaUploadInput = document.querySelector("#mediaUploadInput");
 const mediaUrlInput = document.querySelector("#mediaUrlInput");
 const mediaUrlAddButton = document.querySelector("#mediaUrlAddButton");
+const siteImageGenerateButton = document.querySelector("#siteImageGenerateButton");
+const siteImageGenerateStatus = document.querySelector("#siteImageGenerateStatus");
 const previewInspector = document.querySelector("#previewInspector");
 const previewInspectorTitle = document.querySelector("#previewInspectorTitle");
 const previewInspectorImage = document.querySelector("#previewInspectorImage");
@@ -121,6 +123,7 @@ const stockSearchButton = document.querySelector("#stockSearchButton");
 const stockImageResults = document.querySelector("#stockImageResults");
 const stockImageStatus = document.querySelector("#stockImageStatus");
 const stockLoadMoreButton = document.querySelector("#stockLoadMoreButton");
+const stockSiteImageButton = document.querySelector("#stockSiteImageButton");
 const previewInspectorLinkLabel = document.querySelector("#previewInspectorLinkLabel");
 const previewInspectorLinkUrl = document.querySelector("#previewInspectorLinkUrl");
 const previewInspectorTextSample = document.querySelector("#previewInspectorTextSample");
@@ -250,6 +253,7 @@ function init() {
   bindLayoutTemplates();
   bindMediaManager();
   bindStockImageSearch();
+  bindSiteImageGenerator();
   bindDirectEditing();
   bindActions();
   bindPresentationMode();
@@ -750,6 +754,311 @@ function renderMediaDetails(item) {
   return escapeHtml([source, dimensions, weight, license].filter(Boolean).join(" - ") + warning);
 }
 
+function bindSiteImageGenerator() {
+  siteImageGenerateButton?.addEventListener("click", generateAndApplySiteImages);
+  stockSiteImageButton?.addEventListener("click", loadSiteImageCandidates);
+}
+
+async function generateAndApplySiteImages() {
+  if (!siteImageGenerateButton || siteImageGenerateButton.disabled) {
+    return;
+  }
+
+  setSiteImageLoading(true, "Generando imagenes del negocio...");
+
+  try {
+    const result = await requestSiteImagePack(["hero", "servicios", "galeria", "contacto"]);
+    const pack = buildSiteImagePack(result);
+
+    if (!pack.hero && !pack.gallery.length) {
+      throw new Error(siteImageWarning(result) || "No llegaron imagenes nuevas. Revisa las claves de imagenes.");
+    }
+
+    runQuickMutation(() => {
+      applySiteImagePack(pack);
+    }, `Pack visual aplicado: ${pack.total} imagenes.`);
+
+    const added = saveSiteImageItems(pack.items);
+    renderMediaLibrary();
+    setSiteImageGenerateStatus(`${pack.total} imagenes aplicadas${added ? `, ${added} guardadas` : ""}.`);
+    showSiteImageItemsInInspector(pack.items);
+  } catch (error) {
+    const message = error?.message || "No se pudo generar el pack visual.";
+    setSiteImageGenerateStatus(message);
+    setStatus(message);
+  } finally {
+    setSiteImageLoading(false);
+  }
+}
+
+async function loadSiteImageCandidates() {
+  if (!stockImageResults || stockSiteImageButton?.disabled) {
+    return;
+  }
+
+  setSiteImageLoading(true, "Buscando pack del negocio...");
+  renderStockImageStatus("Buscando imagenes del negocio...");
+  stockImageResults.innerHTML = '<p class="stock-empty">Cargando pack visual...</p>';
+  if (stockLoadMoreButton) {
+    stockLoadMoreButton.hidden = true;
+  }
+
+  try {
+    const result = await requestSiteImagePack(["hero", "servicios", "galeria", "contacto"]);
+    const pack = buildSiteImagePack(result);
+
+    if (!pack.items.length) {
+      throw new Error(siteImageWarning(result) || "No llegaron imagenes nuevas. Revisa las claves de imagenes.");
+    }
+
+    showSiteImageItemsInInspector(pack.items);
+    setSiteImageGenerateStatus(`${pack.items.length} candidatas del negocio.`);
+  } catch (error) {
+    const catalogItems = stockImageState.catalogItems || [];
+    stockImageState = {
+      ...stockImageState,
+      loading: false,
+      mode: catalogItems.length ? "catalog" : "search",
+      items: catalogItems.length ? catalogItems : []
+    };
+    renderStockImages();
+    const message = error?.message || "No se pudo cargar el pack del negocio.";
+    renderStockImageStatus(message);
+    setSiteImageGenerateStatus(message);
+  } finally {
+    setSiteImageLoading(false);
+  }
+}
+
+async function requestSiteImagePack(sections) {
+  const business = businessFromForm();
+  const payload = {
+    negocio: {
+      nombre: business.name,
+      tipo: business.category,
+      descripcion: [business.description, business.tagline, business.conversionGoal].filter(Boolean).join(". "),
+      ubicacion: business.location || business.address,
+      colores: [business.accent].filter(Boolean),
+      estilo_web: [
+        business.designPack,
+        business.artDirection,
+        business.contentMode,
+        business.typography,
+        business.visualShape
+      ].filter(Boolean).join(" "),
+      secciones: sections,
+      servicios: business.services,
+      testimonios: business.testimonials,
+      imageRatio: business.imageRatio,
+      showGallery: business.showGallery,
+      showTestimonials: business.showTestimonials,
+      showMap: business.showMap
+    }
+  };
+
+  const response = await fetch(apiUrl("/api/site-images"), {
+    method: "POST",
+    headers: apiHeaders({ json: true }),
+    body: JSON.stringify(payload)
+  });
+  let result = {};
+
+  try {
+    result = await response.json();
+  } catch (error) {
+    result = {};
+  }
+
+  if (!response.ok) {
+    throw new Error(result.error || "API de imagenes no disponible. Levanta el servidor con npm.cmd start.");
+  }
+
+  return result;
+}
+
+function buildSiteImagePack(result = {}) {
+  const images = result.imagenes || {};
+  const hero = toSiteImageItem(images.hero?.principal, "Portada", "hero", 0);
+  const heroAlternatives = Array.isArray(images.hero?.alternativas)
+    ? images.hero.alternativas.map((item, index) => toSiteImageItem(item, `Portada alternativa ${index + 1}`, "hero-alt", index)).filter(Boolean)
+    : [];
+  const services = Array.isArray(images.servicios)
+    ? images.servicios.map((item, index) => toSiteImageItem(item, item.label || `Servicio ${index + 1}`, "servicios", index)).filter(Boolean)
+    : [];
+  const gallery = Array.isArray(images.galeria)
+    ? images.galeria.map((item, index) => toSiteImageItem(item, `Galeria ${index + 1}`, "galeria", index)).filter(Boolean)
+    : [];
+  const contact = toSiteImageItem(images.contacto, "Contacto", "contacto", 0);
+  const items = uniqueSiteImageItems([hero, ...heroAlternatives, ...services, ...gallery, contact].filter(Boolean));
+
+  return {
+    hero,
+    gallery,
+    items,
+    total: items.length,
+    warnings: Array.isArray(result.meta?.advertencias) ? result.meta.advertencias : []
+  };
+}
+
+function applySiteImagePack(pack) {
+  if (pack.hero?.url) {
+    setValue("heroImage", pack.hero.url);
+    mergeMediaMetadata(pack.hero.url, mediaMetadataFromSiteImage(pack.hero));
+  }
+
+  if (pack.gallery.length) {
+    const galleryUrls = pack.gallery.map((item) => item.url).filter(Boolean).slice(0, 12);
+    setValue("gallery", galleryUrls.join("\n"));
+    setChecked("showGallery", true);
+    pack.gallery.forEach((item) => {
+      mergeMediaMetadata(item.url, mediaMetadataFromSiteImage(item));
+    });
+  }
+}
+
+function saveSiteImageItems(items) {
+  let added = 0;
+  items.forEach((item) => {
+    try {
+      const stored = mediaLibrary.add({
+        name: item.title,
+        url: item.url,
+        alt: item.alt,
+        license: item.license,
+        sourceUrl: item.sourceUrl,
+        provider: item.provider,
+        creator: item.creator
+      });
+      mediaLibrary.update(stored.id, {
+        name: item.title,
+        alt: item.alt,
+        license: item.license,
+        sourceUrl: item.sourceUrl,
+        provider: item.provider,
+        creator: item.creator
+      });
+      added += 1;
+    } catch (error) {
+      // A full media library should not block applying the selected images.
+    }
+  });
+  return added;
+}
+
+function showSiteImageItemsInInspector(items) {
+  if (!stockImageResults || !items.length) {
+    return;
+  }
+  stockImageState = {
+    ...stockImageState,
+    mode: "site",
+    query: "",
+    page: 1,
+    loading: false,
+    items,
+    hasNext: false
+  };
+  renderStockImages();
+  renderStockImageStatus(`${items.length} imagenes del negocio`);
+}
+
+function toSiteImageItem(image, title, section, index) {
+  if (!image?.url) {
+    return null;
+  }
+
+  const provider = providerLabel(image.fuente);
+  const sourceUrl = normalizeOptionalUrl(image.source_url || image.url_original || image.url);
+  const url = normalizeImage(image.url, "");
+  const thumbnail = normalizeImage(image.url_thumb || image.url, url);
+
+  if (!url) {
+    return null;
+  }
+
+  return {
+    id: `site-${section}-${index}-${slugify(url).slice(0, 42)}`,
+    title: String(title || image.alt || "Imagen del negocio").slice(0, 120),
+    creator: String(image.credito || "").replace(/^Foto de\s+/i, "").replace(/\s+en\s+\w+$/i, "").slice(0, 80),
+    provider,
+    license: providerLicense(image.fuente),
+    sourceUrl,
+    url,
+    thumbnail,
+    tags: [section, image.query_usada].filter(Boolean),
+    alt: String(image.alt || title || "Imagen del negocio").slice(0, 180),
+    focal: image.focal || "center center",
+    category: "site",
+    categoryLabel: "Pack negocio",
+    generated: true,
+    query: image.query_usada || ""
+  };
+}
+
+function uniqueSiteImageItems(items) {
+  const known = new Set();
+  return items.filter((item) => {
+    const key = String(item.url || "").split("?")[0];
+    if (!key || known.has(key)) {
+      return false;
+    }
+    known.add(key);
+    return true;
+  });
+}
+
+function mediaMetadataFromSiteImage(item) {
+  return {
+    alt: item.alt || item.title || "",
+    position: item.focal || "center center",
+    ...mediaCreditMetadata({
+      ...item,
+      creator: item.creator,
+      provider: item.provider
+    })
+  };
+}
+
+function providerLabel(value) {
+  const provider = String(value || "").toLowerCase();
+  if (provider === "unsplash") return "Unsplash";
+  if (provider === "pexels") return "Pexels";
+  if (provider === "pixabay") return "Pixabay";
+  return provider || "Banco de imagenes";
+}
+
+function providerLicense(value) {
+  const provider = String(value || "").toLowerCase();
+  if (provider === "unsplash") return "Unsplash License";
+  if (provider === "pexels") return "Pexels License";
+  if (provider === "pixabay") return "Pixabay License";
+  return "";
+}
+
+function siteImageWarning(result = {}) {
+  return Array.isArray(result.meta?.advertencias)
+    ? result.meta.advertencias.find(Boolean)
+    : "";
+}
+
+function setSiteImageLoading(loading, message = "") {
+  if (siteImageGenerateButton) {
+    siteImageGenerateButton.disabled = loading;
+  }
+  if (stockSiteImageButton) {
+    stockSiteImageButton.disabled = loading;
+  }
+  if (message) {
+    setSiteImageGenerateStatus(message);
+  }
+}
+
+function setSiteImageGenerateStatus(message) {
+  if (siteImageGenerateStatus) {
+    siteImageGenerateStatus.textContent = message || "";
+  }
+}
+
 function bindStockImageSearch() {
   if (!stockCategoryList || !stockSearchButton || !stockImageResults) {
     return;
@@ -1012,6 +1321,9 @@ function selectStockImage(item) {
   selectedStockImage = item;
   previewInspectorImageUrl.value = item.url;
   previewInspectorImageAlt.value = item.alt || item.title || "";
+  if (item.focal && previewInspectorImagePosition) {
+    previewInspectorImagePosition.value = item.focal;
+  }
   previewInspectorImage.src = item.url;
   renderStockImageStatus(`${item.license} seleccionado`);
 }
