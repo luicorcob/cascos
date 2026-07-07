@@ -112,11 +112,25 @@
         </div>
 
         <div class="intro-hub-copy">
-          <p class="intro-hub-kicker">Selecciona destino</p>
-          <h1>Donde quieres trabajar hoy?</h1>
-          <p>Entra al modulo exacto de produccion, prospeccion u operacion.</p>
+          <p class="intro-hub-kicker">Selecciona modo</p>
+          <h1>Quien entra hoy?</h1>
+          <p>Developer abre la cabina completa. Cliente entra solo a su negocio, su portal y su web publicada.</p>
         </div>
 
+        <div class="intro-mode-grid" role="tablist" aria-label="Modo de acceso">
+          <button class="intro-mode-card is-active" type="button" data-intro-mode="developer" aria-selected="true">
+            <span>Developer</span>
+            <strong>Command Center</strong>
+            <small>Studio, Radar, brief, tienda, Google Ops y vision interna.</small>
+          </button>
+          <button class="intro-mode-card" type="button" data-intro-mode="client" aria-selected="false">
+            <span>Cliente</span>
+            <strong>Portal privado</strong>
+            <small>Reservas, contactos, reportes y acciones de su propio negocio.</small>
+          </button>
+        </div>
+
+        <section class="intro-mode-panel is-active" data-intro-mode-panel="developer">
         <div class="intro-destination-grid">
           <a class="intro-destination-card is-primary is-studio" href="#studioWorkspace" data-intro-destination="studio">
             <span class="intro-destination-index">01</span>
@@ -137,8 +151,23 @@
             <em>Entrar al Studio</em>
           </a>
 
-          <a class="intro-destination-card is-radar" href="pages/business-radar.html">
+          <a class="intro-destination-card is-projects" href="pages/projects.html">
             <span class="intro-destination-index">02</span>
+            <span class="intro-destination-visual intro-visual-projects" aria-hidden="true">
+              <span class="project-board project-board-main"></span>
+              <span class="project-board project-board-a"></span>
+              <span class="project-board project-board-b"></span>
+              <span class="project-connector project-connector-a"></span>
+              <span class="project-connector project-connector-b"></span>
+            </span>
+            <span class="intro-destination-label">Gestion</span>
+            <strong>Proyectos</strong>
+            <span>Controla negocios, portales, webs y accesos de cliente.</span>
+            <em>Abrir proyectos</em>
+          </a>
+
+          <a class="intro-destination-card is-radar" href="pages/business-radar.html">
+            <span class="intro-destination-index">03</span>
             <span class="intro-destination-visual intro-visual-radar" aria-hidden="true">
               <span class="radar-scope">
                 <span class="radar-sweep"></span>
@@ -154,7 +183,7 @@
           </a>
 
           <a class="intro-destination-card is-brief" href="pages/onboarding.html">
-            <span class="intro-destination-index">03</span>
+            <span class="intro-destination-index">04</span>
             <span class="intro-destination-visual intro-visual-brief" aria-hidden="true">
               <span class="brief-sheet brief-sheet-a"></span>
               <span class="brief-sheet brief-sheet-b"></span>
@@ -169,7 +198,7 @@
           </a>
 
           <a class="intro-destination-card is-portal" href="pages/business-dashboard.html">
-            <span class="intro-destination-index">04</span>
+            <span class="intro-destination-index">05</span>
             <span class="intro-destination-visual intro-visual-portal" aria-hidden="true">
               <span class="portal-panel portal-panel-main"></span>
               <span class="portal-panel portal-panel-side"></span>
@@ -183,7 +212,7 @@
           </a>
 
           <a class="intro-destination-card is-store" href="pages/store-admin.html">
-            <span class="intro-destination-index">05</span>
+            <span class="intro-destination-index">06</span>
             <span class="intro-destination-visual intro-visual-store" aria-hidden="true">
               <span class="store-product store-product-a"></span>
               <span class="store-product store-product-b"></span>
@@ -198,7 +227,7 @@
           </a>
 
           <a class="intro-destination-card is-pitch" href="pages/investor.html">
-            <span class="intro-destination-index">06</span>
+            <span class="intro-destination-index">07</span>
             <span class="intro-destination-visual intro-visual-pitch" aria-hidden="true">
               <span class="pitch-bars"></span>
               <span class="pitch-line"></span>
@@ -212,6 +241,27 @@
             <em>Ver pitch</em>
           </a>
         </div>
+        </section>
+
+        <section class="intro-mode-panel" data-intro-mode-panel="client" hidden>
+          <form class="intro-client-login" data-client-login-form>
+            <div>
+              <span class="intro-destination-label">Acceso cliente</span>
+              <h2>Entrar al portal del negocio</h2>
+              <p>Usa el nombre exacto de tu negocio y la contrasena que te ha dado DLS.</p>
+            </div>
+            <label>
+              Negocio
+              <input name="business" type="text" autocomplete="organization" placeholder="Brasa Norte" required>
+            </label>
+            <label>
+              Contrasena
+              <input name="password" type="password" autocomplete="current-password" placeholder="Contrasena del portal" required>
+            </label>
+            <button type="submit">Entrar al portal</button>
+            <p class="intro-login-notice" data-client-login-notice aria-live="polite"></p>
+          </form>
+        </section>
       </div>
     </section>
     <noscript><style>.intro-gate{display:none!important}</style></noscript>
@@ -233,6 +283,7 @@
       </div>
 
       <nav class="topbar-links" aria-label="Herramientas del negocio">
+        <a href="pages/projects.html">Proyectos</a>
         <a href="pages/business-radar.html">DLS Radar</a>
         <a href="pages/onboarding.html">Brief + Google</a>
         <a href="pages/business-dashboard.html">Portal</a>
@@ -280,6 +331,7 @@
         </div>
 
         <div class="workspace-links" aria-label="Material de presentacion">
+          <a href="pages/projects.html">Proyectos</a>
           <a href="pages/business-radar.html">Radar de negocios</a>
           <a href="pages/investor.html">Pitch inversores</a>
           <a href="pages/onboarding.html">Brief + Google Ops</a>

@@ -1,7 +1,5 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { corsHeaders } from "../lib/cors.mjs";
-import { cloneJson, readJsonStore } from "../lib/json-store.mjs";
+import { loadBusinessStore } from "../lib/business-store.mjs";
 
 const DEFAULT_DB = {
   version: 1,
@@ -183,9 +181,7 @@ function makeRecommendation(title, text, priority) {
 }
 
 async function loadDb(context) {
-  const dbPath = getDbPath(context.root);
-  const fallback = await loadFallbackDb(context.root);
-  const db = await readJsonStore(dbPath, fallback);
+  const db = await loadBusinessStore(context, DEFAULT_DB);
 
   db.version = Number(db.version || 1);
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
@@ -197,21 +193,6 @@ async function loadDb(context) {
   db.businessEvents = Array.isArray(db.businessEvents) ? db.businessEvents : [];
   db.auditLog = Array.isArray(db.auditLog) ? db.auditLog : [];
   return db;
-}
-
-async function loadFallbackDb(root) {
-  const examplePath = path.join(root, "data", "business-db.example.json");
-
-  try {
-    const raw = await readFile(examplePath, "utf8");
-    return JSON.parse(raw);
-  } catch (error) {
-    if (error.code !== "ENOENT") {
-      throw error;
-    }
-
-    return cloneJson(DEFAULT_DB);
-  }
 }
 
 function normalizePeriod(value) {
@@ -257,12 +238,6 @@ function arrayFrom(...values) {
 
 function findBusiness(db, id) {
   return db.businesses.find((business) => business.id === id || business.slug === id);
-}
-
-function getDbPath(root) {
-  return process.env.BUSINESS_DB_FILE
-    ? path.resolve(root, process.env.BUSINESS_DB_FILE)
-    : path.join(root, "data", "business-db.json");
 }
 
 function sendJson(response, status, payload, context, extraHeaders = {}) {

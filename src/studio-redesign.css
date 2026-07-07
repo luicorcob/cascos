@@ -1609,6 +1609,143 @@ textarea:focus-visible {
   line-height: 1.6;
 }
 
+.intro-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.intro-mode-card {
+  display: grid;
+  gap: 6px;
+  min-height: 116px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(6, 8, 16, 0.62);
+  color: rgba(248, 251, 255, 0.7);
+  text-align: left;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.intro-mode-card:hover,
+.intro-mode-card.is-active {
+  transform: translateY(-2px);
+  border-color: rgba(24, 217, 255, 0.46);
+  background: linear-gradient(135deg, rgba(24, 217, 255, 0.14), rgba(255, 47, 207, 0.08)), rgba(6, 8, 16, 0.78);
+  color: #ffffff;
+}
+
+.intro-mode-card span {
+  color: #8eeaff;
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.intro-mode-card strong {
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  line-height: 1;
+}
+
+.intro-mode-card small {
+  max-width: 48ch;
+  color: rgba(248, 251, 255, 0.62);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.intro-mode-panel[hidden] {
+  display: none;
+}
+
+.intro-client-login {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.5fr) minmax(180px, 0.5fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(140deg, rgba(93, 140, 255, 0.18), rgba(24, 217, 255, 0.08)),
+    rgba(6, 8, 16, 0.78);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+.intro-client-login h2,
+.intro-client-login p {
+  margin: 0;
+}
+
+.intro-client-login h2 {
+  margin-top: 10px;
+  font-size: clamp(1.55rem, 3vw, 2.7rem);
+  line-height: 0.98;
+}
+
+.intro-client-login p {
+  color: rgba(248, 251, 255, 0.68);
+  line-height: 1.55;
+}
+
+.intro-client-login label {
+  display: grid;
+  gap: 7px;
+  color: rgba(248, 251, 255, 0.72);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.intro-client-login input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  outline: none;
+}
+
+.intro-client-login input:focus {
+  border-color: rgba(24, 217, 255, 0.58);
+  box-shadow: 0 0 0 3px rgba(24, 217, 255, 0.12);
+}
+
+.intro-client-login button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(24, 217, 255, 0.6);
+  border-radius: 8px;
+  background: #18d9ff;
+  color: #071018;
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.intro-login-notice {
+  grid-column: 1 / -1;
+  min-height: 20px;
+  font-size: 0.86rem;
+}
+
+.intro-login-notice[data-type="error"] {
+  color: #ff9aa8;
+}
+
+.intro-login-notice[data-type="ok"] {
+  color: #92ffd8;
+}
+
 .intro-destination-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1720,6 +1857,12 @@ textarea:focus-visible {
   --destination-a: #5d8cff;
   --destination-b: #18d9ff;
   --destination-c: #ff8a18;
+}
+
+.intro-destination-card.is-projects {
+  --destination-a: #55e19a;
+  --destination-b: #28d7ff;
+  --destination-c: #ff725e;
 }
 
 .intro-destination-card.is-store {
@@ -2147,6 +2290,83 @@ textarea:focus-visible {
   right: 26px;
   width: 128px;
   animation-delay: 0.5s;
+}
+
+.project-board {
+  border: 1px solid rgba(85, 225, 154, 0.3);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 28%),
+    rgba(9, 14, 20, 0.86);
+  box-shadow: 0 0 24px rgba(85, 225, 154, 0.22);
+  animation: introPanelFloat 3.7s ease-in-out infinite;
+}
+
+.project-board::before,
+.project-board::after {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  content: "";
+}
+
+.project-board::before {
+  top: 18px;
+  box-shadow: 0 20px 0 rgba(40, 215, 255, 0.48);
+}
+
+.project-board::after {
+  bottom: 16px;
+  background: rgba(255, 114, 94, 0.58);
+}
+
+.project-board-main {
+  top: 10px;
+  right: 52px;
+  width: 112px;
+  height: 110px;
+}
+
+.project-board-a,
+.project-board-b {
+  width: 58px;
+  height: 58px;
+}
+
+.project-board-a {
+  top: 20px;
+  right: 0;
+  animation-delay: 0.34s;
+}
+
+.project-board-b {
+  right: 14px;
+  bottom: 4px;
+  animation-delay: 0.68s;
+}
+
+.project-connector {
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #55e19a, #28d7ff, transparent);
+  box-shadow: 0 0 16px rgba(40, 215, 255, 0.54);
+  animation: introBeamSlide 1.7s ease-in-out infinite;
+}
+
+.project-connector-a {
+  top: 48px;
+  right: 48px;
+  width: 94px;
+}
+
+.project-connector-b {
+  top: 94px;
+  right: 36px;
+  width: 110px;
+  animation-delay: 0.42s;
 }
 
 .store-product {
@@ -4565,6 +4785,15 @@ body.is-presentation .device-frame[data-size="tablet"] {
 
   .intro-hub-copy p:last-child {
     font-size: 0.9rem;
+  }
+
+  .intro-mode-grid,
+  .intro-client-login {
+    grid-template-columns: 1fr;
+  }
+
+  .intro-client-login {
+    align-items: stretch;
   }
 
   .intro-destination-grid {

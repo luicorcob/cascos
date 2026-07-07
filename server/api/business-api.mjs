@@ -1,7 +1,6 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { corsHeaders } from "../lib/cors.mjs";
-import { backupJsonStore, cloneJson, readJsonStore, writeJsonStore } from "../lib/json-store.mjs";
+import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
+import { getRequestClientSession, matchesBusinessSession, setBusinessClientPassword, toPortalAccessSummary } from "../lib/client-auth.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.BUSINESS_API_MAX_BODY_BYTES || 1024 * 1024);
 const STATUSES = new Set(["lead", "onboarding", "in-design", "in-review", "published", "maintenance", "paused", "archived"]);
@@ -30,7 +29,7 @@ export async function handleBusinessApi(request, response, context) {
 
   try {
     if (segments.length === 2 && method === "GET") {
-      await listBusinesses(requestUrl, response, context);
+      await listBusinesses(request, requestUrl, response, context);
       return;
     }
 
@@ -50,7 +49,12 @@ export async function handleBusinessApi(request, response, context) {
     }
 
     if (segments.length === 4 && action === "archive" && method === "DELETE") {
-      await archiveBusiness(id, response, context);
+      await archiveBusiness(id, request, response, context);
+      return;
+    }
+
+    if (segments.length === 4 && action === "portal-access" && method === "POST") {
+      await updatePortalAccess(id, request, response, context);
       return;
     }
 
@@ -62,8 +66,9 @@ export async function handleBusinessApi(request, response, context) {
   }
 }
 
-async function listBusinesses(requestUrl, response, context) {
+async function listBusinesses(request, requestUrl, response, context) {
   const db = await loadBusinessDb(context);
+  const clientSession = getRequestClientSession(request);
   const includeArchived = requestUrl.searchParams.get("includeArchived") === "true";
   const q = cleanText(requestUrl.searchParams.get("q") || "").toLowerCase();
   const status = cleanText(requestUrl.searchParams.get("status") || "");
@@ -71,6 +76,7 @@ async function listBusinesses(requestUrl, response, context) {
   const plan = cleanText(requestUrl.searchParams.get("plan") || "").toLowerCase();
 
   const businesses = db.businesses
+    .filter((business) => !clientSession || matchesBusinessSession(clientSession, business.id) || matchesBusinessSession(clientSession, business.slug))
     .filter((business) => includeArchived || business.status !== "archived")
     .filter((business) => !status || business.status === status)
     .filter((business) => !category || business.category.toLowerCase().includes(category))
@@ -91,6 +97,7 @@ async function listBusinesses(requestUrl, response, context) {
 }
 
 async function createBusiness(request, response, context) {
+  rejectClientSession(request);
   const db = await loadBusinessDb(context);
   const payload = await readJsonBody(request);
   const now = new Date().toISOString();
@@ -118,6 +125,7 @@ async function getBusiness(id, response, context) {
 }
 
 async function updateBusiness(id, request, response, context) {
+  rejectClientSession(request);
   const db = await loadBusinessDb(context);
   const index = db.businesses.findIndex((business) => matchesBusinessId(business, id));
 
@@ -135,7 +143,8 @@ async function updateBusiness(id, request, response, context) {
   sendJson(response, 200, { business }, context);
 }
 
-async function archiveBusiness(id, response, context) {
+async function archiveBusiness(id, request, response, context) {
+  rejectClientSession(request);
   const db = await loadBusinessDb(context);
   const business = findBusiness(db, id);
 
@@ -152,10 +161,26 @@ async function archiveBusiness(id, response, context) {
   sendJson(response, 200, { business }, context);
 }
 
+async function updatePortalAccess(id, request, response, context) {
+  rejectClientSession(request);
+  const db = await loadBusinessDb(context);
+  const business = findBusiness(db, id);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const payload = await readJsonBody(request);
+  const password = cleanText(payload.password || payload.clientPassword || "", 300);
+
+  await setBusinessClientPassword(business, password);
+  appendAudit(db, "business.portal_access_updated", business.id, new Date().toISOString());
+  await saveBusinessDb(db, context, "portal-access");
+  sendJson(response, 200, { portalAccess: toPortalAccessSummary(business) }, context);
+}
+
 async function loadBusinessDb(context) {
-  const dbPath = getDbPath(context.root);
-  const fallback = await loadFallbackDb(context.root);
-  const db = await readJsonStore(dbPath, fallback);
+  const db = await loadBusinessStore(context, DEFAULT_DB);
 
   db.version = Number(db.version || 1);
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
@@ -164,30 +189,7 @@ async function loadBusinessDb(context) {
 }
 
 async function saveBusinessDb(db, context, backupLabel) {
-  const dbPath = getDbPath(context.root);
-
-  db.updatedAt = new Date().toISOString();
-
-  if (process.env.BUSINESS_DB_BACKUPS !== "false") {
-    await backupJsonStore(dbPath, getBackupDir(context.root), backupLabel);
-  }
-
-  await writeJsonStore(dbPath, db);
-}
-
-async function loadFallbackDb(root) {
-  const examplePath = path.join(root, "data", "business-db.example.json");
-
-  try {
-    const raw = await readFile(examplePath, "utf8");
-    return JSON.parse(raw);
-  } catch (error) {
-    if (error.code !== "ENOENT") {
-      throw error;
-    }
-
-    return cloneJson(DEFAULT_DB);
-  }
+  await saveBusinessStore(db, context, backupLabel);
 }
 
 function normalizeBusiness(payload, existing, db, now) {
@@ -303,6 +305,7 @@ function toBusinessSummary(business) {
     plan: business.plan,
     status: business.status,
     publishedUrl: business.publishedUrl,
+    portalAccess: toPortalAccessSummary(business),
     updatedAt: business.updatedAt,
     createdAt: business.createdAt,
     archivedAt: business.archivedAt || ""
@@ -316,18 +319,6 @@ function appendAudit(db, type, businessId, now) {
     businessId,
     createdAt: now
   });
-}
-
-function getDbPath(root) {
-  return process.env.BUSINESS_DB_FILE
-    ? path.resolve(root, process.env.BUSINESS_DB_FILE)
-    : path.join(root, "data", "business-db.json");
-}
-
-function getBackupDir(root) {
-  return process.env.BUSINESS_DB_BACKUP_DIR
-    ? path.resolve(root, process.env.BUSINESS_DB_BACKUP_DIR)
-    : path.join(root, "data", "backups");
 }
 
 function sendJson(response, status, payload, context, extraHeaders = {}) {
@@ -353,6 +344,12 @@ function httpError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
   return error;
+}
+
+function rejectClientSession(request) {
+  if (getRequestClientSession(request)) {
+    throw httpError(403, "Developer access required");
+  }
 }
 
 function normalizeStatus(value) {

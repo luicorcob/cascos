@@ -96,6 +96,10 @@ const introGate = document.querySelector("#introGate");
 const introStartButton = document.querySelector("#introStartButton");
 const introHub = document.querySelector("#introHub");
 const introHubBackButton = document.querySelector("#introHubBackButton");
+const introModeButtons = Array.from(document.querySelectorAll("[data-intro-mode]"));
+const introModePanels = Array.from(document.querySelectorAll("[data-intro-mode-panel]"));
+const clientLoginForm = document.querySelector("[data-client-login-form]");
+const clientLoginNotice = document.querySelector("[data-client-login-notice]");
 const importDataInput = document.querySelector("#importDataInput");
 const topbarProjectName = document.querySelector("#topbarProjectName");
 const frameAddress = document.querySelector("#frameAddress");
@@ -2315,8 +2319,80 @@ function bindIntroGate() {
     fallbackTimer = window.setTimeout(finish, 900);
   };
 
+  const setIntroMode = (mode) => {
+    introModeButtons.forEach((button) => {
+      const active = button.dataset.introMode === mode;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", active ? "true" : "false");
+    });
+
+    introModePanels.forEach((panel) => {
+      const active = panel.dataset.introModePanel === mode;
+      panel.classList.toggle("is-active", active);
+      panel.hidden = !active;
+    });
+  };
+
+  const setClientLoginNotice = (message, type = "info") => {
+    if (!clientLoginNotice) {
+      return;
+    }
+
+    clientLoginNotice.textContent = message || "";
+    clientLoginNotice.dataset.type = type;
+  };
+
+  const handleClientLogin = async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(clientLoginForm);
+    const button = clientLoginForm.querySelector("button[type='submit']");
+    const business = String(formData.get("business") || "").trim();
+    const password = String(formData.get("password") || "").trim();
+
+    if (!business || !password) {
+      setClientLoginNotice("Introduce negocio y contrasena.", "error");
+      return;
+    }
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Entrando...";
+    }
+
+    setClientLoginNotice("Validando acceso...", "info");
+
+    try {
+      const response = await fetch(window.LocalLiftApi?.url?.("/api/client/login") || "/api/client/login", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ business, password })
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "No se pudo iniciar sesion.");
+      }
+
+      window.LocalLiftApi?.setClientSession?.(payload.session);
+      setClientLoginNotice("Acceso correcto. Abriendo portal...", "ok");
+      window.location.href = `pages/business-dashboard.html?business=${encodeURIComponent(payload.business?.slug || payload.business?.id || payload.session.businessSlug || payload.session.businessId)}`;
+    } catch (error) {
+      setClientLoginNotice(error.message || "Credenciales no validas.", "error");
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Entrar al portal";
+      }
+    }
+  };
+
   introStartButton?.addEventListener("click", showDestinationHub);
   introHubBackButton?.addEventListener("click", showLogoIntro);
+  introModeButtons.forEach((button) => {
+    button.addEventListener("click", () => setIntroMode(button.dataset.introMode || "developer"));
+  });
+  clientLoginForm?.addEventListener("submit", handleClientLogin);
   introHub?.querySelector('[data-intro-destination="studio"]')?.addEventListener("click", (event) => {
     event.preventDefault();
     enterStudio();

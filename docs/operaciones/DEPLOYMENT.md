@@ -42,15 +42,16 @@ El repositorio ya incluye `render.yaml` para crear un servicio web Node en Rende
 
 - `startCommand: npm run start:prod`
 - `healthCheckPath: /api/health`
-- plan `starter` y disco persistente montado en `/data`
-- `BUSINESS_DB_FILE=/data/business-db.json`
+- plan `starter`, PostgreSQL gestionado e inyeccion de `DATABASE_URL`
+- `BUSINESS_STORE=postgres` para que el dashboard use PostgreSQL
+- disco persistente montado en `/data` para Google OAuth, backups auxiliares y fallback JSON
 - `DLS_DISCOVERY_PROVIDER=openstreetmap` para que el Radar use datos reales sin clave externa
 - `RADAR_LEADS_DB_FILE=/data/radar-leads.json` para guardar leads del Radar en el disco persistente
 - secretos `LOCALLIFT_ADMIN_TOKEN`, Google opcional y `CORS_ORIGIN` configurables en la plataforma
 
 El `Procfile` tambien declara `web: npm run start:prod`. Asi, si creas el servicio manualmente desde el panel de Render en vez de usar el Blueprint, Render sigue levantando el backend del Radar como proceso web.
 
-Render solo permite adjuntar discos persistentes a servicios de pago. No cambies el Blueprint a plan gratuito mientras el backend use archivos JSON para guardar datos reales.
+Render solo permite adjuntar discos persistentes a servicios de pago. Con PostgreSQL, los datos operativos del dashboard no dependen del disco local, pero el disco sigue siendo util para OAuth Google y backups.
 
 Tambien incluye `Dockerfile` para proveedores basados en contenedor.
 
@@ -98,6 +99,16 @@ $env:PORT="5173"
 $env:HOST="0.0.0.0"
 $env:LOCALLIFT_ADMIN_TOKEN="usa-un-token-largo-aleatorio"
 $env:CORS_ORIGIN="https://www.cliente.com,https://cliente.com"
+$env:BUSINESS_STORE="postgres"
+$env:DATABASE_URL="postgres://usuario:password@host:5432/db"
+$env:PGSSLMODE="require"
+npm.cmd start
+```
+
+Para desarrollo local sin PostgreSQL:
+
+```powershell
+$env:BUSINESS_STORE="json"
 $env:BUSINESS_DB_FILE="data/business-db.json"
 $env:BUSINESS_DB_BACKUPS="true"
 npm.cmd start
@@ -118,7 +129,8 @@ $env:NODE_ENV="production"
 $env:HOST="0.0.0.0"
 $env:LOCALLIFT_ADMIN_TOKEN="usa-un-token-largo-aleatorio-de-32-caracteres"
 $env:CORS_ORIGIN="https://www.cliente.com,https://cliente.com"
-$env:BUSINESS_DB_FILE="data/business-db.json"
+$env:BUSINESS_STORE="postgres"
+$env:DATABASE_URL="postgres://usuario:password@host:5432/db"
 npm.cmd run check:deploy
 ```
 
@@ -194,16 +206,24 @@ Respuesta esperada:
 }
 ```
 
-Usalo en Render/Railway/Fly/VPS para saber si la API esta levantada y si puede leer/escribir la base JSON.
+Usalo en Render/Railway/Fly/VPS para saber si la API esta levantada y si puede leer/escribir la base configurada (`json` o `postgres`).
 
-## Nota sobre la base JSON
+## Nota sobre persistencia
 
-`data/business-db.json` esta bien para demo, desarrollo y pilotos controlados. Para vender a varios clientes en serio, el siguiente salto es Postgres o Supabase:
+`data/business-db.json` esta bien para demo, desarrollo y pilotos controlados. Para vender a varios clientes en serio, usa PostgreSQL, Supabase, Neon, Render Postgres o Railway Postgres:
 
 - Evita conflictos de escritura concurrente.
 - Permite usuarios, permisos y auditoria por cliente.
 - Facilita backups, busquedas y metricas historicas.
 - Mejora despliegues sin depender del disco local del servidor.
+
+Migracion desde el JSON actual:
+
+```powershell
+$env:BUSINESS_STORE="postgres"
+$env:DATABASE_URL="postgres://usuario:password@host:5432/db"
+npm.cmd run migrate:businesses:postgres
+```
 
 ## Checklist antes del primer piloto online
 

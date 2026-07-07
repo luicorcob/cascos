@@ -1,0 +1,56 @@
+.client-site-body {
+  min-height: 100dvh;
+  background: #0d0d12;
+}
+
+.client-site-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 clamp(14px, 4vw, 28px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(9, 10, 16, 0.88);
+  color: #fffaf0;
+  backdrop-filter: blur(16px);
+}
+
+.client-site-bar a,
+.client-site-bar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fffaf0;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.client-site-bar strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.client-site-root {
+  min-height: calc(100dvh - 56px);
+}
+
+.client-site-state {
+  display: grid;
+  place-content: center;
+  min-height: calc(100dvh - 56px);
+  padding: 24px;
+  color: #fffaf0;
+  text-align: center;
+}

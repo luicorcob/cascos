@@ -1,6 +1,7 @@
 (function () {
   const API_BASE_KEY = "locallift_api_base";
   const ADMIN_TOKEN_KEY = "locallift_admin_token";
+  const CLIENT_SESSION_KEY = "locallift_client_session";
 
   syncApiBaseFromQuery();
 
@@ -9,7 +10,11 @@
     headers,
     getBase,
     setBase,
-    getAdminToken
+    getAdminToken,
+    getClientSession,
+    setClientSession,
+    clearClientSession,
+    isClientMode
   };
 
   function url(path) {
@@ -34,10 +39,16 @@
       result["Content-Type"] = "application/json";
     }
 
-    const token = getAdminToken();
-    if (token) {
-      result.Authorization = `Bearer ${token}`;
-      result["X-LocalLift-Admin-Token"] = token;
+    const adminToken = getAdminToken();
+    if (adminToken) {
+      result.Authorization = `Bearer ${adminToken}`;
+      result["X-LocalLift-Admin-Token"] = adminToken;
+      return result;
+    }
+
+    const clientSession = getClientSession();
+    if (clientSession?.token) {
+      result["X-LocalLift-Client-Token"] = clientSession.token;
     }
 
     return result;
@@ -63,6 +74,45 @@
 
   function getAdminToken() {
     return String(localStorage.getItem(ADMIN_TOKEN_KEY) || "").trim();
+  }
+
+  function getClientSession() {
+    try {
+      const session = JSON.parse(localStorage.getItem(CLIENT_SESSION_KEY) || "null");
+
+      if (!session?.token) {
+        return null;
+      }
+
+      if (session.exp && Number(session.exp) * 1000 < Date.now()) {
+        clearClientSession();
+        return null;
+      }
+
+      return session;
+    } catch (error) {
+      clearClientSession();
+      return null;
+    }
+  }
+
+  function setClientSession(session) {
+    if (session?.token) {
+      localStorage.setItem(CLIENT_SESSION_KEY, JSON.stringify(session));
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      return session;
+    }
+
+    clearClientSession();
+    return null;
+  }
+
+  function clearClientSession() {
+    localStorage.removeItem(CLIENT_SESSION_KEY);
+  }
+
+  function isClientMode() {
+    return Boolean(getClientSession());
   }
 
   function syncApiBaseFromQuery() {

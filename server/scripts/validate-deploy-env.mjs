@@ -8,6 +8,8 @@ const googleOAuthRequested = [
   process.env.GOOGLE_OAUTH_CLIENT_SECRET,
   process.env.GOOGLE_OAUTH_REDIRECT_URI
 ].some((value) => Boolean(clean(value)));
+const postgresRequested = clean(process.env.BUSINESS_STORE || process.env.BUSINESS_DB_DRIVER).toLowerCase() === "postgres";
+const postgresConfigured = Boolean(clean(process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.LOCALLIFT_DATABASE_URL));
 
 const checks = [
   {
@@ -31,9 +33,14 @@ const checks = [
     message: "CORS_ORIGIN debe incluir el dominio HTTPS del frontend."
   },
   {
-    name: "BUSINESS_DB_FILE",
-    ok: Boolean(clean(process.env.BUSINESS_DB_FILE)),
-    message: "BUSINESS_DB_FILE debe apuntar a la base persistente."
+    name: "BUSINESS_STORE",
+    ok: postgresConfigured || Boolean(clean(process.env.BUSINESS_DB_FILE)),
+    message: "Configura DATABASE_URL para PostgreSQL o BUSINESS_DB_FILE para persistencia JSON."
+  },
+  {
+    name: "DATABASE_URL",
+    ok: !postgresRequested || postgresConfigured,
+    message: "BUSINESS_STORE=postgres requiere DATABASE_URL, POSTGRES_URL o LOCALLIFT_DATABASE_URL."
   },
   {
     name: "GOOGLE_OAUTH",

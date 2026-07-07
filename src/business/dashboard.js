@@ -14,6 +14,7 @@ const state = {
   googleDiagnostics: null,
   apiBase: window.LocalLiftApi?.getBase?.() || "",
   adminToken: localStorage.getItem("locallift_admin_token") || "",
+  clientSession: window.LocalLiftApi?.getClientSession?.() || null,
   crmError: "",
   bookingError: "",
   googleError: "",
@@ -44,6 +45,7 @@ function init() {
   refs.adminTokenForm = document.querySelector("[data-admin-token-form]");
   refs.adminTokenInput = document.querySelector("[data-admin-token-input]");
   refs.adminTokenClear = document.querySelector("[data-admin-token-clear]");
+  refs.clientLogout = document.querySelector("[data-client-logout]");
   refs.notice = document.querySelector("[data-notice]");
   refs.sideBusiness = document.querySelector("[data-side-business]");
   refs.sideMeta = document.querySelector("[data-side-meta]");
@@ -51,9 +53,11 @@ function init() {
   refs.pageTitle = document.querySelector("[data-page-title]");
   refs.pageSubtitle = document.querySelector("[data-page-subtitle]");
   refs.refresh = document.querySelector("[data-refresh]");
+  refs.webLink = document.querySelector("[data-web-link]");
   refs.todayList = document.querySelector("[data-today-list]");
   refs.healthList = document.querySelector("[data-health-list]");
 
+  applyPortalMode();
   bindUi();
   loadBusinesses();
 }
@@ -129,6 +133,19 @@ function bindUi() {
     showNotice("Token admin eliminado.", "warn");
     loadBusinesses({ keepCurrent: true });
   });
+
+  refs.clientLogout?.addEventListener("click", () => {
+    window.LocalLiftApi?.clearClientSession?.();
+    window.location.href = "../index.html";
+  });
+}
+
+function applyPortalMode() {
+  document.body.classList.toggle("is-client-portal", Boolean(state.clientSession));
+
+  if (refs.clientLogout) {
+    refs.clientLogout.hidden = !state.clientSession;
+  }
 }
 
 async function loadBusinesses(options = {}) {
@@ -143,7 +160,7 @@ async function loadBusinesses(options = {}) {
     if (!state.businesses.length) {
       state.business = null;
       render();
-      showNotice("No hay negocios en la base local.", "warn");
+      showNotice("No hay negocios disponibles para esta sesion.", "warn");
       return;
     }
 
@@ -171,8 +188,12 @@ async function loadBusinesses(options = {}) {
       state.googleError = "";
       renderBusinessSelect();
       render();
+      if (state.clientSession && error.status === 401) {
+        window.LocalLiftApi?.clearClientSession?.();
+      }
+
       showNotice(error.status === 401
-        ? "La API pide token admin. Pegalo en la barra lateral y guarda."
+        ? (state.clientSession ? "La sesion de cliente ha caducado. Entra de nuevo desde Start > Cliente." : "La API pide token admin. Pegalo en la barra lateral y guarda.")
         : "No se pudo conectar con la API. Ejecuta npm.cmd start y abre esta pagina desde http://127.0.0.1:5173/pages/business-dashboard.html.", "error");
   } finally {
     setLoading(false);
@@ -192,7 +213,13 @@ async function loadBusiness(id, options = {}) {
     await loadContacts(state.business?.id || id);
     await loadBookings(state.business?.id || id);
     await loadReport(state.business?.id || id);
-    await loadGoogle(state.business?.id || id);
+    if (state.clientSession) {
+      state.googleStatus = null;
+      state.googleDiagnostics = null;
+      state.googleError = "";
+    } else {
+      await loadGoogle(state.business?.id || id);
+    }
     renderBusinessSelect();
     render();
 
@@ -369,6 +396,10 @@ function apiHeaders(options = {}) {
     headers["X-LocalLift-Admin-Token"] = state.adminToken;
   }
 
+  if (state.clientSession?.token) {
+    headers["X-LocalLift-Client-Token"] = state.clientSession.token;
+  }
+
   return headers;
 }
 
@@ -378,6 +409,13 @@ function apiUrl(url) {
 
 function renderBusinessSelect() {
   if (!refs.businessSelect) {
+    return;
+  }
+
+  if (state.clientSession && state.businesses.length) {
+    const business = state.businesses[0];
+    refs.businessSelect.innerHTML = `<option value="${escapeHtml(business.id)}">${escapeHtml(business.name)}</option>`;
+    refs.businessSelect.disabled = true;
     return;
   }
 
@@ -492,6 +530,14 @@ function renderHeader(business, model) {
   refs.pageSubtitle.textContent = [business.category, business.city, business.ownerName]
     .filter(Boolean)
     .join(" - ") || "Operacion diaria";
+
+  if (refs.webLink) {
+    const businessRef = business.slug || business.id || "";
+    const url = `client-site.html?business=${encodeURIComponent(businessRef)}`;
+    refs.webLink.textContent = state.clientSession ? "Mi web" : "Editar web";
+    refs.webLink.href = state.clientSession ? url : "../index.html";
+    refs.webLink.toggleAttribute("aria-disabled", state.clientSession && !businessRef);
+  }
 }
 
 function renderMetrics(model) {
@@ -821,6 +867,11 @@ function renderGoogle(model) {
   const container = document.querySelector('[data-list="google"]');
 
   if (!container) {
+    return;
+  }
+
+  if (state.clientSession) {
+    container.innerHTML = emptyState("Modulo interno", "Google Ops lo gestiona el equipo DLS.");
     return;
   }
 
@@ -1340,6 +1391,10 @@ function bindBookingControls() {
 }
 
 function bindGoogleControls() {
+  if (state.clientSession) {
+    return;
+  }
+
   document.querySelectorAll("[data-google-connect]").forEach((button) => {
     button.addEventListener("click", async () => {
       if (!state.business) {

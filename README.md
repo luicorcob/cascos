@@ -158,7 +158,7 @@ dock_maps_click
 
 ## API multi-negocio
 
-El servidor local incluye una primera API para gestionar negocios desde `data/business-db.json`.
+El servidor incluye una API para gestionar negocios, CRM, reservas, eventos y reportes. Por defecto usa `data/business-db.json` para desarrollo local; en produccion puede usar PostgreSQL activando `BUSINESS_STORE=postgres` y `DATABASE_URL`.
 
 ```text
 GET    http://127.0.0.1:5173/api/health
@@ -203,17 +203,40 @@ Base inicial:
 npm.cmd run seed:businesses
 ```
 
-`/api/health` sirve para despliegue y monitorizacion: devuelve estado del servicio, entorno, latencia, uptime, lectura/escritura de base local y conteos principales.
+Migrar el JSON actual a PostgreSQL:
+
+```powershell
+$env:BUSINESS_STORE="postgres"
+$env:DATABASE_URL="postgres://usuario:password@host:5432/db"
+npm.cmd run migrate:businesses:postgres
+```
+
+`/api/health` sirve para despliegue y monitorizacion: devuelve estado del servicio, entorno, latencia, uptime, modo de persistencia (`json` o `postgres`), lectura/escritura y conteos principales.
 
 Para produccion, define `LOCALLIFT_ADMIN_TOKEN` o `ADMIN_API_TOKEN` en el backend. Si existe, todas las rutas administrativas `/api/businesses/*` exigen `Authorization: Bearer ...` o `X-LocalLift-Admin-Token`; el portal del negocio permite guardar ese token desde la barra lateral. Sin token configurado, el servidor mantiene el modo local abierto para desarrollo.
 
 `CORS_ORIGIN` permite limitar que dominios frontend pueden llamar a la API desde navegador. Si no se define, el servidor usa `*` para desarrollo local. Hay una plantilla completa en `.env.example`.
 
-El guardado es atomico y crea copias en `data/backups/` antes de cambios importantes. Para pruebas automatizadas se puede usar `BUSINESS_DB_FILE` y `BUSINESS_DB_BACKUPS=false`.
+Con JSON, el guardado es atomico y crea copias en `data/backups/` antes de cambios importantes. Con PostgreSQL, el store crea tablas e indices automaticamente y guarda cada coleccion en `jsonb`. Para pruebas automatizadas se puede usar `BUSINESS_DB_FILE` y `BUSINESS_DB_BACKUPS=false`.
 
-Para recuperar una copia con el backend detenido, usa `npm.cmd run restore:businesses -- "ruta-a-la-copia.json" --confirm`. El procedimiento completo de salud diaria y restauracion esta en `docs/operaciones/OPERATIONS_RUNBOOK.md`.
+Para recuperar una copia con el backend detenido, usa `npm.cmd run restore:businesses -- "ruta-a-la-copia.json" --confirm`. Si `DATABASE_URL` esta activo y no pasas un target de archivo, restaura PostgreSQL y antes guarda una copia JSON del estado actual. El procedimiento completo de salud diaria y restauracion esta en `docs/operaciones/OPERATIONS_RUNBOOK.md`.
 
 Antes de desplegar, `npm.cmd run smoke:pilot` levanta un backend temporal y verifica salud, autenticacion admin, lead, reserva, consentimiento, cambios de estado, eventos y reporte sin tocar la base real.
+
+## Modos de acceso
+
+La entrada principal separa dos superficies:
+
+- **Developer**: Studio, Radar, brief, tienda, Google Ops y herramientas internas.
+- **Cliente**: login con nombre de negocio y contrasena para abrir solo su portal operativo.
+
+Para crear o cambiar la contrasena de un cliente:
+
+```powershell
+npm.cmd run client:password -- "brasa-norte" "Portal2026!"
+```
+
+El password se guarda como hash `scrypt` dentro del negocio, en `settings.portal.passwordHash`. Las sesiones cliente usan `CLIENT_SESSION_SECRET`; en produccion define tambien `LOCALLIFT_ADMIN_TOKEN` para que las rutas internas no queden abiertas sin token developer.
 
 Para verificar la arquitectura y comportamiento modular del Studio:
 
@@ -229,7 +252,7 @@ Desde el Studio principal, `Guardar` mantiene una copia en el navegador y tambie
 
 ## API CRM y leads
 
-La base `data/business-db.json` tambien puede guardar `contacts` y `activities`, separados por `businessId`.
+El store del dashboard guarda `contacts` y `activities`, separados por `businessId`, en JSON local o PostgreSQL segun la configuracion.
 
 ```text
 POST  http://127.0.0.1:5173/api/public/{businessSlug}/leads
@@ -243,7 +266,7 @@ El portal `pages/business-dashboard.html` usa estos endpoints para mostrar pipel
 
 ## API y widget de reservas
 
-La agenda MVP guarda `services`, `bookings`, `availability`, `bookingBlocks` y `bookingReminders` en `data/business-db.json`. Si un negocio todavia no tiene servicios reservables, la API puede generar servicios iniciales desde los servicios de la web.
+La agenda MVP guarda `services`, `bookings`, `availability`, `bookingBlocks` y `bookingReminders` en el mismo store del dashboard. Si un negocio todavia no tiene servicios reservables, la API puede generar servicios iniciales desde los servicios de la web.
 
 Cuando `Mostrar reserva` esta activo, la web publica generada incluye un bloque visible `#reservas` con servicio, fecha/hora, nombre, contacto y nota. Si la API esta activa, envia la reserva a `POST /api/public/{businessSlug}/bookings`; si no, conserva el intento en `window.localLiftBookings`.
 

@@ -1,6 +1,6 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { corsHeaders } from "../lib/cors.mjs";
+import { getRequestClientSession } from "../lib/client-auth.mjs";
+import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import {
   completeGoogleAuthorization,
   createGoogleAuthorization,
@@ -12,7 +12,6 @@ import {
   saveGooglePlaceSnapshot,
   setupError
 } from "../lib/google-auth.mjs";
-import { backupJsonStore, cloneJson, readJsonStore, writeJsonStore } from "../lib/json-store.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.GOOGLE_API_MAX_BODY_BYTES || 512 * 1024);
 const DEFAULT_DB = {
@@ -114,6 +113,10 @@ export async function handleGoogleApi(request, response, context) {
 }
 
 async function handleBusinessGoogleRoute(businessRef, route, method, requestUrl, request, response, context) {
+  if (getRequestClientSession(request)) {
+    throw httpError(403, "Developer access required");
+  }
+
   const db = await loadBusinessDb(context);
   const business = findBusiness(db, businessRef);
 
@@ -967,9 +970,7 @@ function requiredIso(value, message) {
 }
 
 async function loadBusinessDb(context) {
-  const dbPath = getBusinessDbPath(context.root);
-  const fallback = await loadFallbackDb(context.root);
-  const db = await readJsonStore(dbPath, fallback);
+  const db = await loadBusinessStore(context, DEFAULT_DB);
   db.version = Number(db.version || 1);
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
   db.bookings = Array.isArray(db.bookings) ? db.bookings : [];
@@ -978,28 +979,7 @@ async function loadBusinessDb(context) {
 }
 
 async function saveBusinessDb(db, context, backupLabel) {
-  const dbPath = getBusinessDbPath(context.root);
-  db.updatedAt = new Date().toISOString();
-
-  if (process.env.BUSINESS_DB_BACKUPS !== "false") {
-    await backupJsonStore(dbPath, getBackupDir(context.root), backupLabel);
-  }
-
-  await writeJsonStore(dbPath, db);
-}
-
-async function loadFallbackDb(root) {
-  const examplePath = path.join(root, "data", "business-db.example.json");
-
-  try {
-    return JSON.parse(await readFile(examplePath, "utf8"));
-  } catch (error) {
-    if (error.code !== "ENOENT") {
-      throw error;
-    }
-
-    return cloneJson(DEFAULT_DB);
-  }
+  await saveBusinessStore(db, context, backupLabel);
 }
 
 function findBusiness(db, id) {
@@ -1014,18 +994,6 @@ function appendBusinessAudit(db, type, businessId, createdAt, subjectId) {
     subjectId,
     createdAt
   });
-}
-
-function getBusinessDbPath(root) {
-  return process.env.BUSINESS_DB_FILE
-    ? path.resolve(root, process.env.BUSINESS_DB_FILE)
-    : path.join(root, "data", "business-db.json");
-}
-
-function getBackupDir(root) {
-  return process.env.BUSINESS_DB_BACKUP_DIR
-    ? path.resolve(root, process.env.BUSINESS_DB_BACKUP_DIR)
-    : path.join(root, "data", "backups");
 }
 
 async function readJsonBody(request) {

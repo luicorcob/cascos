@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isPostgresBusinessStore, loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { backupJsonStore, readJsonStore, writeJsonStore } from "../lib/json-store.mjs";
+import { loadLocalEnv } from "../lib/load-env.mjs";
+
+loadLocalEnv();
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const args = process.argv.slice(2);
@@ -16,13 +20,28 @@ async function main() {
   }
 
   const sourcePath = resolveFromRoot(positional[0]);
-  const targetPath = positional[1] ? resolveFromRoot(positional[1]) : getDbPath();
+  const restoreToPostgres = isPostgresBusinessStore() && !positional[1];
+  const targetPath = restoreToPostgres ? null : positional[1] ? resolveFromRoot(positional[1]) : getDbPath();
 
-  if (sourcePath === targetPath) {
+  if (!restoreToPostgres && sourcePath === targetPath) {
     throw new Error("Backup source and database target must be different files.");
   }
 
   const restoredDb = await readAndValidateBackup(sourcePath);
+
+  if (restoreToPostgres) {
+    const preRestoreBackup = await backupCurrentPostgresStore();
+    await saveBusinessStore(restoredDb, { root }, "postgres-restore");
+
+    const verifiedDb = await loadBusinessStore({ root }, {});
+    validateDatabase(verifiedDb, "Restored PostgreSQL database");
+
+    console.log(`Restored PostgreSQL business store from ${displayPath(sourcePath)}.`);
+    console.log(`Businesses: ${verifiedDb.businesses.length}; contacts: ${count(verifiedDb.contacts)}; bookings: ${count(verifiedDb.bookings)}.`);
+    console.log(`Pre-restore backup: ${displayPath(preRestoreBackup)}`);
+    return;
+  }
+
   const preRestoreBackup = await backupJsonStore(targetPath, getBackupDir(), "pre-restore");
 
   await writeJsonStore(targetPath, restoredDb);
@@ -106,7 +125,18 @@ function count(value) {
 
 function printUsage() {
   console.log("Usage: npm run restore:businesses -- <backup-file> [target-file] --confirm");
-  console.log("Stop the backend before restoring. The command validates JSON and creates a pre-restore backup.");
+  console.log("Stop the backend before restoring. With DATABASE_URL it restores PostgreSQL unless [target-file] is passed.");
+  console.log("The command validates JSON and creates a pre-restore backup.");
+}
+
+async function backupCurrentPostgresStore() {
+  const currentDb = await loadBusinessStore({ root }, {});
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupPath = path.join(getBackupDir(), `business-db.${timestamp}.pre-postgres-restore.json`);
+
+  validateDatabase(currentDb, "Current PostgreSQL database");
+  await writeJsonStore(backupPath, currentDb);
+  return backupPath;
 }
 
 main().catch((error) => {

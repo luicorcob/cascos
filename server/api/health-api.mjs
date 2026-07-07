@@ -1,16 +1,7 @@
-import { constants } from "node:fs";
-import { access, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { readBusinessStoreHealth } from "../lib/business-store.mjs";
 import { corsHeaders } from "../lib/cors.mjs";
-
-const DEFAULT_DB = {
-  businesses: [],
-  contacts: [],
-  bookings: [],
-  bookingReminders: [],
-  businessEvents: [],
-  auditLog: []
-};
 
 export function isHealthApiRequest(pathname) {
   return pathname === "/api/health";
@@ -30,11 +21,9 @@ export async function handleHealthApi(request, response, context) {
   }
 
   const startedAt = Date.now();
-  const dbPath = getDbPath(context.root);
-  const db = await readHealthDb(dbPath);
-  const checks = await buildChecks(dbPath, db);
+  const store = await readBusinessStoreHealth(context);
   const google = await readGoogleHealth(context.root);
-  const ok = checks.databaseReadable && checks.databaseWritable;
+  const ok = store.ok;
 
   sendJson(response, ok ? 200 : 503, {
     ok,
@@ -44,56 +33,12 @@ export async function handleHealthApi(request, response, context) {
     uptimeSeconds: Math.round(process.uptime()),
     latencyMs: Date.now() - startedAt,
     database: {
-      path: path.relative(context.root, dbPath),
-      readable: checks.databaseReadable,
-      writable: checks.databaseWritable,
-      error: checks.error
+      mode: store.mode,
+      ...store.database
     },
-    counts: {
-      businesses: db.businesses.length,
-      contacts: db.contacts.length,
-      bookings: db.bookings.length,
-      reminders: db.bookingReminders.length,
-      events: db.businessEvents.length,
-      auditLog: db.auditLog.length
-    },
+    counts: store.counts,
     google
   }, context);
-}
-
-async function readHealthDb(dbPath) {
-  try {
-    const raw = await readFile(dbPath, "utf8");
-    const db = JSON.parse(raw);
-
-    return {
-      businesses: Array.isArray(db.businesses) ? db.businesses : [],
-      contacts: Array.isArray(db.contacts) ? db.contacts : [],
-      bookings: Array.isArray(db.bookings) ? db.bookings : [],
-      bookingReminders: Array.isArray(db.bookingReminders) ? db.bookingReminders : [],
-      businessEvents: Array.isArray(db.businessEvents) ? db.businessEvents : [],
-      auditLog: Array.isArray(db.auditLog) ? db.auditLog : []
-    };
-  } catch (error) {
-    return { ...DEFAULT_DB, error: error.message };
-  }
-}
-
-async function buildChecks(dbPath, db) {
-  const checks = {
-    databaseReadable: !db.error,
-    databaseWritable: false,
-    error: db.error || ""
-  };
-
-  try {
-    await access(dbPath, constants.W_OK);
-    checks.databaseWritable = true;
-  } catch (error) {
-    checks.error = checks.error || error.message;
-  }
-
-  return checks;
 }
 
 async function readGoogleHealth(root) {
@@ -140,12 +85,6 @@ function googleOAuthConfigured() {
 
 function googleEncryptionConfigured() {
   return clean(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY).length >= 32;
-}
-
-function getDbPath(root) {
-  return process.env.BUSINESS_DB_FILE
-    ? path.resolve(root, process.env.BUSINESS_DB_FILE)
-    : path.join(root, "data", "business-db.json");
 }
 
 function clean(value) {

@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleBookingApi, isBookingApiRequest } from "./api/booking-api.mjs";
 import { handleBusinessApi, isBusinessApiRequest } from "./api/business-api.mjs";
+import { handleClientAuthApi, isClientAuthApiRequest } from "./lib/client-auth.mjs";
 import { handleContactApi, isContactApiRequest } from "./api/contact-api.mjs";
 import { handleDiscoveryApi, isDiscoveryApiRequest } from "./api/discovery-api.mjs";
 import { handleEventApi, isEventApiRequest } from "./api/event-api.mjs";
@@ -67,7 +68,12 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    if (isAdminApiRequest(requestUrl.pathname) && !requireAdminApiAuth(request, response, apiContext)) {
+    if (isClientAuthApiRequest(requestUrl.pathname)) {
+      await handleClientAuthApi(request, response, apiContext);
+      return;
+    }
+
+    if (isAdminApiRequest(requestUrl.pathname) && !(await requireAdminApiAuth(request, response, apiContext, requestUrl.pathname))) {
       return;
     }
 
@@ -159,6 +165,10 @@ const server = createServer(async (request, response) => {
     });
     response.end(request.method === "HEAD" ? undefined : file);
   } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error(error);
+    }
+
     response.writeHead(404, { ...baseHeaders, "Content-Type": "text/plain; charset=utf-8" });
     response.end("Not found. Check the path or use / for the studio.");
   }

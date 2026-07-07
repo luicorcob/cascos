@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Proyectos - DLS</title>
+    <meta name="description" content="Panel developer de proyectos DLS.">
+    <meta name="theme-color" content="#090b10">
+    <link rel="icon" type="image/png" href="../Logo.png">
+    <link rel="stylesheet" href="../src/styles/projects.css">
+    <script src="../src/shared/api-config.js"></script>
+    <script type="module" src="../src/business/projects.js"></script>
+  </head>
+  <body class="projects-body">
+    <div class="projects-shell">
+      <header class="projects-topbar">
+        <a class="projects-brand" href="../index.html" aria-label="DLS Studio">
+          <img src="../Logo.png" alt="" aria-hidden="true">
+          <span>
+            <small>DLS</small>
+            <strong>Proyectos</strong>
+          </span>
+        </a>
+
+        <nav class="projects-nav" aria-label="Developer">
+          <a href="../index.html?skipIntro=1">Studio</a>
+          <a href="business-radar.html">Radar</a>
+          <a href="business-dashboard.html">Portal</a>
+        </nav>
+      </header>
+
+      <main class="projects-main">
+        <section class="projects-hero">
+          <div>
+            <p class="eyebrow">Developer</p>
+            <h1>Proyectos</h1>
+            <p data-project-summary>Sin datos cargados</p>
+          </div>
+
+          <div class="projects-actions">
+            <form class="projects-config-form" data-api-base-form>
+              <label>
+                API
+                <input type="url" inputmode="url" placeholder="Mismo dominio" data-api-base-input>
+              </label>
+              <button type="submit">Guardar</button>
+              <button type="button" data-api-base-clear>Limpiar</button>
+            </form>
+
+            <form class="projects-config-form" data-admin-token-form>
+              <label>
+                Token
+                <input type="password" autocomplete="off" placeholder="Admin token" data-admin-token-input>
+              </label>
+              <button type="submit">Guardar</button>
+              <button type="button" data-admin-token-clear>Limpiar</button>
+            </form>
+
+            <button class="projects-refresh" type="button" data-refresh>Actualizar</button>
+          </div>
+        </section>
+
+        <section class="projects-toolbar" aria-label="Filtros">
+          <label>
+            Buscar
+            <input type="search" placeholder="Negocio, ciudad, sector..." data-search>
+          </label>
+          <label>
+            Estado
+            <select data-status-filter>
+              <option value="">Todos</option>
+              <option value="lead">Lead</option>
+              <option value="onboarding">Onboarding</option>
+              <option value="in-design">Diseno</option>
+              <option value="in-review">Revision</option>
+              <option value="published">Publicado</option>
+              <option value="maintenance">Mantenimiento</option>
+              <option value="paused">Pausado</option>
+              <option value="archived">Archivado</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="projects-notice" data-notice hidden></section>
+
+        <section class="projects-grid" data-project-grid aria-live="polite">
+          <article class="project-empty">
+            <strong>Cargando proyectos...</strong>
+          </article>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

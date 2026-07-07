@@ -218,6 +218,28 @@ select:focus {
   color: #fffaf0;
 }
 
+.client-logout {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: #fffaf0;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+body.is-client-portal .api-base-form,
+body.is-client-portal [data-admin-token-form],
+body.is-client-portal .select-label,
+body.is-client-portal .quick-nav [data-action-link="projects"],
+body.is-client-portal .quick-nav [data-action-link="studio"],
+body.is-client-portal .quick-nav [data-action-link="store"],
+body.is-client-portal .quick-nav [data-action-link="google"],
+body.is-client-portal .tab-button[data-tab="google"],
+body.is-client-portal .tab-panel[data-panel="google"] {
+  display: none;
+}
+
 .side-panel,
 .work-panel,
 .metric-card,
