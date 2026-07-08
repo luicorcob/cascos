@@ -3067,9 +3067,176 @@ body:not(.is-intro-active) .intro-gate:not(.is-closing) .intro-subline {
   box-shadow: 0 0 20px rgba(111, 80, 255, 0.24);
 }
 
+.studio-topbar .publish-action {
+  border-color: rgba(79, 224, 168, 0.36);
+  background: linear-gradient(110deg, #17c48f, #0f8f8f 54%, #2e6bff);
+  box-shadow: 0 0 20px rgba(23, 196, 143, 0.2);
+}
+
 .studio-topbar .primary-action:hover {
   border-color: rgba(255, 255, 255, 0.34);
   background: linear-gradient(110deg, #20ccff, #8769ff 48%, #ff41d3);
+}
+
+.studio-topbar .publish-action:hover {
+  background: linear-gradient(110deg, #20d6a0, #13a6a6 54%, #4b7dff);
+}
+
+.publish-demo-modal[hidden] {
+  display: none;
+}
+
+.publish-demo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.publish-demo-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 9, 12, 0.68);
+  backdrop-filter: blur(18px);
+}
+
+.publish-demo-dialog {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  width: min(520px, 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: #101419;
+  color: #f6f7f3;
+  box-shadow: 0 30px 110px rgba(0, 0, 0, 0.42);
+}
+
+.publish-demo-dialog header,
+.publish-demo-dialog footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.publish-demo-dialog header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.publish-demo-dialog footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.publish-demo-kicker,
+.publish-demo-badge {
+  color: #63e6a8;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.publish-demo-modal[data-share-status="blocked"] .publish-demo-badge,
+.publish-demo-modal[data-share-status="error"] .publish-demo-badge {
+  color: #ffd166;
+}
+
+.publish-demo-modal[data-share-status="blocked"] .publish-demo-body input,
+.publish-demo-modal[data-share-status="error"] .publish-demo-body input {
+  border-color: rgba(255, 209, 102, 0.48);
+}
+
+.publish-demo-modal[data-share-status="blocked"] .publish-demo-copy,
+.publish-demo-modal[data-share-status="error"] .publish-demo-copy {
+  background: #ffd166;
+  color: #171106;
+}
+
+.publish-demo-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f7f3;
+  cursor: pointer;
+}
+
+.publish-demo-body {
+  display: grid;
+  gap: 12px;
+  padding: 2px 18px 4px;
+}
+
+.publish-demo-body h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+.publish-demo-body p {
+  margin: 0;
+  color: #aab4b0;
+  line-height: 1.5;
+}
+
+.publish-demo-body label {
+  display: grid;
+  gap: 8px;
+  color: #aab4b0;
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.publish-demo-body input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(99, 230, 168, 0.34);
+  border-radius: 8px;
+  background: #070a0d;
+  color: #ffffff;
+  padding: 0 12px;
+  font: inherit;
+}
+
+.publish-demo-copy,
+.publish-demo-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.publish-demo-copy {
+  background: #63e6a8;
+  color: #07100c;
+}
+
+.publish-demo-open {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.publish-demo-copy:hover,
+.publish-demo-open:hover,
+.publish-demo-close:hover {
+  transform: translateY(-1px);
 }
 
 .studio-shell {
@@ -4349,6 +4516,12 @@ input[type="color"] {
   background: #eef1ed;
   color: #676e68;
   font-size: 0.7rem;
+}
+
+.status-line a {
+  color: #0f6f73;
+  font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .data-actions {

@@ -53,6 +53,7 @@ Calidad y decisiones funcionales del producto:
 Como publicar, validar y mantener DLS:
 
 - Despliegue y lanzamiento del piloto.
+- Publicador temporal de demos en Cloudflare.
 - Runbook operativo.
 - Servicio gestionado de Google.
 
@@ -87,6 +88,7 @@ Documentos utiles que no marcan prioridades actuales:
 | Producto | [`COMPATIBILITY_CHECKLIST.md`](producto/COMPATIBILITY_CHECKLIST.md) | QA responsive y navegadores. |
 | Operaciones | [`PILOT_LAUNCH.md`](operaciones/PILOT_LAUNCH.md) | Publicacion y aceptacion del piloto. |
 | Operaciones | [`DEPLOYMENT.md`](operaciones/DEPLOYMENT.md) | Guia de despliegue. |
+| Operaciones | [`DEMO_PUBLISH_CLOUDFLARE.md`](operaciones/DEMO_PUBLISH_CLOUDFLARE.md) | Demos publicas temporales con Workers + KV. |
 | Operaciones | [`OPERATIONS_RUNBOOK.md`](operaciones/OPERATIONS_RUNBOOK.md) | Salud, incidentes y restauracion. |
 | Operaciones | [`GOOGLE_CLIENT_SERVICE_PLAYBOOK.md`](operaciones/GOOGLE_CLIENT_SERVICE_PLAYBOOK.md) | Operacion del servicio Google. |
 | Operaciones | [`GOOGLE_CLOUD_SETUP.md`](operaciones/GOOGLE_CLOUD_SETUP.md) | Alta tecnica, credenciales y consentimiento Google. |

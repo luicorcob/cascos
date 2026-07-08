@@ -307,6 +307,7 @@
           <span aria-hidden="true">Entrega Pro</span>
           <span class="sr-only">Preparar entrega profesional</span>
         </button>
+        <button class="primary-action publish-action" id="publishDemoButton" type="button">Publicar demo online</button>
         <button class="primary-action" id="exportButton" type="button">Exportar web</button>
       </div>
     </header>
@@ -1324,12 +1325,35 @@
       </section>
     </main>
 
+    <div class="publish-demo-modal" id="publishDemoModal" role="dialog" aria-modal="true" aria-labelledby="publishDemoTitle" hidden>
+      <div class="publish-demo-backdrop" data-publish-demo-close></div>
+      <section class="publish-demo-dialog">
+        <header>
+          <span class="publish-demo-kicker">Demo online</span>
+          <button class="publish-demo-close" type="button" data-publish-demo-close aria-label="Cerrar">x</button>
+        </header>
+        <div class="publish-demo-body">
+          <p class="publish-demo-badge">Publicada correctamente</p>
+          <h2 id="publishDemoTitle">Demo lista para enviar</h2>
+          <p id="publishDemoExpiry">Enlace temporal activo.</p>
+          <label>
+            <span id="publishDemoUrlLabel">Enlace de cliente</span>
+            <input id="publishDemoUrl" type="url" readonly>
+          </label>
+        </div>
+        <footer>
+          <button class="publish-demo-copy" id="publishDemoCopyButton" type="button">Copiar enlace</button>
+          <a class="publish-demo-open" id="publishDemoOpenLink" href="#" target="_blank" rel="noopener">Abrir demo</a>
+        </footer>
+      </section>
+    </div>
+
     <template id="exportTemplate"></template>
     <script src="assets/vendor/lenis.min.js"></script>
     <script src="assets/vendor/splitting.min.js"></script>
     <script src="assets/vendor/vanilla-tilt.min.js"></script>
     <script src="assets/vendor/atropos.min.js"></script>
-    <script src="src/shared/api-config.js"></script>
+    <script src="src/shared/api-config.js?v=20260708-1"></script>
     <script src="src/studio/core-utils.js?v=20260612-1"></script>
     <script src="src/studio/button-style-editor.js?v=20260622-1"></script>
     <script src="src/studio/catalog.js?v=20260622-2"></script>
@@ -1337,12 +1361,12 @@
     <script src="src/studio/layout-library.js?v=20260612-1"></script>
     <script src="src/studio/media-library.js?v=20260612-1"></script>
     <script src="src/studio/curated-stock-images.js?v=20260620-2"></script>
-    <script src="src/studio/stock-images.js?v=20260620-10"></script>
+    <script src="src/studio/stock-images.js?v=20260708-2"></script>
     <script src="src/studio/data-client.js?v=20260612-1"></script>
     <script src="src/studio/validation.js?v=20260612-1"></script>
     <script src="src/studio/quality-control.js?v=20260622-1"></script>
     <script src="src/studio/renderer.js?v=20260622-2"></script>
     <script src="src/studio/exporter.js?v=20260622-1"></script>
-    <script src="src/app.js?v=20260629-4"></script>
+    <script src="src/app.js?v=20260708-2"></script>
   </body>
 </html>

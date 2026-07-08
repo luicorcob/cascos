@@ -100,6 +100,8 @@ a {
 .projects-refresh,
 .projects-config-form button,
 .project-links a,
+.project-demo-actions a,
+.project-demo-actions button,
 .project-password-form button {
   min-height: 36px;
   border: 1px solid var(--line);
@@ -112,7 +114,9 @@ a {
 }
 
 .projects-nav a,
-.project-links a {
+.project-links a,
+.project-demo-actions a,
+.project-demo-actions button {
   justify-content: center;
   padding: 0 12px;
 }
@@ -125,6 +129,10 @@ a {
 .projects-config-form button:focus-visible,
 .project-links a:hover,
 .project-links a:focus-visible,
+.project-demo-actions a:hover,
+.project-demo-actions a:focus-visible,
+.project-demo-actions button:hover,
+.project-demo-actions button:focus-visible,
 .project-password-form button:hover,
 .project-password-form button:focus-visible {
   border-color: rgba(40, 215, 255, 0.52);
@@ -215,6 +223,7 @@ a {
 
 .projects-config-form button,
 .projects-refresh,
+.project-demo-actions button,
 .project-password-form button {
   padding: 0 12px;
   cursor: pointer;
@@ -376,6 +385,75 @@ a {
   display: inline-flex;
 }
 
+.project-demo-state {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.project-demo-state span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.project-demo-state strong {
+  display: block;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.project-demo-state small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.project-demo-state.is-active {
+  border-color: rgba(85, 225, 154, 0.36);
+  background: rgba(85, 225, 154, 0.1);
+}
+
+.project-demo-state.is-active span {
+  color: #8dffbd;
+}
+
+.project-demo-state.is-expired {
+  border-color: rgba(255, 189, 74, 0.34);
+  background: rgba(255, 189, 74, 0.1);
+}
+
+.project-demo-state.is-expired span {
+  color: var(--amber);
+}
+
+.project-demo-state.is-empty {
+  grid-template-columns: 1fr;
+}
+
+.project-demo-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(82px, 1fr));
+  gap: 8px;
+}
+
+.project-demo-actions a,
+.project-demo-actions button {
+  display: inline-flex;
+  min-width: 0;
+}
+
 .project-password-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -438,6 +516,8 @@ a {
   .projects-toolbar,
   .projects-config-form,
   .project-links,
+  .project-demo-state,
+  .project-demo-actions,
   .project-password-form {
     grid-template-columns: 1fr;
   }

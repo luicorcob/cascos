@@ -305,10 +305,37 @@ function toBusinessSummary(business) {
     plan: business.plan,
     status: business.status,
     publishedUrl: business.publishedUrl,
+    activeDemo: normalizeActiveDemo(business.settings?.activeDemo, business.publishedUrl),
     portalAccess: toPortalAccessSummary(business),
     updatedAt: business.updatedAt,
     createdAt: business.createdAt,
     archivedAt: business.archivedAt || ""
+  };
+}
+
+function normalizeActiveDemo(activeDemo, publishedUrl = "") {
+  if (!isPlainObject(activeDemo) && !publishedUrl) {
+    return null;
+  }
+
+  const source = isPlainObject(activeDemo) ? activeDemo : {};
+  const url = cleanText(source.url || publishedUrl || "", 1000);
+
+  if (!url) {
+    return null;
+  }
+
+  return {
+    id: cleanText(source.id || "", 160),
+    url,
+    path: cleanText(source.path || "", 300),
+    createdAt: cleanText(source.createdAt || "", 80),
+    expiresAt: cleanText(source.expiresAt || "", 80),
+    publicBaseUrl: cleanText(source.publicBaseUrl || "", 500),
+    shareable: source.shareable !== false,
+    shareStatus: cleanText(source.shareStatus || "", 80),
+    shareMessage: cleanText(source.shareMessage || "", 500),
+    source: cleanText(source.source || "studio", 80)
   };
 }
 

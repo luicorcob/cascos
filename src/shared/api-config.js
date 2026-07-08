@@ -55,9 +55,12 @@
   }
 
   function getBase() {
-    return cleanBase(window.LOCALLIFT_API_BASE)
+    const configured = cleanBase(window.LOCALLIFT_API_BASE)
       || cleanBase(document.querySelector('meta[name="locallift-api-base"]')?.content)
       || cleanBase(localStorage.getItem(API_BASE_KEY));
+
+    return rewriteLocalStaticBase(configured)
+      || inferLocalBackendBase();
   }
 
   function setBase(value) {
@@ -136,5 +139,40 @@
 
   function isAbsoluteUrl(value) {
     return /^[a-z][a-z0-9+.-]*:\/\//i.test(String(value || ""));
+  }
+
+  function inferLocalBackendBase() {
+    const { protocol, hostname, port } = window.location;
+
+    if (
+      protocol !== "http:"
+      || !["127.0.0.1", "localhost"].includes(hostname)
+      || !port
+      || port === "5173"
+    ) {
+      return "";
+    }
+
+    return `http://${hostname}:5173`;
+  }
+
+  function rewriteLocalStaticBase(base) {
+    if (!base) {
+      return "";
+    }
+
+    try {
+      const parsed = new URL(base);
+      const isLocal = ["127.0.0.1", "localhost"].includes(parsed.hostname);
+      const isCurrentStaticOrigin = parsed.origin === window.location.origin && window.location.port !== "5173";
+
+      if (isLocal && isCurrentStaticOrigin) {
+        return `http://${parsed.hostname}:5173`;
+      }
+    } catch (error) {
+      return base;
+    }
+
+    return base;
   }
 })();

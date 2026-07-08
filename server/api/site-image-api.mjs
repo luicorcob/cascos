@@ -433,7 +433,8 @@ export async function createSiteImageSelection(payload, options = {}) {
     timeoutMs: Math.max(1500, Number(options.timeoutMs || DEFAULT_TIMEOUT_MS)),
     cache: options.cache || searchCache,
     warnings,
-    usedUrls: new Set()
+    usedUrls: new Set(),
+    imageSeed: createBusinessImageSeed(business)
   };
 
   if (!providerState.fetcher) {
@@ -805,7 +806,8 @@ async function searchProviders(query, orientation, perPage, providerState) {
   }
 
   for (const provider of providers) {
-    const cacheKey = `${provider.id}:${query}:${orientation}:${perPage}`.toLowerCase();
+    const page = providerSearchPage(providerState, provider.id, query, orientation);
+    const cacheKey = `${provider.id}:${query}:${orientation}:${perPage}:${page}`.toLowerCase();
     const cached = providerState.cache.get(cacheKey);
 
     if (cached && cached.expiresAt > Date.now()) {
@@ -813,7 +815,7 @@ async function searchProviders(query, orientation, perPage, providerState) {
     }
 
     try {
-      const items = await searchProvider(provider, query, orientation, perPage, providerState);
+      const items = await searchProvider(provider, query, orientation, perPage, page, providerState);
       const safeItems = items.filter((item) => item.url && item.urlThumb && isSafeImageItem(item, {}));
       providerState.cache.set(cacheKey, { items: safeItems, expiresAt: Date.now() + CACHE_TTL_MS });
       pruneCache(providerState.cache);
@@ -830,28 +832,30 @@ async function searchProviders(query, orientation, perPage, providerState) {
   return [];
 }
 
-async function searchProvider(provider, query, orientation, perPage, providerState) {
+async function searchProvider(provider, query, orientation, perPage, page, providerState) {
   if (provider.id === "unsplash") {
-    return searchUnsplash(provider, query, orientation, perPage, providerState);
+    return searchUnsplash(provider, query, orientation, perPage, page, providerState);
   }
 
   if (provider.id === "pexels") {
-    return searchPexels(provider, query, orientation, perPage, providerState);
+    return searchPexels(provider, query, orientation, perPage, page, providerState);
   }
 
-  return searchPixabay(provider, query, orientation, perPage, providerState);
+  return searchPixabay(provider, query, orientation, perPage, page, providerState);
 }
 
-async function searchUnsplash(provider, query, orientation, perPage, providerState) {
+async function searchUnsplash(provider, query, orientation, perPage, page, providerState) {
   const endpoint = new URL("https://api.unsplash.com/search/photos");
   endpoint.searchParams.set("query", query);
   endpoint.searchParams.set("orientation", mapUnsplashOrientation(orientation));
   endpoint.searchParams.set("per_page", String(Math.max(5, Math.min(30, perPage))));
+  endpoint.searchParams.set("page", String(page));
   endpoint.searchParams.set("content_filter", "high");
 
   const payload = await fetchJson(providerState.fetcher, endpoint, {
     headers: {
       Accept: "application/json",
+      "Accept-Version": "v1",
       Authorization: `Client-ID ${provider.key}`
     },
     timeoutMs: providerState.timeoutMs
@@ -874,6 +878,7 @@ async function searchUnsplash(provider, query, orientation, perPage, providerSta
       urlOriginal: regular,
       urlRaw: raw,
       urlThumb: thumb,
+      downloadLocation: firstHttp(photo.links?.download_location),
       width: Number(photo.width || 0),
       height: Number(photo.height || 0),
       credit: creator ? `Foto de ${creator} en Unsplash` : "Foto en Unsplash"
@@ -881,11 +886,12 @@ async function searchUnsplash(provider, query, orientation, perPage, providerSta
   });
 }
 
-async function searchPexels(provider, query, orientation, perPage, providerState) {
+async function searchPexels(provider, query, orientation, perPage, page, providerState) {
   const endpoint = new URL("https://api.pexels.com/v1/search");
   endpoint.searchParams.set("query", query);
   endpoint.searchParams.set("orientation", orientation);
   endpoint.searchParams.set("per_page", String(Math.max(5, Math.min(30, perPage))));
+  endpoint.searchParams.set("page", String(page));
 
   const payload = await fetchJson(providerState.fetcher, endpoint, {
     headers: {
@@ -919,13 +925,14 @@ async function searchPexels(provider, query, orientation, perPage, providerState
   });
 }
 
-async function searchPixabay(provider, query, orientation, perPage, providerState) {
+async function searchPixabay(provider, query, orientation, perPage, page, providerState) {
   const endpoint = new URL("https://pixabay.com/api/");
   endpoint.searchParams.set("key", provider.key);
   endpoint.searchParams.set("q", query);
   endpoint.searchParams.set("image_type", "photo");
   endpoint.searchParams.set("orientation", mapPixabayOrientation(orientation));
   endpoint.searchParams.set("per_page", String(Math.max(5, Math.min(30, perPage))));
+  endpoint.searchParams.set("page", String(page));
   endpoint.searchParams.set("safesearch", "true");
 
   const payload = await fetchJson(providerState.fetcher, endpoint, {
@@ -966,6 +973,7 @@ function formatSelectedImage(item, config) {
     credito: item.credit,
     fuente: item.provider,
     source_url: item.sourceUrl,
+    download_location: item.downloadLocation || "",
     query_usada: config.query
   };
 }
@@ -984,6 +992,7 @@ function compactAlternative(image) {
     credito: image.credito,
     fuente: image.fuente,
     source_url: image.source_url,
+    download_location: image.download_location,
     query_usada: image.query_usada
   };
 }
@@ -1078,6 +1087,20 @@ function getAvailableProviders(env) {
   ];
 
   return providers.filter((provider) => provider.key);
+}
+
+function createBusinessImageSeed(business) {
+  return hashString([
+    business.name,
+    business.category,
+    business.location,
+    business.style
+  ].join("|"));
+}
+
+function providerSearchPage(providerState, providerId, query, orientation) {
+  const hash = hashString(`${providerState.imageSeed || 0}:${providerId}:${query}:${orientation}`);
+  return 1 + (hash % 3);
 }
 
 async function fetchJson(fetcher, endpoint, options = {}) {
@@ -1430,6 +1453,18 @@ function slugify(value) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+function hashString(value) {
+  let hash = 2166136261;
+  const source = String(value || "");
+
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
 }
 
 function cleanText(value, maxLength = 500) {

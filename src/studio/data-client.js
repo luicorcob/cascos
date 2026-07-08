@@ -133,7 +133,8 @@
       name: record.name,
       plan: record.plan,
       status: record.status,
-      publishedUrl: record.publishedUrl || ""
+      publishedUrl: record.publishedUrl || "",
+      activeDemo: record.settings?.activeDemo || record.activeDemo || null
     };
   }
 

@@ -192,7 +192,7 @@
 
   function normalizeEndpoints(value) {
     const fallback = [
-      "/api/stock-images"
+      global.LocalLiftApi?.url?.("/api/stock-images") || "/api/stock-images"
     ];
 
     if (Array.isArray(value)) {
@@ -242,6 +242,7 @@
       sourceUrl,
       url,
       thumbnail,
+      downloadLocation: firstHttp(item.download_location, item.downloadLocation),
       tags: normalizeTags(item.tags),
       alt: [title, creator].filter(Boolean).join(" - ").slice(0, 180)
     };

@@ -6,3 +6,4 @@ node_modules/
 .tmp-*/
 data/google-auth-db.json
 data/backups/google-auth-db.*.json
+data/demo-publishes/

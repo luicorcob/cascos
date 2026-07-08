@@ -31,6 +31,10 @@ services:
         value: /data/backups
       - key: BUSINESS_DB_BACKUPS
         value: "true"
+      - key: DEMO_PUBLISH_DIR
+        value: /data/demo-publishes
+      - key: DEMO_PUBLISH_TTL_HOURS
+        value: "168"
       - key: GOOGLE_AUTH_DB_FILE
         value: /data/google-auth-db.json
       - key: LOCALLIFT_ADMIN_TOKEN

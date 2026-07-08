@@ -22,7 +22,8 @@ assert.deepEqual(toApiRecordMeta(record), {
   name: "Luma",
   plan: undefined,
   status: "active",
-  publishedUrl: ""
+  publishedUrl: "",
+  activeDemo: null
 });
 
 console.log("Studio data client tests passed.");

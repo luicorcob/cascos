@@ -22,16 +22,26 @@ Para que el Radar funcione sin arrancarlo desde tu portátil, despliega este rep
 10. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
 11. Pulsa `Entrega Pro` para generar un preflight con bloqueos, avisos y siguientes pasos.
 12. Revisa el score de entrega; los errores criticos bloquean la exportacion.
-13. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
-14. Usa `Exportar paquete` para descargar un ZIP con HTML, `business.json`, ficha de entrega y cambios.
-15. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
-16. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
+13. Con el servidor publicado en un dominio publico, pulsa `Publicar demo` para obtener una URL temporal lista para enviar al cliente. Si estas en local, puedes configurar el publicador gratis de Cloudflare Workers + KV para que el enlace sea publico y caduque solo.
+14. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
+15. Usa `Exportar paquete` para descargar un ZIP con HTML, `business.json`, ficha de entrega y cambios.
+16. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
+17. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
 
 Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
 `index.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
 `view=desktop`.
 
 Para simular produccion o subir el backend, usa `npm run start:prod` con las variables de `.env.example`. En Render ese comando queda configurado como Start Command del Web Service. Este comando valida `NODE_ENV=production`, `HOST=0.0.0.0`, token admin, CORS HTTPS y ruta de base persistente antes de arrancar.
+
+Para dejar las demos online temporales casi automaticas, autentica Cloudflare una vez con `npx wrangler login` y despues ejecuta:
+
+```powershell
+npm.cmd run setup:demo-online
+```
+
+El script crea el KV, guarda el secret, despliega el Worker e imprime las variables `DEMO_REMOTE_PUBLISH_URL` y `DEMO_REMOTE_PUBLISH_TOKEN`.
+Tambien las guarda en `.env`, asi que despues basta con `npm.cmd start` y el boton `Publicar demo online`.
 
 Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=https://tu-api.com` o pega esa URL en el campo `URL API` del dashboard. DLS la guarda en el navegador y la usa para leads, reservas, eventos, dashboard y reportes.
 
@@ -82,6 +92,7 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 - Chatbot configurable por negocio con modo local y endpoint IA opcional.
 - Portal operativo base con metricas, tabs, acciones rapidas, estados vacios y carga desde la API multi-negocio.
 - Guardado local en navegador.
+- Publicacion temporal de demos desde el Studio con popup de enlace, URL `/demos/...`, copia al portapapeles, guardado de `publishedUrl` y estado `Demo activa` en Proyectos solo cuando la URL es publica. Puede usar el disco del backend o un publicador remoto gratis con Cloudflare Workers + KV y TTL automatico. Los enlaces `localhost`/`127.0.0.1` se marcan como diagnostico local para no enviarlos al cliente por error.
 - Exportador de pagina standalone con CSS y JS integrados.
 - Recursos locales en `assets/vendor/`: Lenis, Splitting.js, VanillaTilt y Open Props animations.
 
@@ -173,7 +184,9 @@ DELETE http://127.0.0.1:5173/api/businesses/{id-o-slug}/archive
 
 `POST /api/site-images` recibe `negocio`, `business` o un objeto plano con nombre, tipo, ubicacion, estilo, secciones y servicios. Devuelve un JSON con imagenes para `hero`, `servicios`, `galeria`, `contacto` y otras secciones compatibles, incluyendo creditos, alt text, foco CSS y query usada.
 
-El endpoint usa `UNSPLASH_ACCESS_KEY`, `PEXELS_API_KEY` y `PIXABAY_API_KEY` por ese orden. Si no hay claves o no hay resultados validos, devuelve `null` y avisos en `meta.advertencias` sin inventar URLs.
+El endpoint usa `UNSPLASH_ACCESS_KEY`, `PEXELS_API_KEY` y `PIXABAY_API_KEY` por ese orden. Con Unsplash activo, cada negocio calcula una pagina de resultados estable a partir de su nombre, categoria, ubicacion y estilo, para que negocios parecidos no reciban siempre la misma primera tanda de fotos. Si no hay claves o no hay resultados validos, devuelve `null` y avisos en `meta.advertencias` sin inventar URLs.
+
+El buscador manual del inspector usa `GET /api/stock-images`. Si `UNSPLASH_ACCESS_KEY` esta configurada, busca primero en Unsplash; si no, o si Unsplash no devuelve resultados validos, mantiene Wikimedia Commons como fallback sin clave. Guarda solo la Access Key en `.env`; la Secret Key no debe ir en frontend, HTML exportado ni ejemplos.
 
 ```powershell
 $body = @{
@@ -411,12 +424,13 @@ El panel `Demo en vivo` permite aplicar cambios sin navegar por todas las pestan
 - Anadir subida directa de imagenes a Cloudinary, Supabase Storage o S3.
 - Crear mas plantillas por sector: academia, taller, tienda especializada, inmobiliaria y servicios profesionales.
 - Generar textos con IA a partir de un cuestionario corto.
-- Publicar automaticamente en Netlify, Vercel o un servidor propio.
+- Convertir la publicacion temporal en deploy permanente a Netlify, Vercel o dominio propio.
 
 ## Documentacion
 
 - [Objetivo y siguientes acciones](docs/AHORA.md)
 - [Mapa y reglas de la documentacion](docs/README.md)
+- [Publicar demos gratis con Cloudflare Workers](docs/operaciones/DEMO_PUBLISH_CLOUDFLARE.md)
 - [Vista del servicio Google gestionado](pages/google-ops.html)
 - [Pitch navegable para inversores](pages/investor.html)
 - [Brief de onboarding](pages/onboarding.html)

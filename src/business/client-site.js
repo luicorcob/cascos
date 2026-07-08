@@ -7,6 +7,7 @@
   const catalog = window.LocalLiftStudio?.catalog || {};
   const rendererFactory = window.LocalLiftStudio?.renderer?.createRenderer;
   let currentBusinessRecord = null;
+  let revealObserver = null;
 
   document.addEventListener("DOMContentLoaded", init);
 
@@ -75,6 +76,7 @@
     }
 
     root.innerHTML = renderer.renderSite(business);
+    attachGeneratedSiteInteractions(root);
     attachLeadForms(root, business);
     attachPublicBookingForms(root, business);
   }
@@ -247,6 +249,50 @@
       const allowed = definition.variants.map((variant) => variant.id);
       return [section, allowed.includes(value?.[section]) ? value[section] : defaults[section]];
     }));
+  }
+
+  function attachGeneratedSiteInteractions(container) {
+    if (revealObserver) {
+      revealObserver.disconnect();
+      revealObserver = null;
+    }
+
+    const revealItems = container.querySelectorAll(".reveal");
+    if (!revealItems.length) {
+      return;
+    }
+
+    if (!("IntersectionObserver" in window)) {
+      revealItems.forEach(showRevealItem);
+      return;
+    }
+
+    revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          showRevealItem(entry.target);
+        }
+      });
+    }, { root: null, rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
+
+    revealItems.forEach((item, index) => {
+      item.style.transitionDelay = `${Math.min(index * 45, 260)}ms`;
+      revealObserver.observe(item);
+    });
+
+    requestAnimationFrame(() => {
+      revealItems.forEach((item) => {
+        const rect = item.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 0.98 && rect.bottom > 0) {
+          showRevealItem(item);
+        }
+      });
+    });
+  }
+
+  function showRevealItem(item) {
+    item.classList.add("is-visible");
+    revealObserver?.unobserve?.(item);
   }
 
   function attachLeadForms(container, business) {

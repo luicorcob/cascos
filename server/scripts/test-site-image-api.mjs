@@ -16,6 +16,8 @@ try {
     requests.push({ endpoint, options });
     assert.equal(endpoint.hostname, "api.unsplash.com");
     assert.match(options.headers.Authorization, /^Client-ID test-unsplash-key$/);
+    assert.equal(options.headers["Accept-Version"], "v1");
+    assert.match(endpoint.searchParams.get("page"), /^[1-3]$/);
     return {
       ok: true,
       json: async () => makeUnsplashPayload(endpoint)
@@ -48,6 +50,7 @@ try {
   assert.equal(result.imagenes.galeria.length, 6);
   assert.ok(result.imagenes.hero.principal.url.includes("w=1920"));
   assert.ok(result.imagenes.hero.principal.url_thumb.includes("w=400"));
+  assert.match(result.imagenes.hero.principal.download_location, /^https:\/\/api\.unsplash\.com\/photos\//);
   assert.match(result.imagenes.hero.principal.credito, /Unsplash/);
   assert.doesNotMatch(result.imagenes.hero.principal.query_usada, /peluquer/i);
   assert.match(result.imagenes.hero.principal.query_usada, /hair salon/);
@@ -99,10 +102,11 @@ console.log("Site image module API tests passed.");
 function makeUnsplashPayload(endpoint) {
   const query = endpoint.searchParams.get("query") || "local business";
   const orientation = endpoint.searchParams.get("orientation") || "landscape";
+  const page = endpoint.searchParams.get("page") || "1";
   const perPage = Number(endpoint.searchParams.get("per_page") || 5);
   return {
     results: Array.from({ length: perPage }, (_, index) => {
-      const id = `${slugify(query)}-${orientation}-${index}`;
+      const id = `${slugify(query)}-${orientation}-p${page}-${index}`;
       const portrait = orientation === "portrait";
       const square = orientation === "squarish";
       const width = portrait ? 1200 : square ? 1200 : 1800;
@@ -121,7 +125,10 @@ function makeUnsplashPayload(endpoint) {
           thumb: `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=200&q=60`
         },
         user: { name: `Author ${index}` },
-        links: { html: `https://unsplash.com/photos/${id}` }
+        links: {
+          html: `https://unsplash.com/photos/${id}`,
+          download_location: `https://api.unsplash.com/photos/${id}/download`
+        }
       };
     })
   };

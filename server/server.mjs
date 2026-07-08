@@ -6,6 +6,7 @@ import { handleBookingApi, isBookingApiRequest } from "./api/booking-api.mjs";
 import { handleBusinessApi, isBusinessApiRequest } from "./api/business-api.mjs";
 import { handleClientAuthApi, isClientAuthApiRequest } from "./lib/client-auth.mjs";
 import { handleContactApi, isContactApiRequest } from "./api/contact-api.mjs";
+import { handleDemoPublishApi, isDemoPublishApiRequest } from "./api/demo-publish-api.mjs";
 import { handleDiscoveryApi, isDiscoveryApiRequest } from "./api/discovery-api.mjs";
 import { handleEventApi, isEventApiRequest } from "./api/event-api.mjs";
 import { handleHealthApi, isHealthApiRequest } from "./api/health-api.mjs";
@@ -94,6 +95,11 @@ const server = createServer(async (request, response) => {
 
     if (isSiteImageApiRequest(requestUrl.pathname)) {
       await handleSiteImageApi(request, response, apiContext);
+      return;
+    }
+
+    if (isDemoPublishApiRequest(requestUrl.pathname)) {
+      await handleDemoPublishApi(request, response, apiContext);
       return;
     }
 

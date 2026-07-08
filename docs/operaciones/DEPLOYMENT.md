@@ -19,6 +19,7 @@ Necesita backend encendido:
 - Reservas reales con validacion de disponibilidad.
 - Bloqueos de agenda, recordatorios y reporte mensual.
 - Tracking persistente de conversiones.
+- Publicacion temporal de demos desde el Studio (`POST /api/demo-publish` y URLs `/demos/...`).
 - IA real, pagos, emails, Google Calendar, Google Business Profile y Workspace.
 
 En local lo mantiene vivo `npm.cmd start`. En produccion lo mantiene vivo la plataforma de hosting, igual que cualquier API.
@@ -102,6 +103,8 @@ $env:CORS_ORIGIN="https://www.cliente.com,https://cliente.com"
 $env:BUSINESS_STORE="postgres"
 $env:DATABASE_URL="postgres://usuario:password@host:5432/db"
 $env:PGSSLMODE="require"
+$env:DEMO_PUBLISH_DIR="/data/demo-publishes"
+$env:DEMO_PUBLISH_TTL_HOURS="168"
 npm.cmd start
 ```
 
@@ -119,6 +122,21 @@ En plataformas cloud, `PORT` suele venir definido automaticamente. Usa `HOST=0.0
 `LOCALLIFT_ADMIN_TOKEN` protege las rutas administrativas `/api/businesses/*`. Si no se define, el servidor mantiene el modo local abierto para desarrollo. En produccion debe estar definido y el portal `pages/business-dashboard.html` permite guardarlo en el navegador desde la barra lateral.
 
 `CORS_ORIGIN` limita que dominios pueden llamar a la API desde navegador. En desarrollo puede omitirse para usar `*`; en produccion pon los dominios reales del frontend, separados por comas si hay mas de uno. El servidor devolvera el origen permitido que coincida con la peticion.
+
+`DEMO_PUBLISH_DIR` define donde se guardan las demos temporales publicadas desde el Studio. Por defecto usa `data/demo-publishes`; en Render conviene apuntarlo al disco persistente `/data/demo-publishes`. `DEMO_PUBLISH_TTL_HOURS` controla la caducidad y por defecto son 168 horas.
+
+Para que el enlace de `Publicar demo` funcione en movil y fuera de tu ordenador, el backend debe estar accesible desde un dominio publico. En local, una URL tipo `http://127.0.0.1:5173/demos/...` solo abre en el propio ordenador; en el movil `127.0.0.1` es el movil, no tu portatil. Si tu proveedor no envia el host publico correctamente, define:
+
+```text
+DEMO_PUBLIC_BASE_URL=https://tu-api.onrender.com
+```
+
+El Studio marca esos enlaces locales como diagnostico y no los guarda como `Demo activa` para evitar enviarlos al cliente por error.
+
+Si quieres enlaces publicos gratis aunque el Studio este en local, usa el
+publicador de Cloudflare Workers + KV. El Studio envia el HTML al Worker desde
+el backend, el Worker lo guarda con TTL y devuelve una URL publica. Guia:
+[`DEMO_PUBLISH_CLOUDFLARE.md`](DEMO_PUBLISH_CLOUDFLARE.md).
 
 El archivo `.env.example` resume las variables principales para copiar la configuracion a Render, Railway, Fly.io o un VPS.
 

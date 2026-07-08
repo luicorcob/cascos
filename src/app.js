@@ -80,6 +80,7 @@ const STORAGE_KEY = "locallift-studio-business";
 const DRAFT_STORAGE_KEY = "locallift-studio-draft";
 const BRIEF_HANDOFF_STORAGE_KEY = "locallift-studio-brief-handoff";
 const API_RECORD_KEY = "locallift-studio-business-api-record";
+const INTRO_COMPLETE_KEY = "dls-studio-intro-complete";
 const DATA_VERSION = 6;
 
 const form = document.querySelector("#businessForm");
@@ -105,6 +106,15 @@ const topbarProjectName = document.querySelector("#topbarProjectName");
 const frameAddress = document.querySelector("#frameAddress");
 const presentationModeButton = document.querySelector("#presentationModeButton");
 const prepareDeliveryButton = document.querySelector("#prepareDeliveryButton");
+const publishDemoButton = document.querySelector("#publishDemoButton");
+const publishDemoModal = document.querySelector("#publishDemoModal");
+const publishDemoBadge = document.querySelector(".publish-demo-badge");
+const publishDemoTitle = document.querySelector("#publishDemoTitle");
+const publishDemoUrlInput = document.querySelector("#publishDemoUrl");
+const publishDemoUrlLabel = document.querySelector("#publishDemoUrlLabel");
+const publishDemoExpiry = document.querySelector("#publishDemoExpiry");
+const publishDemoOpenLink = document.querySelector("#publishDemoOpenLink");
+const publishDemoCopyButton = document.querySelector("#publishDemoCopyButton");
 const directEditButton = document.querySelector("#directEditButton");
 const autoSaveState = document.querySelector("#autoSaveState");
 const sectionOrderList = document.querySelector("#sectionOrderList");
@@ -256,6 +266,7 @@ let stockImageState = {
   hasNext: false
 };
 let selectedStockImage = null;
+const trackedStockDownloads = new Set();
 const PREVIEW_SECTION_LISTS = {
   services: "services",
   features: "features",
@@ -958,6 +969,7 @@ function applySiteImagePack(pack) {
   if (pack.hero?.url) {
     setValue("heroImage", pack.hero.url);
     mergeMediaMetadata(pack.hero.url, mediaMetadataFromSiteImage(pack.hero));
+    trackStockImageDownload(pack.hero);
   }
 
   if (pack.gallery.length) {
@@ -966,6 +978,7 @@ function applySiteImagePack(pack) {
     setChecked("showGallery", true);
     pack.gallery.forEach((item) => {
       mergeMediaMetadata(item.url, mediaMetadataFromSiteImage(item));
+      trackStockImageDownload(item);
     });
   }
 }
@@ -1037,6 +1050,7 @@ function toSiteImageItem(image, title, section, index) {
     provider,
     license: providerLicense(image.fuente),
     sourceUrl,
+    downloadLocation: normalizeOptionalUrl(image.download_location),
     url,
     thumbnail,
     tags: [section, image.query_usada].filter(Boolean),
@@ -1227,21 +1241,15 @@ async function loadStockImageCatalog() {
   };
   renderStockImages();
   renderStockImageStatus(builtInItems.length
-    ? `${builtInItems.length} fotos profesionales incluidas`
+    ? `${builtInItems.length} fotos incluidas - buscando nuevas online...`
     : "Preparando catalogo profesional...");
   if (stockLoadMoreButton) {
     stockLoadMoreButton.hidden = true;
   }
 
-  if (builtInItems.length >= 200) {
-    stockImageState = { ...stockImageState, loading: false };
-    renderStockCatalogStatus();
-    return;
-  }
-
   try {
-    const result = await stockImageSearch.discover({ minItems: 200, targetItems: 240 });
-    const items = mergeStockImageItems(builtInItems, result.items, 240);
+    const result = await stockImageSearch.discover({ minItems: 120, targetItems: 220, maxPages: 1 });
+    const items = mergeStockImageItems(result.items, builtInItems, 240);
     stockImageState = {
       ...stockImageState,
       loading: false,
@@ -1404,9 +1412,28 @@ function saveStockImage(item) {
     renderMediaLibrary();
     renderStockImageStatus(`Guardada: ${stored.name}`);
     setStatus(`"${stored.name}" disponible en la biblioteca.`);
+    trackStockImageDownload(item);
   } catch (error) {
     setStatus(error?.message || "No se pudo guardar esa imagen.");
   }
+}
+
+function trackStockImageDownload(item = {}) {
+  const downloadLocation = normalizeOptionalUrl(item.downloadLocation || item.download_location);
+  const provider = String(item.provider || "").toLowerCase();
+
+  if (!downloadLocation || provider !== "unsplash" || trackedStockDownloads.has(downloadLocation)) {
+    return;
+  }
+
+  trackedStockDownloads.add(downloadLocation);
+  fetch(apiUrl("/api/stock-images/download"), {
+    method: "POST",
+    headers: apiHeaders({ json: true }),
+    body: JSON.stringify({ downloadLocation })
+  }).catch(() => {
+    trackedStockDownloads.delete(downloadLocation);
+  });
 }
 
 function resolveImageCreditMetadata(url) {
@@ -1606,6 +1633,7 @@ function applyPreviewImageEdit() {
       ...resolveImageCreditMetadata(url)
     });
   }, "Imagen actualizada desde la preview.");
+  trackStockImageDownload(selectedStockImage);
   selectedStockImage = null;
   closePreviewInspector();
 }
@@ -2252,12 +2280,17 @@ function bindIntroGate() {
 
   const params = new URLSearchParams(window.location.search);
   const skipIntro = ["1", "true", "yes"].includes(String(params.get("skipIntro") || "").toLowerCase());
+  const forceIntro = ["1", "true", "yes"].includes(String(params.get("intro") || "").toLowerCase());
   const presentationLaunch = ["1", "true", "yes"].includes(String(params.get("presentation") || "").toLowerCase());
   const automatedLaunch = navigator.webdriver === true;
+  const introCompleted = getIntroCompleted();
 
-  if (skipIntro || presentationLaunch || automatedLaunch) {
+  if (!forceIntro && (skipIntro || presentationLaunch || automatedLaunch || introCompleted)) {
     introGate.hidden = true;
     document.body.classList.add("is-intro-complete");
+    if (skipIntro || presentationLaunch || automatedLaunch) {
+      setIntroCompleted(true);
+    }
     return;
   }
 
@@ -2298,6 +2331,7 @@ function bindIntroGate() {
     introGate.classList.add("is-closing");
     document.body.classList.remove("is-intro-active");
     document.body.classList.add("is-intro-complete");
+    setIntroCompleted(true);
 
     let fallbackTimer = 0;
     const finish = () => {
@@ -2342,6 +2376,14 @@ function bindIntroGate() {
     clientLoginNotice.dataset.type = type;
   };
 
+  const getClientLoginErrorMessage = (error) => {
+    if (error?.name === "TypeError" || /fetch/i.test(error?.message || "")) {
+      return "No se pudo conectar con la API. Ejecuta npm.cmd start y abre http://127.0.0.1:5173/ para entrar al portal.";
+    }
+
+    return error?.message || "Credenciales no validas.";
+  };
+
   const handleClientLogin = async (event) => {
     event.preventDefault();
 
@@ -2378,7 +2420,7 @@ function bindIntroGate() {
       setClientLoginNotice("Acceso correcto. Abriendo portal...", "ok");
       window.location.href = `pages/business-dashboard.html?business=${encodeURIComponent(payload.business?.slug || payload.business?.id || payload.session.businessSlug || payload.session.businessId)}`;
     } catch (error) {
-      setClientLoginNotice(error.message || "Credenciales no validas.", "error");
+      setClientLoginNotice(getClientLoginErrorMessage(error), "error");
     } finally {
       if (button) {
         button.disabled = false;
@@ -2408,6 +2450,26 @@ function bindIntroGate() {
       showDestinationHub();
     }
   });
+}
+
+function getIntroCompleted() {
+  try {
+    return localStorage.getItem(INTRO_COMPLETE_KEY) === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
+function setIntroCompleted(value) {
+  try {
+    if (value) {
+      localStorage.setItem(INTRO_COMPLETE_KEY, "true");
+    } else {
+      localStorage.removeItem(INTRO_COMPLETE_KEY);
+    }
+  } catch (error) {
+    // The Studio still works when browser storage is not writable.
+  }
 }
 
 function consumeBriefHandoff() {
@@ -2459,6 +2521,31 @@ function togglePresentationMode(force) {
 }
 
 function bindActions() {
+  publishDemoModal?.querySelectorAll("[data-publish-demo-close]").forEach((button) => {
+    button.addEventListener("click", hidePublishDemoModal);
+  });
+
+  publishDemoUrlInput?.addEventListener("focus", () => {
+    publishDemoUrlInput.select();
+  });
+
+  publishDemoCopyButton?.addEventListener("click", async () => {
+    const url = publishDemoUrlInput?.value || "";
+
+    if (!url) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(url);
+    setPublishDemoCopyState(copied ? "Copiado" : "No se pudo copiar");
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !publishDemoModal?.hidden) {
+      hidePublishDemoModal();
+    }
+  });
+
   document.querySelector("#saveButton").addEventListener("click", async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
@@ -2545,6 +2632,64 @@ function bindActions() {
     currentBusiness = businessFromForm();
     renderQualityPanel(currentBusiness);
     renderDeliveryReport(currentBusiness);
+  });
+
+  publishDemoButton?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+
+    try {
+      currentBusiness = businessFromForm();
+      const validation = validateBusiness(currentBusiness);
+      if (!validation.ok) {
+        renderQualityPanel(currentBusiness);
+        renderDeliveryReport(currentBusiness);
+        setStatus(`Publicacion bloqueada: corrige ${validation.errors.length} error(es) de entrega.`);
+        return;
+      }
+
+      setStatus("Publicando demo temporal en el servidor...");
+      const demo = await publishDemo(currentBusiness);
+      const activeDemo = normalizeActiveDemo(demo);
+      const expiresText = activeDemo.expiresAt ? ` Caduca: ${formatDateTime(activeDemo.expiresAt)}.` : "";
+
+      if (!activeDemo.shareable) {
+        const message = getUnshareableDemoMessage(activeDemo);
+        setStatus(message, {
+          href: activeDemo.url,
+          label: activeDemo.url
+        });
+        showPublishDemoModal(activeDemo, false);
+        return;
+      }
+
+      setStatus(`Demo publicada. URL lista para enviar.${expiresText}`, {
+        href: activeDemo.url,
+        label: activeDemo.url
+      });
+      showPublishDemoModal(activeDemo, false);
+
+      rememberPublishedDemo(currentBusiness, activeDemo)
+        .then(() => {
+          setStatus(`Demo publicada. URL guardada en Proyectos.${expiresText}`, {
+            href: activeDemo.url,
+            label: activeDemo.url
+          });
+        })
+        .catch(() => {
+          setStatus(`Demo publicada. No se pudo guardar en Proyectos, pero el enlace funciona.${expiresText}`, {
+            href: activeDemo.url,
+            label: activeDemo.url
+          });
+        });
+    } catch (error) {
+      const endpoint = apiUrl("/api/demo-publish");
+      const message = getPublishErrorMessage(error, endpoint);
+      setStatus(message);
+      showPublishDemoErrorModal(message, endpoint);
+    } finally {
+      button.disabled = false;
+    }
   });
 
   document.querySelector("#exportButton").addEventListener("click", async (event) => {
@@ -4937,6 +5082,235 @@ async function downloadSite(business) {
   downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${filename}.html`);
 }
 
+async function publishDemo(business) {
+  const resolved = withBusinessDefaults(business);
+  const html = await studioExporter.buildExportDocument(resolved);
+  const response = await fetch(apiUrl("/api/demo-publish"), {
+    method: "POST",
+    headers: apiHeaders({ json: true }),
+    body: JSON.stringify({
+      html,
+      business: {
+        id: currentBusinessRecord?.id || resolved.id || "",
+        slug: currentBusinessRecord?.slug || resolved.slug || slugify(resolved.name || ""),
+        name: resolved.name,
+        category: resolved.category,
+        location: resolved.location || resolved.address || ""
+      }
+    })
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.error || "Demo publish failed");
+  }
+
+  const demo = payload.demo || {};
+
+  if (!demo.url) {
+    throw new Error("Demo publish response did not include a URL");
+  }
+
+  return demo;
+}
+
+function normalizeActiveDemo(demo) {
+  const url = String(demo.url || "").trim();
+  const shareability = inferDemoShareability(url);
+
+  return {
+    id: String(demo.id || "").trim(),
+    url,
+    path: String(demo.path || "").trim(),
+    createdAt: String(demo.createdAt || new Date().toISOString()),
+    expiresAt: String(demo.expiresAt || ""),
+    publicBaseUrl: String(demo.publicBaseUrl || "").trim(),
+    shareable: typeof demo.shareable === "boolean" ? demo.shareable : shareability.shareable,
+    shareStatus: String(demo.shareStatus || shareability.status || "").trim(),
+    shareMessage: String(demo.shareMessage || shareability.message || "").trim(),
+    source: "studio"
+  };
+}
+
+function showPublishDemoModal(activeDemo, copied = false) {
+  if (!publishDemoModal || !activeDemo?.url) {
+    return;
+  }
+
+  const canShare = activeDemo.shareable !== false;
+  publishDemoModal.dataset.shareStatus = canShare ? "shareable" : "blocked";
+
+  if (publishDemoBadge) {
+    publishDemoBadge.textContent = canShare ? "Publicada correctamente" : "No enviar al cliente";
+  }
+
+  if (publishDemoTitle) {
+    publishDemoTitle.textContent = canShare ? "Demo lista para enviar" : "Demo creada solo local";
+  }
+
+  if (publishDemoUrlLabel) {
+    publishDemoUrlLabel.textContent = canShare ? "Enlace de cliente" : "Enlace local de diagnostico";
+  }
+
+  if (publishDemoUrlInput) {
+    publishDemoUrlInput.value = activeDemo.url;
+  }
+
+  if (publishDemoOpenLink) {
+    publishDemoOpenLink.href = activeDemo.url;
+    publishDemoOpenLink.hidden = false;
+  }
+
+  if (publishDemoExpiry) {
+    const remaining = formatRemainingTime(activeDemo.expiresAt);
+    publishDemoExpiry.textContent = canShare
+      ? activeDemo.expiresAt
+        ? `Activa hasta ${formatDateTime(activeDemo.expiresAt)}${remaining ? ` (${remaining})` : ""}.`
+        : "Enlace temporal activo."
+      : getUnshareableDemoMessage(activeDemo);
+  }
+
+  setPublishDemoCopyState(copied ? "Copiado" : canShare ? "Copiar enlace" : "Copiar enlace local");
+  publishDemoModal.hidden = false;
+  requestAnimationFrame(() => publishDemoUrlInput?.select());
+}
+
+function showPublishDemoErrorModal(message, endpoint) {
+  if (!publishDemoModal) {
+    return;
+  }
+
+  publishDemoModal.dataset.shareStatus = "error";
+
+  if (publishDemoBadge) {
+    publishDemoBadge.textContent = "No publicada";
+  }
+
+  if (publishDemoTitle) {
+    publishDemoTitle.textContent = "No se pudo publicar";
+  }
+
+  if (publishDemoExpiry) {
+    publishDemoExpiry.textContent = message;
+  }
+
+  if (publishDemoUrlLabel) {
+    publishDemoUrlLabel.textContent = "Endpoint que no respondio";
+  }
+
+  if (publishDemoUrlInput) {
+    publishDemoUrlInput.value = endpoint || "";
+  }
+
+  if (publishDemoOpenLink) {
+    publishDemoOpenLink.hidden = true;
+  }
+
+  setPublishDemoCopyState("Copiar diagnostico");
+  publishDemoModal.hidden = false;
+  requestAnimationFrame(() => publishDemoUrlInput?.select());
+}
+
+function hidePublishDemoModal() {
+  if (publishDemoModal) {
+    publishDemoModal.hidden = true;
+    delete publishDemoModal.dataset.shareStatus;
+  }
+}
+
+function setPublishDemoCopyState(label) {
+  if (publishDemoCopyButton) {
+    publishDemoCopyButton.textContent = label;
+  }
+}
+
+function getPublishErrorMessage(error, endpoint) {
+  if (error?.name === "TypeError" || /fetch|failed|network|load/i.test(error?.message || "")) {
+    return `No se pudo conectar con la API de publicacion en ${endpoint}. Arranca npm.cmd start o abre el Studio desde el puerto donde este vivo el servidor.`;
+  }
+
+  return error?.message || "No se pudo publicar la demo. Revisa la API y vuelve a intentarlo.";
+}
+
+function getUnshareableDemoMessage(activeDemo) {
+  if (activeDemo?.shareStatus === "local-network") {
+    return "Demo creada, pero ese enlace solo funciona dentro de tu red local. Para mandarla a un movil fuera de esa red o a un cliente, publica el backend en Render/Railway o configura DEMO_PUBLIC_BASE_URL con un dominio HTTPS.";
+  }
+
+  return "Demo creada, pero ese enlace apunta a este ordenador. En un movil 127.0.0.1/localhost apunta al propio movil y falla. Publica el backend en Render/Railway o configura DEMO_PUBLIC_BASE_URL antes de enviarla.";
+}
+
+function inferDemoShareability(url) {
+  let parsed;
+
+  try {
+    parsed = new URL(url, window.location.href);
+  } catch (error) {
+    return {
+      shareable: false,
+      status: "invalid-url",
+      message: "La URL de demo no se pudo validar."
+    };
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (isLocalDemoHostname(hostname)) {
+    return {
+      shareable: false,
+      status: "local-machine",
+      message: "La URL apunta a este ordenador."
+    };
+  }
+
+  if (isPrivateNetworkDemoHostname(hostname)) {
+    return {
+      shareable: false,
+      status: "local-network",
+      message: "La URL solo es accesible desde la red local."
+    };
+  }
+
+  return {
+    shareable: true,
+    status: parsed.protocol === "https:" ? "public-https" : "public",
+    message: "URL publica."
+  };
+}
+
+function isLocalDemoHostname(hostname) {
+  return hostname === "localhost"
+    || hostname === "0.0.0.0"
+    || hostname === "::1"
+    || hostname === "[::1]"
+    || hostname.startsWith("127.");
+}
+
+function isPrivateNetworkDemoHostname(hostname) {
+  const parts = hostname.split(".").map((part) => Number(part));
+
+  if (parts.length === 4 && parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)) {
+    return parts[0] === 10
+      || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31)
+      || (parts[0] === 192 && parts[1] === 168)
+      || (parts[0] === 169 && parts[1] === 254);
+  }
+
+  return hostname.endsWith(".local") || hostname.endsWith(".lan");
+}
+
+async function rememberPublishedDemo(business, activeDemo) {
+  const record = await saveBusinessToApi({
+    ...business,
+    status: currentBusinessRecord?.status || "in-review",
+    publishedUrl: activeDemo.url,
+    activeDemo
+  });
+  currentBusinessRecord = toApiRecordMeta(record);
+  storeApiRecord(currentBusinessRecord);
+  return record;
+}
+
 async function downloadDeliveryPackage(business) {
   const resolved = withBusinessDefaults(business);
   const exportedAt = new Date().toISOString();
@@ -5186,6 +5560,74 @@ function downloadBlob(blob, filename) {
   }
 }
 
+async function copyTextToClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (error) {
+    // Fall back to a temporary textarea below.
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } catch (error) {
+    return false;
+  } finally {
+    textarea.remove();
+  }
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("es-ES", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(date);
+}
+
+function formatRemainingTime(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const ms = date.getTime() - Date.now();
+
+  if (ms <= 0) {
+    return "caducada";
+  }
+
+  const hours = Math.ceil(ms / 36e5);
+  const days = Math.floor(hours / 24);
+  const restHours = hours % 24;
+
+  if (days >= 1 && restHours >= 1) {
+    return `quedan ${days} d ${restHours} h`;
+  }
+
+  if (days >= 1) {
+    return `quedan ${days} dia${days === 1 ? "" : "s"}`;
+  }
+
+  return `quedan ${hours} h`;
+}
+
 async function saveBusinessToApi(business) {
   return businessDataClient.save(business, currentBusinessRecord);
 }
@@ -5220,8 +5662,8 @@ function buildBusinessApiPayload(business, record) {
       ownerEmail: business.email,
       ownerPhone: business.phone,
       plan: record?.plan || "presencia-local",
-      status: record?.status || "in-design",
-      publishedUrl: record?.publishedUrl || "",
+      status: business.status || record?.status || "in-design",
+      publishedUrl: business.publishedUrl || record?.publishedUrl || "",
       brand: {
         theme: business.theme,
         accent: business.accent,
@@ -5247,6 +5689,7 @@ function buildBusinessApiPayload(business, record) {
       },
       settings: {
         primaryGoal: business.conversionGoal,
+        activeDemo: business.activeDemo || record?.activeDemo || null,
         source: "studio",
         updatedFromStudioAt: new Date().toISOString()
       },
@@ -5606,6 +6049,19 @@ function toDatetimeLocalValue(date) {
   ].join("-") + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function setStatus(message) {
-  statusLine.textContent = message;
+function setStatus(message, action = {}) {
+  statusLine.textContent = "";
+  const text = document.createElement("span");
+  text.textContent = message;
+  statusLine.appendChild(text);
+
+  if (action.href) {
+    const separator = document.createTextNode(" ");
+    const link = document.createElement("a");
+    link.href = action.href;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = action.label || action.href;
+    statusLine.append(separator, link);
+  }
 }

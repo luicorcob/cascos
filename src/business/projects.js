@@ -130,9 +130,10 @@ function renderProjects() {
   const projects = getFilteredProjects();
   const active = state.businesses.filter((business) => business.status !== "archived").length;
   const published = state.businesses.filter((business) => business.status === "published").length;
+  const activeDemos = state.businesses.filter((business) => getDemoState(business).status === "active").length;
 
   if (refs.summary) {
-    refs.summary.textContent = `${state.businesses.length} negocios - ${active} activos - ${published} publicados`;
+    refs.summary.textContent = `${state.businesses.length} negocios - ${active} activos - ${published} publicados - ${activeDemos} demos activas`;
   }
 
   if (!refs.grid) {
@@ -182,6 +183,7 @@ function renderProjectCard(business) {
   const portalLabel = portalAccess.passwordSet ? "Acceso cliente activo" : "Acceso cliente pendiente";
   const portalClass = portalAccess.passwordSet ? "ok" : "warn";
   const owner = business.ownerName || business.ownerEmail || business.ownerPhone || "Sin responsable";
+  const demoState = getDemoState(business);
 
   return `
     <article class="project-card" data-project-card="${escapeHtml(ref)}">
@@ -205,6 +207,7 @@ function renderProjectCard(business) {
           <dd><span class="project-mini-status is-${portalClass}">${escapeHtml(portalLabel)}</span></dd>
         </div>
       </dl>
+      ${renderDemoPanel(demoState)}
       <div class="project-links">
         <a href="business-dashboard.html?business=${encodeURIComponent(ref)}">Portal</a>
         <a href="client-site.html?business=${encodeURIComponent(ref)}&preview=developer">Web</a>
@@ -223,6 +226,13 @@ function renderProjectCard(business) {
 }
 
 function bindProjectForms() {
+  refs.grid?.querySelectorAll("[data-copy-demo-url]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const copied = await copyTextToClipboard(button.dataset.copyDemoUrl || "");
+      button.textContent = copied ? "Copiado" : "No copiado";
+    });
+  });
+
   refs.grid?.querySelectorAll("[data-portal-password-form]").forEach((form) => {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -262,6 +272,142 @@ function bindProjectForms() {
       }
     });
   });
+}
+
+function renderDemoPanel(demoState) {
+  if (demoState.status === "none") {
+    return `
+      <section class="project-demo-state is-empty">
+        <div>
+          <span>Demo</span>
+          <strong>Sin demo activa</strong>
+          <small>Publica desde el Studio cuando este lista.</small>
+        </div>
+      </section>
+    `;
+  }
+
+  if (demoState.status === "expired") {
+    return `
+      <section class="project-demo-state is-expired">
+        <div>
+          <span>Demo caducada</span>
+          <strong>${escapeHtml(demoState.expiredLabel)}</strong>
+          <small>${escapeHtml(demoState.expiresLabel)}</small>
+        </div>
+      </section>
+    `;
+  }
+
+  if (demoState.status === "local") {
+    return `
+      <section class="project-demo-state is-expired is-local">
+        <div>
+          <span>Demo solo local</span>
+          <strong>${escapeHtml(demoState.expiredLabel)}</strong>
+          <small>${escapeHtml(demoState.expiresLabel)}</small>
+        </div>
+        <div class="project-demo-actions">
+          <a href="${escapeAttr(demoState.url)}" target="_blank" rel="noopener">Abrir local</a>
+        </div>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="project-demo-state is-active">
+      <div>
+        <span>Demo activa</span>
+        <strong>${escapeHtml(demoState.remainingLabel)}</strong>
+        <small>${escapeHtml(demoState.expiresLabel)}</small>
+      </div>
+      <div class="project-demo-actions">
+        <a href="${escapeAttr(demoState.url)}" target="_blank" rel="noopener">Abrir</a>
+        <button type="button" data-copy-demo-url="${escapeAttr(demoState.url)}">Copiar</button>
+      </div>
+    </section>
+  `;
+}
+
+function getDemoState(business) {
+  const demo = business.activeDemo || {};
+  const url = String(demo.url || business.publishedUrl || "").trim();
+
+  if (!url) {
+    return { status: "none" };
+  }
+
+  const shareability = inferProjectDemoShareability(url);
+
+  if (!shareability.shareable) {
+    return {
+      status: "local",
+      url,
+      expiredLabel: shareability.status === "local-network" ? "Solo red local" : "No sirve para movil",
+      expiresLabel: "Republica desde un backend publico HTTPS antes de enviarla."
+    };
+  }
+
+  const expiresAt = parseDate(demo.expiresAt);
+
+  if (expiresAt && expiresAt.getTime() <= Date.now()) {
+    return {
+      status: "expired",
+      url,
+      expiredLabel: "Necesita republicarse",
+      expiresLabel: `Caduco el ${formatDateTime(expiresAt)}`
+    };
+  }
+
+  return {
+    status: "active",
+    url,
+    remainingLabel: expiresAt ? formatRemaining(expiresAt) : "Activa sin caducidad",
+    expiresLabel: expiresAt ? `Caduca el ${formatDateTime(expiresAt)}` : "Enlace publicado sin fecha de caducidad"
+  };
+}
+
+function inferProjectDemoShareability(url) {
+  let parsed;
+
+  try {
+    parsed = new URL(url, window.location.href);
+  } catch (error) {
+    return { shareable: false, status: "invalid-url" };
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (isLocalDemoHostname(hostname)) {
+    return { shareable: false, status: "local-machine" };
+  }
+
+  if (isPrivateNetworkDemoHostname(hostname)) {
+    return { shareable: false, status: "local-network" };
+  }
+
+  return { shareable: true, status: parsed.protocol === "https:" ? "public-https" : "public" };
+}
+
+function isLocalDemoHostname(hostname) {
+  return hostname === "localhost"
+    || hostname === "0.0.0.0"
+    || hostname === "::1"
+    || hostname === "[::1]"
+    || hostname.startsWith("127.");
+}
+
+function isPrivateNetworkDemoHostname(hostname) {
+  const parts = hostname.split(".").map((part) => Number(part));
+
+  if (parts.length === 4 && parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)) {
+    return parts[0] === 10
+      || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31)
+      || (parts[0] === 192 && parts[1] === 168)
+      || (parts[0] === 169 && parts[1] === 254);
+  }
+
+  return hostname.endsWith(".local") || hostname.endsWith(".lan");
 }
 
 async function getJson(path) {
@@ -317,13 +463,44 @@ function setCardStatus(node, message, type) {
   node.dataset.type = type;
 }
 
+async function copyTextToClipboard(text) {
+  if (!text) {
+    return false;
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (error) {
+    // Use the textarea fallback below.
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } catch (error) {
+    return false;
+  } finally {
+    textarea.remove();
+  }
+}
+
 function formatDate(value) {
   if (!value) {
     return "Sin fecha";
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  const date = parseDate(value);
+  if (!date) {
     return "Sin fecha";
   }
 
@@ -334,6 +511,49 @@ function formatDate(value) {
   }).format(date);
 }
 
+function formatDateTime(value) {
+  const date = value instanceof Date ? value : parseDate(value);
+
+  if (!date) {
+    return "sin fecha";
+  }
+
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function formatRemaining(date) {
+  const ms = date.getTime() - Date.now();
+
+  if (ms <= 0) {
+    return "Caducada";
+  }
+
+  const hours = Math.ceil(ms / 36e5);
+  const days = Math.floor(hours / 24);
+  const restHours = hours % 24;
+
+  if (days >= 1 && restHours >= 1) {
+    return `Quedan ${days} d ${restHours} h`;
+  }
+
+  if (days >= 1) {
+    return `Quedan ${days} dia${days === 1 ? "" : "s"}`;
+  }
+
+  return `Quedan ${hours} h`;
+}
+
+function parseDate(value) {
+  const date = new Date(value || "");
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -342,4 +562,8 @@ function escapeHtml(value) {
     '"': "&quot;",
     "'": "&#039;"
   })[char]);
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
 }
