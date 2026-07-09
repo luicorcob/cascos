@@ -614,6 +614,14 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   gap: 8px;
 }
 
+.lead-card-badges {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
 .lead-card header span {
   color: var(--muted);
   font-size: 0.76rem;
@@ -663,6 +671,60 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   border-color: rgba(37, 99, 235, 0.28);
   background: rgba(37, 99, 235, 0.1);
   color: var(--blue);
+}
+
+.pill.score-caliente {
+  border-color: rgba(201, 68, 50, 0.32);
+  background: rgba(201, 68, 50, 0.12);
+  color: var(--accent);
+}
+
+.pill.score-templado {
+  border-color: rgba(154, 101, 0, 0.32);
+  background: rgba(154, 101, 0, 0.11);
+  color: var(--amber);
+}
+
+.pill.score-frio {
+  border-color: rgba(37, 99, 235, 0.3);
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--blue);
+}
+
+.pill.score-perdido {
+  border-color: rgba(104, 102, 115, 0.28);
+  background: rgba(104, 102, 115, 0.1);
+  color: var(--muted);
+}
+
+.lead-filter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.lead-filter-toolbar span,
+.lead-filter-toolbar label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.lead-filter-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lead-filter-toolbar select {
+  min-height: 34px;
+  min-width: 140px;
 }
 
 .next-action-chip {
@@ -1630,9 +1692,16 @@ tr:last-child td {
   .block-card,
   .booking-calendar > header,
   .reminder-panel > header,
-  .reminder-item {
+  .reminder-item,
+  .lead-filter-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .lead-filter-toolbar,
+  .lead-filter-toolbar label,
+  .lead-filter-toolbar select {
+    width: 100%;
   }
 
   .calendar-actions {

@@ -1,11 +1,14 @@
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
+import { recalculateBusinessContactScores } from "../lib/lead-score.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.EVENT_API_MAX_BODY_BYTES || 256 * 1024);
 const DEFAULT_DB = {
   version: 1,
   updatedAt: null,
   businesses: [],
+  contacts: [],
+  activities: [],
   businessEvents: [],
   auditLog: []
 };
@@ -59,6 +62,7 @@ async function createPublicEvent(slug, request, response, context) {
     .filter(Boolean);
 
   db.businessEvents.push(...events);
+  recalculateBusinessContactScores(db, business.id, new Date(now));
   appendAudit(db, "business_events.created", business.id, now, String(events.length));
   await saveDb(db, context, "business-events");
   sendJson(response, 201, { events, total: events.length }, context);
@@ -137,6 +141,8 @@ async function loadDb(context) {
 
   db.version = Number(db.version || 1);
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
+  db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
+  db.activities = Array.isArray(db.activities) ? db.activities : [];
   db.businessEvents = Array.isArray(db.businessEvents) ? db.businessEvents : [];
   db.auditLog = Array.isArray(db.auditLog) ? db.auditLog : [];
   return db;

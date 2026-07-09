@@ -75,8 +75,8 @@ async function main() {
   await request(baseUrl, `/api/public/${businessSlug}/events`, {
     method: "POST",
     body: {
-      name: "lead_form_submit",
-      detail: { source: "pilot-smoke" }
+      name: "booking_click",
+      detail: { email: "lead@example.com", source: "pilot-smoke" }
     },
     expectedStatus: 201
   });
@@ -105,7 +105,22 @@ async function main() {
   assert(booking.booking?.privacyAccepted === true, "Booking consent must be stored");
 
   const contacts = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts?includeActivities=true`);
-  assert(contacts.contacts?.some((item) => item.id === lead.contact.id), "Public lead must appear in admin contacts");
+  const listedLead = contacts.contacts?.find((item) => item.id === lead.contact.id);
+  assert(listedLead, "Public lead must appear in admin contacts");
+  assert(Number(listedLead.score) >= 55, "Lead score must include email, form, booking click and recent interaction signals");
+  assert(listedLead.scoreLabel === "templado", "Lead score label must follow configured thresholds");
+
+  const lostScoreContact = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts`, {
+    method: "POST",
+    body: {
+      name: "Lead perdido scoring",
+      email: "lost-score@example.com",
+      status: "lost",
+      source: "manual"
+    },
+    expectedStatus: 201
+  });
+  assert(lostScoreContact.contact?.scoreLabel === "perdido", "Lost contacts must force the perdido score label");
 
   const updatedLead = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}`, {
     method: "PATCH",

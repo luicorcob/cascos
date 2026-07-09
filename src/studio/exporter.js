@@ -478,7 +478,7 @@
           };
           window.localLiftLeads = window.localLiftLeads || [];
           window.localLiftLeads.push(lead);
-          track("lead_form_submit", {});
+          track("lead_form_submit", { contact: lead.contact, source: lead.source });
           const status = leadForm.querySelector("[data-lead-status]");
           try {
             await syncLead(leadForm.dataset.leadEndpoint || "", lead);
@@ -510,7 +510,7 @@
           };
           window.localLiftBookings = window.localLiftBookings || [];
           window.localLiftBookings.push(booking);
-          track("public_booking_submit", { service: booking.serviceName });
+          track("public_booking_submit", { service: booking.serviceName, contact: booking.contact, source: booking.source });
           const status = bookingForm.querySelector("[data-booking-status]");
           try {
             await syncBooking(bookingForm.dataset.bookingEndpoint || "", booking);
@@ -943,7 +943,7 @@
         window.localLiftLeads = window.localLiftLeads || [];
         window.localLiftLeads.push(stored);
         syncLead(lead.leadEndpoint || "", stored).catch(() => {});
-        track("chatbot_lead_captured", { business: stored.business || "" });
+        track("chatbot_lead_captured", { business: stored.business || "", contact: stored.contact || "", source: stored.source || "chatbot" });
         return stored;
       }
 

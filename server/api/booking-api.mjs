@@ -1,5 +1,6 @@
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
+import { recalculateContactScore } from "../lib/lead-score.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.BOOKING_API_MAX_BODY_BYTES || 512 * 1024);
 const BOOKING_STATUSES = new Set(["pending", "confirmed", "canceled", "completed", "no-show"]);
@@ -247,6 +248,7 @@ async function createPublicBooking(slug, request, response, context) {
     source: booking.source,
     metadata: { bookingId: booking.id }
   }));
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "booking.public_created", business.id, now, booking.id);
   await saveDb(db, context, "booking");
   sendJson(response, 201, { booking, contact }, context);
@@ -278,6 +280,7 @@ async function createAdminBooking(businessId, request, response, context) {
     source: booking.source,
     metadata: { bookingId: booking.id }
   }));
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "booking.created", business.id, now, booking.id);
   await saveDb(db, context, "booking");
   sendJson(response, 201, { booking, contact }, context);
@@ -336,6 +339,7 @@ async function createBookingReminder(businessId, bookingId, request, response, c
     source: reminder.source,
     metadata: { bookingId: booking.id, reminderId: reminder.id, channel: reminder.channel }
   }));
+  recalculateContactScore(db, business.id, contact, new Date(now));
 
   booking.lastReminderAt = now;
   booking.reminderCount = getBookingReminders(db, booking.id).length;
@@ -493,6 +497,7 @@ async function createDueReminders(businessId, request, response, context) {
       source: reminder.source,
       metadata: { bookingId: booking.id, reminderId: reminder.id, channel: reminder.channel }
     }));
+    recalculateContactScore(db, business.id, contact, new Date(nowIso));
     booking.lastReminderAt = nowIso;
     booking.reminderCount = getBookingReminders(db, booking.id).length;
     booking.updatedAt = nowIso;

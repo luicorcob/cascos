@@ -5,6 +5,7 @@ const state = {
   business: null,
   contacts: [],
   pipeline: null,
+  scoreLabelFilter: "all",
   nextActions: {
     today: [],
     overdue: [],
@@ -29,6 +30,7 @@ const state = {
 
 const LEAD_STATUSES = ["new", "contacted", "waiting", "reserved", "won", "lost", "customer"];
 const LEAD_PRIORITIES = ["alta", "media", "baja"];
+const LEAD_SCORE_LABELS = ["caliente", "templado", "frio", "perdido"];
 const NEXT_ACTION_TYPES = ["llamada", "whatsapp", "email", "reunion", "enviar_propuesta", "revisar_reserva"];
 const BOOKING_STATUSES = ["pending", "confirmed", "completed", "canceled", "no-show"];
 const WEEKDAYS = [
@@ -697,7 +699,10 @@ function renderNextActionItem(item, type) {
     <article class="next-action-item">
       <header>
         <strong>${escapeHtml(contactName(contact))}</strong>
-        ${priorityPill(contact.priority)}
+        <div class="lead-card-badges">
+          ${scorePill(contact)}
+          ${priorityPill(contact.priority)}
+        </div>
       </header>
       <p>${escapeHtml(contactDetail)}</p>
       ${nextAction ? `<p>${escapeHtml(`${nextActionTypeLabel(nextAction.type)} - ${formatDate(nextAction.dueDate)}`)}</p>` : '<p>Crear seguimiento desde la tarjeta del lead.</p>'}
@@ -711,15 +716,21 @@ function renderNextActionItem(item, type) {
 
 function renderLeads(model) {
   const container = document.querySelector('[data-list="leads"]');
-  const pipeline = model.pipeline || buildPipelineModel(model.leads);
 
-  if (!pipeline.total) {
+  if (!model.leads.length) {
     container.innerHTML = emptyState("Sin leads reales", "El formulario web y el chatbot ya pueden guardar aqui los nuevos contactos.");
     return;
   }
 
+  const filteredLeads = filterLeadsByScore(model.leads);
+  const pipeline = state.scoreLabelFilter === "all"
+    ? (model.pipeline || buildPipelineModel(model.leads))
+    : buildPipelineModel(filteredLeads);
+
   container.innerHTML = `
     ${renderExportToolbar("leads", model.leads.length, "Exportar leads")}
+    ${renderLeadScoreFilter(model.leads.length, pipeline.total)}
+    ${pipeline.total ? `
     <div class="pipeline-grid">
       ${pipeline.columns.map((column) => {
         const leads = Array.isArray(column.contacts) ? column.contacts : [];
@@ -739,6 +750,7 @@ function renderLeads(model) {
         `;
       }).join("")}
     </div>
+    ` : emptyState("Sin leads en este filtro", "Cambia la temperatura para volver a ver el pipeline completo.")}
   `;
 }
 
@@ -1204,6 +1216,13 @@ function bindCrmControls(model) {
         showNotice("No se pudo actualizar el estado del lead.", "error");
         select.disabled = false;
       }
+    });
+  });
+
+  document.querySelectorAll("[data-score-label-filter]").forEach((select) => {
+    select.addEventListener("change", () => {
+      state.scoreLabelFilter = normalizeScoreFilter(select.value);
+      render();
     });
   });
 
@@ -2056,7 +2075,10 @@ function renderLeadCard(lead) {
     <article class="lead-card" draggable="true" data-lead-card data-contact-id="${escapeAttr(lead.id)}" data-status="${escapeAttr(lead.status || "new")}" data-order="${escapeAttr(lead.order ?? "")}">
       <header>
         <strong>${escapeHtml(contactName(lead))}</strong>
-        ${priorityPill(lead.priority)}
+        <div class="lead-card-badges">
+          ${scorePill(lead)}
+          ${priorityPill(lead.priority)}
+        </div>
       </header>
       <div class="lead-card-meta">
         <span>${escapeHtml(clean(lead.source || "web"))}</span>
@@ -2341,6 +2363,8 @@ function contactToCsvRow(contact) {
     Telefono: clean(contact.phone || ""),
     Email: clean(contact.email || ""),
     Estado: statusLabel(contact.status || "new"),
+    Score: normalizeLeadScore(contact.score),
+    Temperatura: scoreLabel(contact.scoreLabel),
     Fuente: statusLabel(contact.source || "manual"),
     Etiquetas: Array.isArray(contact.tags) ? contact.tags.join(", ") : clean(contact.tags || ""),
     Valor: Number(contact.valueEstimate || 0),
@@ -2415,6 +2439,30 @@ function priorityPill(priority) {
   };
 
   return `<span class="pill priority-${escapeHtml(normalized)}">${escapeHtml(labels[normalized] || "Media")}</span>`;
+}
+
+function scorePill(contact) {
+  const label = normalizeLeadScoreLabel(contact?.scoreLabel, normalizeLeadStatus(contact?.status) === "lost" ? "perdido" : "frio");
+  const score = normalizeLeadScore(contact?.score);
+
+  return `<span class="pill score-${escapeHtml(label)}">${escapeHtml(`${scoreLabel(label)} ${score}`)}</span>`;
+}
+
+function renderLeadScoreFilter(total, filtered) {
+  const selected = normalizeScoreFilter(state.scoreLabelFilter);
+
+  return `
+    <div class="lead-filter-toolbar">
+      <span>${escapeHtml(selected === "all" ? `${total} lead(s)` : `${filtered} de ${total} lead(s)`)}</span>
+      <label>
+        Temperatura
+        <select data-score-label-filter>
+          <option value="all"${selected === "all" ? " selected" : ""}>Todos</option>
+          ${LEAD_SCORE_LABELS.map((label) => `<option value="${escapeAttr(label)}"${selected === label ? " selected" : ""}>${escapeHtml(scoreLabel(label))}</option>`).join("")}
+        </select>
+      </label>
+    </div>
+  `;
 }
 
 function renderNextActionChip(nextAction) {
@@ -2561,8 +2609,20 @@ function normalizePipelineContact(contact, fallbackStatus = "new") {
     ...source,
     status,
     priority: normalizeLeadPriority(source.priority),
+    score: normalizeLeadScore(source.score),
+    scoreLabel: normalizeLeadScoreLabel(source.scoreLabel, status === "lost" ? "perdido" : "frio"),
     order: normalizeLeadOrder(source.order, fallbackLeadOrder(source))
   };
+}
+
+function filterLeadsByScore(leads) {
+  const filter = normalizeScoreFilter(state.scoreLabelFilter);
+
+  if (filter === "all") {
+    return leads;
+  }
+
+  return leads.filter((lead) => normalizeLeadScoreLabel(lead.scoreLabel, normalizeLeadStatus(lead.status) === "lost" ? "perdido" : "frio") === filter);
 }
 
 function normalizeLeadStatus(value) {
@@ -2591,6 +2651,34 @@ function normalizeLeadPriority(value) {
   };
   const normalized = aliases[priority] || priority || "media";
   return LEAD_PRIORITIES.includes(normalized) ? normalized : "media";
+}
+
+function normalizeScoreFilter(value) {
+  const label = normalizeLeadScoreLabel(value, "all");
+  return label === "all" || LEAD_SCORE_LABELS.includes(label) ? label : "all";
+}
+
+function normalizeLeadScoreLabel(value, fallback = "frio") {
+  const label = clean(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (LEAD_SCORE_LABELS.includes(label) || label === "all") {
+    return label;
+  }
+
+  return fallback;
+}
+
+function normalizeLeadScore(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(number)));
 }
 
 function normalizeLeadOrder(value, fallback = 0) {
@@ -2753,6 +2841,10 @@ function statusLabel(value) {
     chatbot_lead_captured: "Lead chatbot",
     google_maps_click: "Click mapa",
     google_review_click: "Click resena",
+    caliente: "Caliente",
+    templado: "Templado",
+    frio: "Frio",
+    perdido: "Perdido",
     confirmed: "Confirmada",
     completed: "Completada",
     "no-show": "No asistio",
@@ -2766,6 +2858,10 @@ function statusLabel(value) {
   };
 
   return labels[value] || clean(value || "Pendiente");
+}
+
+function scoreLabel(value) {
+  return statusLabel(normalizeLeadScoreLabel(value));
 }
 
 function escapeAttr(value) {

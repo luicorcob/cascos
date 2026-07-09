@@ -1,5 +1,6 @@
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
+import { normalizeStoredScoreLabel, recalculateContactScore, withComputedLeadScore } from "../lib/lead-score.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.CONTACT_API_MAX_BODY_BYTES || 512 * 1024);
 const CONTACT_TYPES = new Set(["lead", "customer"]);
@@ -14,13 +15,14 @@ const DEFAULT_DB = {
   businesses: [],
   contacts: [],
   activities: [],
+  businessEvents: [],
   auditLog: []
 };
 
 export function isContactApiRequest(pathname) {
   return /^\/api\/public\/[^/]+\/leads$/.test(pathname)
     || /^\/api\/businesses\/[^/]+\/next-actions$/.test(pathname)
-    || /^\/api\/businesses\/[^/]+\/contacts(?:\/pipeline|\/[^/]+(?:\/activities|\/pipeline|\/next-action)?)?$/.test(pathname);
+    || /^\/api\/businesses\/[^/]+\/contacts(?:\/pipeline|\/[^/]+(?:\/activities|\/pipeline|\/next-action|\/recalculate-score)?)?$/.test(pathname);
 }
 
 export async function handleContactApi(request, response, context) {
@@ -88,6 +90,11 @@ export async function handleContactApi(request, response, context) {
         await addContactActivity(businessId, contactId, request, response, context);
         return;
       }
+
+      if (contactId && action === "recalculate-score" && method === "POST") {
+        await recalculateContactScoreEndpoint(businessId, contactId, response, context);
+        return;
+      }
     }
 
     sendJson(response, 405, { error: "Method not allowed" }, context, { Allow: "GET, POST, PATCH, OPTIONS" });
@@ -108,14 +115,17 @@ async function listContacts(businessId, requestUrl, response, context) {
 
   const type = cleanText(requestUrl.searchParams.get("type") || "");
   const status = normalizeOptionalStatus(requestUrl.searchParams.get("status") || "");
+  const scoreLabel = normalizeOptionalScoreLabel(requestUrl.searchParams.get("scoreLabel") || requestUrl.searchParams.get("score") || "");
   const q = cleanText(requestUrl.searchParams.get("q") || "").toLowerCase();
   const includeActivities = requestUrl.searchParams.get("includeActivities") === "true";
+  const now = new Date();
 
   let contacts = db.contacts
     .filter((contact) => contact.businessId === business.id)
-    .map((contact) => normalizeStoredContact(contact))
+    .map((contact) => normalizeStoredContact(contact, db, business.id, now))
     .filter((contact) => !type || contact.type === type)
     .filter((contact) => !status || contact.status === status)
+    .filter((contact) => !scoreLabel || contact.scoreLabel === scoreLabel)
     .filter((contact) => {
       if (!q) {
         return true;
@@ -148,9 +158,10 @@ async function getContactPipeline(businessId, requestUrl, response, context) {
   }
 
   const includeActivities = requestUrl.searchParams.get("includeActivities") === "true";
+  const now = new Date();
   const contacts = db.contacts
     .filter((contact) => contact.businessId === business.id)
-    .map((contact) => normalizeStoredContact(contact));
+    .map((contact) => normalizeStoredContact(contact, db, business.id, now));
   const columns = CONTACT_PIPELINE_STATUSES.map((status) => {
     const columnContacts = contacts
       .filter((contact) => contact.status === status)
@@ -188,9 +199,10 @@ async function listNextActions(businessId, requestUrl, response, context) {
 
   const filter = normalizeNextActionFilter(requestUrl.searchParams.get("filter") || "hoy");
   const completedTodayIds = getCompletedNextActionContactIds(db, business.id);
+  const now = new Date();
   const contacts = db.contacts
     .filter((contact) => contact.businessId === business.id)
-    .map((contact) => normalizeStoredContact(contact));
+    .map((contact) => normalizeStoredContact(contact, db, business.id, now));
   const actions = contacts
     .map((contact) => ({
       contact,
@@ -230,6 +242,7 @@ async function createPublicLead(slug, request, response, context) {
 
   db.contacts.push(contact);
   db.activities.push(activity);
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "contact.public_lead_created", business.id, now, contact.id);
   await saveDb(db, context, "lead");
   sendJson(response, 201, { contact, activity }, context);
@@ -259,6 +272,7 @@ async function createAdminContact(businessId, request, response, context) {
 
   db.contacts.push(contact);
   db.activities.push(activity);
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "contact.created", business.id, now, contact.id);
   await saveDb(db, context, "contact");
   sendJson(response, 201, { contact, activity }, context);
@@ -295,6 +309,7 @@ async function updateContact(businessId, contactId, request, response, context) 
     db.activities.push(activity);
   }
 
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "contact.updated", business.id, now, contact.id);
   await saveDb(db, context, "contact-update");
   sendJson(response, 200, { contact, activity }, context);
@@ -353,6 +368,7 @@ async function updateContactPipeline(businessId, contactId, request, response, c
     db.activities.push(activity);
   }
 
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "contact.pipeline_updated", business.id, now, contact.id);
   await saveDb(db, context, "contact-pipeline");
   sendJson(response, 200, { contact, activity }, context);
@@ -390,6 +406,7 @@ async function createNextAction(businessId, contactId, request, response, contex
   });
 
   db.activities.push(activity);
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "contact.next_action_created", business.id, now, contact.id);
   await saveDb(db, context, "next-action");
   sendJson(response, 201, { contact: normalizeStoredContact(contact), nextAction, activity }, context);
@@ -447,6 +464,7 @@ async function updateNextAction(businessId, contactId, request, response, contex
 
   contact.lastInteractionAt = now;
   contact.updatedAt = now;
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "contact.next_action_updated", business.id, now, contact.id);
   await saveDb(db, context, "next-action-update");
   sendJson(response, 200, { contact: normalizeStoredContact(contact), nextAction: contact.nextAction, activity }, context);
@@ -477,9 +495,31 @@ async function addContactActivity(businessId, contactId, request, response, cont
   db.activities.push(activity);
   contact.lastInteractionAt = now;
   contact.updatedAt = now;
+  recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "contact.activity_created", business.id, now, contact.id);
   await saveDb(db, context, "activity");
   sendJson(response, 201, { contact, activity }, context);
+}
+
+async function recalculateContactScoreEndpoint(businessId, contactId, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const contact = db.contacts.find((item) => item.businessId === business.id && item.id === contactId);
+
+  if (!contact) {
+    throw httpError(404, "Contact not found");
+  }
+
+  const now = new Date().toISOString();
+  recalculateContactScore(db, business.id, contact, new Date(now));
+  appendAudit(db, "contact.score_recalculated", business.id, now, contact.id);
+  await saveDb(db, context, "contact-score");
+  sendJson(response, 200, { contact: normalizeStoredContact(contact, db, business.id, new Date(now)) }, context);
 }
 
 function normalizeContact(payload, existing, businessId, now, defaults) {
@@ -523,23 +563,28 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     privacyAcceptedAt: cleanText(source.privacyAcceptedAt || existing?.privacyAcceptedAt || "", 80),
     privacyPolicyUrl: cleanText(source.privacyPolicyUrl || existing?.privacyPolicyUrl || "", 500),
     nextAction,
+    score: normalizeScore(existing?.score),
+    scoreLabel: normalizeStoredScoreLabel(existing?.scoreLabel, existing?.status === "lost" ? "perdido" : "frio"),
     lastInteractionAt: cleanText(source.lastInteractionAt || existing?.lastInteractionAt || now, 80),
     createdAt: existing?.createdAt || now,
     updatedAt: now
   };
 }
 
-function normalizeStoredContact(contact) {
+function normalizeStoredContact(contact, db = null, businessId = "", now = new Date()) {
   const normalizedStatus = normalizeStoredStatus(contact?.status);
   const normalizedPriority = normalizeStoredPriority(contact?.priority);
-
-  return {
+  const normalized = {
     ...contact,
     status: normalizedStatus,
     priority: normalizedPriority,
     order: normalizeOrder(contact?.order, fallbackContactOrder(contact)),
+    score: normalizeScore(contact?.score),
+    scoreLabel: normalizeStoredScoreLabel(contact?.scoreLabel, normalizedStatus === "lost" ? "perdido" : "frio"),
     nextAction: getComputedNextAction(contact?.nextAction)
   };
+
+  return db && businessId ? withComputedLeadScore(db, businessId, normalized, now) : normalized;
 }
 
 function withContactActivities(db, businessId, contact) {
@@ -573,6 +618,7 @@ async function loadDb(context) {
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
   db.activities = Array.isArray(db.activities) ? db.activities : [];
+  db.businessEvents = Array.isArray(db.businessEvents) ? db.businessEvents : [];
   db.auditLog = Array.isArray(db.auditLog) ? db.auditLog : [];
   return db;
 }
@@ -710,6 +756,16 @@ function comparePipelineContacts(left, right) {
 function normalizeMoney(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function normalizeScore(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(number)));
 }
 
 function normalizeNextAction(payload, now = new Date().toISOString()) {
@@ -863,6 +919,8 @@ function summarizeContact(contact) {
     source: contact.source,
     status: contact.status,
     priority: contact.priority,
+    score: contact.score,
+    scoreLabel: contact.scoreLabel,
     valueEstimate: contact.valueEstimate,
     lastInteractionAt: contact.lastInteractionAt,
     createdAt: contact.createdAt
@@ -920,6 +978,14 @@ function normalizeToken(value) {
 
 function normalizeOptionalStatus(value) {
   return value ? normalizeStatus(value) : "";
+}
+
+function normalizeOptionalScoreLabel(value) {
+  if (!value) {
+    return "";
+  }
+
+  return normalizeStoredScoreLabel(value);
 }
 
 function normalizeStatusAlias(value) {

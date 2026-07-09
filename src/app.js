@@ -4794,7 +4794,7 @@ function attachLeadForms(container, business) {
 
       window.localLiftLeads = window.localLiftLeads || [];
       window.localLiftLeads.push(lead);
-      trackLocalLiftEvent("lead_form_submit", { business: business.name });
+      trackLocalLiftEvent("lead_form_submit", { business: business.name, contact: lead.contact, source: lead.source });
       const status = leadForm.querySelector("[data-lead-status]");
 
       try {
@@ -4841,7 +4841,7 @@ function attachPublicBookingForms(container, business) {
 
       window.localLiftBookings = window.localLiftBookings || [];
       window.localLiftBookings.push(booking);
-      trackLocalLiftEvent("public_booking_submit", { business: business.name, service: booking.serviceName });
+      trackLocalLiftEvent("public_booking_submit", { business: business.name, service: booking.serviceName, contact: booking.contact, source: booking.source });
 
       try {
         await syncBookingToAgenda(bookingForm.dataset.bookingEndpoint || getPublicBookingEndpoint(business), booking);
@@ -5382,7 +5382,7 @@ function storeChatLead(lead) {
   window.localLiftLeads = window.localLiftLeads || [];
   window.localLiftLeads.push(storedLead);
   syncLeadToCrm(lead.leadEndpoint || "", storedLead).catch(() => {});
-  trackLocalLiftEvent("chatbot_lead_captured", { business: storedLead.business || "" });
+  trackLocalLiftEvent("chatbot_lead_captured", { business: storedLead.business || "", contact: storedLead.contact || "", source: storedLead.source || "chatbot" });
   return storedLead;
 }
 
