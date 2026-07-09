@@ -13,9 +13,11 @@ const DEFAULT_DB = {
   businessEvents: [],
   auditLog: []
 };
+const LOST_REASONS = ["precio", "no_responde", "ya_tiene_proveedor", "fuera_de_zona", "pospuesto", "no_encaja", "competencia"];
 
 export function isReportApiRequest(pathname) {
-  return /^\/api\/businesses\/[^/]+\/reports\/monthly$/.test(pathname);
+  return /^\/api\/businesses\/[^/]+\/reports\/monthly$/.test(pathname)
+    || /^\/api\/businesses\/[^/]+\/reports\/lost-reasons$/.test(pathname);
 }
 
 export async function handleReportApi(request, response, context) {
@@ -31,6 +33,11 @@ export async function handleReportApi(request, response, context) {
   try {
     if (segments[0] === "api" && segments[1] === "businesses" && segments[3] === "reports" && segments[4] === "monthly" && method === "GET") {
       await getMonthlyReport(segments[2], requestUrl, response, context);
+      return;
+    }
+
+    if (segments[0] === "api" && segments[1] === "businesses" && segments[3] === "reports" && segments[4] === "lost-reasons" && method === "GET") {
+      await getLostReasonsReport(segments[2], response, context);
       return;
     }
 
@@ -55,6 +62,38 @@ async function getMonthlyReport(businessId, requestUrl, response, context) {
   const report = buildMonthlyReport(db, business, range);
 
   sendJson(response, 200, { report }, context);
+}
+
+async function getLostReasonsReport(businessId, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const lostContacts = db.contacts
+    .filter((contact) => contact.businessId === business.id)
+    .filter((contact) => String(contact.status || "").toLowerCase() === "lost");
+  const counts = countBy(lostContacts, (contact) => normalizeLostReason(contact.lostReason) || "sin_motivo");
+  const byReason = new Map(counts.map((item) => [item.label, item.value]));
+  const reasons = LOST_REASONS.map((reason) => ({
+    reason,
+    label: lostReasonLabel(reason),
+    count: byReason.get(reason) || 0
+  }));
+  const legacyMissing = byReason.get("sin_motivo") || 0;
+
+  sendJson(response, 200, {
+    business: {
+      id: business.id,
+      slug: business.slug,
+      name: business.name
+    },
+    total: lostContacts.length,
+    reasons,
+    legacyMissing
+  }, context);
 }
 
 function buildMonthlyReport(db, business, range) {
@@ -229,6 +268,29 @@ function countBy(items, getKey) {
   return Array.from(counts.entries())
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+}
+
+function normalizeLostReason(value) {
+  const reason = String(value || "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  return LOST_REASONS.includes(reason) ? reason : "";
+}
+
+function lostReasonLabel(value) {
+  const labels = {
+    precio: "Precio",
+    no_responde: "No responde",
+    ya_tiene_proveedor: "Ya tiene proveedor",
+    fuera_de_zona: "Fuera de zona",
+    pospuesto: "Pospuesto",
+    no_encaja: "No encaja",
+    competencia: "Competencia"
+  };
+
+  return labels[value] || value;
 }
 
 function arrayFrom(...values) {

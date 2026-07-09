@@ -7,6 +7,7 @@ const CONTACT_TYPES = new Set(["lead", "customer"]);
 const CONTACT_STATUSES = new Set(["new", "contacted", "waiting", "reserved", "won", "lost", "customer"]);
 const CONTACT_PIPELINE_STATUSES = ["new", "contacted", "waiting", "reserved", "won", "lost", "customer"];
 const CONTACT_PRIORITIES = new Set(["alta", "media", "baja"]);
+const CONTACT_LOST_REASONS = new Set(["precio", "no_responde", "ya_tiene_proveedor", "fuera_de_zona", "pospuesto", "no_encaja", "competencia"]);
 const NEXT_ACTION_TYPES = new Set(["llamada", "whatsapp", "email", "reunion", "enviar_propuesta", "revisar_reserva"]);
 const NEXT_ACTION_STATUSES = new Set(["pendiente", "hecha", "vencida"]);
 const DEFAULT_DB = {
@@ -301,7 +302,10 @@ async function updateContact(businessId, contactId, request, response, context) 
 
   let activity = null;
   if (previous.status !== contact.status) {
-    activity = makeActivity(business.id, contact.id, { note: `Estado: ${previous.status} -> ${contact.status}` }, now, {
+    activity = makeActivity(business.id, contact.id, {
+      note: makeStatusChangeNote(previous, contact),
+      metadata: makeStatusChangeMetadata(previous, contact)
+    }, now, {
       type: "contact.status_changed",
       title: "Estado actualizado",
       source: "dashboard"
@@ -342,10 +346,12 @@ async function updateContactPipeline(businessId, contactId, request, response, c
   const previous = normalizeStoredContact(db.contacts[index]);
   const status = hasStatus ? normalizeStatus(source.status) : previous.status;
   const order = hasOrder ? normalizeOrder(source.order, previous.order) : previous.order;
+  const lostReason = resolveLostReason(status, source, previous);
   const contact = {
     ...previous,
     status,
     order,
+    lostReason,
     updatedAt: now
   };
 
@@ -354,10 +360,9 @@ async function updateContactPipeline(businessId, contactId, request, response, c
   let activity = null;
   if (previous.status !== contact.status) {
     activity = makeActivity(business.id, contact.id, {
-      note: `Estado: ${previous.status} -> ${contact.status}`,
+      note: makeStatusChangeNote(previous, contact),
       metadata: {
-        previousStatus: previous.status,
-        status: contact.status,
+        ...makeStatusChangeMetadata(previous, contact),
         order: contact.order
       }
     }, now, {
@@ -536,6 +541,7 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
 
   const type = normalizeType(source.type || existing?.type || defaults.type || "lead");
   const status = normalizeStatus(source.status || existing?.status || defaults.status || (type === "customer" ? "customer" : "new"));
+  const lostReason = resolveLostReason(status, source, existing || {});
   const tags = normalizeTags(source.tags ?? existing?.tags);
   const priority = normalizePriority(source.priority || existing?.priority || defaults.priority || "media");
   const order = normalizeOrder(source.order ?? existing?.order ?? defaults.order, fallbackContactOrder(existing, now));
@@ -552,6 +558,7 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     email,
     source: cleanText(source.source || existing?.source || defaults.source || "manual", 80),
     status,
+    lostReason,
     priority,
     order,
     tags,
@@ -574,9 +581,11 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
 function normalizeStoredContact(contact, db = null, businessId = "", now = new Date()) {
   const normalizedStatus = normalizeStoredStatus(contact?.status);
   const normalizedPriority = normalizeStoredPriority(contact?.priority);
+  const lostReason = normalizeStoredLostReason(contact?.lostReason);
   const normalized = {
     ...contact,
     status: normalizedStatus,
+    lostReason: normalizedStatus === "lost" ? lostReason : "",
     priority: normalizedPriority,
     order: normalizeOrder(contact?.order, fallbackContactOrder(contact)),
     score: normalizeScore(contact?.score),
@@ -716,6 +725,56 @@ function normalizeStoredPriority(value) {
   return CONTACT_PRIORITIES.has(priority) ? priority : "media";
 }
 
+function resolveLostReason(status, source, existing = {}) {
+  if (status !== "lost") {
+    return "";
+  }
+
+  const value = Object.prototype.hasOwnProperty.call(source, "lostReason")
+    ? source.lostReason
+    : existing?.lostReason;
+  const reason = normalizeLostReason(value);
+
+  if (!reason) {
+    if (cleanText(value || "")) {
+      throw httpError(400, `Invalid lostReason: ${cleanText(value, 80)}`);
+    }
+
+    throw httpError(400, "lostReason is required when status is lost");
+  }
+
+  return reason;
+}
+
+function normalizeLostReason(value) {
+  const reason = normalizeLostReasonAlias(value);
+  return CONTACT_LOST_REASONS.has(reason) ? reason : "";
+}
+
+function normalizeStoredLostReason(value) {
+  return normalizeLostReason(value);
+}
+
+function normalizeLostReasonAlias(value) {
+  const reason = normalizeToken(value);
+  const aliases = {
+    price: "precio",
+    "no responde": "no_responde",
+    no_response: "no_responde",
+    unresponsive: "no_responde",
+    "ya tiene proveedor": "ya_tiene_proveedor",
+    has_provider: "ya_tiene_proveedor",
+    "fuera de zona": "fuera_de_zona",
+    out_of_area: "fuera_de_zona",
+    postponed: "pospuesto",
+    "no encaja": "no_encaja",
+    not_fit: "no_encaja",
+    competitor: "competencia"
+  };
+
+  return aliases[reason] || reason || "";
+}
+
 function normalizePriorityAlias(value) {
   const priority = cleanText(value, 40).toLowerCase();
   const aliases = {
@@ -756,6 +815,38 @@ function comparePipelineContacts(left, right) {
 function normalizeMoney(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function makeStatusChangeNote(previous, contact) {
+  const base = `Estado: ${previous.status} -> ${contact.status}`;
+
+  if (contact.status !== "lost" || !contact.lostReason) {
+    return base;
+  }
+
+  return `${base}. Motivo: ${lostReasonLabel(contact.lostReason)}`;
+}
+
+function makeStatusChangeMetadata(previous, contact) {
+  return {
+    previousStatus: previous.status,
+    status: contact.status,
+    lostReason: contact.status === "lost" ? contact.lostReason || "" : ""
+  };
+}
+
+function lostReasonLabel(value) {
+  const labels = {
+    precio: "Precio",
+    no_responde: "No responde",
+    ya_tiene_proveedor: "Ya tiene proveedor",
+    fuera_de_zona: "Fuera de zona",
+    pospuesto: "Pospuesto",
+    no_encaja: "No encaja",
+    competencia: "Competencia"
+  };
+
+  return labels[value] || value;
 }
 
 function normalizeScore(value) {

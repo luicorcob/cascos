@@ -31,6 +31,7 @@ const state = {
 const LEAD_STATUSES = ["new", "contacted", "waiting", "reserved", "won", "lost", "customer"];
 const LEAD_PRIORITIES = ["alta", "media", "baja"];
 const LEAD_SCORE_LABELS = ["caliente", "templado", "frio", "perdido"];
+const LOST_REASONS = ["precio", "no_responde", "ya_tiene_proveedor", "fuera_de_zona", "pospuesto", "no_encaja", "competencia"];
 const NEXT_ACTION_TYPES = ["llamada", "whatsapp", "email", "reunion", "enviar_propuesta", "revisar_reserva"];
 const BOOKING_STATUSES = ["pending", "confirmed", "completed", "canceled", "no-show"];
 const WEEKDAYS = [
@@ -1197,8 +1198,16 @@ function bindCrmControls(model) {
     select.addEventListener("change", async () => {
       const contactId = select.dataset.contactId || "";
       const status = select.value;
+      const previous = state.contacts.find((contact) => contact.id === contactId) || null;
 
-      if (!contactId || !state.business) {
+      if (!contactId || !state.business || !previous) {
+        return;
+      }
+
+      const lostReason = await requestLostReasonForTransition(previous, status);
+
+      if (lostReason === null) {
+        select.value = previous.status || "new";
         return;
       }
 
@@ -1207,7 +1216,7 @@ function bindCrmControls(model) {
       try {
         const result = await patchJson(
           `/api/businesses/${encodeURIComponent(state.business.id || state.business.slug)}/contacts/${encodeURIComponent(contactId)}`,
-          { status }
+          lostReason ? { status, lostReason } : { status }
         );
         mergeContactResult(contactId, result.contact, result.activity);
         showNotice("Estado del lead actualizado.", "info");
@@ -1440,10 +1449,17 @@ async function moveContactInPipeline(contactId, status, order) {
     return;
   }
 
+  const lostReason = await requestLostReasonForTransition(previous, status);
+
+  if (lostReason === null) {
+    return;
+  }
+
   try {
+    const payload = lostReason ? { status, order, lostReason } : { status, order };
     const result = await patchJson(
       `/api/businesses/${encodeURIComponent(businessRef)}/contacts/${encodeURIComponent(contactId)}/pipeline`,
-      { status, order }
+      payload
     );
     mergeContactResult(contactId, result.contact, result.activity);
     showNotice(previous.status === status ? "Orden del pipeline actualizado." : `Lead movido a ${statusLabel(status)}.`, "info");
@@ -1470,6 +1486,79 @@ function mergeContactResult(contactId, updatedContact, activity) {
     });
   });
   state.pipeline = buildPipelineModel(state.contacts);
+}
+
+async function requestLostReasonForTransition(contact, status) {
+  const normalizedStatus = normalizeLeadStatus(status);
+
+  if (normalizedStatus !== "lost" || normalizeLeadStatus(contact?.status) === "lost") {
+    return "";
+  }
+
+  return showLostReasonDialog(contact);
+}
+
+function showLostReasonDialog(contact) {
+  if (typeof HTMLDialogElement === "undefined" || typeof document.createElement("dialog").showModal !== "function") {
+    const value = window.prompt(`Motivo de perdida para ${contactName(contact)}: precio, no_responde, ya_tiene_proveedor, fuera_de_zona, pospuesto, no_encaja, competencia`) || "";
+    const reason = normalizeLostReason(value);
+    return Promise.resolve(reason || null);
+  }
+
+  return new Promise((resolve) => {
+    const dialog = document.createElement("dialog");
+    dialog.className = "lost-reason-dialog";
+    dialog.innerHTML = `
+      <form method="dialog">
+        <header>
+          <strong>${escapeHtml(contactName(contact))}</strong>
+          <button type="button" value="cancel" aria-label="Cerrar" data-lost-reason-cancel>x</button>
+        </header>
+        <label>
+          Motivo
+          <select name="lostReason" required>
+            <option value="">Seleccionar</option>
+            ${LOST_REASONS.map((reason) => `<option value="${escapeAttr(reason)}">${escapeHtml(lostReasonLabel(reason))}</option>`).join("")}
+          </select>
+        </label>
+        <menu>
+          <button type="button" data-lost-reason-cancel>Cancelar</button>
+          <button type="submit" value="confirm">Confirmar</button>
+        </menu>
+      </form>
+    `;
+
+    const form = dialog.querySelector("form");
+    const select = dialog.querySelector("select");
+    const close = (value) => {
+      dialog.close(value || "");
+    };
+
+    dialog.querySelectorAll("[data-lost-reason-cancel]").forEach((button) => {
+      button.addEventListener("click", () => close("cancel"));
+    });
+
+    form?.addEventListener("submit", (event) => {
+      const reason = normalizeLostReason(select?.value || "");
+
+      if (!reason) {
+        event.preventDefault();
+        select?.focus();
+        return;
+      }
+    });
+
+    dialog.addEventListener("close", () => {
+      const reason = normalizeLostReason(select?.value || "");
+      const confirmed = dialog.returnValue === "confirm" && reason;
+      dialog.remove();
+      resolve(confirmed ? reason : null);
+    });
+
+    document.body.append(dialog);
+    dialog.showModal();
+    select?.focus();
+  });
 }
 
 function bindExportControls(model) {
@@ -2069,6 +2158,7 @@ function renderLeadCard(lead) {
   const activities = Array.isArray(lead.activities) ? lead.activities.slice(0, 2) : [];
   const contact = [lead.phone, lead.email].filter(Boolean).join(" / ") || "Sin contacto";
   const notes = clean(lead.notes || "");
+  const lostReason = normalizeLostReason(lead.lostReason);
   const valueEstimate = Number(lead.valueEstimate || 0);
 
   return `
@@ -2086,6 +2176,7 @@ function renderLeadCard(lead) {
       </div>
       <p>${escapeHtml(contact)}</p>
       ${renderNextActionChip(lead.nextAction)}
+      ${normalizeLeadStatus(lead.status) === "lost" && lostReason ? `<span class="lost-reason-chip">Motivo: ${escapeHtml(lostReasonLabel(lostReason))}</span>` : ""}
       ${notes ? `<p>${escapeHtml(notes)}</p>` : ""}
       ${renderNextActionForm(lead)}
       <label class="status-field">
@@ -2096,7 +2187,7 @@ function renderLeadCard(lead) {
       </label>
       <div class="activity-trail">
         ${activities.length
-          ? activities.map((activity) => `<span>${escapeHtml(activity.title || statusLabel(activity.type))} - ${escapeHtml(formatDate(activity.createdAt))}</span>`).join("")
+          ? activities.map((activity) => renderActivityTrailItem(activity)).join("")
           : "<span>Sin historial todavia</span>"}
       </div>
       <form class="note-form" data-contact-note-form data-contact-id="${escapeAttr(lead.id)}">
@@ -2105,6 +2196,16 @@ function renderLeadCard(lead) {
       </form>
     </article>
   `;
+}
+
+function renderActivityTrailItem(activity) {
+  const title = activity.title || statusLabel(activity.type);
+  const date = formatDate(activity.createdAt);
+  const note = clean(activity.note || "");
+  const lostReason = normalizeLostReason(activity.metadata?.lostReason || "");
+  const detail = note || (lostReason ? `Motivo: ${lostReasonLabel(lostReason)}` : "");
+
+  return `<span><strong>${escapeHtml(title)}</strong> - ${escapeHtml(date)}${detail ? ` · ${escapeHtml(detail)}` : ""}</span>`;
 }
 
 function renderNextActionForm(lead) {
@@ -2363,6 +2464,7 @@ function contactToCsvRow(contact) {
     Telefono: clean(contact.phone || ""),
     Email: clean(contact.email || ""),
     Estado: statusLabel(contact.status || "new"),
+    "Motivo perdida": lostReasonLabel(contact.lostReason),
     Score: normalizeLeadScore(contact.score),
     Temperatura: scoreLabel(contact.scoreLabel),
     Fuente: statusLabel(contact.source || "manual"),
@@ -2608,6 +2710,7 @@ function normalizePipelineContact(contact, fallbackStatus = "new") {
   return {
     ...source,
     status,
+    lostReason: status === "lost" ? normalizeLostReason(source.lostReason) : "",
     priority: normalizeLeadPriority(source.priority),
     score: normalizeLeadScore(source.score),
     scoreLabel: normalizeLeadScoreLabel(source.scoreLabel, status === "lost" ? "perdido" : "frio"),
@@ -2651,6 +2754,35 @@ function normalizeLeadPriority(value) {
   };
   const normalized = aliases[priority] || priority || "media";
   return LEAD_PRIORITIES.includes(normalized) ? normalized : "media";
+}
+
+function normalizeLostReason(value) {
+  const reason = clean(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const aliases = {
+    "no responde": "no_responde",
+    "ya tiene proveedor": "ya_tiene_proveedor",
+    "fuera de zona": "fuera_de_zona",
+    "no encaja": "no_encaja"
+  };
+  const normalized = aliases[reason] || reason;
+  return LOST_REASONS.includes(normalized) ? normalized : "";
+}
+
+function lostReasonLabel(value) {
+  const labels = {
+    precio: "Precio",
+    no_responde: "No responde",
+    ya_tiene_proveedor: "Ya tiene proveedor",
+    fuera_de_zona: "Fuera de zona",
+    pospuesto: "Pospuesto",
+    no_encaja: "No encaja",
+    competencia: "Competencia"
+  };
+
+  return labels[normalizeLostReason(value)] || "";
 }
 
 function normalizeScoreFilter(value) {

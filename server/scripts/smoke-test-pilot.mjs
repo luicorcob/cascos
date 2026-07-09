@@ -116,11 +116,41 @@ async function main() {
       name: "Lead perdido scoring",
       email: "lost-score@example.com",
       status: "lost",
+      lostReason: "no_responde",
       source: "manual"
     },
     expectedStatus: 201
   });
   assert(lostScoreContact.contact?.scoreLabel === "perdido", "Lost contacts must force the perdido score label");
+
+  const lossCandidate = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts`, {
+    method: "POST",
+    body: {
+      name: "Lead con motivo obligatorio",
+      email: "lost-reason@example.com",
+      source: "manual"
+    },
+    expectedStatus: 201
+  });
+  await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lossCandidate.contact.id}`, {
+    method: "PATCH",
+    body: { status: "lost" },
+    expectedStatus: 400
+  });
+  await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lossCandidate.contact.id}/pipeline`, {
+    method: "PATCH",
+    body: { status: "lost", order: 4.5 },
+    expectedStatus: 400
+  });
+  const lostWithReason = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lossCandidate.contact.id}/pipeline`, {
+    method: "PATCH",
+    body: { status: "lost", order: 4.5, lostReason: "precio" }
+  });
+  assert(lostWithReason.contact?.lostReason === "precio", "Lost reason must be stored when moving to lost");
+  assert(/Motivo: Precio/.test(lostWithReason.activity?.note || ""), "Lost reason must be visible in contact history");
+
+  const lostReasons = await adminRequest(baseUrl, `/api/businesses/${businessId}/reports/lost-reasons`);
+  assert(lostReasons.reasons?.some((item) => item.reason === "precio" && item.count >= 1), "Lost reasons report must count price losses");
 
   const updatedLead = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}`, {
     method: "PATCH",

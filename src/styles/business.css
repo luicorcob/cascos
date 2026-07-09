@@ -697,6 +697,20 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   color: var(--muted);
 }
 
+.lost-reason-chip {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid rgba(104, 102, 115, 0.24);
+  border-radius: 999px;
+  background: rgba(104, 102, 115, 0.08);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 950;
+}
+
 .lead-filter-toolbar {
   display: flex;
   align-items: center;
@@ -1154,6 +1168,77 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   background: var(--ink);
   color: #fffaf0;
   font-weight: 950;
+}
+
+.lost-reason-dialog {
+  width: min(420px, calc(100vw - 28px));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.lost-reason-dialog::backdrop {
+  background: rgba(20, 19, 27, 0.38);
+}
+
+.lost-reason-dialog form {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.lost-reason-dialog header,
+.lost-reason-dialog menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.lost-reason-dialog header button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 950;
+}
+
+.lost-reason-dialog label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.lost-reason-dialog menu {
+  justify-content: flex-end;
+}
+
+.lost-reason-dialog menu button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 950;
+}
+
+.lost-reason-dialog menu button[type="submit"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fffaf0;
 }
 
 .task-item,
