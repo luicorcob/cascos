@@ -72,6 +72,21 @@ async function main() {
   });
   assert(lead.contact?.privacyAccepted === true, "Lead consent must be stored");
 
+  const repeatedLead = await request(baseUrl, `/api/public/${businessSlug}/leads`, {
+    method: "POST",
+    body: {
+      name: "Prueba Lead Repetido",
+      email: "lead@example.com",
+      message: "Segunda solicitud con el mismo email",
+      privacyAccepted: true,
+      privacyAcceptedAt: new Date().toISOString(),
+      privacyPolicyUrl: "https://example.com/privacidad"
+    },
+    expectedStatus: 200
+  });
+  assert(repeatedLead.contact?.id === lead.contact.id, "Repeated public lead must update the existing contact");
+  assert(repeatedLead.mergedWithExisting === true, "Repeated public lead must be reported as an existing contact update");
+
   await request(baseUrl, `/api/public/${businessSlug}/events`, {
     method: "POST",
     body: {
@@ -151,6 +166,64 @@ async function main() {
 
   const lostReasons = await adminRequest(baseUrl, `/api/businesses/${businessId}/reports/lost-reasons`);
   assert(lostReasons.reasons?.some((item) => item.reason === "precio" && item.count >= 1), "Lost reasons report must count price losses");
+
+  const mergeSurvivor = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts`, {
+    method: "POST",
+    body: {
+      name: "Duplicado superviviente",
+      email: "merge-a@example.com",
+      phone: "+34 611 111 111",
+      source: "manual"
+    },
+    expectedStatus: 201
+  });
+  const mergeDuplicate = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts`, {
+    method: "POST",
+    body: {
+      name: "Duplicado secundario",
+      email: "merge-b@example.com",
+      phone: "+34 622 222 222",
+      source: "manual"
+    },
+    expectedStatus: 201
+  });
+  await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${mergeDuplicate.contact.id}/activities`, {
+    method: "POST",
+    body: {
+      type: "note",
+      title: "Nota duplicada",
+      note: "Historial que debe sobrevivir",
+      source: "dashboard"
+    },
+    expectedStatus: 201
+  });
+  await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${mergeDuplicate.contact.id}`, {
+    method: "PATCH",
+    body: { email: "merge-a@example.com" }
+  });
+  const duplicateGroups = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/duplicates`);
+  assert(duplicateGroups.groups?.some((group) => {
+    const ids = group.contacts?.map((contact) => contact.id) || [];
+    return ids.includes(mergeSurvivor.contact.id) && ids.includes(mergeDuplicate.contact.id);
+  }), "Duplicate candidates must be detected by normalized email");
+  const merged = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/merge`, {
+    method: "POST",
+    body: {
+      survivorId: mergeSurvivor.contact.id,
+      duplicateIds: [mergeDuplicate.contact.id]
+    }
+  });
+  assert(merged.contact?.id === mergeSurvivor.contact.id, "Merge must return the survivor contact");
+  assert(merged.merged?.[0]?.merged === true, "Duplicate contact must be soft merged");
+
+  const contactsAfterMerge = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts?includeActivities=true`);
+  assert(!contactsAfterMerge.contacts?.some((item) => item.id === mergeDuplicate.contact.id), "Merged duplicates must be hidden from normal contact lists");
+  const survivorAfterMerge = contactsAfterMerge.contacts?.find((item) => item.id === mergeSurvivor.contact.id);
+  assert(survivorAfterMerge?.activities?.some((activity) => activity.note === "Historial que debe sobrevivir"), "Merged survivor must keep duplicate activity history");
+
+  const allContactsAfterMerge = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts?includeMerged=true`);
+  const softMergedContact = allContactsAfterMerge.contacts?.find((item) => item.id === mergeDuplicate.contact.id);
+  assert(softMergedContact?.merged === true && softMergedContact?.mergedInto === mergeSurvivor.contact.id, "Merged duplicate must keep mergedInto metadata");
 
   const updatedLead = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}`, {
     method: "PATCH",

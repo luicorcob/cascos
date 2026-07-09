@@ -6,6 +6,7 @@ const state = {
   contacts: [],
   pipeline: null,
   scoreLabelFilter: "all",
+  duplicateGroups: [],
   nextActions: {
     today: [],
     overdue: [],
@@ -187,6 +188,7 @@ async function loadBusinesses(options = {}) {
       state.business = null;
       state.contacts = [];
       state.pipeline = null;
+      state.duplicateGroups = [];
       state.nextActions = emptyNextActions();
       state.services = [];
       state.bookings = [];
@@ -246,6 +248,7 @@ async function loadBusiness(id, options = {}) {
     state.business = fallback || null;
     state.contacts = [];
     state.pipeline = null;
+    state.duplicateGroups = [];
     state.nextActions = emptyNextActions();
     state.services = [];
     state.bookings = [];
@@ -296,6 +299,7 @@ async function loadBookings(id) {
 async function loadContacts(id) {
   state.contacts = [];
   state.pipeline = null;
+  state.duplicateGroups = [];
   state.nextActions = emptyNextActions();
   state.crmError = "";
 
@@ -307,10 +311,22 @@ async function loadContacts(id) {
     const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/pipeline?includeActivities=true`);
     state.pipeline = normalizePipelinePayload(payload);
     state.contacts = flattenPipelineContacts(state.pipeline);
+    await loadDuplicateContacts(id);
     await loadNextActions(id);
   } catch (error) {
     state.crmError = "El CRM no respondio. El dashboard seguira con datos del negocio, pero sin contactos reales.";
   }
+}
+
+async function loadDuplicateContacts(id) {
+  state.duplicateGroups = [];
+
+  if (!id) {
+    return;
+  }
+
+  const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/duplicates`);
+  state.duplicateGroups = Array.isArray(payload.groups) ? payload.groups : [];
 }
 
 async function loadNextActions(id) {
@@ -512,6 +528,7 @@ function render() {
   const model = createDashboardModel(business, {
     contacts: state.contacts,
     pipeline: state.pipeline,
+    duplicateGroups: state.duplicateGroups,
     nextActions: state.nextActions,
     services: state.services,
     bookings: state.bookings,
@@ -730,6 +747,7 @@ function renderLeads(model) {
 
   container.innerHTML = `
     ${renderExportToolbar("leads", model.leads.length, "Exportar leads")}
+    ${renderDuplicateGroups(model.duplicateGroups)}
     ${renderLeadScoreFilter(model.leads.length, pipeline.total)}
     ${pipeline.total ? `
     <div class="pipeline-grid">
@@ -752,6 +770,56 @@ function renderLeads(model) {
       }).join("")}
     </div>
     ` : emptyState("Sin leads en este filtro", "Cambia la temperatura para volver a ver el pipeline completo.")}
+  `;
+}
+
+function renderDuplicateGroups(groups = []) {
+  if (!groups.length) {
+    return "";
+  }
+
+  return `
+    <section class="duplicate-panel">
+      <header>
+        <span>
+          <strong>Posibles duplicados</strong>
+          <small>${escapeHtml(String(groups.length))} grupo(s)</small>
+        </span>
+      </header>
+      <div class="duplicate-list">
+        ${groups.map((group) => renderDuplicateGroup(group)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderDuplicateGroup(group) {
+  const contacts = Array.isArray(group.contacts) ? group.contacts : [];
+
+  if (contacts.length < 2) {
+    return "";
+  }
+
+  return `
+    <article class="duplicate-card" data-duplicate-group="${escapeAttr(group.id)}">
+      <div class="duplicate-contacts">
+        ${contacts.map((contact) => `
+          <span>
+            <strong>${escapeHtml(contactName(contact))}</strong>
+            <small>${escapeHtml([contact.phone, contact.email].filter(Boolean).join(" / ") || "Sin contacto")}</small>
+          </span>
+        `).join("")}
+      </div>
+      <div class="duplicate-actions">
+        <label>
+          Mantener
+          <select data-merge-survivor data-group-id="${escapeAttr(group.id)}">
+            ${contacts.map((contact) => `<option value="${escapeAttr(contact.id)}">${escapeHtml(contactName(contact))}</option>`).join("")}
+          </select>
+        </label>
+        <button type="button" data-merge-duplicates data-group-id="${escapeAttr(group.id)}">Fusionar</button>
+      </div>
+    </article>
   `;
 }
 
@@ -1126,6 +1194,7 @@ function createDashboardModel(business, crm = {}) {
   const today = new Date();
   const currency = commerce.currency || content.currency || "EUR";
   const pipeline = crm.pipeline ? normalizePipelinePayload(crm.pipeline) : buildPipelineModel(contacts);
+  const duplicateGroups = Array.isArray(crm.duplicateGroups) ? crm.duplicateGroups : [];
   const primaryGoal = business.settings?.primaryGoal || content.conversionGoal || "Reservas y contactos";
   const bookingUrl = content.bookingUrl || google.appointmentUrl || "";
   const whatsappUrl = integrations.whatsapp?.url || content.whatsappUrl || "";
@@ -1159,6 +1228,7 @@ function createDashboardModel(business, crm = {}) {
     business,
     leads,
     pipeline,
+    duplicateGroups,
     customers,
     services,
     bookings,
@@ -1193,6 +1263,36 @@ function createDashboardModel(business, crm = {}) {
 
 function bindCrmControls(model) {
   bindPipelineControls(model);
+
+  document.querySelectorAll("[data-merge-duplicates]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const groupId = button.dataset.groupId || "";
+      const group = model.duplicateGroups.find((item) => item.id === groupId);
+      const survivorId = button.closest("[data-duplicate-group]")?.querySelector("[data-merge-survivor]")?.value || "";
+      const duplicateIds = (group?.contacts || [])
+        .map((contact) => contact.id)
+        .filter((id) => id && id !== survivorId);
+
+      if (!state.business || !survivorId || !duplicateIds.length) {
+        return;
+      }
+
+      button.disabled = true;
+
+      try {
+        await postJson(
+          `/api/businesses/${encodeURIComponent(state.business.id || state.business.slug)}/contacts/merge`,
+          { survivorId, duplicateIds }
+        );
+        await loadContacts(state.business.id || state.business.slug);
+        showNotice("Contactos fusionados.", "info");
+        render();
+      } catch (error) {
+        showNotice("No se pudieron fusionar los contactos.", "error");
+        button.disabled = false;
+      }
+    });
+  });
 
   document.querySelectorAll("[data-contact-status]").forEach((select) => {
     select.addEventListener("change", async () => {

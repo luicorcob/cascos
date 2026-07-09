@@ -741,6 +741,93 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   min-width: 140px;
 }
 
+.duplicate-panel {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid rgba(154, 101, 0, 0.24);
+  border-radius: var(--radius);
+  background: rgba(154, 101, 0, 0.06);
+}
+
+.duplicate-panel > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.duplicate-panel > header span {
+  display: grid;
+  gap: 3px;
+}
+
+.duplicate-panel small,
+.duplicate-card small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.duplicate-list {
+  display: grid;
+  gap: 8px;
+}
+
+.duplicate-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(23, 21, 19, 0.1);
+  border-radius: var(--radius);
+  background: #fffdf7;
+}
+
+.duplicate-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.duplicate-contacts span {
+  display: grid;
+  gap: 2px;
+  min-width: 160px;
+}
+
+.duplicate-actions {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+
+.duplicate-actions label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.duplicate-actions select {
+  min-height: 36px;
+  min-width: 170px;
+}
+
+.duplicate-actions button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: #fffaf0;
+  font-weight: 950;
+}
+
 .next-action-chip {
   display: inline-flex;
   align-items: center;
@@ -1784,8 +1871,23 @@ tr:last-child td {
   }
 
   .lead-filter-toolbar,
+  .duplicate-card,
   .lead-filter-toolbar label,
   .lead-filter-toolbar select {
+    width: 100%;
+  }
+
+  .duplicate-card {
+    grid-template-columns: 1fr;
+  }
+
+  .duplicate-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .duplicate-actions select,
+  .duplicate-actions button {
     width: 100%;
   }
 

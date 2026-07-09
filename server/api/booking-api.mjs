@@ -876,10 +876,10 @@ function ensureContactForBooking(db, businessId, booking, now) {
 
 function findContactForBooking(db, businessId, booking) {
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
-  const email = booking.email || extractEmail(booking.phone);
-  const phone = booking.phone || "";
-  return db.contacts.find((item) => item.businessId === businessId && (
-    (email && item.email === email) || (phone && item.phone === phone)
+  const email = normalizeEmail(booking.email || extractEmail(booking.phone));
+  const phone = cleanPhone(booking.phone || "");
+  return db.contacts.find((item) => item.businessId === businessId && !item.merged && (
+    (email && normalizeEmail(item.email) === email) || (phone && cleanPhone(item.phone) === phone)
   ));
 }
 
@@ -1213,6 +1213,10 @@ function roundMoney(value) {
 
 function extractEmail(value) {
   return String(value || "").match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || "";
+}
+
+function normalizeEmail(value) {
+  return extractEmail(value).toLowerCase();
 }
 
 function formatIsoForNote(value) {

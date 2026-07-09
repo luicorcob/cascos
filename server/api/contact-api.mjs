@@ -16,6 +16,8 @@ const DEFAULT_DB = {
   businesses: [],
   contacts: [],
   activities: [],
+  bookings: [],
+  bookingReminders: [],
   businessEvents: [],
   auditLog: []
 };
@@ -23,7 +25,7 @@ const DEFAULT_DB = {
 export function isContactApiRequest(pathname) {
   return /^\/api\/public\/[^/]+\/leads$/.test(pathname)
     || /^\/api\/businesses\/[^/]+\/next-actions$/.test(pathname)
-    || /^\/api\/businesses\/[^/]+\/contacts(?:\/pipeline|\/[^/]+(?:\/activities|\/pipeline|\/next-action|\/recalculate-score)?)?$/.test(pathname);
+    || /^\/api\/businesses\/[^/]+\/contacts(?:\/(?:pipeline|duplicates|merge)|\/[^/]+(?:\/activities|\/pipeline|\/next-action|\/recalculate-score)?)?$/.test(pathname);
 }
 
 export async function handleContactApi(request, response, context) {
@@ -54,6 +56,16 @@ export async function handleContactApi(request, response, context) {
 
       if (contactId === "pipeline" && !action && method === "GET") {
         await getContactPipeline(businessId, requestUrl, response, context);
+        return;
+      }
+
+      if (contactId === "duplicates" && !action && method === "GET") {
+        await listDuplicateContacts(businessId, response, context);
+        return;
+      }
+
+      if (contactId === "merge" && !action && method === "POST") {
+        await mergeDuplicateContacts(businessId, request, response, context);
         return;
       }
 
@@ -119,10 +131,12 @@ async function listContacts(businessId, requestUrl, response, context) {
   const scoreLabel = normalizeOptionalScoreLabel(requestUrl.searchParams.get("scoreLabel") || requestUrl.searchParams.get("score") || "");
   const q = cleanText(requestUrl.searchParams.get("q") || "").toLowerCase();
   const includeActivities = requestUrl.searchParams.get("includeActivities") === "true";
+  const includeMerged = requestUrl.searchParams.get("includeMerged") === "true";
   const now = new Date();
 
   let contacts = db.contacts
     .filter((contact) => contact.businessId === business.id)
+    .filter((contact) => includeMerged || !contact.merged)
     .map((contact) => normalizeStoredContact(contact, db, business.id, now))
     .filter((contact) => !type || contact.type === type)
     .filter((contact) => !status || contact.status === status)
@@ -162,6 +176,7 @@ async function getContactPipeline(businessId, requestUrl, response, context) {
   const now = new Date();
   const contacts = db.contacts
     .filter((contact) => contact.businessId === business.id)
+    .filter((contact) => !contact.merged)
     .map((contact) => normalizeStoredContact(contact, db, business.id, now));
   const columns = CONTACT_PIPELINE_STATUSES.map((status) => {
     const columnContacts = contacts
@@ -203,6 +218,7 @@ async function listNextActions(businessId, requestUrl, response, context) {
   const now = new Date();
   const contacts = db.contacts
     .filter((contact) => contact.businessId === business.id)
+    .filter((contact) => !contact.merged)
     .map((contact) => normalizeStoredContact(contact, db, business.id, now));
   const actions = contacts
     .map((contact) => ({
@@ -229,24 +245,31 @@ async function createPublicLead(slug, request, response, context) {
 
   const payload = await readJsonBody(request);
   const now = new Date().toISOString();
-  const contact = normalizeContact(payload, null, business.id, now, {
+  const existingIndex = findDuplicateContactIndexForPayload(db, business.id, payload);
+  const existing = existingIndex >= 0 ? db.contacts[existingIndex] : null;
+  const contact = normalizeContact(payload, existing, business.id, now, {
     type: "lead",
     status: "new",
     source: "web"
   });
+  contact.lastInteractionAt = now;
   const activity = makeActivity(business.id, contact.id, payload, now, {
-    type: "lead.created",
-    title: "Lead creado",
+    type: existing ? "lead.updated" : "lead.created",
+    title: existing ? "Lead actualizado" : "Lead creado",
     source: contact.source,
     note: contact.notes
   });
 
-  db.contacts.push(contact);
+  if (existingIndex >= 0) {
+    db.contacts[existingIndex] = contact;
+  } else {
+    db.contacts.push(contact);
+  }
   db.activities.push(activity);
   recalculateContactScore(db, business.id, contact, new Date(now));
-  appendAudit(db, "contact.public_lead_created", business.id, now, contact.id);
+  appendAudit(db, existing ? "contact.public_lead_updated" : "contact.public_lead_created", business.id, now, contact.id);
   await saveDb(db, context, "lead");
-  sendJson(response, 201, { contact, activity }, context);
+  sendJson(response, existing ? 200 : 201, { contact, activity, mergedWithExisting: Boolean(existing) }, context);
 }
 
 async function createAdminContact(businessId, request, response, context) {
@@ -259,24 +282,103 @@ async function createAdminContact(businessId, request, response, context) {
 
   const payload = await readJsonBody(request);
   const now = new Date().toISOString();
-  const contact = normalizeContact(payload, null, business.id, now, {
+  const existingIndex = findDuplicateContactIndexForPayload(db, business.id, payload);
+  const existing = existingIndex >= 0 ? db.contacts[existingIndex] : null;
+  const contact = normalizeContact(payload, existing, business.id, now, {
     type: "lead",
     status: "new",
     source: "manual"
   });
+  contact.lastInteractionAt = now;
   const activity = makeActivity(business.id, contact.id, payload, now, {
-    type: "contact.created",
-    title: "Contacto creado",
+    type: existing ? "contact.updated" : "contact.created",
+    title: existing ? "Contacto actualizado" : "Contacto creado",
     source: contact.source,
     note: contact.notes
   });
 
-  db.contacts.push(contact);
+  if (existingIndex >= 0) {
+    db.contacts[existingIndex] = contact;
+  } else {
+    db.contacts.push(contact);
+  }
   db.activities.push(activity);
   recalculateContactScore(db, business.id, contact, new Date(now));
-  appendAudit(db, "contact.created", business.id, now, contact.id);
+  appendAudit(db, existing ? "contact.updated_from_duplicate_create" : "contact.created", business.id, now, contact.id);
   await saveDb(db, context, "contact");
-  sendJson(response, 201, { contact, activity }, context);
+  sendJson(response, existing ? 200 : 201, { contact, activity, mergedWithExisting: Boolean(existing) }, context);
+}
+
+async function listDuplicateContacts(businessId, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const groups = buildDuplicateContactGroups(db, business.id);
+
+  sendJson(response, 200, { groups, total: groups.length }, context);
+}
+
+async function mergeDuplicateContacts(businessId, request, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const payload = await readJsonBody(request);
+  const source = extractPayload(payload);
+  const survivorId = cleanId(source.survivorId);
+  const duplicateIds = Array.isArray(source.duplicateIds)
+    ? source.duplicateIds.map(cleanId).filter(Boolean)
+    : [];
+
+  if (!survivorId || !duplicateIds.length) {
+    throw httpError(400, "Merge needs survivorId and duplicateIds");
+  }
+
+  if (duplicateIds.includes(survivorId)) {
+    throw httpError(400, "survivorId cannot be included in duplicateIds");
+  }
+
+  const survivor = db.contacts.find((contact) => contact.businessId === business.id && contact.id === survivorId && !contact.merged);
+  const duplicates = duplicateIds.map((id) => db.contacts.find((contact) => contact.businessId === business.id && contact.id === id && !contact.merged));
+
+  if (!survivor || duplicates.some((contact) => !contact)) {
+    throw httpError(404, "Merge contacts not found");
+  }
+
+  const now = new Date().toISOString();
+  mergeContactData(survivor, duplicates, now);
+  moveContactReferences(db, business, survivor.id, duplicateIds);
+
+  duplicates.forEach((contact) => {
+    contact.merged = true;
+    contact.mergedInto = survivor.id;
+    contact.updatedAt = now;
+  });
+
+  const activity = makeActivity(business.id, survivor.id, {
+    note: `Fusionados ${duplicates.length} duplicado(s) en ${survivor.name}`,
+    metadata: { survivorId: survivor.id, duplicateIds }
+  }, now, {
+    type: "contact.merged",
+    title: "Contactos fusionados",
+    source: "dashboard"
+  });
+  db.activities.push(activity);
+  recalculateContactScore(db, business.id, survivor, new Date(now));
+  appendAudit(db, "contact.merged", business.id, now, survivor.id);
+  await saveDb(db, context, "contact-merge");
+  sendJson(response, 200, {
+    contact: normalizeStoredContact(survivor, db, business.id, new Date(now)),
+    merged: duplicates.map((contact) => summarizeContact(normalizeStoredContact(contact, db, business.id, new Date(now)))),
+    activity
+  }, context);
 }
 
 async function updateContact(businessId, contactId, request, response, context) {
@@ -559,6 +661,8 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     source: cleanText(source.source || existing?.source || defaults.source || "manual", 80),
     status,
     lostReason,
+    merged: Boolean(existing?.merged),
+    mergedInto: cleanId(existing?.mergedInto || ""),
     priority,
     order,
     tags,
@@ -586,6 +690,8 @@ function normalizeStoredContact(contact, db = null, businessId = "", now = new D
     ...contact,
     status: normalizedStatus,
     lostReason: normalizedStatus === "lost" ? lostReason : "",
+    merged: Boolean(contact?.merged),
+    mergedInto: cleanId(contact?.mergedInto || ""),
     priority: normalizedPriority,
     order: normalizeOrder(contact?.order, fallbackContactOrder(contact)),
     score: normalizeScore(contact?.score),
@@ -603,6 +709,181 @@ function withContactActivities(db, businessId, contact) {
       .filter((activity) => activity.businessId === businessId && activity.contactId === contact.id)
       .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
   };
+}
+
+function findDuplicateContactIndexForPayload(db, businessId, payload) {
+  const keys = getContactMatchKeysFromPayload(payload);
+
+  if (!keys.email && !keys.phone) {
+    return -1;
+  }
+
+  return db.contacts.findIndex((contact) => {
+    if (contact.businessId !== businessId || contact.merged) {
+      return false;
+    }
+
+    return (keys.email && normalizeEmail(contact.email) === keys.email)
+      || (keys.phone && normalizePhone(contact.phone) === keys.phone);
+  });
+}
+
+function getContactMatchKeysFromPayload(payload) {
+  const source = extractPayload(payload);
+  const rawContact = cleanText(source.contact || source.leadContact || source.phoneOrEmail || "", 320);
+  const email = normalizeEmail(source.email || extractEmail(rawContact));
+  const phone = normalizePhone(source.phone || source.telephone || extractPhone(rawContact));
+
+  return { email, phone };
+}
+
+function buildDuplicateContactGroups(db, businessId) {
+  const contacts = db.contacts
+    .filter((contact) => contact.businessId === businessId && !contact.merged)
+    .map((contact) => normalizeStoredContact(contact, db, businessId));
+  const parent = new Map(contacts.map((contact) => [contact.id, contact.id]));
+  const keyContacts = new Map();
+
+  contacts.forEach((contact) => {
+    getContactMatchKeys(contact).forEach((key) => {
+      const ids = keyContacts.get(key) || [];
+      ids.push(contact.id);
+      keyContacts.set(key, ids);
+    });
+  });
+
+  keyContacts.forEach((ids) => {
+    ids.slice(1).forEach((id) => unionParents(parent, ids[0], id));
+  });
+
+  const grouped = new Map();
+  contacts.forEach((contact) => {
+    const root = findParent(parent, contact.id);
+    const group = grouped.get(root) || [];
+    group.push(contact);
+    grouped.set(root, group);
+  });
+
+  return Array.from(grouped.values())
+    .filter((group) => group.length > 1)
+    .map((group, index) => {
+      const ids = new Set(group.map((contact) => contact.id));
+      const matchKeys = Array.from(keyContacts.entries())
+        .filter(([, keyIds]) => keyIds.filter((id) => ids.has(id)).length > 1)
+        .map(([key]) => key);
+
+      return {
+        id: `dup_${index + 1}`,
+        matchKeys,
+        contacts: group
+          .sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")))
+          .map(summarizeContact)
+      };
+    });
+}
+
+function getContactMatchKeys(contact) {
+  return [
+    normalizeEmail(contact.email) ? `email:${normalizeEmail(contact.email)}` : "",
+    normalizePhone(contact.phone) ? `phone:${normalizePhone(contact.phone)}` : ""
+  ].filter(Boolean);
+}
+
+function findParent(parent, id) {
+  const current = parent.get(id) || id;
+
+  if (current === id) {
+    return current;
+  }
+
+  const root = findParent(parent, current);
+  parent.set(id, root);
+  return root;
+}
+
+function unionParents(parent, left, right) {
+  const leftRoot = findParent(parent, left);
+  const rightRoot = findParent(parent, right);
+
+  if (leftRoot !== rightRoot) {
+    parent.set(rightRoot, leftRoot);
+  }
+}
+
+function mergeContactData(survivor, duplicates, now) {
+  survivor.name = survivor.name || duplicates.find((contact) => contact.name)?.name || survivor.name;
+  survivor.phone = survivor.phone || duplicates.find((contact) => contact.phone)?.phone || "";
+  survivor.email = survivor.email || duplicates.find((contact) => contact.email)?.email || "";
+  survivor.source = survivor.source || duplicates.find((contact) => contact.source)?.source || "manual";
+  survivor.tags = Array.from(new Set([
+    ...(Array.isArray(survivor.tags) ? survivor.tags : []),
+    ...duplicates.flatMap((contact) => Array.isArray(contact.tags) ? contact.tags : [])
+  ])).slice(0, 12);
+  survivor.notes = uniqueTexts([survivor.notes, ...duplicates.map((contact) => contact.notes)]).join("\n\n");
+  const valueEstimates = [survivor, ...duplicates]
+    .map((contact) => Number(contact.valueEstimate || 0))
+    .filter((value) => Number.isFinite(value));
+  survivor.valueEstimate = Math.max(0, ...valueEstimates);
+  survivor.lastInteractionAt = latestIso([survivor.lastInteractionAt, ...duplicates.map((contact) => contact.lastInteractionAt)]) || survivor.lastInteractionAt || now;
+  survivor.createdAt = earliestIso([survivor.createdAt, ...duplicates.map((contact) => contact.createdAt)]) || survivor.createdAt || now;
+  survivor.updatedAt = now;
+}
+
+function moveContactReferences(db, business, survivorId, duplicateIds) {
+  const duplicateSet = new Set(duplicateIds);
+
+  db.activities.forEach((activity) => {
+    if (duplicateSet.has(activity.contactId)) {
+      activity.contactId = survivorId;
+    }
+  });
+
+  db.bookings.forEach((booking) => {
+    if (duplicateSet.has(booking.contactId)) {
+      booking.contactId = survivorId;
+    }
+  });
+
+  db.bookingReminders.forEach((reminder) => {
+    if (duplicateSet.has(reminder.contactId)) {
+      reminder.contactId = survivorId;
+    }
+  });
+
+  [business.orders, business.content?.orders, business.content?.commerce?.orders]
+    .filter(Array.isArray)
+    .forEach((orders) => {
+      orders.forEach((order) => {
+        if (duplicateSet.has(order.contactId)) {
+          order.contactId = survivorId;
+        }
+
+        if (order.customer && duplicateSet.has(order.customer.contactId)) {
+          order.customer.contactId = survivorId;
+        }
+      });
+    });
+}
+
+function uniqueTexts(values) {
+  return Array.from(new Set(values.map((value) => cleanText(value || "", 4000)).filter(Boolean)));
+}
+
+function latestIso(values) {
+  return pickIso(values, (left, right) => right - left);
+}
+
+function earliestIso(values) {
+  return pickIso(values, (left, right) => left - right);
+}
+
+function pickIso(values, sorter) {
+  const dates = values
+    .map((value) => new Date(value || ""))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((left, right) => sorter(left.getTime(), right.getTime()));
+
+  return dates[0]?.toISOString() || "";
 }
 
 function makeActivity(businessId, contactId, payload, now, defaults) {
@@ -627,6 +908,8 @@ async function loadDb(context) {
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
   db.activities = Array.isArray(db.activities) ? db.activities : [];
+  db.bookings = Array.isArray(db.bookings) ? db.bookings : [];
+  db.bookingReminders = Array.isArray(db.bookingReminders) ? db.bookingReminders : [];
   db.businessEvents = Array.isArray(db.businessEvents) ? db.businessEvents : [];
   db.auditLog = Array.isArray(db.auditLog) ? db.auditLog : [];
   return db;
@@ -1012,6 +1295,8 @@ function summarizeContact(contact) {
     priority: contact.priority,
     score: contact.score,
     scoreLabel: contact.scoreLabel,
+    merged: Boolean(contact.merged),
+    mergedInto: contact.mergedInto || "",
     valueEstimate: contact.valueEstimate,
     lastInteractionAt: contact.lastInteractionAt,
     createdAt: contact.createdAt
@@ -1163,6 +1448,14 @@ function normalizeBoolean(value, fallback = false) {
 
 function cleanId(value) {
   return cleanText(value, 80).replace(/[^a-z0-9_-]/gi, "_").replace(/^_+|_+$/g, "");
+}
+
+function normalizeEmail(value) {
+  return extractEmail(value).toLowerCase();
+}
+
+function normalizePhone(value) {
+  return cleanText(value, 80).replace(/[^\d+]/g, "").replace(/^\+/, "");
 }
 
 function extractEmail(value) {
