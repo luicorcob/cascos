@@ -45,12 +45,13 @@ La URL admite `view=desktop`, `view=tablet` y `view=mobile`. Con
 1. Probar Safari en un iPhone real.
 2. Abrir la URL publica desde movil y ventana privada.
 3. Comprobar llamada, WhatsApp, mapa, lead, reserva y privacidad.
-4. Repetir `npm.cmd run smoke:pilot` contra la configuracion de despliegue.
+4. Repetir `npm.cmd run qa:visual` y `npm.cmd run smoke:pilot` contra la configuracion de despliegue.
 
 ## Comandos de verificacion
 
 ```powershell
 npm.cmd run check
+npm.cmd run qa:visual
 npm.cmd run smoke:pilot
 node server/server.mjs
 ```

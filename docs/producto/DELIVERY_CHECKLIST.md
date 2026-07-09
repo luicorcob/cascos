@@ -14,6 +14,7 @@
 - [x] Exportacion HTML.
 - [x] Import/export JSON por cliente.
 - [x] Checklist de calidad dentro del editor.
+- [x] QA visual y accesibilidad automatica por desktop/movil.
 - [x] Panel de cambios rapidos para demo con cliente.
 - [x] Undo/redo para variantes comerciales.
 - [x] Formulario de lead en web generada.
