@@ -119,6 +119,18 @@ async function main() {
   });
   assert(booking.booking?.privacyAccepted === true, "Booking consent must be stored");
 
+  const bookingReminder = await adminRequest(baseUrl, `/api/businesses/${businessId}/bookings/${booking.booking.id}/reminders`, {
+    method: "POST",
+    body: {
+      channel: "whatsapp",
+      message: "Recordatorio creado por smoke test"
+    },
+    expectedStatus: 201
+  });
+  const bookingTimeline = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${booking.contact.id}/timeline`);
+  assert(bookingTimeline.timeline?.some((item) => item.type === "booking" && item.refId === booking.booking.id), "Contact timeline must include bookings");
+  assert(bookingTimeline.timeline?.some((item) => item.type === "booking.reminder" && item.refId === bookingReminder.reminder.id), "Contact timeline must include booking reminders");
+
   const contacts = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts?includeActivities=true`);
   const listedLead = contacts.contacts?.find((item) => item.id === lead.contact.id);
   assert(listedLead, "Public lead must appear in admin contacts");
@@ -216,10 +228,11 @@ async function main() {
   assert(merged.contact?.id === mergeSurvivor.contact.id, "Merge must return the survivor contact");
   assert(merged.merged?.[0]?.merged === true, "Duplicate contact must be soft merged");
 
-  const contactsAfterMerge = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts?includeActivities=true`);
+  const contactsAfterMerge = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts?includeActivities=true&includeTimeline=true`);
   assert(!contactsAfterMerge.contacts?.some((item) => item.id === mergeDuplicate.contact.id), "Merged duplicates must be hidden from normal contact lists");
   const survivorAfterMerge = contactsAfterMerge.contacts?.find((item) => item.id === mergeSurvivor.contact.id);
   assert(survivorAfterMerge?.activities?.some((activity) => activity.note === "Historial que debe sobrevivir"), "Merged survivor must keep duplicate activity history");
+  assert(survivorAfterMerge?.timeline?.some((item) => /Historial que debe sobrevivir/.test(item.summary || "")), "Merged survivor timeline must keep duplicate activity history");
 
   const allContactsAfterMerge = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts?includeMerged=true`);
   const softMergedContact = allContactsAfterMerge.contacts?.find((item) => item.id === mergeDuplicate.contact.id);
@@ -231,11 +244,12 @@ async function main() {
   });
   assert(updatedLead.contact?.status === "contacted", "Lead status must be editable");
 
-  const pipeline = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/pipeline`);
+  const pipeline = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/pipeline?includeTimeline=true`);
   const pipelineLead = pipeline.pipeline?.contacted?.contacts?.find((item) => item.id === lead.contact.id);
   assert(pipelineLead, "Pipeline must group contacts by status");
   assert(pipelineLead.priority === "media", "Pipeline contacts must expose default priority");
   assert(Number.isFinite(Number(pipelineLead.order)), "Pipeline contacts must expose a numeric order");
+  assert(pipelineLead.timeline?.some((item) => item.type === "booking_click"), "Pipeline contacts must expose contact timeline events");
 
   const movedLead = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/pipeline`, {
     method: "PATCH",
@@ -272,6 +286,11 @@ async function main() {
   });
   assert(completedNextAction.contact?.nextAction === null, "Completed next action must clear the active nextAction");
   assert(completedNextAction.activity?.type === "next_action.completed", "Completed next action must be archived as an activity");
+
+  const leadTimeline = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/timeline`);
+  assert(leadTimeline.timeline?.some((item) => item.type === "contact.status_changed"), "Contact timeline must include status changes");
+  assert(leadTimeline.timeline?.some((item) => item.type === "next_action.completed"), "Contact timeline must include completed next actions");
+  assert(leadTimeline.timeline?.some((item) => item.type === "booking_click"), "Contact timeline must include associated business events");
 
   const todayAfterDone = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=hoy`);
   const overdueAfterDone = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=vencidas`);

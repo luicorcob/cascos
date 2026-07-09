@@ -308,7 +308,7 @@ async function loadContacts(id) {
   }
 
   try {
-    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/pipeline?includeActivities=true`);
+    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/pipeline?includeActivities=true&includeTimeline=true`);
     state.pipeline = normalizePipelinePayload(payload);
     state.contacts = flattenPipelineContacts(state.pipeline);
     await loadDuplicateContacts(id);
@@ -1362,12 +1362,7 @@ function bindCrmControls(model) {
             source: "dashboard"
           }
         );
-        state.contacts = state.contacts.map((contact) => (
-          contact.id === contactId
-            ? { ...contact, activities: [result.activity, ...(contact.activities || [])], lastInteractionAt: result.contact?.lastInteractionAt || contact.lastInteractionAt }
-            : contact
-        ));
-        state.pipeline = buildPipelineModel(state.contacts);
+        mergeContactResult(contactId, result.contact, result.activity);
         showNotice("Nota guardada en el historial del lead.", "info");
         render();
       } catch (error) {
@@ -1578,11 +1573,15 @@ function mergeContactResult(contactId, updatedContact, activity) {
     const activities = activity
       ? [activity, ...(contact.activities || [])]
       : (updatedContact?.activities || contact.activities || []);
+    const timeline = activity
+      ? [activityToTimelineItem(activity), ...(contact.timeline || [])]
+      : (updatedContact?.timeline || contact.timeline || []);
 
     return normalizePipelineContact({
       ...contact,
       ...updatedContact,
-      activities
+      activities,
+      timeline
     });
   });
   state.pipeline = buildPipelineModel(state.contacts);
@@ -2256,6 +2255,9 @@ function renderBookingCard(booking) {
 
 function renderLeadCard(lead) {
   const activities = Array.isArray(lead.activities) ? lead.activities.slice(0, 2) : [];
+  const timeline = Array.isArray(lead.timeline) && lead.timeline.length
+    ? lead.timeline.slice(0, 4)
+    : activities.map(activityToTimelineItem);
   const contact = [lead.phone, lead.email].filter(Boolean).join(" / ") || "Sin contacto";
   const notes = clean(lead.notes || "");
   const lostReason = normalizeLostReason(lead.lostReason);
@@ -2286,8 +2288,8 @@ function renderLeadCard(lead) {
         </select>
       </label>
       <div class="activity-trail">
-        ${activities.length
-          ? activities.map((activity) => renderActivityTrailItem(activity)).join("")
+        ${timeline.length
+          ? timeline.map((item) => renderTimelineItem(item)).join("")
           : "<span>Sin historial todavia</span>"}
       </div>
       <form class="note-form" data-contact-note-form data-contact-id="${escapeAttr(lead.id)}">
@@ -2298,14 +2300,24 @@ function renderLeadCard(lead) {
   `;
 }
 
-function renderActivityTrailItem(activity) {
-  const title = activity.title || statusLabel(activity.type);
-  const date = formatDate(activity.createdAt);
-  const note = clean(activity.note || "");
-  const lostReason = normalizeLostReason(activity.metadata?.lostReason || "");
-  const detail = note || (lostReason ? `Motivo: ${lostReasonLabel(lostReason)}` : "");
+function renderTimelineItem(item) {
+  const title = statusLabel(item.type || "activity");
+  const date = formatDate(item.date || item.createdAt);
+  const detail = clean(item.summary || item.title || item.note || "");
 
-  return `<span><strong>${escapeHtml(title)}</strong> - ${escapeHtml(date)}${detail ? ` · ${escapeHtml(detail)}` : ""}</span>`;
+  return `<span><strong>${escapeHtml(title)}</strong> - ${escapeHtml(date)}${detail ? ` - ${escapeHtml(detail)}` : ""}</span>`;
+}
+
+function activityToTimelineItem(activity) {
+  const lostReason = normalizeLostReason(activity?.metadata?.lostReason || "");
+  const detail = clean(activity?.note || "") || (lostReason ? `Motivo: ${lostReasonLabel(lostReason)}` : "");
+
+  return {
+    type: activity?.type || "activity",
+    date: activity?.createdAt || "",
+    summary: [activity?.title || "", detail].filter(Boolean).join(": "),
+    refId: activity?.id || ""
+  };
 }
 
 function renderNextActionForm(lead) {
@@ -3059,6 +3071,17 @@ function statusLabel(value) {
     enviar_propuesta: "Enviar propuesta",
     revisar_reserva: "Revisar reserva",
     pending: "Pendiente",
+    activity: "Actividad",
+    task: "Tarea",
+    note: "Nota",
+    order: "Pedido",
+    booking: "Reserva",
+    "booking.reminder": "Recordatorio",
+    "contact.created": "Lead creado",
+    "contact.updated": "Lead actualizado",
+    "contact.status_changed": "Cambio de estado",
+    "next_action.created": "Proxima accion",
+    "next_action.completed": "Accion completada",
     manual: "Manual",
     whatsapp: "WhatsApp",
     email: "Email",
