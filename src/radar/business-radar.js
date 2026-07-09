@@ -258,6 +258,9 @@
       providerId: String(business.providerId || ""),
       businessStatus: String(business.businessStatus || ""),
       openingHours: normalizeOpeningHours(business.openingHours || business.hours || business.regularOpeningHours?.weekdayDescriptions),
+      photos: normalizePhotoList(business.photos),
+      serviceTypes: normalizeTextList(business.serviceTypes || business.types),
+      localKeywords: normalizeTextList(business.localKeywords),
       coordinates: business.coordinates || null
     };
     normalized.opportunityScore = SCORE.calculateOpportunityScore(normalized);
@@ -693,6 +696,10 @@
       opportunityScore: business.opportunityScore,
       provider: business.provider,
       sourceLabel: business.sourceLabel,
+      photos: business.photos,
+      serviceTypes: business.serviceTypes,
+      localKeywords: business.localKeywords,
+      imageSearchKeywords: buildImageSearchKeywords(business),
       suggestedPositioning: PITCH.getSuggestedPositioning(business),
       suggestedSections: PITCH.getSuggestedSections(business),
       suggestedCTA: PITCH.getSuggestedCTA(business)
@@ -705,6 +712,8 @@
     const isAppointment = includesAny(category, ["clinic", "clinica", "dentist", "dentista", "hairdresser", "peluqueria", "gym", "gimnasio"]);
     const services = serviceSuggestions(category);
     const sourceLabel = business.sourceLabel || (business.provider === "places" ? "Google Places" : "OpenStreetMap");
+    const photos = normalizePhotoList(business.photos);
+    const imageSearchKeywords = buildImageSearchKeywords(business);
     const reputationFeature = business.rating
       ? `Valoracion de clientes: ${business.rating.toFixed(1)} estrellas y ${business.reviews} resenas`
       : `Estamos localizados en ${sourceLabel}`;
@@ -730,6 +739,16 @@
       testimonials: [],
       trustBadges: business.rating ? [`${business.rating.toFixed(1)} en Google`, `${business.reviews} reseñas locales`, "Contacto directo", `Ubicación en ${business.city}`] : [`Ficha en ${sourceLabel}`, "Ubicación real", `Presencia en ${business.city}`],
       links: business.mapsUrl ? [{ label: business.provider === "places" ? "Google Maps" : "OpenStreetMap", url: business.mapsUrl }] : [],
+      heroImage: photos[0] || "",
+      gallery: photos,
+      mediaMetadata: Object.fromEntries(photos.map((photo, index) => [photo, {
+        alt: `${business.name} - foto publica ${index + 1}`,
+        position: "center center",
+        provider: sourceLabel
+      }])),
+      imageSearchKeywords,
+      visualKeywords: imageSearchKeywords,
+      galleryTarget: 6,
       bookingLabel: brief.suggestedCTA,
       bookingUrl: business.phone ? `https://wa.me/${business.phone.replace(/\D/g, "")}` : "#contacto",
       showBooking: isFood || isAppointment || Boolean(business.phone),
@@ -757,8 +776,54 @@
         reviewCount: business.reviews,
         appointmentUrl: business.phone ? `https://wa.me/${business.phone.replace(/\D/g, "")}` : ""
       },
+      sourceData: {
+        id: business.id,
+        provider: business.provider,
+        sourceLabel,
+        category: business.category,
+        categoryKey: business.categoryKey,
+        city: business.city,
+        photos,
+        serviceTypes: business.serviceTypes,
+        localKeywords: business.localKeywords
+      },
       radarOpportunity: brief
     };
+  }
+
+  function buildImageSearchKeywords(business) {
+    const text = normalize([
+      business.categoryKey,
+      business.category,
+      ...(business.serviceTypes || []),
+      ...(business.localKeywords || [])
+    ].filter(Boolean).join(" "));
+    const profiles = [
+      { terms: ["restaurant", "restaurante", "bar", "tapas"], keywords: ["restaurant interior", "dining table", "food service", "spanish restaurant"] },
+      { terms: ["cafe", "cafeteria", "coffee"], keywords: ["coffee shop", "barista", "cafe interior", "breakfast table"] },
+      { terms: ["panaderia", "pasteleria", "bakery"], keywords: ["artisan bakery", "fresh pastry", "bread display", "bakery interior"] },
+      { terms: ["peluqueria", "hairdresser", "hair salon"], keywords: ["hair salon", "professional stylist", "beauty salon", "hair treatment"] },
+      { terms: ["barberia", "barber"], keywords: ["barbershop", "barber chair", "beard trim", "classic barber tools"] },
+      { terms: ["estetica", "beauty", "spa"], keywords: ["beauty treatment room", "spa", "skincare", "relaxing salon"] },
+      { terms: ["dentista", "dental"], keywords: ["dental clinic", "dentist office", "clean medical interior", "dental treatment"] },
+      { terms: ["clinica", "clinic"], keywords: ["medical clinic", "consultation room", "healthcare professional", "clean clinic"] },
+      { terms: ["farmacia", "pharmacy"], keywords: ["pharmacy interior", "health products", "pharmacist counter", "clean shelves"] },
+      { terms: ["gimnasio", "gym", "fitness", "pilates", "yoga"], keywords: ["fitness studio", "gym equipment", "personal trainer", "training class"] },
+      { terms: ["taller", "workshop", "mechanic"], keywords: ["auto repair workshop", "mechanic tools", "garage service", "vehicle maintenance"] },
+      { terms: ["tienda", "store", "retail", "boutique"], keywords: ["local shop interior", "retail display", "boutique", "customer service"] },
+      { terms: ["floristeria", "florist"], keywords: ["flower shop", "floral arrangement", "bouquet", "colorful flowers"] },
+      { terms: ["libreria", "bookstore", "papeleria"], keywords: ["bookstore shelves", "stationery store", "cozy books", "local shop"] },
+      { terms: ["inmobiliaria", "real estate"], keywords: ["real estate office", "property consultation", "modern office", "client meeting"] },
+      { terms: ["hotel", "alojamiento"], keywords: ["hotel lobby", "hospitality", "guest room", "reception desk"] }
+    ];
+    const match = profiles.find((profile) => profile.terms.some((term) => text.includes(term)));
+    const location = business.city ? `${business.city} spain` : "spain";
+    return uniqueText([
+      ...(match?.keywords || ["local business interior", "professional service", "customer service"]),
+      location,
+      "authentic local business",
+      "warm professional"
+    ]).slice(0, 12);
   }
 
   function serviceSuggestions(category) {
@@ -910,6 +975,26 @@
     return text.split(/\s*;\s*/).map((item) => item.trim()).filter(Boolean).slice(0, 14);
   }
 
+  function normalizePhotoList(value) {
+    return (Array.isArray(value) ? value : [])
+      .map((item) => typeof item === "string" ? item : item?.url)
+      .map((item) => String(item || "").trim())
+      .filter((item) => /^(https?:|data:image\/)/i.test(item))
+      .slice(0, 12);
+  }
+
+  function normalizeTextList(value) {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => typeof item === "string" ? item : item?.label || item?.name || item?.type)
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, 12);
+    }
+    const text = String(value || "").trim();
+    return text ? text.split(/\s*[,;\n]\s*/).map((item) => item.trim()).filter(Boolean).slice(0, 12) : [];
+  }
+
   function formatBusinessStatus(value) {
     const status = String(value || "").trim().toUpperCase();
     const labels = {
@@ -975,6 +1060,7 @@
   }
 
   function phoneHref(value) { return String(value || "").replace(/[^\d+]/g, ""); }
+  function uniqueText(items) { return [...new Set(items.map((item) => String(item || "").trim()).filter(Boolean))]; }
   function safeExternalUrl(value) {
     try {
       const url = new URL(String(value || ""));

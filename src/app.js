@@ -91,6 +91,10 @@ const deliveryStatus = document.querySelector("#deliveryStatus");
 const deliveryReadiness = document.querySelector("#deliveryReadiness");
 const deliveryReport = document.querySelector("#deliveryReport");
 const statusLine = document.querySelector("#statusLine");
+const visualQaRunButton = document.querySelector("#visualQaRunButton");
+const visualQaFixButton = document.querySelector("#visualQaFixButton");
+const visualQaStatus = document.querySelector("#visualQaStatus");
+const visualQaResult = document.querySelector("#visualQaResult");
 const deviceFrame = document.querySelector(".device-frame");
 const cursorGlow = document.querySelector(".cursor-glow");
 const introGate = document.querySelector("#introGate");
@@ -249,6 +253,7 @@ const studioExporter = createExporter({
 });
 let currentBusiness = withBusinessDefaults(draftStore.load() || cloneData(defaultSectorPreset));
 let currentBusinessRecord = null;
+let lastVisualQaPayload = null;
 let menu = normalizeMenuItems(currentBusiness.menuItems);
 let editorEditStart = null;
 let renderFrame = 0;
@@ -269,6 +274,7 @@ let stockImageState = {
 };
 let selectedStockImage = null;
 const trackedStockDownloads = new Set();
+let radarLaunchImageContext = null;
 const PREVIEW_SECTION_LISTS = {
   services: "services",
   features: "features",
@@ -285,12 +291,16 @@ function init() {
     return;
   }
 
+  const requestedBusinessRef = getRequestedBusinessRef();
   const briefLaunchBusiness = consumeBriefHandoff();
   if (briefLaunchBusiness) {
     currentBusinessRecord = null;
     storeApiRecord(null);
     currentBusiness = briefLaunchBusiness;
+  } else if (requestedBusinessRef) {
+    pinRequestedBusinessRecord(requestedBusinessRef);
   }
+  radarLaunchImageContext = createRadarLaunchImageContext(currentBusiness);
 
   bindTabs();
   bindViewportButtons();
@@ -319,7 +329,10 @@ function init() {
   applyLaunchView();
   if (briefLaunchBusiness) {
     setStatus(`Brief importado: ${currentBusiness.name}. Web generada y lista para revisar.`);
+  } else if (requestedBusinessRef) {
+    loadRequestedBusinessFromApi(requestedBusinessRef);
   }
+  maybeAutoGenerateRadarSiteImages(radarLaunchImageContext);
   form.addEventListener("input", (event) => {
     if (event.target.closest("#menuProductModal")) {
       return;
@@ -831,7 +844,17 @@ async function generateAndApplySiteImages() {
     return;
   }
 
-  setSiteImageLoading(true, "Generando imagenes del negocio...");
+  try {
+    await fetchAndApplySiteImages("Generando imagenes del negocio...");
+  } catch (error) {
+    const message = error?.message || "No se pudo generar el pack visual.";
+    setSiteImageGenerateStatus(message);
+    setStatus(message);
+  }
+}
+
+async function fetchAndApplySiteImages(loadingMessage = "Generando imagenes del negocio...") {
+  setSiteImageLoading(true, loadingMessage);
 
   try {
     const result = await requestSiteImagePack(["hero", "servicios", "galeria", "contacto"]);
@@ -849,10 +872,7 @@ async function generateAndApplySiteImages() {
     renderMediaLibrary();
     setSiteImageGenerateStatus(`${pack.total} imagenes aplicadas${added ? `, ${added} guardadas` : ""}.`);
     showSiteImageItemsInInspector(pack.items);
-  } catch (error) {
-    const message = error?.message || "No se pudo generar el pack visual.";
-    setSiteImageGenerateStatus(message);
-    setStatus(message);
+    return { result, pack, added };
   } finally {
     setSiteImageLoading(false);
   }
@@ -899,6 +919,7 @@ async function loadSiteImageCandidates() {
 
 async function requestSiteImagePack(sections) {
   const business = businessFromForm();
+  const imageKeywords = collectSiteImageKeywords(business);
   const payload = {
     negocio: {
       nombre: business.name,
@@ -913,6 +934,10 @@ async function requestSiteImagePack(sections) {
         business.typography,
         business.visualShape
       ].filter(Boolean).join(" "),
+      source: radarLaunchImageContext ? "radar" : "studio",
+      imageSearchKeywords: imageKeywords,
+      palabras_clave_ingles: imageKeywords,
+      galleryTarget: radarLaunchImageContext ? 6 : business.gallery.length,
       secciones: sections,
       servicios: business.services,
       testimonios: business.testimonials,
@@ -941,6 +966,169 @@ async function requestSiteImagePack(sections) {
   }
 
   return result;
+}
+
+async function maybeAutoGenerateRadarSiteImages(context) {
+  if (!shouldAutoGenerateRadarSiteImages(context)) {
+    return;
+  }
+
+  setStatus("Radar: buscando imagenes personalizadas de Unsplash para este negocio...");
+
+  try {
+    const { pack } = await fetchAndApplySiteImages("Buscando imagenes de Unsplash para este negocio...");
+    rememberRadarAutoImages(context);
+    setStatus(`Radar: ${pack.total} imagenes personalizadas aplicadas al borrador.`);
+  } catch (error) {
+    setStatus(error?.message || "Radar: no se pudo aplicar el pack visual automaticamente.");
+  }
+}
+
+function shouldAutoGenerateRadarSiteImages(context) {
+  if (!context?.isRadarLaunch || !siteImageGenerateButton) {
+    return false;
+  }
+
+  if (hasProvidedBusinessImages(context.initialBusiness)) {
+    return false;
+  }
+
+  try {
+    return sessionStorage.getItem(radarAutoImageKey(context)) !== "done";
+  } catch (error) {
+    return true;
+  }
+}
+
+function rememberRadarAutoImages(context) {
+  try {
+    sessionStorage.setItem(radarAutoImageKey(context), "done");
+  } catch (error) {
+    // Repeating the automatic search is harmless if session storage is blocked.
+  }
+}
+
+function radarAutoImageKey(context) {
+  return `dls-radar-site-images:${context.opportunityId || slugify(context.businessName || "negocio")}`;
+}
+
+function createRadarLaunchImageContext(business = {}) {
+  const params = new URLSearchParams(window.location.search);
+  const isRadarLaunch = String(params.get("source") || "").toLowerCase() === "radar";
+
+  if (!isRadarLaunch) {
+    return null;
+  }
+
+  const opportunity = business.radarOpportunity || {};
+  const sourceData = business.sourceData || opportunity.sourceData || {};
+  const keywords = normalizeImageKeywordList(
+    business.imageSearchKeywords,
+    business.visualKeywords,
+    opportunity.imageSearchKeywords,
+    opportunity.visualKeywords,
+    sourceData.imageSearchKeywords,
+    sourceData.serviceTypes,
+    categoryImageKeywords(business.category || opportunity.category || sourceData.category),
+    business.location ? `${business.location} spain` : "",
+    "authentic local business",
+    "warm professional"
+  );
+
+  return {
+    isRadarLaunch,
+    opportunityId: String(params.get("opportunity") || opportunity.id || sourceData.id || "").trim(),
+    businessName: business.name || opportunity.businessName || sourceData.name || "",
+    keywords,
+    sourceData,
+    initialBusiness: cloneData(business)
+  };
+}
+
+function collectSiteImageKeywords(business) {
+  const keywords = normalizeImageKeywordList(
+    radarLaunchImageContext?.keywords,
+    business.imageSearchKeywords,
+    business.visualKeywords,
+    categoryImageKeywords(business.category),
+    business.location ? `${business.location} spain` : "spain",
+    "authentic local business",
+    "warm professional"
+  );
+
+  return keywords.slice(0, 14);
+}
+
+function categoryImageKeywords(category) {
+  const text = normalizeKeywordText(category);
+  const profiles = [
+    { terms: ["restaurant", "restaurante", "bar", "tapas"], keywords: ["restaurant interior", "dining table", "food service"] },
+    { terms: ["cafe", "cafeteria", "coffee"], keywords: ["coffee shop", "barista", "cafe interior"] },
+    { terms: ["panaderia", "pasteleria", "bakery"], keywords: ["artisan bakery", "fresh pastry", "bread display"] },
+    { terms: ["peluqueria", "hairdresser", "hair salon"], keywords: ["hair salon", "professional stylist", "beauty salon"] },
+    { terms: ["barberia", "barber"], keywords: ["barbershop", "barber chair", "beard trim"] },
+    { terms: ["estetica", "beauty", "spa"], keywords: ["beauty treatment room", "spa", "skincare"] },
+    { terms: ["dentista", "dental"], keywords: ["dental clinic", "dentist office", "clean medical interior"] },
+    { terms: ["clinica", "clinic"], keywords: ["medical clinic", "consultation room", "healthcare professional"] },
+    { terms: ["farmacia", "pharmacy"], keywords: ["pharmacy interior", "health products", "pharmacist counter"] },
+    { terms: ["gimnasio", "gym", "fitness", "pilates", "yoga"], keywords: ["fitness studio", "gym equipment", "personal trainer"] },
+    { terms: ["taller", "workshop", "mechanic"], keywords: ["auto repair workshop", "mechanic tools", "garage service"] },
+    { terms: ["tienda", "store", "retail", "boutique"], keywords: ["local shop interior", "retail display", "boutique"] },
+    { terms: ["floristeria", "florist"], keywords: ["flower shop", "floral arrangement", "bouquet"] },
+    { terms: ["inmobiliaria", "real estate"], keywords: ["real estate office", "property consultation", "modern office"] },
+    { terms: ["hotel", "alojamiento"], keywords: ["hotel lobby", "hospitality", "guest room"] }
+  ];
+  const match = profiles.find((profile) => profile.terms.some((term) => text.includes(term)));
+  return match?.keywords || ["local business interior", "professional service", "customer service"];
+}
+
+function normalizeKeywordText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function hasProvidedBusinessImages(business = {}) {
+  const demoHero = normalizeImage(demoBusiness.heroImage, "");
+  const demoGallery = new Set((demoBusiness.gallery || []).map((item) => normalizeImage(item, "")).filter(Boolean));
+  const hero = normalizeImage(business.heroImage, "");
+  const gallery = Array.isArray(business.gallery) ? business.gallery : parseLines(business.gallery);
+  const sourcePhotos = Array.isArray(business.sourceData?.photos)
+    ? business.sourceData.photos
+    : Array.isArray(business.radarOpportunity?.photos) ? business.radarOpportunity.photos : [];
+
+  return [hero, ...gallery, ...sourcePhotos]
+    .map((item) => normalizeImage(typeof item === "string" ? item : item?.url, ""))
+    .some((url) => url && url !== demoHero && !demoGallery.has(url));
+}
+
+function normalizeImageKeywordList(...values) {
+  const items = [];
+  values.forEach(visitKeywordValue);
+
+  return [...new Set(items
+    .map((item) => String(item || "").trim())
+    .filter(Boolean))]
+    .slice(0, 18);
+
+  function visitKeywordValue(value) {
+    if (!value) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach(visitKeywordValue);
+      return;
+    }
+
+    if (typeof value === "object") {
+      visitKeywordValue(value.label || value.name || value.keyword || value.term || value.title);
+      return;
+    }
+
+    String(value).split(/\r?\n|,/).forEach((item) => items.push(item));
+  }
 }
 
 function buildSiteImagePack(result = {}) {
@@ -2636,6 +2824,38 @@ function consumeBriefHandoff() {
   }
 }
 
+function getRequestedBusinessRef() {
+  const params = new URLSearchParams(window.location.search);
+  return ["business", "project", "id", "slug"]
+    .map((key) => String(params.get(key) || "").trim())
+    .find(Boolean) || "";
+}
+
+function pinRequestedBusinessRecord(ref) {
+  currentBusinessRecord = {
+    id: ref,
+    slug: "",
+    name: "",
+    plan: "",
+    status: "",
+    publishedUrl: "",
+    activeDemo: null
+  };
+  storeApiRecord(currentBusinessRecord);
+}
+
+async function loadRequestedBusinessFromApi(ref) {
+  setStatus(`Cargando proyecto: ${ref}...`);
+
+  try {
+    applyBusinessRecord(await fetchBusinessFromApi(ref));
+    setStatus(`Proyecto cargado: ${currentBusinessRecord?.name || ref}. Los cambios se guardaran en este mismo proyecto.`);
+  } catch (error) {
+    pinRequestedBusinessRecord(ref);
+    setStatus("No se pudo cargar el proyecto desde la API. No se creara una copia; al guardar se intentara actualizar ese mismo proyecto.");
+  }
+}
+
 function applyLaunchView() {
   const params = new URLSearchParams(window.location.search);
   const requestedView = params.get("view");
@@ -2772,6 +2992,9 @@ function bindActions() {
     renderQualityPanel(currentBusiness);
     renderDeliveryReport(currentBusiness);
   });
+
+  visualQaRunButton?.addEventListener("click", runVisualQaFromStudio);
+  visualQaFixButton?.addEventListener("click", applyVisualQaAutoFixes);
 
   publishDemoButton?.addEventListener("click", async (event) => {
     const button = event.currentTarget;
@@ -3971,6 +4194,306 @@ function renderDeliveryReport(business) {
   setStatus(report.ready
     ? "Entrega Pro preparada: la web puede exportarse con informe limpio."
     : `Entrega Pro bloqueada: corrige ${report.validation.errors.length} error(es) critico(s).`);
+}
+
+async function runVisualQaFromStudio(event) {
+  const button = event?.currentTarget || visualQaRunButton;
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Analizando...";
+  }
+  if (visualQaFixButton) {
+    visualQaFixButton.disabled = true;
+  }
+
+  try {
+    currentBusiness = businessFromForm();
+    renderQualityPanel(currentBusiness);
+    renderVisualQaPending("Analizando web actual...");
+    setStatus("QA visual en marcha: preparando HTML y capturas desktop/movil.");
+
+    const resolved = withBusinessDefaults(currentBusiness);
+    const html = await studioExporter.buildExportDocument(resolved);
+    const response = await fetch(apiUrl("/api/qa-visual"), {
+      method: "POST",
+      headers: apiHeaders({ json: true }),
+      body: JSON.stringify({
+        html,
+        business: {
+          id: currentBusinessRecord?.id || resolved.id || "",
+          slug: currentBusinessRecord?.slug || resolved.slug || slugify(resolved.name || ""),
+          name: resolved.name,
+          category: resolved.category,
+          location: resolved.location || resolved.address || ""
+        },
+        viewports: ["desktop", "mobile"]
+      })
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.error || payload.detail || "Visual QA request failed");
+    }
+
+    lastVisualQaPayload = payload;
+    renderVisualQaPayload(payload);
+
+    const totals = payload.report?.totals || {};
+    setStatus(`QA visual completada: ${totals.blockers || 0} bloqueos y ${totals.warnings || 0} avisos.`);
+  } catch (error) {
+    lastVisualQaPayload = null;
+    renderVisualQaError(getVisualQaErrorMessage(error));
+    setStatus(getVisualQaErrorMessage(error));
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Analizar QA visual";
+    }
+    if (visualQaFixButton) {
+      visualQaFixButton.disabled = false;
+    }
+  }
+}
+
+function applyVisualQaAutoFixes(event) {
+  const button = event?.currentTarget || visualQaFixButton;
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Corrigiendo...";
+  }
+
+  try {
+    const report = lastVisualQaPayload?.report || null;
+    const issues = getVisualQaIssues(report);
+    const codes = new Set(issues.map((issue) => issue.code));
+    const hadReport = Boolean(report);
+    const snapshot = businessFromForm();
+    const validation = validateBusiness(snapshot);
+    const applied = [];
+
+    editorHistory.record(snapshot);
+
+    if (!hadReport || hasAnyVisualQaCode(codes, [
+      "horizontal-overflow",
+      "horizontal-overflow-source",
+      "interactive-covered",
+      "text-covered",
+      "touch-target-small"
+    ])) {
+      setValue("designPack", "custom");
+      setRadioValue("contentDensity", "compact");
+      setRadioValue("heroSize", "compact");
+      setRadioValue("contentWidth", "focused");
+      setRadioValue("imageRatio", "square");
+      setRadioValue("typography", "compact");
+      setRadioValue("motion", "soft");
+      setValue("fontScale", Math.min(100, numberOr(form.elements.fontScale?.value, 100)));
+      setValue("layoutScale", Math.min(88, numberOr(form.elements.layoutScale?.value, 100)));
+      setChecked("premiumEffects", false);
+      applied.push("Layout compacto para movil y sin efectos pesados.");
+    }
+
+    if (hasAnyVisualQaCode(codes, ["interactive-covered", "text-covered", "horizontal-overflow"]) && form.elements.showConversionDock?.checked) {
+      setChecked("showConversionDock", false);
+      applied.push("Dock flotante ocultado para evitar solapes.");
+    }
+
+    if (!hadReport || hasAnyVisualQaCode(codes, ["contrast-low", "focus-not-visible"])) {
+      applyHighContrastPrimaryButton();
+      applied.push("Boton principal con contraste alto y sin neon.");
+    }
+
+    const updatedImageAlts = ensureVisualQaImageMetadata(snapshot);
+    if (updatedImageAlts > 0) {
+      applied.push(`${updatedImageAlts} texto(s) alternativo(s) de imagen completados.`);
+    }
+
+    if (validation.errors.some((issue) => issue.code === "missing_privacy") && !form.elements.privacyUrl?.value.trim()) {
+      setValue("privacyUrl", "pages/privacy-demo.html");
+      applied.push("Privacidad enlazada a la plantilla demo.");
+    }
+
+    if (!applied.length) {
+      renderVisualQaFixResult(["No habia correcciones automaticas seguras para aplicar."]);
+      setStatus("QA visual: no habia correcciones automaticas seguras para aplicar.");
+      return;
+    }
+
+    syncSegmentedControls();
+    syncDesignPackState();
+    syncQuickToggleState();
+    renderFromForm();
+    updateHistoryButtons();
+    lastVisualQaPayload = null;
+    renderVisualQaFixResult(applied);
+    setStatus(`Correccion automatica aplicada: ${applied.length} ajuste(s). Ejecuta de nuevo QA visual para confirmar.`);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Corregir automatico";
+    }
+  }
+}
+
+function renderVisualQaPending(message) {
+  if (visualQaStatus) {
+    visualQaStatus.textContent = "Analizando";
+    visualQaStatus.className = "is-running";
+  }
+  if (visualQaResult) {
+    visualQaResult.innerHTML = `<p class="visual-qa-muted">${escapeHtml(message)}</p>`;
+  }
+}
+
+function renderVisualQaPayload(payload) {
+  if (!visualQaStatus || !visualQaResult) {
+    return;
+  }
+
+  const report = payload.report || {};
+  const totals = report.totals || {};
+  const blockers = totals.blockers || 0;
+  const warnings = totals.warnings || 0;
+  const issues = getVisualQaIssues(report);
+  const tone = blockers ? "blocked" : warnings ? "warning" : "ready";
+  const label = blockers ? `${blockers} bloqueo${blockers === 1 ? "" : "s"}` : warnings ? `${warnings} aviso${warnings === 1 ? "" : "s"}` : "QA limpio";
+  const topIssues = issues.slice(0, 5);
+  const reportLink = payload.reportUrl
+    ? `<a href="${escapeAttr(payload.reportUrl)}" target="_blank" rel="noopener">Abrir reporte completo</a>`
+    : "";
+
+  visualQaStatus.textContent = label;
+  visualQaStatus.className = `is-${tone}`;
+  visualQaResult.innerHTML = `
+    <div class="visual-qa-summary is-${tone}">
+      <span><b>${blockers}</b> bloqueos</span>
+      <span><b>${warnings}</b> avisos</span>
+      <span><b>${totals.viewports || 0}</b> vistas</span>
+    </div>
+    ${topIssues.length ? `
+      <div class="visual-qa-issues">
+        ${topIssues.map(renderVisualQaIssue).join("")}
+      </div>
+    ` : '<p class="visual-qa-muted">Sin incidencias detectadas.</p>'}
+    ${reportLink ? `<div class="visual-qa-report-link">${reportLink}</div>` : ""}
+  `;
+}
+
+function renderVisualQaIssue(issue) {
+  return `
+    <article class="visual-qa-issue is-${escapeAttr(issue.severity)}">
+      <strong>${escapeHtml(issue.viewport || "vista")} - ${escapeHtml(issue.code)}</strong>
+      <span>${escapeHtml(issue.message)}</span>
+      ${issue.selector ? `<code>${escapeHtml(issue.selector)}</code>` : ""}
+    </article>
+  `;
+}
+
+function renderVisualQaFixResult(items) {
+  if (visualQaStatus) {
+    visualQaStatus.textContent = "Correcciones aplicadas";
+    visualQaStatus.className = "is-warning";
+  }
+  if (visualQaResult) {
+    visualQaResult.innerHTML = `
+      <div class="visual-qa-issues">
+        ${items.map((item) => `
+          <article class="visual-qa-issue is-info">
+            <strong>Ajuste</strong>
+            <span>${escapeHtml(item)}</span>
+          </article>
+        `).join("")}
+      </div>
+    `;
+  }
+}
+
+function renderVisualQaError(message) {
+  if (visualQaStatus) {
+    visualQaStatus.textContent = "No disponible";
+    visualQaStatus.className = "is-blocked";
+  }
+  if (visualQaResult) {
+    visualQaResult.innerHTML = `
+      <article class="visual-qa-issue is-blocker">
+        <strong>QA visual</strong>
+        <span>${escapeHtml(message)}</span>
+      </article>
+    `;
+  }
+}
+
+function getVisualQaIssues(report) {
+  return (report?.viewports || []).flatMap((run) => {
+    const viewport = run.viewport?.name || "";
+    return (run.issues || []).map((issue) => ({ ...issue, viewport }));
+  });
+}
+
+function hasAnyVisualQaCode(codes, expected) {
+  return expected.some((code) => codes.has(code));
+}
+
+function applyHighContrastPrimaryButton() {
+  const styles = readButtonStyles(form.elements.buttonStyles?.value);
+  styles.primary = {
+    ...(styles.primary || {}),
+    background: "#111316",
+    textColor: "#ffffff",
+    neon: false,
+    glowStrength: 0
+  };
+  setValue("buttonStyles", JSON.stringify(normalizeButtonStyles(styles)));
+}
+
+function ensureVisualQaImageMetadata(business) {
+  const metadata = readMediaMetadata(form.elements.mediaMetadata?.value);
+  const name = textOr(business.name, "este negocio");
+  const category = textOr(business.category, "negocio local");
+  const images = [
+    { url: normalizeImage(form.elements.heroImage?.value, ""), alt: `Portada de ${name}, ${category}` },
+    ...parseLines(form.elements.gallery?.value).map((url, index) => ({
+      url: normalizeImage(url, ""),
+      alt: `Imagen ${index + 1} de ${name}`
+    }))
+  ].filter((item) => item.url);
+  let updated = 0;
+
+  images.forEach((item) => {
+    const current = metadata[item.url] || {};
+    if (!String(current.alt || "").trim()) {
+      metadata[item.url] = {
+        ...current,
+        alt: item.alt,
+        position: current.position || "center center"
+      };
+      updated += 1;
+    }
+  });
+
+  if (updated > 0) {
+    setValue("mediaMetadata", JSON.stringify(normalizeMediaMetadata(metadata)));
+  }
+
+  return updated;
+}
+
+function getVisualQaErrorMessage(error) {
+  const message = error?.message || "";
+
+  if (/chrome|edge/i.test(message)) {
+    return "Chrome o Edge no esta disponible para ejecutar el QA visual headless.";
+  }
+
+  if (/fetch|failed|network|load/i.test(message)) {
+    return "No se pudo conectar con /api/qa-visual. Abre el Studio desde npm.cmd start.";
+  }
+
+  if (/timed out|timeout/i.test(message)) {
+    return "El QA visual tardo demasiado. Prueba otra vez o usa npm.cmd run qa:visual.";
+  }
+
+  return message || "No se pudo ejecutar el QA visual.";
 }
 
 function buildDeliveryReport(business) {
@@ -5439,11 +5962,16 @@ function isPrivateNetworkDemoHostname(hostname) {
 }
 
 async function rememberPublishedDemo(business, activeDemo) {
+  const studioUpdatedAt = new Date().toISOString();
   const record = await saveBusinessToApi({
     ...business,
     status: currentBusinessRecord?.status || "in-review",
     publishedUrl: activeDemo.url,
-    activeDemo
+    activeDemo: {
+      ...activeDemo,
+      updatedFromStudioAt: studioUpdatedAt
+    },
+    updatedFromStudioAt: studioUpdatedAt
   });
   currentBusinessRecord = toApiRecordMeta(record);
   storeApiRecord(currentBusinessRecord);
@@ -5791,6 +6319,13 @@ function applyBusinessRecord(record) {
 }
 
 function buildBusinessApiPayload(business, record) {
+  const studioUpdatedAt = business.updatedFromStudioAt || new Date().toISOString();
+  const activeDemo = normalizeActiveDemoForApiPayload(
+    business.activeDemo || record?.activeDemo || null,
+    studioUpdatedAt,
+    Boolean(business.activeDemo)
+  );
+
   return {
     business: {
       id: record?.id,
@@ -5828,13 +6363,27 @@ function buildBusinessApiPayload(business, record) {
       },
       settings: {
         primaryGoal: business.conversionGoal,
-        activeDemo: business.activeDemo || record?.activeDemo || null,
+        activeDemo,
         source: "studio",
-        updatedFromStudioAt: new Date().toISOString()
+        updatedFromStudioAt: studioUpdatedAt
       },
       content: withBusinessDefaults(business)
     }
   };
+}
+
+function normalizeActiveDemoForApiPayload(activeDemo, studioUpdatedAt, isFreshPublish) {
+  if (!activeDemo) {
+    return null;
+  }
+
+  const demo = { ...activeDemo };
+
+  if (isFreshPublish && !demo.updatedFromStudioAt) {
+    demo.updatedFromStudioAt = studioUpdatedAt;
+  }
+
+  return demo;
 }
 
 function getStoredApiRecord() {

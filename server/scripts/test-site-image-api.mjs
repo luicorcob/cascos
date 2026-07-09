@@ -32,6 +32,7 @@ try {
       ubicacion: "Sevilla, Espana",
       colores: ["#2C3E50", "#E8C5A0"],
       estilo_web: "elegante y femenino",
+      palabras_clave_ingles: ["hair salon", "professional stylist", "beauty salon", "seville spain"],
       secciones: ["hero", "servicios", "galeria", "contacto"],
       servicios: ["Corte de pelo", "Coloracion profesional", "Tratamientos capilares"]
     }
@@ -46,6 +47,7 @@ try {
   assert.equal(result.negocio, "Peluqueria Lucia");
   assert.equal(result.fuente_principal, "unsplash");
   assert.equal(result.meta.fuentes_usadas[0], "unsplash");
+  assert.ok(result.meta.keywords_usadas.includes("professional stylist"));
   assert.equal(result.imagenes.servicios.length, 3);
   assert.equal(result.imagenes.galeria.length, 6);
   assert.ok(result.imagenes.hero.principal.url.includes("w=1920"));
@@ -54,6 +56,7 @@ try {
   assert.match(result.imagenes.hero.principal.credito, /Unsplash/);
   assert.doesNotMatch(result.imagenes.hero.principal.query_usada, /peluquer/i);
   assert.match(result.imagenes.hero.principal.query_usada, /hair salon/);
+  assert.match(result.imagenes.hero.principal.query_usada, /professional stylist/);
   assert.match(result.imagenes.contacto.query_usada, /seville spain/);
 
   const urls = collectUrls(result.imagenes);

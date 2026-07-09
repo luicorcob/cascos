@@ -40,6 +40,10 @@ const ROUTE_LIMITS = {
     limit: readPositiveInteger("DEMO_PUBLISH_RATE_LIMIT", 12),
     windowMs: readPositiveInteger("DEMO_PUBLISH_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000)
   },
+  qaVisual: {
+    limit: readPositiveInteger("QA_VISUAL_RATE_LIMIT", 10),
+    windowMs: readPositiveInteger("QA_VISUAL_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000)
+  },
   googleApi: {
     limit: readPositiveInteger("GOOGLE_API_RATE_LIMIT", 60),
     windowMs: readPositiveInteger("GOOGLE_API_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
@@ -118,6 +122,10 @@ function getPublicRoute(pathname) {
 
   if (pathname === "/api/demo-publish") {
     return "demoPublish";
+  }
+
+  if (pathname === "/api/qa-visual") {
+    return "qaVisual";
   }
 
   if (pathname === "/api/leads" || pathname === "/api/studio/from-opportunity") {

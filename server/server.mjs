@@ -12,6 +12,7 @@ import { handleEventApi, isEventApiRequest } from "./api/event-api.mjs";
 import { handleHealthApi, isHealthApiRequest } from "./api/health-api.mjs";
 import { handleGoogleApi, isGoogleApiRequest } from "./api/google-api.mjs";
 import { handleReportApi, isReportApiRequest } from "./api/report-api.mjs";
+import { handleQaVisualApi, isQaVisualApiRequest } from "./api/qa-visual-api.mjs";
 import { handleSiteImageApi, isSiteImageApiRequest } from "./api/site-image-api.mjs";
 import { handleStockImageApi, isStockImageApiRequest } from "./api/stock-image-api.mjs";
 import { isAdminApiRequest, requireAdminApiAuth } from "./lib/admin-auth.mjs";
@@ -100,6 +101,11 @@ const server = createServer(async (request, response) => {
 
     if (isReportApiRequest(requestUrl.pathname)) {
       await handleReportApi(request, response, apiContext);
+      return;
+    }
+
+    if (isQaVisualApiRequest(requestUrl.pathname)) {
+      await handleQaVisualApi(request, response, apiContext);
       return;
     }
 

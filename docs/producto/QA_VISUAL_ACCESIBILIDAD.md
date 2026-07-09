@@ -6,6 +6,19 @@ demo o una entrega al cliente.
 
 ## Comando rapido
 
+Desde el Studio tambien puedes hacerlo sin terminal:
+
+1. Abre `Control de entrega`.
+2. Pulsa `Analizar QA visual`.
+3. Revisa bloqueos, avisos y el enlace `Abrir reporte completo`.
+4. Pulsa `Corregir automatico` para aplicar arreglos seguros y reversibles.
+5. Vuelve a lanzar `Analizar QA visual` para confirmar la entrega.
+
+El boton analiza el HTML generado en ese momento, no solo la demo por defecto.
+Usa la API local `/api/qa-visual`, que reutiliza este mismo motor headless.
+
+El comando sigue disponible como respaldo manual:
+
 ```powershell
 npm.cmd run qa:visual
 ```

@@ -9,6 +9,8 @@ const STATUS_LABELS = {
   archived: "Archivado"
 };
 
+const LOCAL_BACKEND_BASES = ["http://127.0.0.1:5173", "http://localhost:5173"];
+
 const refs = {};
 const state = {
   businesses: [],
@@ -18,7 +20,8 @@ const state = {
   adminToken: window.LocalLiftApi?.getAdminToken?.() || "",
   loading: false,
   loadError: "",
-  loadHint: ""
+  loadHint: "",
+  localFallbackUsed: false
 };
 
 document.addEventListener("DOMContentLoaded", init);
@@ -116,10 +119,11 @@ async function loadProjects() {
   showNotice("Cargando proyectos...", "info");
 
   try {
+    state.localFallbackUsed = false;
     const payload = await getJson("/api/businesses?includeArchived=true");
     state.businesses = Array.isArray(payload.businesses) ? payload.businesses : [];
     renderProjects();
-    showNotice("", "info");
+    showNotice(state.localFallbackUsed ? "API local detectada en http://127.0.0.1:5173." : "", "info");
   } catch (error) {
     const message = getLoadErrorMessage(error);
     state.businesses = [];
@@ -137,10 +141,12 @@ function renderProjects() {
   const projects = getFilteredProjects();
   const active = state.businesses.filter((business) => business.status !== "archived").length;
   const published = state.businesses.filter((business) => business.status === "published").length;
-  const activeDemos = state.businesses.filter((business) => getDemoState(business).status === "active").length;
+  const demoStates = state.businesses.map(getDemoState);
+  const activeDemos = demoStates.filter((demoState) => ["active", "outdated"].includes(demoState.status)).length;
+  const outdatedDemos = demoStates.filter((demoState) => demoState.status === "outdated").length;
 
   if (refs.summary) {
-    refs.summary.textContent = `${state.businesses.length} negocios - ${active} activos - ${published} publicados - ${activeDemos} demos activas`;
+    refs.summary.textContent = `${state.businesses.length} negocios - ${active} activos - ${published} publicados - ${activeDemos} demos activas${outdatedDemos ? ` - ${outdatedDemos} desactualizadas` : ""}`;
   }
 
   if (!refs.grid) {
@@ -181,6 +187,14 @@ function renderEmptyState(title, hint = "") {
 }
 
 function getLoadErrorMessage(error) {
+  if (!error.status) {
+    return {
+      title: "No se pudo conectar con la API local.",
+      hint: "Arranca el backend con npm.cmd start y abre Proyectos desde http://127.0.0.1:5173/pages/projects.html. Si estabas usando otra API guardada, pulsa Limpiar en el campo API.",
+      notice: "No se pudo conectar con la API."
+    };
+  }
+
   if (error.status === 401) {
     return {
       title: "Token admin requerido.",
@@ -261,7 +275,7 @@ function renderProjectCard(business) {
       <div class="project-links">
         <a href="business-dashboard.html?business=${encodeURIComponent(ref)}">Portal</a>
         <a href="client-site.html?business=${encodeURIComponent(ref)}&preview=developer">Web</a>
-        <a href="../index.html?skipIntro=1">Studio</a>
+        <a href="../index.html?skipIntro=1&business=${encodeURIComponent(ref)}">Studio</a>
       </div>
       <form class="project-password-form" data-portal-password-form data-business-id="${escapeHtml(ref)}">
         <label>
@@ -271,6 +285,9 @@ function renderProjectCard(business) {
         <button type="submit">Guardar acceso</button>
         <small data-card-status></small>
       </form>
+      <div class="project-danger-zone">
+        <button class="project-delete-button" type="button" data-project-delete="${escapeHtml(ref)}" data-project-name="${escapeAttr(business.name || "Proyecto sin nombre")}">Eliminar proyecto</button>
+      </div>
     </article>
   `;
 }
@@ -280,6 +297,32 @@ function bindProjectForms() {
     button.addEventListener("click", async () => {
       const copied = await copyTextToClipboard(button.dataset.copyDemoUrl || "");
       button.textContent = copied ? "Copiado" : "No copiado";
+    });
+  });
+
+  refs.grid?.querySelectorAll("[data-project-delete]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const businessId = button.dataset.projectDelete || "";
+      const businessName = button.dataset.projectName || "este proyecto";
+      const confirmed = window.confirm(`Eliminar "${businessName}"? Esta accion quitara tambien sus datos operativos.`);
+
+      if (!confirmed) {
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Eliminando";
+
+      try {
+        await deleteJson(`/api/businesses/${encodeURIComponent(businessId)}`);
+        state.businesses = state.businesses.filter((business) => business.id !== businessId && business.slug !== businessId);
+        showNotice(`Proyecto eliminado: ${businessName}.`, "warn");
+        renderProjects();
+      } catch (error) {
+        button.disabled = false;
+        button.textContent = "Eliminar proyecto";
+        showNotice(getDeleteErrorMessage(error), "error");
+      }
     });
   });
 
@@ -364,6 +407,22 @@ function renderDemoPanel(demoState) {
     `;
   }
 
+  if (demoState.status === "outdated") {
+    return `
+      <section class="project-demo-state is-outdated">
+        <div>
+          <span>Demo desactualizada</span>
+          <strong>Hay cambios sin publicar</strong>
+          <small>${escapeHtml(demoState.expiresLabel)}</small>
+        </div>
+        <div class="project-demo-actions">
+          <a href="${escapeAttr(demoState.url)}" target="_blank" rel="noopener">Abrir</a>
+          <button type="button" data-copy-demo-url="${escapeAttr(demoState.url)}">Copiar</button>
+        </div>
+      </section>
+    `;
+  }
+
   return `
     <section class="project-demo-state is-active">
       <div>
@@ -409,12 +468,40 @@ function getDemoState(business) {
     };
   }
 
+  if (isDemoOutdated(business, demo)) {
+    const editedAt = parseDate(business.contentUpdatedAt || business.updatedFromStudioAt || business.updatedAt);
+    const expiry = expiresAt ? ` Caduca el ${formatDateTime(expiresAt)}.` : "";
+
+    return {
+      status: "outdated",
+      url,
+      remainingLabel: "Hay cambios sin publicar",
+      expiresLabel: `${editedAt ? `Ultima edicion: ${formatDateTime(editedAt)}.` : "El proyecto cambio despues de publicar."}${expiry} Republica desde Studio.`
+    };
+  }
+
   return {
     status: "active",
     url,
     remainingLabel: expiresAt ? formatRemaining(expiresAt) : "Activa sin caducidad",
     expiresLabel: expiresAt ? `Caduca el ${formatDateTime(expiresAt)}` : "Enlace publicado sin fecha de caducidad"
   };
+}
+
+function isDemoOutdated(business, demo) {
+  const latestEdit = parseDate(business.contentUpdatedAt || business.updatedFromStudioAt || business.updatedAt);
+  const demoSnapshot = parseDate(
+    demo.updatedFromStudioAt
+    || demo.contentUpdatedAt
+    || demo.businessUpdatedAt
+    || demo.createdAt
+  );
+
+  if (!latestEdit || !demoSnapshot) {
+    return false;
+  }
+
+  return latestEdit.getTime() - demoSnapshot.getTime() > 5000;
 }
 
 function inferProjectDemoShareability(url) {
@@ -461,16 +548,79 @@ function isPrivateNetworkDemoHostname(hostname) {
 }
 
 async function getJson(path) {
-  const response = await fetch(window.LocalLiftApi?.url?.(path) || path, {
-    headers: window.LocalLiftApi?.headers?.() || { Accept: "application/json" },
-    cache: "no-store"
-  });
+  const headers = window.LocalLiftApi?.headers?.() || { Accept: "application/json" };
+  const url = window.LocalLiftApi?.url?.(path) || path;
+
+  try {
+    return await fetchJson(url, { headers, cache: "no-store" });
+  } catch (error) {
+    const fallback = await tryLocalBackendFallback(path, { headers, cache: "no-store" }, url);
+
+    if (fallback.ok) {
+      return fallback.payload;
+    }
+
+    throw error;
+  }
+}
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+
   if (!response.ok) {
     const error = new Error(`Request failed: ${response.status}`);
     error.status = response.status;
+    error.url = url;
     throw error;
   }
+
   return response.json();
+}
+
+async function tryLocalBackendFallback(path, options, firstUrl) {
+  if (!shouldTryLocalBackendFallback()) {
+    return { ok: false };
+  }
+
+  for (const base of LOCAL_BACKEND_BASES) {
+    const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
+
+    if (isSameRequestUrl(url, firstUrl)) {
+      continue;
+    }
+
+    try {
+      const payload = await fetchJson(url, options);
+      rememberLocalBackendBase(base);
+      return { ok: true, payload };
+    } catch (error) {
+      // Try the next local hostname.
+    }
+  }
+
+  return { ok: false };
+}
+
+function shouldTryLocalBackendFallback() {
+  const { protocol, hostname } = window.location;
+  return protocol === "file:" || hostname === "127.0.0.1" || hostname === "localhost";
+}
+
+function rememberLocalBackendBase(base) {
+  state.localFallbackUsed = true;
+  state.apiBase = window.LocalLiftApi?.setBase?.(base) || base;
+
+  if (refs.apiBaseInput) {
+    refs.apiBaseInput.value = state.apiBase;
+  }
+}
+
+function isSameRequestUrl(left, right) {
+  try {
+    return new URL(left, window.location.href).href === new URL(right, window.location.href).href;
+  } catch (error) {
+    return left === right;
+  }
 }
 
 async function postJson(path, payload) {
@@ -485,6 +635,31 @@ async function postJson(path, payload) {
     throw error;
   }
   return response.json();
+}
+
+async function deleteJson(path) {
+  const response = await fetch(window.LocalLiftApi?.url?.(path) || path, {
+    method: "DELETE",
+    headers: window.LocalLiftApi?.headers?.() || { Accept: "application/json" }
+  });
+  if (!response.ok) {
+    const error = new Error(`Request failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
+function getDeleteErrorMessage(error) {
+  if (error.status === 401) {
+    return "Token admin requerido para eliminar proyectos.";
+  }
+
+  if (error.status === 403) {
+    return "Ese acceso no puede eliminar proyectos.";
+  }
+
+  return "No se pudo eliminar el proyecto.";
 }
 
 function showNotice(message, type = "info") {

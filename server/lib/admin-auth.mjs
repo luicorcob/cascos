@@ -9,6 +9,7 @@ export function isAdminApiRequest(pathname) {
   return pathname === "/api/businesses"
     || pathname.startsWith("/api/businesses/")
     || pathname === "/api/demo-publish"
+    || pathname === "/api/qa-visual"
     || pathname === "/api/site-images"
     || pathname === "/api/leads"
     || pathname === "/api/studio/from-opportunity"

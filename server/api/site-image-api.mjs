@@ -423,7 +423,7 @@ export async function handleSiteImageApi(request, response, context) {
 export async function createSiteImageSelection(payload, options = {}) {
   const source = extractBusinessPayload(payload);
   const business = normalizeBusinessInput(source);
-  const vocabulary = inferVocabulary(business.category, business.description);
+  const vocabulary = inferVocabulary(business.category, [business.description, business.keywords.join(" ")].join(" "));
   const sections = normalizeSections(business.sections, business);
   const warnings = [];
   const selectedImages = [];
@@ -489,13 +489,16 @@ export async function createSiteImageSelection(payload, options = {}) {
     meta: {
       total_imagenes: selectedImages.length,
       fuentes_usadas: fuentesUsadas,
+      keywords_usadas: business.keywords,
       advertencias: [...new Set(warnings)]
     }
   };
 }
 
 async function buildHeroImages(business, vocabulary, providerState, selectedImages) {
+  const keywordHint = businessKeywordHint(business);
   const query = buildQuery([
+    keywordHint,
     vocabulary.hero,
     getAtmosphereWords(business.style),
     locationSearchHint(business.location)
@@ -559,11 +562,12 @@ async function buildServiceImages(business, vocabulary, providerState, selectedI
 }
 
 async function buildGalleryImages(business, vocabulary, providerState, selectedImages) {
+  const keywordHint = businessKeywordHint(business);
   const target = clampInteger(business.galleryTarget || business.gallery?.length || 6, 6, 9, 6);
   const queries = [
-    buildQuery([vocabulary.gallery, getAtmosphereWords(business.style), locationSearchHint(business.location)]),
-    buildQuery([vocabulary.service, "details authentic", getAtmosphereWords(business.style)]),
-    buildQuery([vocabulary.hero, "interior details"])
+    buildQuery([keywordHint, vocabulary.gallery, getAtmosphereWords(business.style), locationSearchHint(business.location)]),
+    buildQuery([keywordHint, vocabulary.service, "details authentic", getAtmosphereWords(business.style)]),
+    buildQuery([keywordHint, vocabulary.hero, "interior details"])
   ];
   return findImages({
     section: "galeria",
@@ -582,6 +586,7 @@ async function buildGalleryImages(business, vocabulary, providerState, selectedI
 }
 
 async function buildTeamImages(business, vocabulary, providerState, selectedImages) {
+  const keywordHint = businessKeywordHint(business, 3);
   const team = normalizePeopleList(business.team, ["Equipo profesional"]);
   providerState.warnings.push("Revisa manualmente las fotos de equipo si el negocio no ha aportado imagenes propias.");
 
@@ -589,6 +594,7 @@ async function buildTeamImages(business, vocabulary, providerState, selectedImag
 
   for (const [index, person] of team.slice(0, 6).entries()) {
     const query = buildQuery([
+      keywordHint,
       vocabulary.about,
       "professional team working natural light side view",
       getAtmosphereWords(business.style)
@@ -654,7 +660,9 @@ async function buildTestimonialImages(business, providerState, selectedImages) {
 }
 
 async function buildAboutImages(business, vocabulary, providerState, selectedImages) {
+  const keywordHint = businessKeywordHint(business);
   const query = buildQuery([
+    keywordHint,
     vocabulary.about,
     getAtmosphereWords(business.style),
     locationSearchHint(business.location)
@@ -676,6 +684,7 @@ async function buildAboutImages(business, vocabulary, providerState, selectedIma
 }
 
 async function buildBlogImages(business, vocabulary, providerState, selectedImages) {
+  const keywordHint = businessKeywordHint(business, 3);
   const articles = normalizeArticleList(business.blogArticles);
 
   const blogImages = [];
@@ -683,6 +692,7 @@ async function buildBlogImages(business, vocabulary, providerState, selectedImag
   for (const [index, article] of articles.slice(0, 6).entries()) {
     const query = buildQuery([
       englishTopicHint(article.label),
+      keywordHint,
       vocabulary.service,
       getAtmosphereWords(business.style)
     ]);
@@ -713,8 +723,10 @@ async function buildBlogImages(business, vocabulary, providerState, selectedImag
 }
 
 async function buildContactImage(business, vocabulary, providerState, selectedImages) {
+  const keywordHint = businessKeywordHint(business, 3);
   const query = buildQuery([
     locationSearchHint(business.location),
+    keywordHint,
     vocabulary.contact,
     "street architecture warm sunny"
   ]);
@@ -1141,6 +1153,14 @@ function normalizeBusinessInput(source) {
     location: cleanText(source.ubicacion || source.location || source.city || source.address || "", 180),
     colors: normalizeColors(source.colores || source.colors || brand.colors || source.palette || source.accent),
     style: cleanText(source.estilo_web || source.webStyle || source.style || [source.designPack, source.artDirection, source.contentMode].filter(Boolean).join(" "), 240),
+    keywords: normalizeKeywordList(
+      source.palabras_clave_ingles
+      || source.imageSearchKeywords
+      || source.visualKeywords
+      || source.keywords
+      || source.localKeywords
+      || source.localSeo?.keywords
+    ),
     sections: source.secciones || source.sections || source.sectionOrder,
     services: source.servicios || source.services || [],
     gallery: source.gallery || source.galeria || [],
@@ -1253,10 +1273,15 @@ function buildServiceQuery(label, vocabulary, business) {
   const hints = [...(vocabulary.serviceHints || []), ...GLOBAL_SERVICE_HINTS];
   const match = hints.find((hint) => hint.terms.some((term) => hasSearchTerm(text, term)));
   return buildQuery([
+    businessKeywordHint(business, 3),
     match?.query || vocabulary.service,
     getAtmosphereWords(business.style),
     business.location ? "spain" : ""
   ]);
+}
+
+function businessKeywordHint(business, maxItems = 5) {
+  return buildQuery((business.keywords || []).slice(0, maxItems));
 }
 
 function englishTopicHint(value) {
@@ -1345,6 +1370,34 @@ function splitLines(value) {
     .split(/\r?\n|,/)
     .map((item) => cleanText(item, 160))
     .filter(Boolean);
+}
+
+function normalizeKeywordList(value) {
+  const items = [];
+  visit(value);
+
+  return [...new Set(items
+    .map((item) => cleanText(item, 100))
+    .filter(Boolean))]
+    .slice(0, 14);
+
+  function visit(input) {
+    if (!input) {
+      return;
+    }
+
+    if (Array.isArray(input)) {
+      input.forEach(visit);
+      return;
+    }
+
+    if (isPlainObject(input)) {
+      visit(input.label || input.name || input.keyword || input.term || input.title);
+      return;
+    }
+
+    String(input).split(/\r?\n|,/).forEach((item) => items.push(item));
+  }
 }
 
 function firstHttp(...values) {

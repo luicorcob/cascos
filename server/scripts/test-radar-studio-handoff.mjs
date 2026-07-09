@@ -38,6 +38,8 @@ assert.deepEqual(full.draft.hours, ["lunes: 09:00–18:00"]);
 assert.deepEqual(full.draft.gallery, ["https://example.com/clinic.jpg"]);
 assert.ok(full.draft.services.some((item) => item.includes("Dentist")));
 assert.ok(full.draft.localSeo.keywords.includes("Clínica dental en Santander"));
+assert.ok(full.draft.imageSearchKeywords.includes("dental clinic"));
+assert.ok(full.brief.imageSearchKeywords.includes("dental clinic"));
 assert.equal(full.draft.contentProvenance.mode, "radar-real");
 assert.equal(full.missing.length, 0);
 
@@ -53,6 +55,7 @@ assert.equal(sparse.draft.phone, "");
 assert.equal(sparse.draft.address, "");
 assert.equal(sparse.draft.heroImage, "");
 assert.equal(sparse.draft.showGallery, false);
+assert.ok(sparse.draft.imageSearchKeywords.includes("auto repair workshop"));
 assert.equal(sparse.draft.blockVariants.hero, "minimal");
 assert.deepEqual(sparse.draft.hours, ["Confirma el horario antes de venir."]);
 assert.match(sparse.draft.services[0], /te orientamos/i);

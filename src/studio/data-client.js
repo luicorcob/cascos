@@ -32,11 +32,6 @@
         body: JSON.stringify(buildPayload(business, record))
       });
 
-      if (!response.ok && method === "PUT" && response.status === 404) {
-        storeRecord(null);
-        return save(business, null);
-      }
-
       const result = await readApiJson(response);
       return result.business;
     }

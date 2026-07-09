@@ -102,7 +102,8 @@ a {
 .project-links a,
 .project-demo-actions a,
 .project-demo-actions button,
-.project-password-form button {
+.project-password-form button,
+.project-delete-button {
   min-height: 36px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -224,7 +225,8 @@ a {
 .projects-config-form button,
 .projects-refresh,
 .project-demo-actions button,
-.project-password-form button {
+.project-password-form button,
+.project-delete-button {
   padding: 0 12px;
   cursor: pointer;
 }
@@ -438,6 +440,15 @@ a {
   color: var(--amber);
 }
 
+.project-demo-state.is-outdated {
+  border-color: rgba(255, 114, 94, 0.42);
+  background: rgba(255, 114, 94, 0.1);
+}
+
+.project-demo-state.is-outdated span {
+  color: #ff9b8e;
+}
+
 .project-demo-state.is-empty {
   grid-template-columns: 1fr;
 }
@@ -476,6 +487,26 @@ a {
 
 .project-password-form small[data-type="info"] {
   color: #8dffbd;
+}
+
+.project-danger-zone {
+  display: grid;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.project-delete-button {
+  border-color: rgba(255, 114, 94, 0.32);
+  background: rgba(255, 114, 94, 0.09);
+  color: #ffd6d0;
+  font-weight: 900;
+}
+
+.project-delete-button:hover,
+.project-delete-button:focus-visible {
+  border-color: rgba(255, 114, 94, 0.62);
+  background: rgba(255, 114, 94, 0.16);
+  color: #ffffff;
 }
 
 .project-empty {

@@ -547,6 +547,10 @@ async function createStudioBrief(request, response, context) {
   const isFood = includesAny(categoryKey, ["restaurant", "restaurante", "bar", "cafe", "cafeteria"]);
   const isAppointment = includesAny(categoryKey, ["clinic", "clinica", "dentist", "dentista", "hairdresser", "peluqueria", "gym", "gimnasio"]);
   const openingHours = cleanTextList(source.openingHours || source.hours, 14, 180);
+  const imageSearchKeywords = brief.imageSearchKeywords.length
+    ? brief.imageSearchKeywords
+    : buildImageSearchKeywords({ categoryKey, category, city, serviceTypes: source.serviceTypes || source.types, localKeywords: source.localKeywords });
+  const photos = normalizePhotoList(source.photos);
   const studioBusiness = {
     name: businessName,
     category,
@@ -565,6 +569,11 @@ async function createStudioBrief(request, response, context) {
       `${brief.suggestedCTA} con respuesta directa del equipo`,
       "Servicios, horario y contacto explicados con claridad"
     ],
+    heroImage: photos[0] || "",
+    gallery: photos,
+    imageSearchKeywords,
+    visualKeywords: imageSearchKeywords,
+    galleryTarget: 6,
     bookingLabel: brief.suggestedCTA,
     bookingUrl: phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : "#contacto",
     showBooking: Boolean(phone) || isFood || isAppointment,
@@ -591,6 +600,17 @@ async function createStudioBrief(request, response, context) {
       rating: Number(source.rating || 0),
       reviewCount: Number(source.reviews || 0),
       appointmentUrl: phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : ""
+    },
+    sourceData: {
+      id: cleanText(source.id, 120),
+      provider: cleanText(source.provider, 40),
+      sourceLabel: cleanText(source.sourceLabel, 80),
+      category,
+      categoryKey: cleanText(source.categoryKey, 80),
+      city,
+      photos,
+      serviceTypes: cleanTextList(source.serviceTypes || source.types, 12, 120),
+      localKeywords: cleanTextList(source.localKeywords, 12, 120)
     },
     radarOpportunity: brief
   };
@@ -642,10 +662,67 @@ function normalizeBrief(source, fallback) {
     reviews: Math.max(0, Math.round(Number(source.reviews || 0))),
     websiteStatus: cleanText(source.websiteStatus, 30) || "unverified",
     opportunityScore: clamp(Math.round(Number(source.opportunityScore || 0)), 0, 100),
+    imageSearchKeywords: normalizeImageSearchKeywords(source.imageSearchKeywords || source.visualKeywords || source.palabras_clave_ingles),
     suggestedPositioning: cleanText(source.suggestedPositioning, 500) || `${fallback.businessName}, una referencia local en ${fallback.city}.`,
     suggestedSections: Array.isArray(source.suggestedSections) ? source.suggestedSections.map((item) => cleanText(item, 80)).filter(Boolean).slice(0, 12) : ["Hero", "Servicios", "Reseñas", "Mapa", "Contacto"],
     suggestedCTA: cleanText(source.suggestedCTA, 100) || "Pedir información"
   };
+}
+
+function buildImageSearchKeywords({ categoryKey = "", category = "", city = "", serviceTypes = [], localKeywords = [] } = {}) {
+  const text = normalize([categoryKey, category, ...cleanTextList(serviceTypes), ...cleanTextList(localKeywords)].filter(Boolean).join(" "));
+  const profiles = [
+    { terms: ["restaurant", "restaurante", "bar", "tapas"], keywords: ["restaurant interior", "dining table", "food service", "spanish restaurant"] },
+    { terms: ["cafe", "cafeteria", "coffee"], keywords: ["coffee shop", "barista", "cafe interior", "breakfast table"] },
+    { terms: ["panaderia", "pasteleria", "bakery"], keywords: ["artisan bakery", "fresh pastry", "bread display", "bakery interior"] },
+    { terms: ["peluqueria", "hairdresser", "hair salon"], keywords: ["hair salon", "professional stylist", "beauty salon", "hair treatment"] },
+    { terms: ["barberia", "barber"], keywords: ["barbershop", "barber chair", "beard trim", "classic barber tools"] },
+    { terms: ["estetica", "beauty", "spa"], keywords: ["beauty treatment room", "spa", "skincare", "relaxing salon"] },
+    { terms: ["dentista", "dental"], keywords: ["dental clinic", "dentist office", "clean medical interior", "dental treatment"] },
+    { terms: ["clinica", "clinic"], keywords: ["medical clinic", "consultation room", "healthcare professional", "clean clinic"] },
+    { terms: ["farmacia", "pharmacy"], keywords: ["pharmacy interior", "health products", "pharmacist counter", "clean shelves"] },
+    { terms: ["gimnasio", "gym", "fitness", "pilates", "yoga"], keywords: ["fitness studio", "gym equipment", "personal trainer", "training class"] },
+    { terms: ["taller", "workshop", "mechanic"], keywords: ["auto repair workshop", "mechanic tools", "garage service", "vehicle maintenance"] },
+    { terms: ["tienda", "store", "retail", "boutique"], keywords: ["local shop interior", "retail display", "boutique", "customer service"] },
+    { terms: ["floristeria", "florist"], keywords: ["flower shop", "floral arrangement", "bouquet", "colorful flowers"] },
+    { terms: ["libreria", "bookstore", "papeleria"], keywords: ["bookstore shelves", "stationery store", "cozy books", "local shop"] },
+    { terms: ["inmobiliaria", "real estate"], keywords: ["real estate office", "property consultation", "modern office", "client meeting"] },
+    { terms: ["hotel", "alojamiento"], keywords: ["hotel lobby", "hospitality", "guest room", "reception desk"] }
+  ];
+  const match = profiles.find((profile) => profile.terms.some((term) => text.includes(term)));
+  return normalizeImageSearchKeywords([
+    ...(match?.keywords || ["local business interior", "professional service", "customer service"]),
+    city ? `${city} spain` : "spain",
+    "authentic local business",
+    "warm professional"
+  ]);
+}
+
+function normalizeImageSearchKeywords(value) {
+  const items = [];
+  visit(value);
+  return [...new Set(items.map((item) => cleanText(item, 100)).filter(Boolean))].slice(0, 14);
+
+  function visit(input) {
+    if (!input) return;
+    if (Array.isArray(input)) {
+      input.forEach(visit);
+      return;
+    }
+    if (typeof input === "object") {
+      visit(input.label || input.name || input.keyword || input.term || input.title);
+      return;
+    }
+    String(input).split(/\r?\n|,/).forEach((item) => items.push(item));
+  }
+}
+
+function normalizePhotoList(value) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => typeof item === "string" ? item : item?.url)
+    .map((item) => cleanText(item, 1000))
+    .filter((item) => /^(https?:|data:image\/)/i.test(item))
+    .slice(0, 12);
 }
 
 function suggestedServices(category) {

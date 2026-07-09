@@ -26,4 +26,22 @@ assert.deepEqual(toApiRecordMeta(record), {
   activeDemo: null
 });
 
+const requests = [];
+globalThis.fetch = async (url, options) => {
+  requests.push({ url, options });
+  return {
+    ok: false,
+    status: 404,
+    json: async () => ({ error: "Business not found" })
+  };
+};
+
+await assert.rejects(
+  () => client.save({ name: "Luma" }, record),
+  /Business not found/
+);
+assert.equal(requests.length, 1);
+assert.equal(requests[0].options.method, "PUT");
+assert.match(String(requests[0].url), /\/api\/businesses\/biz_1$/);
+
 console.log("Studio data client tests passed.");

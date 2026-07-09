@@ -48,6 +48,11 @@ export async function handleBusinessApi(request, response, context) {
       return;
     }
 
+    if (segments.length === 3 && method === "DELETE") {
+      await deleteBusiness(id, request, response, context);
+      return;
+    }
+
     if (segments.length === 4 && action === "archive" && method === "DELETE") {
       await archiveBusiness(id, request, response, context);
       return;
@@ -141,6 +146,22 @@ async function updateBusiness(id, request, response, context) {
   appendAudit(db, "business.updated", business.id, now);
   await saveBusinessDb(db, context, "update");
   sendJson(response, 200, { business }, context);
+}
+
+async function deleteBusiness(id, request, response, context) {
+  rejectClientSession(request);
+  const db = await loadBusinessDb(context);
+  const index = db.businesses.findIndex((business) => matchesBusinessId(business, id));
+
+  if (index === -1) {
+    throw httpError(404, "Business not found");
+  }
+
+  const [business] = db.businesses.splice(index, 1);
+  removeBusinessRelations(db, business.id);
+  appendAudit(db, "business.deleted", business.id, new Date().toISOString());
+  await saveBusinessDb(db, context, "delete");
+  sendJson(response, 200, { business, deleted: true }, context);
 }
 
 async function archiveBusiness(id, request, response, context) {
@@ -306,6 +327,8 @@ function toBusinessSummary(business) {
     status: business.status,
     publishedUrl: business.publishedUrl,
     activeDemo: normalizeActiveDemo(business.settings?.activeDemo, business.publishedUrl),
+    updatedFromStudioAt: cleanText(business.settings?.updatedFromStudioAt || "", 80),
+    contentUpdatedAt: cleanText(business.settings?.updatedFromStudioAt || business.updatedAt || "", 80),
     portalAccess: toPortalAccessSummary(business),
     updatedAt: business.updatedAt,
     createdAt: business.createdAt,
@@ -335,8 +358,19 @@ function normalizeActiveDemo(activeDemo, publishedUrl = "") {
     shareable: source.shareable !== false,
     shareStatus: cleanText(source.shareStatus || "", 80),
     shareMessage: cleanText(source.shareMessage || "", 500),
+    updatedFromStudioAt: cleanText(source.updatedFromStudioAt || source.contentUpdatedAt || source.businessUpdatedAt || "", 80),
     source: cleanText(source.source || "studio", 80)
   };
+}
+
+function removeBusinessRelations(db, businessId) {
+  Object.entries(db).forEach(([key, value]) => {
+    if (key === "businesses" || key === "auditLog" || !Array.isArray(value)) {
+      return;
+    }
+
+    db[key] = value.filter((item) => !isPlainObject(item) || item.businessId !== businessId);
+  });
 }
 
 function appendAudit(db, type, businessId, now) {

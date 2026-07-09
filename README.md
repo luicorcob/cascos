@@ -178,6 +178,7 @@ GET    http://127.0.0.1:5173/api/businesses
 POST   http://127.0.0.1:5173/api/businesses
 GET    http://127.0.0.1:5173/api/businesses/{id-o-slug}
 PUT    http://127.0.0.1:5173/api/businesses/{id-o-slug}
+DELETE http://127.0.0.1:5173/api/businesses/{id-o-slug}
 DELETE http://127.0.0.1:5173/api/businesses/{id-o-slug}/archive
 ```
 
