@@ -97,6 +97,8 @@ const introGate = document.querySelector("#introGate");
 const introStartButton = document.querySelector("#introStartButton");
 const introHub = document.querySelector("#introHub");
 const introHubBackButton = document.querySelector("#introHubBackButton");
+const introHelpButton = document.querySelector("#introHelpButton");
+const introHelpModal = document.querySelector("#introHelpModal");
 const introModeButtons = Array.from(document.querySelectorAll("[data-intro-mode]"));
 const introModePanels = Array.from(document.querySelectorAll("[data-intro-mode-panel]"));
 const clientLoginForm = document.querySelector("[data-client-login-form]");
@@ -2283,38 +2285,97 @@ function bindIntroGate() {
   const forceIntro = ["1", "true", "yes"].includes(String(params.get("intro") || "").toLowerCase());
   const presentationLaunch = ["1", "true", "yes"].includes(String(params.get("presentation") || "").toLowerCase());
   const automatedLaunch = navigator.webdriver === true;
-  const introCompleted = getIntroCompleted();
+  const logoIntroContent = introGate.querySelector(".intro-gate-content");
+  const studioDestination = introHub?.querySelector('[data-intro-destination="studio"]');
+  let introHelpPreviousFocus = null;
 
-  if (!forceIntro && (skipIntro || presentationLaunch || automatedLaunch || introCompleted)) {
-    introGate.hidden = true;
+  const markIntroCompleted = () => {
+    setIntroCompleted(true);
     document.body.classList.add("is-intro-complete");
-    if (skipIntro || presentationLaunch || automatedLaunch) {
-      setIntroCompleted(true);
+  };
+
+  const setIntroHistoryState = (view, mode = "replace") => {
+    const state = { ...(history.state || {}), dlsView: view };
+    const method = mode === "push" ? "pushState" : "replaceState";
+
+    try {
+      history[method](state, "", view === "studio" ? "#studioWorkspace" : window.location.href);
+    } catch (error) {
+      // Navigation still works if history state cannot be updated.
     }
-    return;
-  }
+  };
 
-  document.body.classList.add("is-intro-active");
+  const focusHub = () => {
+    (introHub?.querySelector(".intro-destination-card") || introHub?.querySelector("button"))?.focus({ preventScroll: true });
+  };
 
-  const showDestinationHub = () => {
+  const openIntroHelp = () => {
+    if (!introHelpModal) {
+      return;
+    }
+
+    introHelpPreviousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : introHelpButton;
+    introHelpModal.hidden = false;
+    introHelpButton?.setAttribute("aria-expanded", "true");
+    introHelpModal.querySelector(".intro-help-dialog")?.focus({ preventScroll: true });
+  };
+
+  const closeIntroHelp = ({ restoreFocus = true } = {}) => {
+    if (!introHelpModal || introHelpModal.hidden) {
+      return;
+    }
+
+    introHelpModal.hidden = true;
+    introHelpButton?.setAttribute("aria-expanded", "false");
+    if (restoreFocus) {
+      introHelpPreviousFocus?.focus?.({ preventScroll: true });
+    }
+    introHelpPreviousFocus = null;
+  };
+
+  const showDestinationHub = ({ focus = true, markComplete = true } = {}) => {
     if (!introHub) {
       enterStudio();
       return;
     }
 
+    if (markComplete) {
+      markIntroCompleted();
+    } else if (getIntroCompleted()) {
+      document.body.classList.add("is-intro-complete");
+    }
+
+    introGate.hidden = false;
+    introGate.classList.remove("is-closing");
     introHub.hidden = false;
     introGate.classList.add("is-choosing");
-    introGate.querySelector(".intro-gate-content")?.setAttribute("aria-hidden", "true");
-    (introHub.querySelector(".intro-destination-card") || introHub.querySelector("button"))?.focus({ preventScroll: true });
+    logoIntroContent?.setAttribute("aria-hidden", "true");
+    if (introHubBackButton) {
+      introHubBackButton.hidden = true;
+    }
+    document.body.classList.add("is-intro-active");
+
+    if (window.location.hash !== "#studioWorkspace") {
+      setIntroHistoryState("hub");
+    }
+
+    if (focus) {
+      focusHub();
+    }
   };
 
   const showLogoIntro = () => {
-    if (!introHub) {
+    if (!introHub || getIntroCompleted()) {
       return;
     }
 
     introGate.classList.remove("is-choosing");
-    introGate.querySelector(".intro-gate-content")?.removeAttribute("aria-hidden");
+    logoIntroContent?.removeAttribute("aria-hidden");
+    if (introHubBackButton) {
+      introHubBackButton.hidden = false;
+    }
     window.setTimeout(() => {
       if (!introGate.classList.contains("is-choosing")) {
         introHub.hidden = true;
@@ -2323,11 +2384,37 @@ function bindIntroGate() {
     }, 260);
   };
 
-  const enterStudio = () => {
+  const openStudioWithoutGate = ({ focus = false, markComplete = true } = {}) => {
+    if (markComplete) {
+      markIntroCompleted();
+    }
+
+    closeIntroHelp({ restoreFocus: false });
+    introGate.hidden = true;
+    introGate.classList.remove("is-closing");
+    document.body.classList.remove("is-intro-active");
+    document.body.classList.add("is-intro-complete");
+
+    if (focus) {
+      document.querySelector("#studioWorkspace")?.focus({ preventScroll: true });
+    }
+  };
+
+  const enterStudio = ({ focus = true, updateHistory = false } = {}) => {
+    if (updateHistory && window.location.hash !== "#studioWorkspace") {
+      setIntroHistoryState("studio", "push");
+    }
+
     if (introGate.hidden || introGate.classList.contains("is-closing")) {
+      markIntroCompleted();
+      closeIntroHelp({ restoreFocus: false });
+      if (focus) {
+        document.querySelector("#studioWorkspace")?.focus({ preventScroll: true });
+      }
       return;
     }
 
+    closeIntroHelp({ restoreFocus: false });
     introGate.classList.add("is-closing");
     document.body.classList.remove("is-intro-active");
     document.body.classList.add("is-intro-complete");
@@ -2337,6 +2424,7 @@ function bindIntroGate() {
     const finish = () => {
       window.clearTimeout(fallbackTimer);
       introGate.hidden = true;
+      introGate.classList.remove("is-closing");
       document.querySelector("#studioWorkspace")?.focus({ preventScroll: true });
     };
 
@@ -2429,20 +2517,33 @@ function bindIntroGate() {
     }
   };
 
+  introHelpButton?.setAttribute("aria-expanded", "false");
+  introHelpButton?.addEventListener("click", openIntroHelp);
+  introHelpModal?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-intro-help-close]")) {
+      closeIntroHelp();
+    }
+  });
   introStartButton?.addEventListener("click", showDestinationHub);
   introHubBackButton?.addEventListener("click", showLogoIntro);
   introModeButtons.forEach((button) => {
     button.addEventListener("click", () => setIntroMode(button.dataset.introMode || "developer"));
   });
   clientLoginForm?.addEventListener("submit", handleClientLogin);
-  introHub?.querySelector('[data-intro-destination="studio"]')?.addEventListener("click", (event) => {
+  studioDestination?.addEventListener("click", (event) => {
     event.preventDefault();
-    enterStudio();
+    enterStudio({ updateHistory: true });
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && introHelpModal && !introHelpModal.hidden) {
+      event.preventDefault();
+      closeIntroHelp();
+      return;
+    }
+
     if (event.key === "Escape" && document.body.classList.contains("is-intro-active")) {
-      if (introGate.classList.contains("is-choosing")) {
+      if (introGate.classList.contains("is-choosing") && !getIntroCompleted()) {
         showLogoIntro();
         return;
       }
@@ -2450,6 +2551,44 @@ function bindIntroGate() {
       showDestinationHub();
     }
   });
+
+  const syncIntroWithLocation = () => {
+    if (window.location.hash === "#studioWorkspace") {
+      enterStudio({ focus: false });
+      return;
+    }
+
+    if (getIntroCompleted()) {
+      showDestinationHub({ focus: false, markComplete: false });
+    }
+  };
+
+  window.addEventListener("popstate", syncIntroWithLocation);
+  window.addEventListener("hashchange", syncIntroWithLocation);
+
+  if (!forceIntro && (skipIntro || presentationLaunch || automatedLaunch || window.location.hash === "#studioWorkspace")) {
+    openStudioWithoutGate({ markComplete: true });
+    setIntroHistoryState("studio");
+    return;
+  }
+
+  if (!forceIntro && getIntroCompleted()) {
+    showDestinationHub({ focus: false, markComplete: false });
+    setIntroHistoryState("hub");
+    return;
+  }
+
+  introGate.hidden = false;
+  if (introHub) {
+    introHub.hidden = true;
+  }
+  if (introHubBackButton) {
+    introHubBackButton.hidden = false;
+  }
+  logoIntroContent?.removeAttribute("aria-hidden");
+  introGate.classList.remove("is-choosing", "is-closing");
+  document.body.classList.add("is-intro-active");
+  setIntroHistoryState("intro");
 }
 
 function getIntroCompleted() {

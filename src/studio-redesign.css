@@ -1193,6 +1193,192 @@ textarea:focus-visible {
   animation: introSignalSweep 4.8s cubic-bezier(0.2, 0.75, 0.16, 1) infinite;
 }
 
+.intro-help-button {
+  position: absolute;
+  top: clamp(18px, 3vw, 34px);
+  right: clamp(18px, 3vw, 34px);
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(24, 217, 255, 0.18), rgba(255, 47, 207, 0.12)),
+    rgba(4, 6, 12, 0.86);
+  color: #ffffff;
+  box-shadow:
+    0 0 18px rgba(24, 217, 255, 0.24),
+    inset 0 0 18px rgba(255, 255, 255, 0.06);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.intro-help-button span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.intro-help-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(24, 217, 255, 0.58);
+  background:
+    linear-gradient(135deg, rgba(24, 217, 255, 0.26), rgba(255, 47, 207, 0.16)),
+    rgba(4, 6, 12, 0.94);
+}
+
+.intro-help-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 42px);
+}
+
+.intro-help-modal[hidden] {
+  display: none;
+}
+
+.intro-help-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 2, 7, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.intro-help-dialog {
+  position: relative;
+  display: grid;
+  width: min(820px, 100%);
+  max-height: min(760px, calc(100dvh - 32px));
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(24, 217, 255, 0.1), transparent 36%),
+    linear-gradient(315deg, rgba(255, 47, 207, 0.12), transparent 40%),
+    rgba(5, 6, 14, 0.97);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.54),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.intro-help-dialog header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 22px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.intro-help-dialog header span {
+  display: block;
+  margin-bottom: 7px;
+  color: #8eeaff;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.intro-help-dialog h2,
+.intro-help-dialog h3,
+.intro-help-dialog p {
+  margin: 0;
+}
+
+.intro-help-dialog h2 {
+  color: #ffffff;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  line-height: 1.02;
+}
+
+.intro-help-close {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(248, 251, 255, 0.82);
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  transition: transform 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.intro-help-close:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.42);
+  color: #ffffff;
+}
+
+.intro-help-body {
+  display: grid;
+  gap: 18px;
+  overflow-y: auto;
+  padding: 18px 22px 22px;
+  color: rgba(248, 251, 255, 0.74);
+  font-size: 0.94rem;
+  line-height: 1.58;
+}
+
+.intro-help-command-group,
+.intro-help-command-grid > div {
+  display: grid;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.intro-help-command-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.intro-help-dialog h3 {
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 950;
+}
+
+.intro-help-dialog strong {
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.intro-help-dialog pre {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: auto;
+  padding: 12px;
+  border: 1px solid rgba(142, 234, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(2, 2, 7, 0.72);
+  color: #dffaff;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  white-space: pre;
+}
+
+.intro-help-dialog code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
 .intro-gate-content {
   grid-area: 1 / 1;
   display: grid;
@@ -4928,6 +5114,39 @@ body.is-presentation .device-frame[data-size="tablet"] {
     min-width: 138px;
     min-height: 50px;
     margin-top: -4px;
+  }
+
+  .intro-help-button {
+    top: 14px;
+    right: 14px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .intro-help-modal {
+    padding: 12px;
+  }
+
+  .intro-help-dialog {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .intro-help-dialog header {
+    padding: 18px 16px 13px;
+  }
+
+  .intro-help-body {
+    gap: 16px;
+    padding: 16px;
+    font-size: 0.88rem;
+  }
+
+  .intro-help-command-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .intro-help-dialog pre {
+    font-size: 0.78rem;
   }
 
   .intro-hub {

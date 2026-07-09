@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#050509">
     <link rel="icon" type="image/png" href="Logo.png">
     <link rel="stylesheet" href="src/styles.css?v=20260629-4">
-    <link rel="stylesheet" href="src/studio-redesign.css?v=20260629-3">
+    <link rel="stylesheet" href="src/studio-redesign.css?v=20260709-1">
     <link rel="stylesheet" href="assets/vendor/atropos.min.css">
     <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
     <link rel="stylesheet" href="src/generated-responsive.css?v=20260629-4">
@@ -22,6 +22,17 @@
 
     <section class="intro-gate" id="introGate" aria-label="Entrada DLS Studio">
       <div class="intro-gate-lines" aria-hidden="true"></div>
+      <button
+        class="intro-help-button"
+        id="introHelpButton"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="introHelpModal"
+        aria-label="Ver comandos para ejecutar DLS en local"
+        title="Comandos para local"
+      >
+        <span aria-hidden="true">i</span>
+      </button>
       <div class="intro-gate-content">
         <div class="intro-logo-stage">
           <svg class="intro-logo-svg" viewBox="0 0 1180 900" role="img" aria-label="DLS Digital Local Sites">
@@ -261,6 +272,53 @@
             <button type="submit">Entrar al portal</button>
             <p class="intro-login-notice" data-client-login-notice aria-live="polite"></p>
           </form>
+        </section>
+      </div>
+
+      <div class="intro-help-modal" id="introHelpModal" role="dialog" aria-modal="true" aria-labelledby="introHelpTitle" hidden>
+        <div class="intro-help-backdrop" data-intro-help-close></div>
+        <section class="intro-help-dialog" tabindex="-1">
+          <header>
+            <div>
+              <span>Ayuda local</span>
+              <h2 id="introHelpTitle">Comandos para arrancar DLS</h2>
+            </div>
+            <button class="intro-help-close" type="button" data-intro-help-close aria-label="Cerrar">x</button>
+          </header>
+
+          <div class="intro-help-body">
+            <p>Si estas en Render o en la web desplegada, no tienes que escribir nada: Render instala dependencias y ejecuta el servidor automaticamente.</p>
+
+            <div class="intro-help-command-group">
+              <h3>Local imprescindible</h3>
+              <p>Desde la carpeta del proyecto, esto levanta Studio, Radar, Proyectos, Portal, reportes y la API local.</p>
+              <pre><code>npm install
+npm.cmd start</code></pre>
+              <p>Despues abre <strong>http://127.0.0.1:5173/</strong>. Evita abrir solo el HTML si vas a usar Radar, Proyectos, Portal o guardado en API.</p>
+            </div>
+
+            <div class="intro-help-command-group">
+              <h3>Opcional local</h3>
+              <p>Solo hace falta si quieres editar variables propias antes de arrancar.</p>
+              <pre><code>Copy-Item .env.example .env
+npm.cmd start</code></pre>
+            </div>
+
+            <div class="intro-help-command-grid">
+              <div>
+                <h3>Radar con Google Places</h3>
+                <pre><code>$env:DLS_DISCOVERY_PROVIDER="places"
+$env:GOOGLE_PLACES_API_KEY="tu_clave"
+npm.cmd start</code></pre>
+              </div>
+              <div>
+                <h3>Demos publicas desde local</h3>
+                <pre><code>npx wrangler login
+npm.cmd run setup:demo-online
+npm.cmd start</code></pre>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </section>
@@ -1367,6 +1425,6 @@
     <script src="src/studio/quality-control.js?v=20260622-1"></script>
     <script src="src/studio/renderer.js?v=20260622-2"></script>
     <script src="src/studio/exporter.js?v=20260622-1"></script>
-    <script src="src/app.js?v=20260708-2"></script>
+    <script src="src/app.js?v=20260709-1"></script>
   </body>
 </html>
