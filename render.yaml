@@ -24,7 +24,7 @@ services:
       - key: PGSSLMODE
         value: require
       - key: BUSINESS_DB_BOOTSTRAP_FROM_JSON
-        value: "false"
+        value: "true"
       - key: BUSINESS_DB_FILE
         value: /data/business-db.json
       - key: BUSINESS_DB_BACKUP_DIR

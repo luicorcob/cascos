@@ -481,10 +481,21 @@ a {
 .project-empty {
   grid-column: 1 / -1;
   display: grid;
+  gap: 8px;
   place-items: center;
   min-height: 180px;
   padding: 24px;
   color: var(--muted);
+  text-align: center;
+}
+
+.project-empty strong {
+  color: var(--text);
+}
+
+.project-empty small {
+  max-width: 620px;
+  line-height: 1.45;
 }
 
 @media (max-width: 1050px) {

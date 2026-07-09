@@ -16,7 +16,9 @@ const state = {
   status: "",
   apiBase: window.LocalLiftApi?.getBase?.() || "",
   adminToken: window.LocalLiftApi?.getAdminToken?.() || "",
-  loading: false
+  loading: false,
+  loadError: "",
+  loadHint: ""
 };
 
 document.addEventListener("DOMContentLoaded", init);
@@ -108,6 +110,8 @@ function bindControls() {
 
 async function loadProjects() {
   state.loading = true;
+  state.loadError = "";
+  state.loadHint = "";
   setLoading(true);
   showNotice("Cargando proyectos...", "info");
 
@@ -117,9 +121,12 @@ async function loadProjects() {
     renderProjects();
     showNotice("", "info");
   } catch (error) {
+    const message = getLoadErrorMessage(error);
     state.businesses = [];
+    state.loadError = message.title;
+    state.loadHint = message.hint;
     renderProjects();
-    showNotice(error.status === 401 ? "La API pide token admin." : "No se pudo cargar proyectos.", "error");
+    showNotice(message.notice, "error");
   } finally {
     state.loading = false;
     setLoading(false);
@@ -145,13 +152,56 @@ function renderProjects() {
     return;
   }
 
+  if (state.loadError) {
+    refs.grid.innerHTML = renderEmptyState(state.loadError, state.loadHint);
+    return;
+  }
+
   if (!projects.length) {
-    refs.grid.innerHTML = `<article class="project-empty"><strong>No hay proyectos para este filtro.</strong></article>`;
+    refs.grid.innerHTML = state.businesses.length
+      ? renderEmptyState("No hay proyectos para este filtro.")
+      : renderEmptyState(
+        "No hay proyectos todavia.",
+        "En Render con PostgreSQL nuevo, el bootstrap inicial debe cargar el JSON o puedes crear el primer negocio desde el Studio."
+      );
     return;
   }
 
   refs.grid.innerHTML = projects.map(renderProjectCard).join("");
   bindProjectForms();
+}
+
+function renderEmptyState(title, hint = "") {
+  return `
+    <article class="project-empty">
+      <strong>${escapeHtml(title)}</strong>
+      ${hint ? `<small>${escapeHtml(hint)}</small>` : ""}
+    </article>
+  `;
+}
+
+function getLoadErrorMessage(error) {
+  if (error.status === 401) {
+    return {
+      title: "Token admin requerido.",
+      hint: "Copia LOCALLIFT_ADMIN_TOKEN desde Render > Environment y pegalo en el campo Token de esta pagina.",
+      notice: "La API pide token admin."
+    };
+  }
+
+  if (error.status === 403) {
+    return {
+      title: "Ese acceso no puede ver la lista de proyectos.",
+      hint: "Usa el token admin del backend, no una sesion de cliente.",
+      notice: "Acceso rechazado para proyectos."
+    };
+  }
+
+  return {
+    title: "No se pudieron cargar los proyectos.",
+    hint: "Comprueba /api/health en Render y que la API base apunte al servicio correcto.",
+    notice: "No se pudo cargar proyectos."
+  };
 }
 
 function getFilteredProjects() {
