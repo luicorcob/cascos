@@ -49,6 +49,6 @@
   "dependencies": {
     "atropos": "2.0.2",
     "pg": "^8.22.0",
-    "stripe": "^22.1.1"
+    "stripe": "^22.3.0"
   }
 }
