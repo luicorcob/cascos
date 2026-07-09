@@ -5,6 +5,11 @@ const state = {
   business: null,
   contacts: [],
   pipeline: null,
+  nextActions: {
+    today: [],
+    overdue: [],
+    missing: []
+  },
   services: [],
   bookings: [],
   availability: [],
@@ -24,6 +29,7 @@ const state = {
 
 const LEAD_STATUSES = ["new", "contacted", "waiting", "reserved", "won", "lost", "customer"];
 const LEAD_PRIORITIES = ["alta", "media", "baja"];
+const NEXT_ACTION_TYPES = ["llamada", "whatsapp", "email", "reunion", "enviar_propuesta", "revisar_reserva"];
 const BOOKING_STATUSES = ["pending", "confirmed", "completed", "canceled", "no-show"];
 const WEEKDAYS = [
   { value: 1, label: "Lunes" },
@@ -178,6 +184,7 @@ async function loadBusinesses(options = {}) {
       state.business = null;
       state.contacts = [];
       state.pipeline = null;
+      state.nextActions = emptyNextActions();
       state.services = [];
       state.bookings = [];
       state.availability = [];
@@ -236,6 +243,7 @@ async function loadBusiness(id, options = {}) {
     state.business = fallback || null;
     state.contacts = [];
     state.pipeline = null;
+    state.nextActions = emptyNextActions();
     state.services = [];
     state.bookings = [];
     state.availability = [];
@@ -285,6 +293,7 @@ async function loadBookings(id) {
 async function loadContacts(id) {
   state.contacts = [];
   state.pipeline = null;
+  state.nextActions = emptyNextActions();
   state.crmError = "";
 
   if (!id) {
@@ -295,9 +304,30 @@ async function loadContacts(id) {
     const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/pipeline?includeActivities=true`);
     state.pipeline = normalizePipelinePayload(payload);
     state.contacts = flattenPipelineContacts(state.pipeline);
+    await loadNextActions(id);
   } catch (error) {
     state.crmError = "El CRM no respondio. El dashboard seguira con datos del negocio, pero sin contactos reales.";
   }
+}
+
+async function loadNextActions(id) {
+  state.nextActions = emptyNextActions();
+
+  if (!id) {
+    return;
+  }
+
+  const [todayPayload, overduePayload, missingPayload] = await Promise.all([
+    getJson(`/api/businesses/${encodeURIComponent(id)}/next-actions?filter=hoy`),
+    getJson(`/api/businesses/${encodeURIComponent(id)}/next-actions?filter=vencidas`),
+    getJson(`/api/businesses/${encodeURIComponent(id)}/next-actions?filter=sin-accion`)
+  ]);
+
+  state.nextActions = {
+    today: Array.isArray(todayPayload.actions) ? todayPayload.actions : [],
+    overdue: Array.isArray(overduePayload.actions) ? overduePayload.actions : [],
+    missing: Array.isArray(missingPayload.actions) ? missingPayload.actions : []
+  };
 }
 
 async function loadReport(id) {
@@ -479,6 +509,7 @@ function render() {
   const model = createDashboardModel(business, {
     contacts: state.contacts,
     pipeline: state.pipeline,
+    nextActions: state.nextActions,
     services: state.services,
     bookings: state.bookings,
     availability: state.availability,
@@ -491,6 +522,7 @@ function render() {
   renderMetrics(model);
   renderActionStrip(business, model);
   renderHome(model);
+  renderNextActions(model);
   renderLeads(model);
   renderCustomers(model);
   renderBookings(model);
@@ -593,6 +625,14 @@ function renderActionStrip(business, model) {
 function renderHome(model) {
   const tasks = [];
 
+  if (model.nextActions.overdue.length) {
+    tasks.push(taskItem("Resolver acciones vencidas", `${model.nextActions.overdue.length} seguimiento(s) fuera de fecha.`, "warn"));
+  }
+
+  if (model.nextActions.today.length) {
+    tasks.push(taskItem("Completar seguimientos de hoy", `${model.nextActions.today.length} accion(es) programadas.`, "leads"));
+  }
+
   if (model.newLeads.length) {
     tasks.push(taskItem("Responder leads nuevos", `${model.newLeads.length} contacto(s) esperan gestion.`, "leads"));
   }
@@ -611,6 +651,62 @@ function renderHome(model) {
 
   refs.todayList.innerHTML = tasks.join("");
   refs.healthList.innerHTML = model.healthItems.map((item) => checklistItem(item)).join("");
+}
+
+function renderNextActions(model) {
+  const container = document.querySelector('[data-list="next-actions"]');
+
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="next-actions-grid">
+      ${renderNextActionList("Hoy", "Acciones con fecha de hoy.", model.nextActions.today, "today")}
+      ${renderNextActionList("Vencidas", "Seguimientos pendientes con fecha pasada.", model.nextActions.overdue, "overdue")}
+      ${renderNextActionList("Sin proxima accion", "Leads abiertos que necesitan siguiente paso.", model.nextActions.missing, "missing")}
+    </div>
+  `;
+}
+
+function renderNextActionList(title, subtitle, items, type) {
+  return `
+    <section class="next-action-panel ${escapeAttr(type)}">
+      <header>
+        <span>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(subtitle)}</small>
+        </span>
+        <span>${escapeHtml(String(items.length))}</span>
+      </header>
+      <div class="next-action-list">
+        ${items.length
+          ? items.map((item) => renderNextActionItem(item, type)).join("")
+          : `<p class="pipeline-empty">${escapeHtml(type === "missing" ? "Todos los leads abiertos tienen seguimiento." : "Sin acciones en esta lista.")}</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderNextActionItem(item, type) {
+  const contact = item.contact || {};
+  const nextAction = item.nextAction || null;
+  const contactDetail = [contact.phone, contact.email].filter(Boolean).join(" / ") || "Sin contacto";
+
+  return `
+    <article class="next-action-item">
+      <header>
+        <strong>${escapeHtml(contactName(contact))}</strong>
+        ${priorityPill(contact.priority)}
+      </header>
+      <p>${escapeHtml(contactDetail)}</p>
+      ${nextAction ? `<p>${escapeHtml(`${nextActionTypeLabel(nextAction.type)} - ${formatDate(nextAction.dueDate)}`)}</p>` : '<p>Crear seguimiento desde la tarjeta del lead.</p>'}
+      <div class="next-action-item-footer">
+        <span class="pill ${escapeAttr(contact.status || "new")}">${escapeHtml(statusLabel(contact.status || "new"))}</span>
+        ${type !== "missing" ? `<button type="button" data-next-action-done data-contact-id="${escapeAttr(contact.id)}">Hecha</button>` : ""}
+      </div>
+    </article>
+  `;
 }
 
 function renderLeads(model) {
@@ -1009,6 +1105,7 @@ function createDashboardModel(business, crm = {}) {
   const availability = arrayFrom(crm.availability, content.availability, business.availability);
   const blocks = arrayFrom(crm.blocks, content.bookingBlocks, business.bookingBlocks);
   const reminderQueue = arrayFrom(crm.reminderQueue, content.reminderQueue, business.reminderQueue);
+  const nextActions = normalizeNextActionsModel(crm.nextActions);
   const report = crm.report || null;
   const orders = arrayFrom(content.orders, commerce.orders, business.orders);
   const products = arrayFrom(content.products, commerce.products, business.products);
@@ -1055,6 +1152,7 @@ function createDashboardModel(business, crm = {}) {
     availability,
     blocks,
     reminderQueue,
+    nextActions,
     report,
     orders,
     products,
@@ -1149,6 +1247,71 @@ function bindCrmControls(model) {
         if (button) {
           button.disabled = false;
         }
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-next-action-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const contactId = form.dataset.contactId || "";
+      const data = new FormData(form);
+      const payload = {
+        type: clean(data.get("type")),
+        dueDate: dateInputToIso(data.get("dueDate")),
+        note: clean(data.get("note"))
+      };
+
+      if (!contactId || !payload.type || !payload.dueDate || !state.business) {
+        return;
+      }
+
+      const button = form.querySelector("button[type='submit']");
+      if (button) {
+        button.disabled = true;
+      }
+
+      try {
+        const result = await postJson(
+          `/api/businesses/${encodeURIComponent(state.business.id || state.business.slug)}/contacts/${encodeURIComponent(contactId)}/next-action`,
+          payload
+        );
+        mergeContactResult(contactId, result.contact, result.activity);
+        await loadNextActions(state.business.id || state.business.slug);
+        showNotice("Proxima accion guardada.", "info");
+        render();
+      } catch (error) {
+        showNotice("No se pudo guardar la proxima accion.", "error");
+        if (button) {
+          button.disabled = false;
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-next-action-done]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const contactId = button.dataset.contactId || "";
+
+      if (!contactId || !state.business) {
+        return;
+      }
+
+      button.disabled = true;
+
+      try {
+        const result = await patchJson(
+          `/api/businesses/${encodeURIComponent(state.business.id || state.business.slug)}/contacts/${encodeURIComponent(contactId)}/next-action`,
+          { status: "hecha" }
+        );
+        mergeContactResult(contactId, result.contact, result.activity);
+        await loadNextActions(state.business.id || state.business.slug);
+        showNotice("Proxima accion marcada como hecha.", "info");
+        render();
+      } catch (error) {
+        showNotice("No se pudo completar la proxima accion.", "error");
+        button.disabled = false;
       }
     });
   });
@@ -1902,6 +2065,7 @@ function renderLeadCard(lead) {
       <p>${escapeHtml(contact)}</p>
       ${renderNextActionChip(lead.nextAction)}
       ${notes ? `<p>${escapeHtml(notes)}</p>` : ""}
+      ${renderNextActionForm(lead)}
       <label class="status-field">
         Estado
         <select data-contact-status data-contact-id="${escapeAttr(lead.id)}">
@@ -1918,6 +2082,33 @@ function renderLeadCard(lead) {
         <button type="submit">Guardar</button>
       </form>
     </article>
+  `;
+}
+
+function renderNextActionForm(lead) {
+  const nextAction = lead.nextAction || null;
+  const type = nextAction?.type || "llamada";
+  const dueDate = dateInputValue(nextAction?.dueDate) || dateInputValue(new Date());
+  const note = nextAction?.note || "";
+
+  return `
+    <div class="next-action-controls">
+      <form class="next-action-form" data-next-action-form data-contact-id="${escapeAttr(lead.id)}">
+        <label>
+          Accion
+          <select name="type">
+            ${NEXT_ACTION_TYPES.map((item) => `<option value="${escapeAttr(item)}"${item === type ? " selected" : ""}>${escapeHtml(nextActionTypeLabel(item))}</option>`).join("")}
+          </select>
+        </label>
+        <label>
+          Fecha
+          <input name="dueDate" type="date" value="${escapeAttr(dueDate)}" required>
+        </label>
+        <input name="note" type="text" value="${escapeAttr(note)}" placeholder="Nota breve">
+        <button type="submit">Guardar</button>
+      </form>
+      ${nextAction ? `<button class="next-action-done" type="button" data-next-action-done data-contact-id="${escapeAttr(lead.id)}">Marcar hecha</button>` : ""}
+    </div>
   `;
 }
 
@@ -2245,6 +2436,10 @@ function nextActionStatus(nextAction) {
     return "done";
   }
 
+  if (status === "vencida") {
+    return "overdue";
+  }
+
   const due = parseDate(nextAction.dueDate);
   if (due && due < startOfToday()) {
     return "overdue";
@@ -2285,6 +2480,24 @@ function showNotice(message, type) {
 function arrayFrom(...values) {
   const arrays = values.filter((value) => Array.isArray(value));
   return arrays.find((value) => value.length) || arrays[0] || [];
+}
+
+function emptyNextActions() {
+  return {
+    today: [],
+    overdue: [],
+    missing: []
+  };
+}
+
+function normalizeNextActionsModel(value) {
+  const source = value && typeof value === "object" ? value : {};
+
+  return {
+    today: Array.isArray(source.today) ? source.today : [],
+    overdue: Array.isArray(source.overdue) ? source.overdue : [],
+    missing: Array.isArray(source.missing) ? source.missing : []
+  };
 }
 
 function normalizePipelinePayload(payload) {
@@ -2410,6 +2623,28 @@ function contactName(contact) {
   return clean(contact.name || contact.fullName || contact.customerName || contact.email || contact.phone || "Contacto sin nombre");
 }
 
+function dateInputValue(value) {
+  const parsed = value instanceof Date ? value : parseDate(value);
+
+  if (!parsed) {
+    return "";
+  }
+
+  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+}
+
+function dateInputToIso(value) {
+  const text = clean(value);
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!match) {
+    return "";
+  }
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0).toISOString();
+}
+
 function sameDay(value, date) {
   const parsed = parseDate(value);
   return Boolean(parsed)
@@ -2496,6 +2731,13 @@ function statusLabel(value) {
     won: "Ganado",
     lost: "Perdido",
     customer: "Cliente",
+    pendiente: "Pendiente",
+    hecha: "Hecha",
+    vencida: "Vencida",
+    llamada: "Llamada",
+    reunion: "Reunion",
+    enviar_propuesta: "Enviar propuesta",
+    revisar_reserva: "Revisar reserva",
     pending: "Pendiente",
     manual: "Manual",
     whatsapp: "WhatsApp",

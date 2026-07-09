@@ -131,6 +131,49 @@ async function main() {
   const waitingLead = movedPipeline.pipeline?.waiting?.contacts?.find((item) => item.id === lead.contact.id);
   assert(waitingLead?.order === 7.5, "Pipeline order must persist after reload");
 
+  const missingBeforeAction = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=sin-accion`);
+  assert(missingBeforeAction.actions?.some((item) => item.contact?.id === lead.contact.id), "Lead without nextAction must appear in missing next actions");
+
+  const nextAction = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/next-action`, {
+    method: "POST",
+    body: {
+      type: "llamada",
+      dueDate: dateAtLocalNoon(new Date()).toISOString(),
+      note: "Llamar hoy"
+    },
+    expectedStatus: 201
+  });
+  assert(nextAction.contact?.nextAction?.type === "llamada", "Next action must be stored on the contact");
+
+  const todayActions = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=hoy`);
+  assert(todayActions.actions?.some((item) => item.contact?.id === lead.contact.id), "Next action due today must appear in today's list");
+
+  const completedNextAction = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/next-action`, {
+    method: "PATCH",
+    body: { status: "hecha" }
+  });
+  assert(completedNextAction.contact?.nextAction === null, "Completed next action must clear the active nextAction");
+  assert(completedNextAction.activity?.type === "next_action.completed", "Completed next action must be archived as an activity");
+
+  const todayAfterDone = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=hoy`);
+  const overdueAfterDone = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=vencidas`);
+  const missingAfterDone = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=sin-accion`);
+  assert(!todayAfterDone.actions?.some((item) => item.contact?.id === lead.contact.id), "Completed next action must leave today's list");
+  assert(!overdueAfterDone.actions?.some((item) => item.contact?.id === lead.contact.id), "Completed next action must leave overdue list");
+  assert(!missingAfterDone.actions?.some((item) => item.contact?.id === lead.contact.id), "Completed next action must not reappear in missing list the same day");
+
+  await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/next-action`, {
+    method: "POST",
+    body: {
+      type: "email",
+      dueDate: dateAtLocalNoon(addDays(new Date(), -1)).toISOString(),
+      note: "Email vencido"
+    },
+    expectedStatus: 201
+  });
+  const overdueActions = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=vencidas`);
+  assert(overdueActions.actions?.some((item) => item.contact?.id === lead.contact.id && item.nextAction?.status === "vencida"), "Past pending next action must appear as overdue");
+
   const updatedBooking = await adminRequest(baseUrl, `/api/businesses/${businessId}/bookings/${booking.booking.id}`, {
     method: "PATCH",
     body: { status: "confirmed" }
@@ -274,6 +317,18 @@ function nextAvailableStart(rule, durationMinutes) {
 
 function formatMonth(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function addDays(date, days) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function dateAtLocalNoon(date) {
+  const copy = new Date(date);
+  copy.setHours(12, 0, 0, 0);
+  return copy;
 }
 
 function getFreePort() {

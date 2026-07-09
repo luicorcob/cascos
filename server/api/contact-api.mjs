@@ -6,6 +6,8 @@ const CONTACT_TYPES = new Set(["lead", "customer"]);
 const CONTACT_STATUSES = new Set(["new", "contacted", "waiting", "reserved", "won", "lost", "customer"]);
 const CONTACT_PIPELINE_STATUSES = ["new", "contacted", "waiting", "reserved", "won", "lost", "customer"];
 const CONTACT_PRIORITIES = new Set(["alta", "media", "baja"]);
+const NEXT_ACTION_TYPES = new Set(["llamada", "whatsapp", "email", "reunion", "enviar_propuesta", "revisar_reserva"]);
+const NEXT_ACTION_STATUSES = new Set(["pendiente", "hecha", "vencida"]);
 const DEFAULT_DB = {
   version: 1,
   updatedAt: null,
@@ -17,7 +19,8 @@ const DEFAULT_DB = {
 
 export function isContactApiRequest(pathname) {
   return /^\/api\/public\/[^/]+\/leads$/.test(pathname)
-    || /^\/api\/businesses\/[^/]+\/contacts(?:\/pipeline|\/[^/]+(?:\/activities|\/pipeline)?)?$/.test(pathname);
+    || /^\/api\/businesses\/[^/]+\/next-actions$/.test(pathname)
+    || /^\/api\/businesses\/[^/]+\/contacts(?:\/pipeline|\/[^/]+(?:\/activities|\/pipeline|\/next-action)?)?$/.test(pathname);
 }
 
 export async function handleContactApi(request, response, context) {
@@ -33,6 +36,11 @@ export async function handleContactApi(request, response, context) {
   try {
     if (segments[0] === "api" && segments[1] === "public" && segments[3] === "leads" && method === "POST") {
       await createPublicLead(segments[2], request, response, context);
+      return;
+    }
+
+    if (segments[0] === "api" && segments[1] === "businesses" && segments[3] === "next-actions" && method === "GET") {
+      await listNextActions(segments[2], requestUrl, response, context);
       return;
     }
 
@@ -63,6 +71,16 @@ export async function handleContactApi(request, response, context) {
 
       if (contactId && action === "pipeline" && method === "PATCH") {
         await updateContactPipeline(businessId, contactId, request, response, context);
+        return;
+      }
+
+      if (contactId && action === "next-action" && method === "POST") {
+        await createNextAction(businessId, contactId, request, response, context);
+        return;
+      }
+
+      if (contactId && action === "next-action" && method === "PATCH") {
+        await updateNextAction(businessId, contactId, request, response, context);
         return;
       }
 
@@ -158,6 +176,34 @@ async function getContactPipeline(businessId, requestUrl, response, context) {
     total: contacts.length,
     totalValueEstimate
   }, context);
+}
+
+async function listNextActions(businessId, requestUrl, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const filter = normalizeNextActionFilter(requestUrl.searchParams.get("filter") || "hoy");
+  const completedTodayIds = getCompletedNextActionContactIds(db, business.id);
+  const contacts = db.contacts
+    .filter((contact) => contact.businessId === business.id)
+    .map((contact) => normalizeStoredContact(contact));
+  const actions = contacts
+    .map((contact) => ({
+      contact,
+      nextAction: getComputedNextAction(contact.nextAction)
+    }))
+    .filter(({ contact, nextAction }) => matchesNextActionFilter(contact, nextAction, filter, completedTodayIds))
+    .sort(compareNextActionItems)
+    .map(({ contact, nextAction }) => ({
+      contact: summarizeContact(contact),
+      nextAction
+    }));
+
+  sendJson(response, 200, { filter, actions, total: actions.length }, context);
 }
 
 async function createPublicLead(slug, request, response, context) {
@@ -312,6 +358,100 @@ async function updateContactPipeline(businessId, contactId, request, response, c
   sendJson(response, 200, { contact, activity }, context);
 }
 
+async function createNextAction(businessId, contactId, request, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const contact = db.contacts.find((item) => item.businessId === business.id && item.id === contactId);
+
+  if (!contact) {
+    throw httpError(404, "Contact not found");
+  }
+
+  const payload = await readJsonBody(request);
+  const now = new Date().toISOString();
+  const nextAction = normalizeNextAction(payload, now);
+
+  contact.nextAction = nextAction;
+  contact.lastInteractionAt = now;
+  contact.updatedAt = now;
+
+  const activity = makeActivity(business.id, contact.id, {
+    note: nextAction.note || `${nextAction.type} para ${nextAction.dueDate}`,
+    metadata: { nextAction }
+  }, now, {
+    type: "next_action.created",
+    title: "Proxima accion creada",
+    source: "dashboard"
+  });
+
+  db.activities.push(activity);
+  appendAudit(db, "contact.next_action_created", business.id, now, contact.id);
+  await saveDb(db, context, "next-action");
+  sendJson(response, 201, { contact: normalizeStoredContact(contact), nextAction, activity }, context);
+}
+
+async function updateNextAction(businessId, contactId, request, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const contact = db.contacts.find((item) => item.businessId === business.id && item.id === contactId);
+
+  if (!contact) {
+    throw httpError(404, "Contact not found");
+  }
+
+  const currentAction = normalizeOptionalNextAction(contact.nextAction);
+
+  if (!currentAction) {
+    throw httpError(404, "Contact has no active nextAction");
+  }
+
+  const payload = await readJsonBody(request);
+  const source = extractPayload(payload);
+  const now = new Date().toISOString();
+  const status = normalizeNextActionStatus(source.status || "hecha");
+  let nextAction = {
+    ...currentAction,
+    status,
+    note: cleanText(source.note || currentAction.note || "", 1000)
+  };
+  let activity = null;
+
+  if (status === "hecha") {
+    nextAction = {
+      ...nextAction,
+      completedAt: now
+    };
+    activity = makeActivity(business.id, contact.id, {
+      note: nextAction.note || `${nextAction.type} completada`,
+      metadata: { nextAction }
+    }, now, {
+      type: "next_action.completed",
+      title: "Proxima accion hecha",
+      source: "dashboard"
+    });
+    db.activities.push(activity);
+    contact.nextAction = null;
+  } else {
+    contact.nextAction = normalizeNextAction(nextAction, now);
+  }
+
+  contact.lastInteractionAt = now;
+  contact.updatedAt = now;
+  appendAudit(db, "contact.next_action_updated", business.id, now, contact.id);
+  await saveDb(db, context, "next-action-update");
+  sendJson(response, 200, { contact: normalizeStoredContact(contact), nextAction: contact.nextAction, activity }, context);
+}
+
 async function addContactActivity(businessId, contactId, request, response, context) {
   const db = await loadDb(context);
   const business = findBusiness(db, businessId);
@@ -359,6 +499,9 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
   const tags = normalizeTags(source.tags ?? existing?.tags);
   const priority = normalizePriority(source.priority || existing?.priority || defaults.priority || "media");
   const order = normalizeOrder(source.order ?? existing?.order ?? defaults.order, fallbackContactOrder(existing, now));
+  const nextAction = Object.prototype.hasOwnProperty.call(source, "nextAction")
+    ? normalizeOptionalNextAction(source.nextAction, now, true)
+    : normalizeOptionalNextAction(existing?.nextAction, now);
 
   return {
     id: existing?.id || cleanId(source.id) || `contact_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -379,6 +522,7 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     privacyAccepted: normalizeBoolean(source.privacyAccepted, existing?.privacyAccepted ?? false),
     privacyAcceptedAt: cleanText(source.privacyAcceptedAt || existing?.privacyAcceptedAt || "", 80),
     privacyPolicyUrl: cleanText(source.privacyPolicyUrl || existing?.privacyPolicyUrl || "", 500),
+    nextAction,
     lastInteractionAt: cleanText(source.lastInteractionAt || existing?.lastInteractionAt || now, 80),
     createdAt: existing?.createdAt || now,
     updatedAt: now
@@ -393,7 +537,8 @@ function normalizeStoredContact(contact) {
     ...contact,
     status: normalizedStatus,
     priority: normalizedPriority,
-    order: normalizeOrder(contact?.order, fallbackContactOrder(contact))
+    order: normalizeOrder(contact?.order, fallbackContactOrder(contact)),
+    nextAction: getComputedNextAction(contact?.nextAction)
   };
 }
 
@@ -565,6 +710,212 @@ function comparePipelineContacts(left, right) {
 function normalizeMoney(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function normalizeNextAction(payload, now = new Date().toISOString()) {
+  const source = extractNextActionPayload(payload);
+  const type = normalizeNextActionType(source.type);
+  const dueDate = normalizeIsoDate(source.dueDate || source.dueAt || source.date);
+  const status = normalizeNextActionStatus(source.status || "pendiente");
+
+  return {
+    type,
+    dueDate,
+    status,
+    note: cleanText(source.note || source.notes || "", 1000),
+    createdAt: cleanText(source.createdAt || now, 80),
+    updatedAt: now
+  };
+}
+
+function normalizeOptionalNextAction(value, now = new Date().toISOString(), strict = false) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const nextAction = normalizeNextAction(value, now);
+    return nextAction.status === "hecha" ? null : nextAction;
+  } catch (error) {
+    if (strict) {
+      throw error;
+    }
+
+    return null;
+  }
+}
+
+function extractNextActionPayload(payload) {
+  if (!isPlainObject(payload)) {
+    throw httpError(400, "nextAction must be an object");
+  }
+
+  if (isPlainObject(payload.nextAction)) {
+    return payload.nextAction;
+  }
+
+  return payload;
+}
+
+function normalizeNextActionType(value) {
+  const type = normalizeToken(value);
+
+  if (!NEXT_ACTION_TYPES.has(type)) {
+    throw httpError(400, `Invalid nextAction type: ${type}`);
+  }
+
+  return type;
+}
+
+function normalizeNextActionStatus(value) {
+  const status = normalizeToken(value);
+  const aliases = {
+    pending: "pendiente",
+    done: "hecha",
+    completed: "hecha",
+    overdue: "vencida"
+  };
+  const normalized = aliases[status] || status || "pendiente";
+
+  if (!NEXT_ACTION_STATUSES.has(normalized)) {
+    throw httpError(400, `Invalid nextAction status: ${normalized}`);
+  }
+
+  return normalized;
+}
+
+function normalizeNextActionFilter(value) {
+  const filter = normalizeToken(value || "hoy");
+
+  if (["hoy", "vencidas", "sin-accion"].includes(filter)) {
+    return filter;
+  }
+
+  throw httpError(400, `Invalid nextAction filter: ${filter}`);
+}
+
+function getComputedNextAction(value) {
+  const nextAction = normalizeOptionalNextAction(value);
+
+  if (!nextAction) {
+    return null;
+  }
+
+  if (nextAction.status === "pendiente" && isBeforeToday(nextAction.dueDate)) {
+    return {
+      ...nextAction,
+      status: "vencida"
+    };
+  }
+
+  return nextAction;
+}
+
+function matchesNextActionFilter(contact, nextAction, filter, completedTodayIds = new Set()) {
+  if (filter === "sin-accion") {
+    return !nextAction
+      && !completedTodayIds.has(contact.id)
+      && !["lost", "customer"].includes(String(contact.status || ""));
+  }
+
+  if (!nextAction) {
+    return false;
+  }
+
+  if (filter === "vencidas") {
+    return nextAction.status === "vencida";
+  }
+
+  return sameLocalDate(nextAction.dueDate, new Date()) && nextAction.status !== "hecha";
+}
+
+function getCompletedNextActionContactIds(db, businessId) {
+  return new Set(
+    db.activities
+      .filter((activity) => activity.businessId === businessId)
+      .filter((activity) => activity.type === "next_action.completed")
+      .filter((activity) => sameLocalDate(activity.createdAt, new Date()))
+      .map((activity) => activity.contactId)
+      .filter(Boolean)
+  );
+}
+
+function compareNextActionItems(left, right) {
+  const leftTime = Date.parse(left.nextAction?.dueDate || left.contact.lastInteractionAt || left.contact.createdAt || "");
+  const rightTime = Date.parse(right.nextAction?.dueDate || right.contact.lastInteractionAt || right.contact.createdAt || "");
+  const diff = normalizeTime(leftTime) - normalizeTime(rightTime);
+
+  if (diff) {
+    return diff;
+  }
+
+  return String(left.contact.name || "").localeCompare(String(right.contact.name || ""));
+}
+
+function summarizeContact(contact) {
+  return {
+    id: contact.id,
+    businessId: contact.businessId,
+    type: contact.type,
+    name: contact.name,
+    phone: contact.phone,
+    email: contact.email,
+    source: contact.source,
+    status: contact.status,
+    priority: contact.priority,
+    valueEstimate: contact.valueEstimate,
+    lastInteractionAt: contact.lastInteractionAt,
+    createdAt: contact.createdAt
+  };
+}
+
+function normalizeIsoDate(value) {
+  const date = new Date(value || "");
+
+  if (Number.isNaN(date.getTime())) {
+    throw httpError(400, "nextAction dueDate must be a valid ISO date");
+  }
+
+  return date.toISOString();
+}
+
+function isBeforeToday(value) {
+  const date = new Date(value || "");
+
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  return date < startOfToday();
+}
+
+function sameLocalDate(value, date) {
+  const parsed = new Date(value || "");
+
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+
+  return parsed.getFullYear() === date.getFullYear()
+    && parsed.getMonth() === date.getMonth()
+    && parsed.getDate() === date.getDate();
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function normalizeTime(value) {
+  return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER;
+}
+
+function normalizeToken(value) {
+  return cleanText(value, 80)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 function normalizeOptionalStatus(value) {

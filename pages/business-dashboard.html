@@ -116,6 +116,7 @@
 
         <nav class="tab-list" aria-label="Secciones del portal">
           <button class="tab-button is-active" type="button" data-tab="home">Inicio</button>
+          <button class="tab-button" type="button" data-tab="today">Hoy</button>
           <button class="tab-button" type="button" data-tab="leads">Leads</button>
           <button class="tab-button" type="button" data-tab="customers">Clientes</button>
           <button class="tab-button" type="button" data-tab="bookings">Reservas</button>
@@ -144,6 +145,14 @@
               <div class="checklist" data-health-list></div>
             </section>
           </div>
+        </section>
+
+        <section class="tab-panel" data-panel="today">
+          <div class="panel-heading">
+            <p class="eyebrow">Seguimiento comercial</p>
+            <h2>Hoy</h2>
+          </div>
+          <div data-list="next-actions"></div>
         </section>
 
         <section class="tab-panel" data-panel="leads">
