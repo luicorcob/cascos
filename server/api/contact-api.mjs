@@ -4,6 +4,8 @@ import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs"
 const MAX_BODY_BYTES = Number(process.env.CONTACT_API_MAX_BODY_BYTES || 512 * 1024);
 const CONTACT_TYPES = new Set(["lead", "customer"]);
 const CONTACT_STATUSES = new Set(["new", "contacted", "waiting", "reserved", "won", "lost", "customer"]);
+const CONTACT_PIPELINE_STATUSES = ["new", "contacted", "waiting", "reserved", "won", "lost", "customer"];
+const CONTACT_PRIORITIES = new Set(["alta", "media", "baja"]);
 const DEFAULT_DB = {
   version: 1,
   updatedAt: null,
@@ -15,7 +17,7 @@ const DEFAULT_DB = {
 
 export function isContactApiRequest(pathname) {
   return /^\/api\/public\/[^/]+\/leads$/.test(pathname)
-    || /^\/api\/businesses\/[^/]+\/contacts(?:\/[^/]+(?:\/activities)?)?$/.test(pathname);
+    || /^\/api\/businesses\/[^/]+\/contacts(?:\/pipeline|\/[^/]+(?:\/activities|\/pipeline)?)?$/.test(pathname);
 }
 
 export async function handleContactApi(request, response, context) {
@@ -39,6 +41,11 @@ export async function handleContactApi(request, response, context) {
       const contactId = segments[4] || "";
       const action = segments[5] || "";
 
+      if (contactId === "pipeline" && !action && method === "GET") {
+        await getContactPipeline(businessId, requestUrl, response, context);
+        return;
+      }
+
       if (!contactId && method === "GET") {
         await listContacts(businessId, requestUrl, response, context);
         return;
@@ -51,6 +58,11 @@ export async function handleContactApi(request, response, context) {
 
       if (contactId && !action && method === "PATCH") {
         await updateContact(businessId, contactId, request, response, context);
+        return;
+      }
+
+      if (contactId && action === "pipeline" && method === "PATCH") {
+        await updateContactPipeline(businessId, contactId, request, response, context);
         return;
       }
 
@@ -83,6 +95,7 @@ async function listContacts(businessId, requestUrl, response, context) {
 
   let contacts = db.contacts
     .filter((contact) => contact.businessId === business.id)
+    .map((contact) => normalizeStoredContact(contact))
     .filter((contact) => !type || contact.type === type)
     .filter((contact) => !status || contact.status === status)
     .filter((contact) => {
@@ -106,6 +119,45 @@ async function listContacts(businessId, requestUrl, response, context) {
   }
 
   sendJson(response, 200, { contacts, total: contacts.length }, context);
+}
+
+async function getContactPipeline(businessId, requestUrl, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const includeActivities = requestUrl.searchParams.get("includeActivities") === "true";
+  const contacts = db.contacts
+    .filter((contact) => contact.businessId === business.id)
+    .map((contact) => normalizeStoredContact(contact));
+  const columns = CONTACT_PIPELINE_STATUSES.map((status) => {
+    const columnContacts = contacts
+      .filter((contact) => contact.status === status)
+      .sort(comparePipelineContacts)
+      .map((contact) => includeActivities ? withContactActivities(db, business.id, contact) : contact);
+    const totalValueEstimate = columnContacts.reduce((sum, contact) => sum + normalizeMoney(contact.valueEstimate), 0);
+
+    return {
+      status,
+      count: columnContacts.length,
+      totalValueEstimate,
+      contacts: columnContacts
+    };
+  });
+
+  const pipeline = Object.fromEntries(columns.map((column) => [column.status, column]));
+  const totalValueEstimate = columns.reduce((sum, column) => sum + column.totalValueEstimate, 0);
+
+  sendJson(response, 200, {
+    statuses: CONTACT_PIPELINE_STATUSES,
+    columns,
+    pipeline,
+    total: contacts.length,
+    totalValueEstimate
+  }, context);
 }
 
 async function createPublicLead(slug, request, response, context) {
@@ -202,6 +254,64 @@ async function updateContact(businessId, contactId, request, response, context) 
   sendJson(response, 200, { contact, activity }, context);
 }
 
+async function updateContactPipeline(businessId, contactId, request, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const index = db.contacts.findIndex((contact) => contact.businessId === business.id && contact.id === contactId);
+
+  if (index === -1) {
+    throw httpError(404, "Contact not found");
+  }
+
+  const payload = await readJsonBody(request);
+  const source = extractPayload(payload);
+  const hasStatus = Object.prototype.hasOwnProperty.call(source, "status");
+  const hasOrder = Object.prototype.hasOwnProperty.call(source, "order");
+
+  if (!hasStatus && !hasOrder) {
+    throw httpError(400, "Pipeline update needs status or order");
+  }
+
+  const now = new Date().toISOString();
+  const previous = normalizeStoredContact(db.contacts[index]);
+  const status = hasStatus ? normalizeStatus(source.status) : previous.status;
+  const order = hasOrder ? normalizeOrder(source.order, previous.order) : previous.order;
+  const contact = {
+    ...previous,
+    status,
+    order,
+    updatedAt: now
+  };
+
+  db.contacts[index] = contact;
+
+  let activity = null;
+  if (previous.status !== contact.status) {
+    activity = makeActivity(business.id, contact.id, {
+      note: `Estado: ${previous.status} -> ${contact.status}`,
+      metadata: {
+        previousStatus: previous.status,
+        status: contact.status,
+        order: contact.order
+      }
+    }, now, {
+      type: "contact.status_changed",
+      title: "Estado actualizado",
+      source: "dashboard"
+    });
+    db.activities.push(activity);
+  }
+
+  appendAudit(db, "contact.pipeline_updated", business.id, now, contact.id);
+  await saveDb(db, context, "contact-pipeline");
+  sendJson(response, 200, { contact, activity }, context);
+}
+
 async function addContactActivity(businessId, contactId, request, response, context) {
   const db = await loadDb(context);
   const business = findBusiness(db, businessId);
@@ -247,6 +357,8 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
   const type = normalizeType(source.type || existing?.type || defaults.type || "lead");
   const status = normalizeStatus(source.status || existing?.status || defaults.status || (type === "customer" ? "customer" : "new"));
   const tags = normalizeTags(source.tags ?? existing?.tags);
+  const priority = normalizePriority(source.priority || existing?.priority || defaults.priority || "media");
+  const order = normalizeOrder(source.order ?? existing?.order ?? defaults.order, fallbackContactOrder(existing, now));
 
   return {
     id: existing?.id || cleanId(source.id) || `contact_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -257,6 +369,8 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     email,
     source: cleanText(source.source || existing?.source || defaults.source || "manual", 80),
     status,
+    priority,
+    order,
     tags,
     notes,
     valueEstimate: Number.isFinite(Number(source.valueEstimate ?? existing?.valueEstimate))
@@ -268,6 +382,27 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     lastInteractionAt: cleanText(source.lastInteractionAt || existing?.lastInteractionAt || now, 80),
     createdAt: existing?.createdAt || now,
     updatedAt: now
+  };
+}
+
+function normalizeStoredContact(contact) {
+  const normalizedStatus = normalizeStoredStatus(contact?.status);
+  const normalizedPriority = normalizeStoredPriority(contact?.priority);
+
+  return {
+    ...contact,
+    status: normalizedStatus,
+    priority: normalizedPriority,
+    order: normalizeOrder(contact?.order, fallbackContactOrder(contact))
+  };
+}
+
+function withContactActivities(db, businessId, contact) {
+  return {
+    ...contact,
+    activities: db.activities
+      .filter((activity) => activity.businessId === businessId && activity.contactId === contact.id)
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
   };
 }
 
@@ -368,6 +503,68 @@ function normalizeStatus(value) {
   }
 
   return status;
+}
+
+function normalizeStoredStatus(value) {
+  const status = normalizeStatusAlias(value);
+  return CONTACT_STATUSES.has(status) ? status : "new";
+}
+
+function normalizePriority(value) {
+  const priority = normalizePriorityAlias(value);
+
+  if (!CONTACT_PRIORITIES.has(priority)) {
+    throw httpError(400, `Invalid contact priority: ${priority}`);
+  }
+
+  return priority;
+}
+
+function normalizeStoredPriority(value) {
+  const priority = normalizePriorityAlias(value);
+  return CONTACT_PRIORITIES.has(priority) ? priority : "media";
+}
+
+function normalizePriorityAlias(value) {
+  const priority = cleanText(value, 40).toLowerCase();
+  const aliases = {
+    high: "alta",
+    medium: "media",
+    low: "baja"
+  };
+
+  return aliases[priority] || priority || "media";
+}
+
+function normalizeOrder(value, fallback = 0) {
+  const number = Number(value);
+
+  if (Number.isFinite(number)) {
+    return number;
+  }
+
+  const fallbackNumber = Number(fallback);
+  return Number.isFinite(fallbackNumber) ? fallbackNumber : 0;
+}
+
+function fallbackContactOrder(contact, now = new Date().toISOString()) {
+  const parsed = Date.parse(contact?.createdAt || contact?.updatedAt || now);
+  return Number.isFinite(parsed) ? parsed : Date.now();
+}
+
+function comparePipelineContacts(left, right) {
+  const order = normalizeOrder(left.order, fallbackContactOrder(left)) - normalizeOrder(right.order, fallbackContactOrder(right));
+
+  if (Math.abs(order) > Number.EPSILON) {
+    return order;
+  }
+
+  return String(left.createdAt || "").localeCompare(String(right.createdAt || ""));
+}
+
+function normalizeMoney(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
 }
 
 function normalizeOptionalStatus(value) {

@@ -542,7 +542,19 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   gap: 8px;
 }
 
-.pipeline-column > header span {
+.pipeline-column > header > span:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pipeline-column > header > span:first-child small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.pipeline-column > header > span:last-child {
   display: grid;
   place-items: center;
   min-width: 28px;
@@ -552,6 +564,16 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 950;
+}
+
+.pipeline-stack {
+  min-height: 170px;
+  align-content: start;
+}
+
+.pipeline-stack.is-drag-over {
+  outline: 2px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
 }
 
 .pipeline-empty {
@@ -570,6 +592,19 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   border: 1px solid rgba(23, 21, 19, 0.11);
   border-radius: var(--radius);
   background: #fffdf7;
+  cursor: grab;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+.lead-card:hover {
+  border-color: rgba(37, 99, 235, 0.22);
+  box-shadow: 0 14px 32px rgba(23, 21, 19, 0.08);
+}
+
+.lead-card.is-dragging {
+  opacity: 0.58;
+  transform: scale(0.985);
+  cursor: grabbing;
 }
 
 .lead-card header {
@@ -590,6 +625,71 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   margin: 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.lead-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.lead-card-meta span {
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.lead-card-meta strong {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.pill.priority-alta {
+  border-color: rgba(201, 68, 50, 0.28);
+  background: rgba(201, 68, 50, 0.1);
+  color: var(--accent);
+}
+
+.pill.priority-media {
+  border-color: rgba(154, 101, 0, 0.28);
+  background: rgba(154, 101, 0, 0.1);
+  color: var(--amber);
+}
+
+.pill.priority-baja {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--blue);
+}
+
+.next-action-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(154, 101, 0, 0.22);
+  border-radius: 999px;
+  background: rgba(154, 101, 0, 0.09);
+  color: var(--amber);
+  font-size: 0.76rem;
+  font-weight: 950;
+}
+
+.next-action-chip.overdue {
+  border-color: rgba(201, 68, 50, 0.3);
+  background: rgba(201, 68, 50, 0.1);
+  color: var(--accent);
+}
+
+.next-action-chip.done,
+.next-action-chip.is-empty {
+  border-color: rgba(23, 21, 19, 0.12);
+  background: rgba(23, 21, 19, 0.04);
+  color: var(--muted);
 }
 
 .booking-form {

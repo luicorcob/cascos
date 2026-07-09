@@ -4,6 +4,7 @@ const state = {
   businesses: [],
   business: null,
   contacts: [],
+  pipeline: null,
   services: [],
   bookings: [],
   availability: [],
@@ -21,7 +22,8 @@ const state = {
   loading: false
 };
 
-const LEAD_STATUSES = ["new", "contacted", "waiting", "reserved", "won", "lost"];
+const LEAD_STATUSES = ["new", "contacted", "waiting", "reserved", "won", "lost", "customer"];
+const LEAD_PRIORITIES = ["alta", "media", "baja"];
 const BOOKING_STATUSES = ["pending", "confirmed", "completed", "canceled", "no-show"];
 const WEEKDAYS = [
   { value: 1, label: "Lunes" },
@@ -175,6 +177,7 @@ async function loadBusinesses(options = {}) {
       state.businesses = [];
       state.business = null;
       state.contacts = [];
+      state.pipeline = null;
       state.services = [];
       state.bookings = [];
       state.availability = [];
@@ -232,6 +235,7 @@ async function loadBusiness(id, options = {}) {
     const fallback = state.businesses.find((business) => business.id === id || business.slug === id);
     state.business = fallback || null;
     state.contacts = [];
+    state.pipeline = null;
     state.services = [];
     state.bookings = [];
     state.availability = [];
@@ -280,6 +284,7 @@ async function loadBookings(id) {
 
 async function loadContacts(id) {
   state.contacts = [];
+  state.pipeline = null;
   state.crmError = "";
 
   if (!id) {
@@ -287,8 +292,9 @@ async function loadContacts(id) {
   }
 
   try {
-    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts?includeActivities=true`);
-    state.contacts = Array.isArray(payload.contacts) ? payload.contacts : [];
+    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/pipeline?includeActivities=true`);
+    state.pipeline = normalizePipelinePayload(payload);
+    state.contacts = flattenPipelineContacts(state.pipeline);
   } catch (error) {
     state.crmError = "El CRM no respondio. El dashboard seguira con datos del negocio, pero sin contactos reales.";
   }
@@ -472,6 +478,7 @@ function render() {
 
   const model = createDashboardModel(business, {
     contacts: state.contacts,
+    pipeline: state.pipeline,
     services: state.services,
     bookings: state.bookings,
     availability: state.availability,
@@ -608,8 +615,9 @@ function renderHome(model) {
 
 function renderLeads(model) {
   const container = document.querySelector('[data-list="leads"]');
+  const pipeline = model.pipeline || buildPipelineModel(model.leads);
 
-  if (!model.leads.length) {
+  if (!pipeline.total) {
     container.innerHTML = emptyState("Sin leads reales", "El formulario web y el chatbot ya pueden guardar aqui los nuevos contactos.");
     return;
   }
@@ -617,15 +625,18 @@ function renderLeads(model) {
   container.innerHTML = `
     ${renderExportToolbar("leads", model.leads.length, "Exportar leads")}
     <div class="pipeline-grid">
-      ${LEAD_STATUSES.map((status) => {
-        const leads = model.leads.filter((lead) => String(lead.status || "new") === status);
+      ${pipeline.columns.map((column) => {
+        const leads = Array.isArray(column.contacts) ? column.contacts : [];
         return `
-          <section class="pipeline-column">
+          <section class="pipeline-column" data-pipeline-column="${escapeAttr(column.status)}">
             <header>
-              <strong>${escapeHtml(statusLabel(status))}</strong>
-              <span>${escapeHtml(String(leads.length))}</span>
+              <span>
+                <strong>${escapeHtml(statusLabel(column.status))}</strong>
+                <small>${escapeHtml(formatMoney(column.totalValueEstimate || 0, model.currency))}</small>
+              </span>
+              <span>${escapeHtml(String(column.count || leads.length))}</span>
             </header>
-            <div class="pipeline-stack">
+            <div class="pipeline-stack" data-pipeline-dropzone data-status="${escapeAttr(column.status)}">
               ${leads.length ? leads.map((lead) => renderLeadCard(lead)).join("") : '<p class="pipeline-empty">Sin contactos</p>'}
             </div>
           </section>
@@ -1004,6 +1015,7 @@ function createDashboardModel(business, crm = {}) {
   const events = arrayFrom(content.metricEvents, business.metricEvents, content.events);
   const today = new Date();
   const currency = commerce.currency || content.currency || "EUR";
+  const pipeline = crm.pipeline ? normalizePipelinePayload(crm.pipeline) : buildPipelineModel(contacts);
   const primaryGoal = business.settings?.primaryGoal || content.conversionGoal || "Reservas y contactos";
   const bookingUrl = content.bookingUrl || google.appointmentUrl || "";
   const whatsappUrl = integrations.whatsapp?.url || content.whatsappUrl || "";
@@ -1036,6 +1048,7 @@ function createDashboardModel(business, crm = {}) {
   return {
     business,
     leads,
+    pipeline,
     customers,
     services,
     bookings,
@@ -1067,7 +1080,9 @@ function createDashboardModel(business, crm = {}) {
   };
 }
 
-function bindCrmControls() {
+function bindCrmControls(model) {
+  bindPipelineControls(model);
+
   document.querySelectorAll("[data-contact-status]").forEach((select) => {
     select.addEventListener("change", async () => {
       const contactId = select.dataset.contactId || "";
@@ -1084,9 +1099,7 @@ function bindCrmControls() {
           `/api/businesses/${encodeURIComponent(state.business.id || state.business.slug)}/contacts/${encodeURIComponent(contactId)}`,
           { status }
         );
-        state.contacts = state.contacts.map((contact) => (
-          contact.id === contactId ? { ...contact, ...result.contact, activities: result.contact.activities || contact.activities } : contact
-        ));
+        mergeContactResult(contactId, result.contact, result.activity);
         showNotice("Estado del lead actualizado.", "info");
         render();
       } catch (error) {
@@ -1128,6 +1141,7 @@ function bindCrmControls() {
             ? { ...contact, activities: [result.activity, ...(contact.activities || [])], lastInteractionAt: result.contact?.lastInteractionAt || contact.lastInteractionAt }
             : contact
         ));
+        state.pipeline = buildPipelineModel(state.contacts);
         showNotice("Nota guardada en el historial del lead.", "info");
         render();
       } catch (error) {
@@ -1138,6 +1152,142 @@ function bindCrmControls() {
       }
     });
   });
+}
+
+function bindPipelineControls(model) {
+  const pipeline = model?.pipeline || buildPipelineModel(state.contacts);
+
+  document.querySelectorAll("[data-lead-card]").forEach((card) => {
+    card.addEventListener("dragstart", (event) => {
+      const contactId = card.dataset.contactId || "";
+
+      if (!contactId) {
+        return;
+      }
+
+      card.classList.add("is-dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", contactId);
+    });
+
+    card.addEventListener("dragend", () => {
+      document.querySelectorAll(".is-dragging, .is-drag-over").forEach((node) => {
+        node.classList.remove("is-dragging", "is-drag-over");
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-pipeline-dropzone]").forEach((zone) => {
+    zone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      zone.classList.add("is-drag-over");
+    });
+
+    zone.addEventListener("dragleave", (event) => {
+      if (!zone.contains(event.relatedTarget)) {
+        zone.classList.remove("is-drag-over");
+      }
+    });
+
+    zone.addEventListener("drop", async (event) => {
+      event.preventDefault();
+      zone.classList.remove("is-drag-over");
+
+      const contactId = event.dataTransfer.getData("text/plain");
+      const status = normalizeLeadStatus(zone.dataset.status || "new");
+
+      if (!contactId || !state.business) {
+        return;
+      }
+
+      const order = calculatePipelineOrder(pipeline, contactId, status, zone, event.clientY);
+      await moveContactInPipeline(contactId, status, order);
+    });
+  });
+}
+
+function calculatePipelineOrder(pipeline, contactId, status, zone, clientY) {
+  const column = (pipeline.columns.find((item) => item.status === status)?.contacts || [])
+    .filter((contact) => contact.id !== contactId)
+    .sort(comparePipelineContacts);
+  const afterCard = getDropAfterCard(zone, clientY);
+
+  if (afterCard) {
+    const afterIndex = column.findIndex((contact) => contact.id === afterCard.dataset.contactId);
+    const next = column[afterIndex] || null;
+    const previous = afterIndex > 0 ? column[afterIndex - 1] : null;
+    return midpointOrder(previous?.order, next?.order);
+  }
+
+  return midpointOrder(column.at(-1)?.order, null);
+}
+
+function getDropAfterCard(zone, clientY) {
+  return Array.from(zone.querySelectorAll("[data-lead-card]:not(.is-dragging)"))
+    .find((card) => {
+      const box = card.getBoundingClientRect();
+      return clientY < box.top + (box.height / 2);
+    }) || null;
+}
+
+function midpointOrder(previous, next) {
+  const previousOrder = Number(previous);
+  const nextOrder = Number(next);
+
+  if (Number.isFinite(previousOrder) && Number.isFinite(nextOrder)) {
+    return previousOrder === nextOrder ? nextOrder - 0.5 : previousOrder + ((nextOrder - previousOrder) / 2);
+  }
+
+  if (Number.isFinite(nextOrder)) {
+    return nextOrder - 1;
+  }
+
+  if (Number.isFinite(previousOrder)) {
+    return previousOrder + 1;
+  }
+
+  return Date.now();
+}
+
+async function moveContactInPipeline(contactId, status, order) {
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const previous = state.contacts.find((contact) => contact.id === contactId);
+
+  if (!businessRef || !previous) {
+    return;
+  }
+
+  try {
+    const result = await patchJson(
+      `/api/businesses/${encodeURIComponent(businessRef)}/contacts/${encodeURIComponent(contactId)}/pipeline`,
+      { status, order }
+    );
+    mergeContactResult(contactId, result.contact, result.activity);
+    showNotice(previous.status === status ? "Orden del pipeline actualizado." : `Lead movido a ${statusLabel(status)}.`, "info");
+    render();
+  } catch (error) {
+    showNotice("No se pudo mover el lead en el pipeline.", "error");
+  }
+}
+
+function mergeContactResult(contactId, updatedContact, activity) {
+  state.contacts = state.contacts.map((contact) => {
+    if (contact.id !== contactId) {
+      return contact;
+    }
+
+    const activities = activity
+      ? [activity, ...(contact.activities || [])]
+      : (updatedContact?.activities || contact.activities || []);
+
+    return normalizePipelineContact({
+      ...contact,
+      ...updatedContact,
+      activities
+    });
+  });
+  state.pipeline = buildPipelineModel(state.contacts);
 }
 
 function bindExportControls(model) {
@@ -1215,8 +1365,9 @@ function bindBookingControls() {
       if (result.contact) {
         const exists = state.contacts.some((contact) => contact.id === result.contact.id);
         state.contacts = exists
-          ? state.contacts.map((contact) => contact.id === result.contact.id ? { ...contact, ...result.contact } : contact)
-          : [result.contact, ...state.contacts];
+          ? state.contacts.map((contact) => contact.id === result.contact.id ? normalizePipelineContact({ ...contact, ...result.contact }) : contact)
+          : [normalizePipelineContact(result.contact), ...state.contacts];
+        state.pipeline = buildPipelineModel(state.contacts);
       }
       const synced = await syncBookingToGoogle(result.booking.id);
       showNotice(synced ? "Reserva creada, vinculada al CRM y sincronizada con Google Calendar." : "Reserva creada y vinculada al CRM.", "info");
@@ -1736,14 +1887,20 @@ function renderLeadCard(lead) {
   const activities = Array.isArray(lead.activities) ? lead.activities.slice(0, 2) : [];
   const contact = [lead.phone, lead.email].filter(Boolean).join(" / ") || "Sin contacto";
   const notes = clean(lead.notes || "");
+  const valueEstimate = Number(lead.valueEstimate || 0);
 
   return `
-    <article class="lead-card">
+    <article class="lead-card" draggable="true" data-lead-card data-contact-id="${escapeAttr(lead.id)}" data-status="${escapeAttr(lead.status || "new")}" data-order="${escapeAttr(lead.order ?? "")}">
       <header>
         <strong>${escapeHtml(contactName(lead))}</strong>
-        <span>${escapeHtml(clean(lead.source || "web"))}</span>
+        ${priorityPill(lead.priority)}
       </header>
+      <div class="lead-card-meta">
+        <span>${escapeHtml(clean(lead.source || "web"))}</span>
+        <strong>${escapeHtml(formatMoney(valueEstimate, state.business?.content?.commerce?.currency || state.business?.content?.currency || "EUR"))}</strong>
+      </div>
       <p>${escapeHtml(contact)}</p>
+      ${renderNextActionChip(lead.nextAction)}
       ${notes ? `<p>${escapeHtml(notes)}</p>` : ""}
       <label class="status-field">
         Estado
@@ -2058,6 +2215,63 @@ function statusPill(label, status) {
   return `<span class="pill ${escapeHtml(status || "neutral")}">${escapeHtml(label)}</span>`;
 }
 
+function priorityPill(priority) {
+  const normalized = normalizeLeadPriority(priority);
+  const labels = {
+    alta: "Alta",
+    media: "Media",
+    baja: "Baja"
+  };
+
+  return `<span class="pill priority-${escapeHtml(normalized)}">${escapeHtml(labels[normalized] || "Media")}</span>`;
+}
+
+function renderNextActionChip(nextAction) {
+  if (!nextAction || typeof nextAction !== "object") {
+    return '<span class="next-action-chip is-empty">Sin proxima accion</span>';
+  }
+
+  const status = nextActionStatus(nextAction);
+  const type = nextActionTypeLabel(nextAction.type);
+  const date = nextAction.dueDate ? formatDate(nextAction.dueDate) : "Sin fecha";
+
+  return `<span class="next-action-chip ${escapeHtml(status)}">${escapeHtml(`${type} - ${date}`)}</span>`;
+}
+
+function nextActionStatus(nextAction) {
+  const status = clean(nextAction.status).toLowerCase();
+
+  if (status === "hecha") {
+    return "done";
+  }
+
+  const due = parseDate(nextAction.dueDate);
+  if (due && due < startOfToday()) {
+    return "overdue";
+  }
+
+  return "pending";
+}
+
+function nextActionTypeLabel(value) {
+  const labels = {
+    llamada: "Llamada",
+    whatsapp: "WhatsApp",
+    email: "Email",
+    reunion: "Reunion",
+    enviar_propuesta: "Enviar propuesta",
+    revisar_reserva: "Revisar reserva"
+  };
+
+  return labels[clean(value)] || statusLabel(value || "accion");
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
 function showNotice(message, type) {
   if (!refs.notice) {
     return;
@@ -2071,6 +2285,125 @@ function showNotice(message, type) {
 function arrayFrom(...values) {
   const arrays = values.filter((value) => Array.isArray(value));
   return arrays.find((value) => value.length) || arrays[0] || [];
+}
+
+function normalizePipelinePayload(payload) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  const sourceColumns = Array.isArray(source.columns)
+    ? source.columns
+    : LEAD_STATUSES.map((status) => source.pipeline?.[status]).filter(Boolean);
+  const byStatus = new Map(sourceColumns.map((column) => [normalizeLeadStatus(column.status), column]));
+  const columns = LEAD_STATUSES.map((status) => {
+    const column = byStatus.get(status) || {};
+    const contacts = Array.isArray(column.contacts)
+      ? column.contacts.map((contact) => normalizePipelineContact(contact, status)).sort(comparePipelineContacts)
+      : [];
+    const totalValueEstimate = Number.isFinite(Number(column.totalValueEstimate))
+      ? Number(column.totalValueEstimate)
+      : contacts.reduce((sum, contact) => sum + Number(contact.valueEstimate || 0), 0);
+
+    return {
+      status,
+      count: Number.isFinite(Number(column.count)) ? Number(column.count) : contacts.length,
+      totalValueEstimate,
+      contacts
+    };
+  });
+
+  return {
+    statuses: LEAD_STATUSES,
+    columns,
+    total: columns.reduce((sum, column) => sum + column.contacts.length, 0),
+    totalValueEstimate: columns.reduce((sum, column) => sum + Number(column.totalValueEstimate || 0), 0)
+  };
+}
+
+function buildPipelineModel(contacts = []) {
+  return normalizePipelinePayload({
+    columns: LEAD_STATUSES.map((status) => {
+      const columnContacts = contacts
+        .map((contact) => normalizePipelineContact(contact))
+        .filter((contact) => contact.status === status)
+        .sort(comparePipelineContacts);
+
+      return {
+        status,
+        count: columnContacts.length,
+        totalValueEstimate: columnContacts.reduce((sum, contact) => sum + Number(contact.valueEstimate || 0), 0),
+        contacts: columnContacts
+      };
+    })
+  });
+}
+
+function flattenPipelineContacts(pipeline) {
+  return normalizePipelinePayload(pipeline).columns.flatMap((column) => column.contacts);
+}
+
+function normalizePipelineContact(contact, fallbackStatus = "new") {
+  const source = contact && typeof contact === "object" ? contact : {};
+  const status = normalizeLeadStatus(source.status || fallbackStatus);
+
+  return {
+    ...source,
+    status,
+    priority: normalizeLeadPriority(source.priority),
+    order: normalizeLeadOrder(source.order, fallbackLeadOrder(source))
+  };
+}
+
+function normalizeLeadStatus(value) {
+  const status = clean(value).toLowerCase();
+  const aliases = {
+    nuevo: "new",
+    contactado: "contacted",
+    "esperando respuesta": "waiting",
+    reservado: "reserved",
+    ganada: "won",
+    ganado: "won",
+    perdida: "lost",
+    perdido: "lost",
+    cliente: "customer"
+  };
+  const normalized = aliases[status] || status || "new";
+  return LEAD_STATUSES.includes(normalized) ? normalized : "new";
+}
+
+function normalizeLeadPriority(value) {
+  const priority = clean(value).toLowerCase();
+  const aliases = {
+    high: "alta",
+    medium: "media",
+    low: "baja"
+  };
+  const normalized = aliases[priority] || priority || "media";
+  return LEAD_PRIORITIES.includes(normalized) ? normalized : "media";
+}
+
+function normalizeLeadOrder(value, fallback = 0) {
+  const number = Number(value);
+
+  if (Number.isFinite(number)) {
+    return number;
+  }
+
+  const fallbackNumber = Number(fallback);
+  return Number.isFinite(fallbackNumber) ? fallbackNumber : 0;
+}
+
+function fallbackLeadOrder(contact) {
+  const parsed = Date.parse(contact?.createdAt || contact?.updatedAt || "");
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function comparePipelineContacts(left, right) {
+  const order = normalizeLeadOrder(left.order, fallbackLeadOrder(left)) - normalizeLeadOrder(right.order, fallbackLeadOrder(right));
+
+  if (Math.abs(order) > Number.EPSILON) {
+    return order;
+  }
+
+  return String(left.createdAt || "").localeCompare(String(right.createdAt || ""));
 }
 
 function contactName(contact) {

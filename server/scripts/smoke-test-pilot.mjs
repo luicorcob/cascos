@@ -113,6 +113,24 @@ async function main() {
   });
   assert(updatedLead.contact?.status === "contacted", "Lead status must be editable");
 
+  const pipeline = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/pipeline`);
+  const pipelineLead = pipeline.pipeline?.contacted?.contacts?.find((item) => item.id === lead.contact.id);
+  assert(pipelineLead, "Pipeline must group contacts by status");
+  assert(pipelineLead.priority === "media", "Pipeline contacts must expose default priority");
+  assert(Number.isFinite(Number(pipelineLead.order)), "Pipeline contacts must expose a numeric order");
+
+  const movedLead = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/pipeline`, {
+    method: "PATCH",
+    body: { status: "waiting", order: 7.5 }
+  });
+  assert(movedLead.contact?.status === "waiting", "Pipeline PATCH must update status");
+  assert(movedLead.contact?.order === 7.5, "Pipeline PATCH must persist manual order");
+  assert(movedLead.activity?.type === "contact.status_changed", "Pipeline status changes must create contact history");
+
+  const movedPipeline = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/pipeline`);
+  const waitingLead = movedPipeline.pipeline?.waiting?.contacts?.find((item) => item.id === lead.contact.id);
+  assert(waitingLead?.order === 7.5, "Pipeline order must persist after reload");
+
   const updatedBooking = await adminRequest(baseUrl, `/api/businesses/${businessId}/bookings/${booking.booking.id}`, {
     method: "PATCH",
     body: { status: "confirmed" }

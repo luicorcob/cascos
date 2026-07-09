@@ -272,12 +272,14 @@ El store del dashboard guarda `contacts` y `activities`, separados por `business
 ```text
 POST  http://127.0.0.1:5173/api/public/{businessSlug}/leads
 GET   http://127.0.0.1:5173/api/businesses/{id-o-slug}/contacts?includeActivities=true
+GET   http://127.0.0.1:5173/api/businesses/{id-o-slug}/contacts/pipeline
 POST  http://127.0.0.1:5173/api/businesses/{id-o-slug}/contacts
 PATCH http://127.0.0.1:5173/api/businesses/{id-o-slug}/contacts/{contactId}
+PATCH http://127.0.0.1:5173/api/businesses/{id-o-slug}/contacts/{contactId}/pipeline
 POST  http://127.0.0.1:5173/api/businesses/{id-o-slug}/contacts/{contactId}/activities
 ```
 
-El portal `pages/business-dashboard.html` usa estos endpoints para mostrar pipeline de leads, cambiar estado y guardar notas/tareas en el historial.
+El portal `pages/business-dashboard.html` usa estos endpoints para mostrar pipeline Kanban de leads, cambiar estado, persistir el orden manual por columna y guardar notas/tareas en el historial.
 
 ## API y widget de reservas
 
