@@ -40,8 +40,8 @@ Para dejar las demos online temporales casi automaticas, autentica Cloudflare un
 npm.cmd run setup:demo-online
 ```
 
-El script crea el KV, guarda el secret, despliega el Worker e imprime las variables `DEMO_REMOTE_PUBLISH_URL` y `DEMO_REMOTE_PUBLISH_TOKEN`.
-Tambien las guarda en `.env`, asi que despues basta con `npm.cmd start` y el boton `Publicar demo online`.
+El script crea el KV, guarda el secret, despliega el Worker y actualiza `.env` con `DEMO_REMOTE_PUBLISH_URL` y `DEMO_REMOTE_PUBLISH_TOKEN` sin imprimir el token completo.
+Despues basta con `npm.cmd start` y el boton `Publicar demo online`.
 
 Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=https://tu-api.com` o pega esa URL en el campo `URL API` del dashboard. DLS la guarda en el navegador y la usa para leads, reservas, eventos, dashboard y reportes.
 

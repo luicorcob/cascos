@@ -7,7 +7,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
-      return emptyResponse(204, corsHeaders(env));
+      return emptyResponse(204, corsHeaders(request, env));
     }
 
     if (url.pathname === "/api/health") {
@@ -16,7 +16,7 @@ export default {
         service: "dls-demo-publisher",
         storage: Boolean(env.DEMOS),
         ttlHours: readPositiveNumber(env.DEMO_TTL_HOURS, DEFAULT_TTL_HOURS)
-      }, 200, env);
+      }, 200, env, {}, request);
     }
 
     if (url.pathname === "/api/demo-publish") {
@@ -27,21 +27,21 @@ export default {
       return handleDemoRequest(request, env, url);
     }
 
-    return textResponse("Not found", 404, env);
+    return textResponse("Not found", 404, env, {}, request);
   }
 };
 
 async function handlePublishRequest(request, env, url) {
   if (request.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405, env, { Allow: "POST, OPTIONS" });
+    return jsonResponse({ error: "Method not allowed" }, 405, env, { Allow: "POST, OPTIONS" }, request);
   }
 
   if (!isAuthorized(request, env)) {
-    return jsonResponse({ error: "Unauthorized" }, 401, env);
+    return jsonResponse({ error: "Unauthorized" }, 401, env, {}, request);
   }
 
   if (!env.DEMOS) {
-    return jsonResponse({ error: "KV namespace DEMOS is not configured" }, 500, env);
+    return jsonResponse({ error: "KV namespace DEMOS is not configured" }, 500, env, {}, request);
   }
 
   try {
@@ -49,14 +49,14 @@ async function handlePublishRequest(request, env, url) {
     const html = String(payload.html || "");
 
     if (!isPublishableHtml(html)) {
-      return jsonResponse({ error: "A complete HTML document is required" }, 400, env);
+      return jsonResponse({ error: "A complete HTML document is required" }, 400, env, {}, request);
     }
 
     const bytes = byteLength(html);
     const maxBytes = readPositiveNumber(env.DEMO_MAX_HTML_BYTES, DEFAULT_MAX_HTML_BYTES);
 
     if (bytes > maxBytes) {
-      return jsonResponse({ error: "Demo publish payload is too large" }, 413, env);
+      return jsonResponse({ error: "Demo publish payload is too large" }, 413, env, {}, request);
     }
 
     const business = normalizeBusinessMeta(payload.business || payload);
@@ -97,19 +97,19 @@ async function handlePublishRequest(request, env, url) {
       },
       publishedUrl: demoUrl,
       warnings: []
-    }, 201, env);
+    }, 201, env, {}, request);
   } catch (error) {
-    return jsonResponse({ error: "Invalid demo publish request" }, 400, env);
+    return jsonResponse({ error: "Invalid demo publish request" }, 400, env, {}, request);
   }
 }
 
 async function handleDemoRequest(request, env, url) {
   if (!["GET", "HEAD"].includes(request.method)) {
-    return textResponse("Method not allowed", 405, env, { Allow: "GET, HEAD" });
+    return textResponse("Method not allowed", 405, env, { Allow: "GET, HEAD" }, request);
   }
 
   if (!env.DEMOS) {
-    return textResponse("Demo storage unavailable", 500, env);
+    return textResponse("Demo storage unavailable", 500, env, {}, request);
   }
 
   let segments;
@@ -117,14 +117,14 @@ async function handleDemoRequest(request, env, url) {
   try {
     segments = url.pathname.split("/").filter(Boolean).map((segment) => decodeURIComponent(segment));
   } catch (error) {
-    return textResponse("Bad request", 400, env);
+    return textResponse("Bad request", 400, env, {}, request);
   }
 
   const demoId = segments[1] || "";
   const rest = segments.slice(2).join("/");
 
   if (segments[0] !== "demos" || !SAFE_DEMO_ID.test(demoId) || (rest && rest !== "index.html")) {
-    return textResponse("Demo not found", 404, env);
+    return textResponse("Demo not found", 404, env, {}, request);
   }
 
   const [html, metadata] = await Promise.all([
@@ -133,7 +133,7 @@ async function handleDemoRequest(request, env, url) {
   ]);
 
   if (!html) {
-    return textResponse("Demo not found or expired", 404, env);
+    return textResponse("Demo not found or expired", 404, env, {}, request);
   }
 
   if (isExpired(metadata)) {
@@ -141,7 +141,7 @@ async function handleDemoRequest(request, env, url) {
       env.DEMOS.delete(htmlKey(demoId)),
       env.DEMOS.delete(metaKey(demoId))
     ]);
-    return textResponse("Demo expired", 410, env);
+    return textResponse("Demo expired", 410, env, {}, request);
   }
 
   return new Response(request.method === "HEAD" ? null : html, {
@@ -230,24 +230,24 @@ function cleanText(value, maxLength = 500) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
 }
 
-function jsonResponse(payload, status, env, extraHeaders = {}) {
+function jsonResponse(payload, status, env, extraHeaders = {}, request = null) {
   return new Response(JSON.stringify(payload, null, 2), {
     status,
     headers: {
       ...securityHeaders(),
-      ...corsHeaders(env),
+      ...corsHeaders(request, env),
       "Content-Type": "application/json; charset=utf-8",
       ...extraHeaders
     }
   });
 }
 
-function textResponse(message, status, env, extraHeaders = {}) {
+function textResponse(message, status, env, extraHeaders = {}, request = null) {
   return new Response(message, {
     status,
     headers: {
       ...securityHeaders(),
-      ...corsHeaders(env),
+      ...corsHeaders(request, env),
       "Content-Type": "text/plain; charset=utf-8",
       ...extraHeaders
     }
@@ -267,16 +267,49 @@ function emptyResponse(status, headers = {}) {
 function securityHeaders() {
   return {
     "X-Content-Type-Options": "nosniff",
-    "Referrer-Policy": "strict-origin-when-cross-origin"
+    "X-Frame-Options": "SAMEORIGIN",
+    "Content-Security-Policy": [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: http: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' http: https:",
+      "media-src 'self' data: blob: http: https:",
+      "frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://youtube.com",
+      "worker-src 'self' blob:"
+    ].join("; "),
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Strict-Transport-Security": "max-age=15552000; includeSubDomains"
   };
 }
 
-function corsHeaders(env) {
-  const origin = cleanText(env.CORS_ORIGIN || "*", 1000);
-  return {
-    "Access-Control-Allow-Origin": origin || "*",
+function corsHeaders(request, env) {
+  const origins = cleanText(env.CORS_ORIGIN || "", 1000)
+    .split(",")
+    .map((origin) => cleanText(origin, 300))
+    .filter((origin) => origin && origin !== "*");
+  const requestOrigin = cleanText(request?.headers?.get?.("Origin") || "", 300);
+  const allowOrigin = requestOrigin
+    ? origins.find((origin) => origin === requestOrigin)
+    : origins[0];
+
+  return cleanHeaders({
+    "Access-Control-Allow-Origin": allowOrigin || null,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-DLS-Publish-Token, X-LocalLift-Publish-Token",
-    "Access-Control-Max-Age": "86400"
-  };
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin"
+  });
+}
+
+function cleanHeaders(headers) {
+  return Object.fromEntries(
+    Object.entries(headers).filter(([, value]) => value !== null && value !== undefined && value !== "")
+  );
 }

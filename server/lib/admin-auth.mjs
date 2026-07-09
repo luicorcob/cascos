@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { getClientSessionForRequest, isClientApiAccessPath } from "./client-auth.mjs";
 import { corsHeaders } from "./cors.mjs";
+import { clearAuthFailures, recordAuthFailure } from "./structured-logger.mjs";
 
 const ADMIN_TOKEN_ENV_KEYS = ["LOCALLIFT_ADMIN_TOKEN", "ADMIN_API_TOKEN"];
 
@@ -21,10 +22,17 @@ export async function requireAdminApiAuth(request, response, context, pathname =
 
   if (clientSession && isClientApiAccessPath(pathname, clientSession)) {
     request.localLiftClientSession = clientSession;
+    clearAuthFailures(request, context, { route: pathname });
     return true;
   }
 
   if (providedClientToken) {
+    recordAuthFailure(request, clientSession ? "client_session_forbidden" : "client_session_invalid", context, {
+      route: pathname,
+      hasProvidedToken: true,
+      clientSessionRole: clientSession?.role || "",
+      statusCode: clientSession ? 403 : 401
+    });
     response.writeHead(clientSession ? 403 : 401, {
       ...context.baseHeaders,
       ...corsHeaders(context),
@@ -37,16 +45,44 @@ export async function requireAdminApiAuth(request, response, context, pathname =
     return false;
   }
 
-  if (!expectedToken || request.method === "OPTIONS") {
+  if (request.method === "OPTIONS") {
+    return true;
+  }
+
+  if (!expectedToken) {
+    if (process.env.NODE_ENV === "production") {
+      recordAuthFailure(request, "admin_auth_not_configured", context, {
+        route: pathname,
+        hasProvidedToken: false,
+        statusCode: 503
+      });
+      response.writeHead(503, {
+        ...context.baseHeaders,
+        ...corsHeaders(context),
+        "Content-Type": "application/json; charset=utf-8"
+      });
+      response.end(JSON.stringify({
+        error: "Admin API token is not configured",
+        code: "admin_auth_not_configured"
+      }, null, 2));
+      return false;
+    }
+
     return true;
   }
 
   const providedToken = getProvidedToken(request);
 
   if (providedToken && secureCompare(providedToken, expectedToken)) {
+    clearAuthFailures(request, context, { route: pathname });
     return true;
   }
 
+  recordAuthFailure(request, "admin_token_invalid_or_missing", context, {
+    route: pathname,
+    hasProvidedToken: Boolean(providedToken),
+    statusCode: 401
+  });
   response.writeHead(401, {
     ...context.baseHeaders,
     ...corsHeaders(context),

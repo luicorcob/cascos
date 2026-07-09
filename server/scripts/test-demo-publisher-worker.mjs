@@ -44,12 +44,27 @@ class MemoryKv {
 const env = {
   DEMOS: new MemoryKv(),
   DEMO_PUBLISH_TOKEN: "test-publish-token",
-  DEMO_TTL_HOURS: "1"
+  DEMO_TTL_HOURS: "1",
+  CORS_ORIGIN: "https://studio.example.com,http://127.0.0.1:5173"
 };
+
+const allowedPreflight = await worker.fetch(new Request("https://demos.example.com/api/demo-publish", {
+  method: "OPTIONS",
+  headers: { Origin: "https://studio.example.com" }
+}), env);
+assert.equal(allowedPreflight.status, 204);
+assert.equal(allowedPreflight.headers.get("Access-Control-Allow-Origin"), "https://studio.example.com");
+
+const blockedPreflight = await worker.fetch(new Request("https://demos.example.com/api/demo-publish", {
+  method: "OPTIONS",
+  headers: { Origin: "https://evil.example" }
+}), env);
+assert.equal(blockedPreflight.status, 204);
+assert.equal(blockedPreflight.headers.get("Access-Control-Allow-Origin"), null);
 
 const unauthorized = await worker.fetch(new Request("https://demos.example.com/api/demo-publish", {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: { "Content-Type": "application/json", Origin: "https://studio.example.com" },
   body: JSON.stringify({
     html: demoHtml("No entra"),
     business: { name: "Sin token" }
@@ -62,7 +77,8 @@ const publish = await worker.fetch(new Request("https://demos.example.com/api/de
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    Authorization: "Bearer test-publish-token"
+    Authorization: "Bearer test-publish-token",
+    Origin: "https://studio.example.com"
   },
   body: JSON.stringify({
     html: demoHtml("Hola desde Cloudflare"),
@@ -77,6 +93,8 @@ const publish = await worker.fetch(new Request("https://demos.example.com/api/de
 }), env);
 
 assert.equal(publish.status, 201);
+assert.equal(publish.headers.get("Access-Control-Allow-Origin"), "https://studio.example.com");
+assert.match(publish.headers.get("Content-Security-Policy"), /object-src 'none'/);
 const payload = await publish.json();
 assert.match(payload.demo.id, /^clinica-aurea-/);
 assert.match(payload.demo.url, /^https:\/\/demos\.example\.com\/demos\/clinica-aurea-/);
@@ -88,6 +106,8 @@ const demo = await worker.fetch(new Request(payload.demo.url), env);
 assert.equal(demo.status, 200);
 assert.equal(demo.headers.get("Content-Type"), "text/html; charset=utf-8");
 assert.equal(demo.headers.get("X-Robots-Tag"), "noindex, nofollow");
+assert.equal(demo.headers.get("X-Frame-Options"), "SAMEORIGIN");
+assert.match(demo.headers.get("Strict-Transport-Security"), /includeSubDomains/);
 assert.match(await demo.text(), /Hola desde Cloudflare/);
 
 const head = await worker.fetch(new Request(payload.demo.url, { method: "HEAD" }), env);

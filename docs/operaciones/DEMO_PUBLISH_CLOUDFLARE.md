@@ -92,3 +92,10 @@ La respuesta debe incluir:
 El HTML exportado de DLS se guarda en una clave KV. El Worker limita cada demo a
 `DEMO_MAX_HTML_BYTES` y el valor por defecto es 14 MB. Si una web pesa mas, toca
 reducir imagenes incrustadas o pasar a un storage tipo R2.
+
+## Seguridad Cloudflare
+
+Si expones el Worker con dominio propio, aplica tambien el runbook de fase 5:
+[`CLOUDFLARE_FASE_5.md`](CLOUDFLARE_FASE_5.md). Como minimo, deja HTTPS
+forzado, HSTS, WAF Managed Rules, Bot Fight Mode si hay trafico publico y rate
+limiting en `POST /api/demo-publish`.

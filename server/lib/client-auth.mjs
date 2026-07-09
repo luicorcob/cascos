@@ -2,6 +2,7 @@ import { createHmac, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { corsHeaders } from "./cors.mjs";
 import { loadBusinessStore } from "./business-store.mjs";
+import { clearAuthFailures, recordAuthFailure } from "./structured-logger.mjs";
 
 const scryptAsync = promisify(scrypt);
 const MAX_BODY_BYTES = Number(process.env.CLIENT_AUTH_MAX_BODY_BYTES || 64 * 1024);
@@ -142,6 +143,10 @@ async function loginClient(request, response, context) {
   const business = findBusinessForLogin(db, businessRef);
 
   if (!business || business.status === "archived") {
+    recordAuthFailure(request, "client_login_invalid_credentials", context, {
+      route: "/api/client/login",
+      statusCode: 401
+    });
     throw httpError(401, "Invalid business credentials");
   }
 
@@ -149,9 +154,14 @@ async function loginClient(request, response, context) {
   const enabled = business.settings?.portal?.enabled === true;
 
   if (!enabled || !passwordHash || !(await verifyClientPassword(password, passwordHash))) {
+    recordAuthFailure(request, "client_login_invalid_credentials", context, {
+      route: "/api/client/login",
+      statusCode: 401
+    });
     throw httpError(401, "Invalid business credentials");
   }
 
+  clearAuthFailures(request, context, { route: "/api/client/login" });
   const session = makeClientSession(business);
   sendJson(response, 200, {
     session,
@@ -163,6 +173,11 @@ async function getClientSession(request, response, context) {
   const session = await getClientSessionForRequest(request);
 
   if (!session) {
+    recordAuthFailure(request, "client_session_invalid_or_missing", context, {
+      route: "/api/client/session",
+      hasProvidedToken: Boolean(getProvidedClientToken(request)),
+      statusCode: 401
+    });
     throw httpError(401, "Client session required");
   }
 
@@ -170,9 +185,15 @@ async function getClientSession(request, response, context) {
   const business = db.businesses.find((item) => item.id === session.businessId && item.status !== "archived");
 
   if (!business) {
+    recordAuthFailure(request, "client_session_business_missing", context, {
+      route: "/api/client/session",
+      hasProvidedToken: true,
+      statusCode: 401
+    });
     throw httpError(401, "Client session is no longer valid");
   }
 
+  clearAuthFailures(request, context, { route: "/api/client/session" });
   sendJson(response, 200, {
     session: {
       ...session,

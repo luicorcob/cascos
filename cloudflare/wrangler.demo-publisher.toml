@@ -10,7 +10,7 @@ id = "ce20989529fa4e6f9d88b6a5cd3644b5"
 [vars]
 DEMO_TTL_HOURS = "24"
 DEMO_MAX_HTML_BYTES = "14680064"
-CORS_ORIGIN = "*"
+CORS_ORIGIN = "http://127.0.0.1:5173,http://localhost:5173"
 
 # Set the publish token as a secret, not as a plain var:
 # npx wrangler secret put DEMO_PUBLISH_TOKEN --config cloudflare/wrangler.demo-publisher.toml

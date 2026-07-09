@@ -17,6 +17,9 @@ import { handleStockImageApi, isStockImageApiRequest } from "./api/stock-image-a
 import { isAdminApiRequest, requireAdminApiAuth } from "./lib/admin-auth.mjs";
 import { loadLocalEnv } from "./lib/load-env.mjs";
 import { requirePublicApiRateLimit } from "./lib/public-rate-limit.mjs";
+import { requireApiRequestGuards } from "./lib/request-guards.mjs";
+import { securityHeaders } from "./lib/security-headers.mjs";
+import { attachAccessLogger, createRequestLogContext, logError, logInfo, logWarn } from "./lib/structured-logger.mjs";
 
 loadLocalEnv();
 
@@ -40,19 +43,22 @@ const contentTypes = {
   ".ico": "image/x-icon"
 };
 
-const baseHeaders = {
-  "X-Content-Type-Options": "nosniff",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Cache-Control": "no-store"
-};
+const baseHeaders = securityHeaders();
 
 const server = createServer(async (request, response) => {
+  let requestLog = null;
+
   try {
     const requestUrl = new URL(request.url || "/", `http://${host}:${port}`);
+    requestLog = createRequestLogContext(request, requestUrl);
+    response.setHeader("X-Request-Id", requestLog.requestId);
+    attachAccessLogger(request, response, requestLog);
+
     const apiContext = {
       root,
       baseHeaders,
-      requestOrigin: request.headers.origin || ""
+      requestOrigin: request.headers.origin || "",
+      requestLog
     };
 
     if (isHealthApiRequest(requestUrl.pathname)) {
@@ -60,12 +66,16 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    if (isStockImageApiRequest(requestUrl.pathname)) {
-      await handleStockImageApi(request, response, apiContext);
+    if (!requireApiRequestGuards(request, response, apiContext, requestUrl.pathname)) {
       return;
     }
 
     if (!requirePublicApiRateLimit(request, response, apiContext, requestUrl.pathname)) {
+      return;
+    }
+
+    if (isStockImageApiRequest(requestUrl.pathname)) {
+      await handleStockImageApi(request, response, apiContext);
       return;
     }
 
@@ -171,24 +181,41 @@ const server = createServer(async (request, response) => {
     });
     response.end(request.method === "HEAD" ? undefined : file);
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error(error);
+    if (error.code === "ENOENT") {
+      logWarn("not_found", { request: requestLog });
+    } else {
+      logError(error, { request: requestLog });
     }
 
-    response.writeHead(404, { ...baseHeaders, "Content-Type": "text/plain; charset=utf-8" });
-    response.end("Not found. Check the path or use / for the studio.");
+    if (!response.headersSent && !response.writableEnded) {
+      response.writeHead(404, { ...baseHeaders, "Content-Type": "text/plain; charset=utf-8" });
+      response.end("Not found. Check the path or use / for the studio.");
+    } else if (!response.writableEnded) {
+      response.end();
+    }
   }
 });
 
 server.listen(port, host, () => {
-  console.log(`DLS Studio running at http://${host}:${port}`);
+  logInfo("server_start", {
+    service: "locallift-studio",
+    url: `http://${host}:${port}`,
+    host,
+    port,
+    environment: process.env.NODE_ENV || "development"
+  });
 });
 
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
-    console.error(`Port ${port} is already in use. Try PORT=5174 node server/server.mjs`);
+    logError(error, {
+      component: "server",
+      port,
+      hint: "Port is already in use. Try PORT=5174 node server/server.mjs"
+    });
     process.exit(1);
   }
 
+  logError(error, { component: "server", port });
   throw error;
 });

@@ -48,6 +48,12 @@ Este plan está dividido en fases. Dáselas a Codex una por una (no todo junto),
 **Prompt para Codex:**
 > Para cada tabla de Supabase, genera las políticas RLS necesarias según este esquema: [describe aquí quién puede leer/escribir qué en tu app]. Verifica que ninguna llamada desde el frontend use la service_role key.
 
+**Entregable local (2026-07-08):**
+Se genero [`operaciones/SUPABASE_RLS_FASE_2.md`](operaciones/SUPABASE_RLS_FASE_2.md)
+y [`operaciones/supabase_rls_fase_2.sql`](operaciones/supabase_rls_fase_2.sql).
+No se marca la fase como aplicada porque falta ejecutar el SQL en una instancia
+real de Supabase y validar `pg_policies`.
+
 ---
 
 ## FASE 3 — Backend (Render): validación y control de acceso
@@ -62,6 +68,13 @@ Este plan está dividido en fases. Dáselas a Codex una por una (no todo junto),
 **Prompt para Codex:**
 > Añade middleware de validación de input (usando [zod/joi/pydantic, el que uses]) a todos los endpoints. Añade verificación del JWT de Supabase en endpoints protegidos. Añade rate limiting (ej. `express-rate-limit` o equivalente) a los endpoints de generación de IA y subida de archivos. Asegúrate de que los errores en producción no devuelven stack traces al cliente.
 
+**Entregable local (2026-07-08):**
+Se genero [`operaciones/BACKEND_SECURITY_FASE_3.md`](operaciones/BACKEND_SECURITY_FASE_3.md).
+Se anadio guard comun de requests API, rate limiting para login/imagenes/demo
+publish/Google/Radar y cierre seguro de rutas admin sin token en produccion.
+La verificacion de JWT Supabase queda pendiente porque el repo todavia no usa
+Supabase Auth ni SDK de Supabase.
+
 ---
 
 ## FASE 4 — CORS y cabeceras HTTP
@@ -72,6 +85,12 @@ Este plan está dividido en fases. Dáselas a Codex una por una (no todo junto),
 
 **Prompt para Codex:**
 > Configura CORS para aceptar solo peticiones desde [tu dominio]. Añade cabeceras de seguridad estándar (CSP, X-Frame-Options, X-Content-Type-Options, HSTS) en las respuestas del backend.
+
+**Entregable local (2026-07-08):**
+Se genero [`operaciones/HTTP_SECURITY_FASE_4.md`](operaciones/HTTP_SECURITY_FASE_4.md).
+El backend principal y el Worker de demos ya no caen a wildcard en produccion,
+validan origenes exactos y anaden CSP, `X-Frame-Options`, `nosniff`,
+`Permissions-Policy`, `Referrer-Policy`, `Cache-Control` y HSTS donde aplica.
 
 ---
 
@@ -85,42 +104,76 @@ Este plan está dividido en fases. Dáselas a Codex una por una (no todo junto),
 
 Esto es configuración en el dashboard de Cloudflare, no algo que Codex programe — pero puedes pedirle que documente en un `SECURITY.md` qué reglas tienes activas y por qué.
 
+**Entregable local (2026-07-09):**
+Se genero [`operaciones/CLOUDFLARE_FASE_5.md`](operaciones/CLOUDFLARE_FASE_5.md)
+y [`../SECURITY.md`](../SECURITY.md). La fase queda documentada como runbook
+de dashboard para WAF, HTTPS/HSTS, Bot Fight Mode, rate limiting de borde y
+bloqueos opcionales por IP/pais. No se marca como aplicada en Cloudflare hasta
+activar las reglas en el dashboard y validar `Security > Events`.
+
 ---
 
 ## FASE 6 — Dependencias y supply chain
 
-- [ ] `npm audit` (o `pip-audit`) integrado en CI, que falle el build si hay vulnerabilidades críticas.
-- [ ] Dependabot (o similar) activado en el repo de GitHub para alertas automáticas.
-- [ ] Revisar que no haya paquetes con muy pocas descargas/mantenimiento sospechoso antes de añadirlos.
+- [x] `npm audit` (o `pip-audit`) integrado en CI, que falle el build si hay vulnerabilidades críticas.
+- [x] Dependabot (o similar) activado en el repo de GitHub para alertas automáticas.
+- [x] Revisar que no haya paquetes con muy pocas descargas/mantenimiento sospechoso antes de añadirlos.
 
 **Prompt para Codex:**
 > Añade un workflow de GitHub Actions que corra `npm audit --audit-level=high` (o equivalente) en cada PR y falle si hay vulnerabilidades críticas o altas.
+
+**Entregable local (2026-07-09):**
+Se genero [`operaciones/DEPENDENCIAS_FASE_6.md`](operaciones/DEPENDENCIAS_FASE_6.md),
+[`../.github/workflows/dependency-audit.yml`](../.github/workflows/dependency-audit.yml)
+y [`../.github/dependabot.yml`](../.github/dependabot.yml). La auditoria local
+`npm.cmd audit --audit-level=high` devuelve `found 0 vulnerabilities`. Queda
+pendiente comprobar en GitHub que Dependabot alerts y Dependabot security
+updates estan activos en `Settings > Code security and analysis`.
 
 ---
 
 ## FASE 7 — Logging y monitorización
 
-- [ ] Logs de errores y accesos (sin loggear datos sensibles: passwords, tokens, keys).
-- [ ] Alertas ante fallos repetidos de autenticación (posible fuerza bruta).
+- [x] Logs de errores y accesos (sin loggear datos sensibles: passwords, tokens, keys).
+- [x] Alertas ante fallos repetidos de autenticación (posible fuerza bruta).
 - [ ] Backups automáticos de Supabase verificados (que existan y que se puedan restaurar).
 
 **Prompt para Codex:**
 > Añade logging estructurado de errores y accesos en el backend, asegurándote de que nunca se loguean contraseñas, tokens ni keys completas. Documenta en `SECURITY.md` la política de backups de Supabase.
 
+**Entregable local (2026-07-09):**
+Se genero [`operaciones/LOGGING_MONITORIZACION_FASE_7.md`](operaciones/LOGGING_MONITORIZACION_FASE_7.md).
+Se anadio logging JSON estructurado, `X-Request-Id`, access logs, redaccion de
+secretos, alertas `auth_failure_alert` por fallos repetidos de autenticacion y
+pruebas en `server/scripts/test-backend-security.mjs`. La politica de backups
+Supabase queda documentada en [`../SECURITY.md`](../SECURITY.md); no se marca
+como verificada hasta activar backups en una instancia real y restaurar una
+copia de prueba.
+
 ---
 
 ## FASE 8 — Checklist final antes de producción
 
-- [ ] Ningún secreto en el repo (revisar historial de git con `git log -p` o herramientas como `gitleaks`).
+- [x] Ningún secreto en el repo (revisar historial de git con `git log -p` o herramientas como `gitleaks`).
 - [ ] RLS activo y probado en todas las tablas.
-- [ ] CORS restringido.
-- [ ] Rate limiting activo en endpoints sensibles.
+- [x] CORS restringido.
+- [x] Rate limiting activo en endpoints sensibles.
 - [ ] HTTPS forzado en todo el dominio.
-- [ ] Dependencias sin vulnerabilidades críticas.
-- [ ] `.env.example` documentado, `.env` real fuera del repo.
+- [x] Dependencias sin vulnerabilidades críticas.
+- [x] `.env.example` documentado, `.env` real fuera del repo.
 
 **Prompt para Codex:**
 > Ejecuta gitleaks (o similar) sobre el historial completo del repo y reporta cualquier secreto detectado. Genera un `SECURITY.md` resumiendo las medidas implementadas en este plan.
+
+**Entregable local (2026-07-09):**
+Se genero [`operaciones/CHECKLIST_FINAL_FASE_8.md`](operaciones/CHECKLIST_FINAL_FASE_8.md)
+y se anadio `npm run security:phase8` con un escaneo local repetible del arbol
+actual y `git log -p --all`. `gitleaks` no estaba instalado en esta maquina; el
+script local no detecto formatos conocidos de secreto ni asignaciones reales no
+placeholder. Tambien pasan `npm.cmd run test:backend-security` y
+`npm.cmd audit --audit-level=high` con `found 0 vulnerabilities`. Quedan como
+gates externos aplicar/probar RLS en Supabase real, verificar backups/restauracion
+y activar/validar HTTPS-HSTS-WAF-rate limiting en Cloudflare/Render.
 
 ---
 

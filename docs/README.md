@@ -88,6 +88,12 @@ Documentos utiles que no marcan prioridades actuales:
 | Producto | [`COMPATIBILITY_CHECKLIST.md`](producto/COMPATIBILITY_CHECKLIST.md) | QA responsive y navegadores. |
 | Operaciones | [`PILOT_LAUNCH.md`](operaciones/PILOT_LAUNCH.md) | Publicacion y aceptacion del piloto. |
 | Operaciones | [`DEPLOYMENT.md`](operaciones/DEPLOYMENT.md) | Guia de despliegue. |
+| Operaciones | [`SUPABASE_RLS_FASE_2.md`](operaciones/SUPABASE_RLS_FASE_2.md) | Politicas RLS para migracion a Supabase. |
+| Operaciones | [`BACKEND_SECURITY_FASE_3.md`](operaciones/BACKEND_SECURITY_FASE_3.md) | Validacion, auth y rate limiting del backend. |
+| Operaciones | [`HTTP_SECURITY_FASE_4.md`](operaciones/HTTP_SECURITY_FASE_4.md) | CORS estricto y cabeceras HTTP de seguridad. |
+| Operaciones | [`DEPENDENCIAS_FASE_6.md`](operaciones/DEPENDENCIAS_FASE_6.md) | Auditoria npm en CI, Dependabot y politica de dependencias. |
+| Operaciones | [`LOGGING_MONITORIZACION_FASE_7.md`](operaciones/LOGGING_MONITORIZACION_FASE_7.md) | Logging estructurado, alertas de auth y politica de backups. |
+| Operaciones | [`CHECKLIST_FINAL_FASE_8.md`](operaciones/CHECKLIST_FINAL_FASE_8.md) | Escaneo final de secretos, checklist local y gates externos de produccion. |
 | Operaciones | [`DEMO_PUBLISH_CLOUDFLARE.md`](operaciones/DEMO_PUBLISH_CLOUDFLARE.md) | Demos publicas temporales con Workers + KV. |
 | Operaciones | [`OPERATIONS_RUNBOOK.md`](operaciones/OPERATIONS_RUNBOOK.md) | Salud, incidentes y restauracion. |
 | Operaciones | [`GOOGLE_CLIENT_SERVICE_PLAYBOOK.md`](operaciones/GOOGLE_CLIENT_SERVICE_PLAYBOOK.md) | Operacion del servicio Google. |

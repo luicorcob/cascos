@@ -309,7 +309,7 @@ async function loadPostgresCounts(client) {
 
   for (const collection of COLLECTIONS) {
     const result = await client.query(`select count(*)::int as count from ${collection.table}`);
-    counts[countKey(collection.key)] = Number(result.rows[0]?.count || 0);
+    setCount(counts, collection.key, Number(result.rows[0]?.count || 0));
   }
 
   return counts;
@@ -519,7 +519,7 @@ function countBusinessDb(db) {
   const counts = emptyCounts();
 
   for (const collection of COLLECTIONS) {
-    counts[countKey(collection.key)] = normalized[collection.key].length;
+    setCount(counts, collection.key, normalized[collection.key].length);
   }
 
   return counts;
@@ -536,12 +536,17 @@ function emptyCounts() {
     bookingBlocks: 0,
     bookingReminders: 0,
     businessEvents: 0,
+    events: 0,
     auditLog: 0
   };
 }
 
-function countKey(key) {
-  return key;
+function setCount(counts, key, value) {
+  counts[key] = value;
+
+  if (key === "businessEvents") {
+    counts.events = value;
+  }
 }
 
 function isStoreEmpty(counts) {

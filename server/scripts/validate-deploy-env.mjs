@@ -29,8 +29,8 @@ const checks = [
   },
   {
     name: "CORS_ORIGIN",
-    ok: hasProductionOrigin(process.env.CORS_ORIGIN || process.env.LOCALLIFT_CORS_ORIGIN),
-    message: "CORS_ORIGIN debe incluir el dominio HTTPS del frontend."
+    ok: hasProductionOrigins(process.env.CORS_ORIGIN || process.env.LOCALLIFT_CORS_ORIGIN),
+    message: "CORS_ORIGIN debe incluir solo dominios HTTPS reales del frontend, sin * ni localhost."
   },
   {
     name: "BUSINESS_STORE",
@@ -65,11 +65,28 @@ function hasLongToken(value) {
   return clean(value).length >= MIN_TOKEN_LENGTH;
 }
 
-function hasProductionOrigin(value) {
-  return clean(value)
+function hasProductionOrigins(value) {
+  const origins = clean(value)
     .split(",")
     .map((origin) => clean(origin))
-    .some((origin) => origin.startsWith("https://"));
+    .filter(Boolean);
+
+  return origins.length > 0 && origins.every(isProductionOrigin);
+}
+
+function isProductionOrigin(origin) {
+  if (origin === "*" || origin.toLowerCase() === "null") {
+    return false;
+  }
+
+  try {
+    const url = new URL(origin);
+    return url.origin === origin
+      && url.protocol === "https:"
+      && !["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  } catch (error) {
+    return false;
+  }
 }
 
 function googleOAuthReady() {

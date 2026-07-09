@@ -1,9 +1,12 @@
 node_modules/
 .env
-.env.local
+.env.*
+!.env.example
+*.log
 .npm-cache/
 .tmp-*
 .tmp-*/
 data/google-auth-db.json
+data/radar-leads.json
 data/backups/google-auth-db.*.json
 data/demo-publishes/

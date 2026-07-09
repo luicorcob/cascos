@@ -29,20 +29,22 @@ const deployOutput = runWrangler(["deploy", "--config", relative(configPath)], {
   label: "Desplegando Worker"
 });
 const workerUrl = readWorkerUrl(deployOutput);
+const envValues = {
+  DEMO_REMOTE_PUBLISH_TOKEN: publishToken,
+  DEMO_PUBLISH_TTL_HOURS: cleanNumber(process.env.DEMO_PUBLISH_TTL_HOURS || process.env.DEMO_TTL_HOURS || "24", "24")
+};
 
 if (workerUrl) {
-  await upsertEnvFile({
-    DEMO_REMOTE_PUBLISH_URL: workerUrl,
-    DEMO_REMOTE_PUBLISH_TOKEN: publishToken,
-    DEMO_PUBLISH_TTL_HOURS: cleanNumber(process.env.DEMO_PUBLISH_TTL_HOURS || process.env.DEMO_TTL_HOURS || "24", "24")
-  });
+  envValues.DEMO_REMOTE_PUBLISH_URL = workerUrl;
 }
+
+await upsertEnvFile(envValues);
 
 console.log("");
 console.log("Demo publisher listo.");
 console.log("");
 console.log(`DEMO_REMOTE_PUBLISH_URL=${workerUrl || "https://TU-WORKER.workers.dev"}`);
-console.log(`DEMO_REMOTE_PUBLISH_TOKEN=${publishToken}`);
+console.log("DEMO_REMOTE_PUBLISH_TOKEN=<guardado-en-.env>");
 console.log("DEMO_PUBLISH_TTL_HOURS=24");
 console.log("");
 console.log(workerUrl
