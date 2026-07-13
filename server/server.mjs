@@ -11,6 +11,7 @@ import { handleDiscoveryApi, isDiscoveryApiRequest } from "./api/discovery-api.m
 import { handleEventApi, isEventApiRequest } from "./api/event-api.mjs";
 import { handleHealthApi, isHealthApiRequest } from "./api/health-api.mjs";
 import { handleGoogleApi, isGoogleApiRequest } from "./api/google-api.mjs";
+import { handleMessageTemplateApi, isMessageTemplateApiRequest } from "./api/message-template-api.mjs";
 import { handleProposalApi, isProposalApiRequest } from "./api/proposal-api.mjs";
 import { handleReportApi, isReportApiRequest } from "./api/report-api.mjs";
 import { handleQaVisualApi, isQaVisualApiRequest } from "./api/qa-visual-api.mjs";
@@ -97,6 +98,11 @@ const server = createServer(async (request, response) => {
 
     if (isGoogleApiRequest(requestUrl.pathname)) {
       await handleGoogleApi(request, response, apiContext);
+      return;
+    }
+
+    if (isMessageTemplateApiRequest(requestUrl.pathname)) {
+      await handleMessageTemplateApi(request, response, apiContext);
       return;
     }
 

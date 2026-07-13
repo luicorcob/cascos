@@ -12,6 +12,17 @@ const state = {
   proposalError: "",
   proposalFeedback: { type: "", message: "" },
   proposalDraftContactId: "",
+  messageTemplates: [],
+  messageTemplateTypes: [],
+  messagePlaceholders: [],
+  messageLoading: false,
+  messageError: "",
+  messageComposer: {
+    contactId: "",
+    templateId: "",
+    preview: null,
+    feedback: ""
+  },
   nextActions: {
     today: [],
     overdue: [],
@@ -42,6 +53,7 @@ const LOST_REASONS = ["precio", "no_responde", "ya_tiene_proveedor", "fuera_de_z
 const NEXT_ACTION_TYPES = ["llamada", "whatsapp", "email", "reunion", "enviar_propuesta", "revisar_reserva"];
 const PROPOSAL_PACKAGES = ["presencia_local", "conversion_pro", "growth_local", "custom"];
 const PROPOSAL_STATUSES = ["borrador", "enviada", "vista", "aceptada", "rechazada", "caducada"];
+const MESSAGE_TEMPLATE_TYPES = ["primer_contacto", "envio_demo", "seguimiento_48h", "envio_propuesta", "reactivacion_lead_frio", "solicitud_resena"];
 const BOOKING_STATUSES = ["pending", "confirmed", "completed", "canceled", "no-show"];
 const WEEKDAYS = [
   { value: 1, label: "Lunes" },
@@ -82,9 +94,14 @@ function init() {
   refs.contactTimelineContent = document.querySelector("[data-contact-timeline-content]");
   refs.contactTimelineClose = document.querySelector("[data-contact-timeline-close]");
   refs.contactProposal = document.querySelector("[data-contact-proposal]");
+  refs.contactMessage = document.querySelector("[data-contact-message]");
 
   applyPortalMode();
   bindUi();
+  const requestedTab = new URLSearchParams(window.location.search).get("tab") || "";
+  if (Array.from(document.querySelectorAll("[data-tab]")).some((button) => button.dataset.tab === requestedTab)) {
+    setActiveTab(requestedTab);
+  }
   loadBusinesses();
 }
 
@@ -181,6 +198,13 @@ function bindUi() {
       startProposalForContact(contactId, { closeDialog: true });
     }
   });
+  refs.contactMessage?.addEventListener("click", () => {
+    const contactId = refs.contactMessage?.dataset.contactId || "";
+
+    if (contactId) {
+      startMessageForContact(contactId, { closeDialog: true });
+    }
+  });
 }
 
 function applyPortalMode() {
@@ -221,6 +245,7 @@ async function loadBusinesses(options = {}) {
       state.pipeline = null;
       state.duplicateGroups = [];
       resetProposalState();
+      resetMessageState();
       state.nextActions = emptyNextActions();
       state.services = [];
       state.bookings = [];
@@ -255,6 +280,7 @@ async function loadBusiness(id, options = {}) {
   closeContactTimeline();
   state.proposalDraftContactId = "";
   state.proposalFeedback = { type: "", message: "" };
+  resetMessageComposer();
   setLoading(true);
 
   try {
@@ -262,6 +288,7 @@ async function loadBusiness(id, options = {}) {
     state.business = payload.business || null;
     await loadContacts(state.business?.id || id);
     await loadProposals(state.business?.id || id);
+    await loadMessageTemplates(state.business?.id || id);
     await loadBookings(state.business?.id || id);
     await loadReport(state.business?.id || id);
     if (state.clientSession) {
@@ -274,8 +301,8 @@ async function loadBusiness(id, options = {}) {
     renderBusinessSelect();
     render();
 
-    if (state.crmError || state.proposalError || state.bookingError || state.googleError) {
-      showNotice([state.crmError, state.proposalError, state.bookingError, state.googleError].filter(Boolean).join(" "), "warn");
+    if (state.crmError || state.proposalError || state.messageError || state.bookingError || state.googleError) {
+      showNotice([state.crmError, state.proposalError, state.messageError, state.bookingError, state.googleError].filter(Boolean).join(" "), "warn");
     } else if (!options.silent) {
       showNotice("", "info");
     }
@@ -286,6 +313,7 @@ async function loadBusiness(id, options = {}) {
     state.pipeline = null;
     state.duplicateGroups = [];
     resetProposalState();
+    resetMessageState();
     state.nextActions = emptyNextActions();
     state.services = [];
     state.bookings = [];
@@ -420,6 +448,59 @@ function resetProposalState() {
   state.proposalDraftContactId = "";
 }
 
+async function loadMessageTemplates(id, options = {}) {
+  state.messageTemplates = [];
+  state.messageTemplateTypes = [];
+  state.messagePlaceholders = [];
+  state.messageError = "";
+  state.messageLoading = true;
+
+  if (!id) {
+    state.messageLoading = false;
+    return;
+  }
+
+  try {
+    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/message-templates`);
+    state.messageTemplates = Array.isArray(payload.templates) ? payload.templates : [];
+    state.messageTemplateTypes = Array.isArray(payload.types) ? payload.types : [];
+    state.messagePlaceholders = Array.isArray(payload.placeholders) ? payload.placeholders : [];
+
+    const selectedExists = state.messageTemplates.some((template) => template.id === state.messageComposer.templateId);
+    if (!selectedExists) {
+      state.messageComposer.templateId = state.messageTemplates[0]?.id || "";
+    }
+  } catch (error) {
+    state.messageError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar las plantillas de este negocio."
+      : "No se pudieron cargar las plantillas de seguimiento.";
+  } finally {
+    state.messageLoading = false;
+  }
+
+  if (options.render && state.business) {
+    render();
+  }
+}
+
+function resetMessageState() {
+  state.messageTemplates = [];
+  state.messageTemplateTypes = [];
+  state.messagePlaceholders = [];
+  state.messageLoading = false;
+  state.messageError = "";
+  resetMessageComposer();
+}
+
+function resetMessageComposer() {
+  state.messageComposer = {
+    contactId: "",
+    templateId: "",
+    preview: null,
+    feedback: ""
+  };
+}
+
 async function loadNextActions(id) {
   state.nextActions = emptyNextActions();
 
@@ -505,6 +586,23 @@ async function putJson(url, payload) {
 
 async function postJson(url, payload) {
   return sendJson("POST", url, payload);
+}
+
+async function deleteJson(url) {
+  const response = await fetch(apiUrl(url), {
+    method: "DELETE",
+    headers: apiHeaders(),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    const error = new Error(payload.error || `Request failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+
+  return response.status === 204 ? {} : response.json();
 }
 
 async function sendJson(method, url, payload) {
@@ -637,6 +735,7 @@ function render() {
   renderNextActions(model);
   renderLeads(model);
   renderProposals(model);
+  renderMessages(model);
   renderCustomers(model);
   renderBookings(model);
   renderOrders(model);
@@ -647,6 +746,7 @@ function render() {
   bindExportControls(model);
   bindCrmControls(model);
   bindProposalControls(model);
+  bindMessageControls(model);
   bindBookingControls(model);
   bindGoogleControls();
 }
@@ -1109,6 +1209,209 @@ function proposalPackageLabel(value) {
   return labels[clean(value)] || clean(value || "Propuesta a medida");
 }
 
+function renderMessages(model) {
+  const container = document.querySelector('[data-list="messages"]');
+
+  if (!container) {
+    return;
+  }
+
+  if (state.messageLoading) {
+    container.innerHTML = `
+      <section class="message-state" role="status">
+        <span class="message-spinner" aria-hidden="true"></span>
+        <div><strong>Cargando plantillas</strong><p>Preparando los mensajes comerciales del negocio.</p></div>
+      </section>
+    `;
+    return;
+  }
+
+  const contacts = proposalContactOptions(model);
+  const templates = Array.isArray(state.messageTemplates) ? state.messageTemplates : [];
+  const selectedContactId = contacts.some((contact) => contact.id === state.messageComposer.contactId)
+    ? state.messageComposer.contactId
+    : (contacts[0]?.id || "");
+  const selectedTemplate = templates.find((template) => template.id === state.messageComposer.templateId)
+    || templates[0]
+    || null;
+
+  container.innerHTML = `
+    ${state.messageError ? renderMessageError(state.messageError) : ""}
+    ${contacts.length && selectedTemplate
+      ? renderMessageComposer(contacts, selectedContactId, templates, selectedTemplate)
+      : renderMessageEmpty(contacts.length, templates.length)}
+  `;
+}
+
+function renderMessageError(message) {
+  return `
+    <section class="message-state message-state-error" role="alert">
+      <span class="message-state-icon" aria-hidden="true">!</span>
+      <div><strong>No pudimos cargar las plantillas</strong><p>${escapeHtml(message)}</p></div>
+      <button type="button" data-message-retry>Reintentar</button>
+    </section>
+  `;
+}
+
+function renderMessageEmpty(contactCount, templateCount) {
+  const missingContacts = contactCount === 0;
+  return `
+    <section class="message-state message-state-empty">
+      <span class="message-state-icon" aria-hidden="true">${missingContacts ? "+" : "01"}</span>
+      <div>
+        <strong>${escapeHtml(missingContacts ? "Primero necesitas un contacto" : "No hay plantillas disponibles")}</strong>
+        <p>${escapeHtml(missingContacts
+          ? "Crea un lead para preparar mensajes personalizados y seguros."
+          : `Se esperaban ${MESSAGE_TEMPLATE_TYPES.length} plantillas comerciales. Reintenta la carga.`)}</p>
+      </div>
+      <button type="button" ${missingContacts ? "data-message-go-leads" : "data-message-retry"}>${missingContacts ? "Ir a Leads" : "Reintentar"}</button>
+    </section>
+  `;
+}
+
+function renderMessageComposer(contacts, selectedContactId, templates, selectedTemplate) {
+  const preview = state.messageComposer.preview;
+  const templateKind = selectedTemplate.virtual ? "Plantilla base" : "Personalizada";
+  const placeholders = state.messagePlaceholders.length ? state.messagePlaceholders : ["nombre"];
+
+  return `
+    <div class="message-workspace">
+      <section class="message-compose" aria-labelledby="messageComposeTitle">
+        <header>
+          <div>
+            <p class="eyebrow">Contacto y contexto</p>
+            <h3 id="messageComposeTitle">Preparar seguimiento</h3>
+            <p>Genera la vista previa antes de copiar o abrir el canal de envio.</p>
+          </div>
+          <span>${escapeHtml(templateKind)}</span>
+        </header>
+        <form class="message-render-form" data-message-render-form>
+          <label class="message-field">
+            Contacto
+            <select name="contactId" required>
+              ${contacts.map((contact) => `<option value="${escapeAttr(contact.id)}"${contact.id === selectedContactId ? " selected" : ""}>${escapeHtml(contactName(contact))}${contact.email ? ` - ${escapeHtml(contact.email)}` : ""}</option>`).join("")}
+            </select>
+          </label>
+          <label class="message-field">
+            Plantilla
+            <select name="templateId" required>
+              ${templates.map((template) => `<option value="${escapeAttr(template.id)}"${template.id === selectedTemplate.id ? " selected" : ""}>${escapeHtml(template.label || messageTemplateTypeLabel(template.type))}${template.virtual ? " - base" : " - personalizada"}</option>`).join("")}
+            </select>
+          </label>
+          <label class="message-field">
+            URL de demo <span>(opcional)</span>
+            <input name="demoUrl" type="url" inputmode="url" placeholder="https://...">
+          </label>
+          <label class="message-field">
+            URL de propuesta <span>(opcional)</span>
+            <input name="proposalUrl" type="url" inputmode="url" placeholder="https://...">
+          </label>
+          <label class="message-field">
+            URL de resena <span>(opcional)</span>
+            <input name="reviewUrl" type="url" inputmode="url" placeholder="https://...">
+          </label>
+          <div class="message-render-submit">
+            <small>Variables admitidas: ${placeholders.map((item) => `<code>{{${escapeHtml(item)}}}</code>`).join(" ")}</small>
+            <button type="submit">Generar vista previa</button>
+          </div>
+        </form>
+        ${state.messageComposer.feedback ? `<p class="message-feedback" role="status">${escapeHtml(state.messageComposer.feedback)}</p>` : ""}
+      </section>
+
+      ${renderMessagePreview(preview)}
+    </div>
+    ${renderMessageTemplateEditor(selectedTemplate)}
+  `;
+}
+
+function renderMessagePreview(preview) {
+  if (!preview) {
+    return `
+      <section class="message-preview message-preview-empty">
+        <span aria-hidden="true">Aa</span>
+        <div>
+          <strong>Vista previa pendiente</strong>
+          <p>Selecciona contacto y plantilla. Nada se enviara sin tu confirmacion.</p>
+        </div>
+      </section>
+    `;
+  }
+
+  const links = preview.links && typeof preview.links === "object" ? preview.links : {};
+  const whatsappUrl = safeMessageActionUrl(links.whatsappUrl, ["https:"]);
+  const mailtoUrl = safeMessageActionUrl(links.mailtoUrl, ["mailto:"]);
+  const missing = Array.isArray(preview.missingPlaceholders) ? preview.missingPlaceholders : [];
+  const unknown = Array.isArray(preview.unknownPlaceholders) ? preview.unknownPlaceholders : [];
+  const warnings = [
+    missing.length ? `Faltan datos para: ${missing.map((item) => `{{${item}}}`).join(", ")}.` : "",
+    unknown.length ? `Variables no reconocidas: ${unknown.map((item) => `{{${item}}}`).join(", ")}.` : ""
+  ].filter(Boolean);
+
+  return `
+    <section class="message-preview" aria-labelledby="messagePreviewTitle" tabindex="-1">
+      <header>
+        <div><p class="eyebrow">Revision final</p><h3 id="messagePreviewTitle">Vista previa</h3></div>
+        <span>${escapeHtml(preview.template?.label || "Mensaje personalizado")}</span>
+      </header>
+      <div class="message-preview-subject"><small>Asunto</small><strong>${escapeHtml(preview.subject || "Sin asunto")}</strong></div>
+      <div class="message-preview-body">${escapeHtml(preview.message || "").replace(/\n/g, "<br>")}</div>
+      ${warnings.length ? `<div class="message-preview-warning" role="alert">${warnings.map((warning) => `<p>${escapeHtml(warning)}</p>`).join("")}</div>` : ""}
+      <footer>
+        <button type="button" data-message-copy>Copiar mensaje</button>
+        ${whatsappUrl ? `<a href="${escapeAttr(whatsappUrl)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>` : '<span class="message-action-disabled">Sin telefono</span>'}
+        ${mailtoUrl ? `<a href="${escapeAttr(mailtoUrl)}">Abrir email</a>` : '<span class="message-action-disabled">Sin email</span>'}
+      </footer>
+    </section>
+  `;
+}
+
+function renderMessageTemplateEditor(template) {
+  const isOverride = Boolean(template && !template.virtual);
+
+  return `
+    <details class="message-template-editor">
+      <summary>Personalizar plantilla: ${escapeHtml(template.label || messageTemplateTypeLabel(template.type))}</summary>
+      <form data-message-template-form data-template-id="${escapeAttr(template.id)}" data-template-type="${escapeAttr(template.type)}" data-template-override="${isOverride ? "true" : "false"}">
+        <label>Nombre<input name="label" type="text" maxlength="160" value="${escapeAttr(template.label || "")}" required></label>
+        <label>Asunto<input name="subject" type="text" maxlength="500" value="${escapeAttr(template.subject || "")}"></label>
+        <label class="message-template-body">Mensaje<textarea name="body" rows="6" maxlength="12000" required>${escapeHtml(template.body || "")}</textarea></label>
+        <div>
+          <p>${isOverride ? "Esta version sustituye la plantilla base para este negocio." : "Al guardar se creara una version propia sin alterar la plantilla global."}</p>
+          ${isOverride ? '<button class="message-template-reset" type="button" data-message-template-reset>Restaurar base</button>' : ""}
+          <button type="submit">${isOverride ? "Guardar cambios" : "Personalizar"}</button>
+        </div>
+      </form>
+    </details>
+  `;
+}
+
+function messageTemplateTypeLabel(value) {
+  const labels = {
+    primer_contacto: "Primer contacto",
+    envio_demo: "Envio de demo",
+    seguimiento_48h: "Seguimiento 48 h",
+    envio_propuesta: "Envio de propuesta",
+    reactivacion_lead_frio: "Reactivacion de lead frio",
+    solicitud_resena: "Solicitud de resena"
+  };
+  return labels[clean(value)] || clean(value || "Mensaje");
+}
+
+function safeMessageActionUrl(value, protocols) {
+  const url = clean(value);
+
+  if (!url) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(url);
+    return protocols.includes(parsed.protocol) ? url : "";
+  } catch {
+    return "";
+  }
+}
+
 function renderDuplicateGroups(groups = []) {
   if (!groups.length) {
     return "";
@@ -1190,6 +1493,9 @@ function renderCustomers(model) {
               <td>
                 ${customer.id && state.contacts.some((contact) => contact.id === customer.id) ? `
                   <div class="contact-row-actions">
+                    <button class="message-contact-button compact" type="button" data-prepare-message-for-contact data-contact-id="${escapeAttr(customer.id)}">
+                      Preparar mensaje
+                    </button>
                     <button class="proposal-contact-button compact" type="button" data-create-proposal-for-contact data-contact-id="${escapeAttr(customer.id)}">
                       Crear propuesta
                     </button>
@@ -2118,6 +2424,244 @@ function downloadBlob(blob, filename) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function bindMessageControls() {
+  document.querySelectorAll("[data-prepare-message-for-contact]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const contactId = button.dataset.contactId || "";
+      if (contactId) {
+        startMessageForContact(contactId);
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-message-retry]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      if (!businessRef) {
+        return;
+      }
+      button.disabled = true;
+      await loadMessageTemplates(businessRef, { render: true });
+      showNotice(state.messageError || "Plantillas actualizadas.", state.messageError ? "error" : "info");
+    });
+  });
+
+  document.querySelector("[data-message-go-leads]")?.addEventListener("click", () => {
+    setActiveTab("leads");
+    document.querySelector('[data-tab="leads"]')?.focus();
+  });
+
+  const renderForm = document.querySelector("[data-message-render-form]");
+  renderForm?.addEventListener("change", (event) => {
+    if (event.target?.name === "contactId") {
+      state.messageComposer.contactId = clean(event.target.value);
+      state.messageComposer.preview = null;
+      state.messageComposer.feedback = "";
+      render();
+      return;
+    }
+
+    if (event.target?.name === "templateId") {
+      state.messageComposer.templateId = clean(event.target.value);
+      state.messageComposer.preview = null;
+      state.messageComposer.feedback = "";
+      render();
+    }
+  });
+  renderForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await renderSelectedMessage(renderForm);
+  });
+
+  document.querySelector("[data-message-copy]")?.addEventListener("click", async (event) => {
+    const preview = state.messageComposer.preview;
+    const text = [preview?.subject, preview?.message].filter(Boolean).join("\n\n");
+
+    if (!text) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(text);
+    state.messageComposer.feedback = copied ? "Mensaje copiado al portapapeles." : "No se pudo copiar automaticamente; selecciona el texto de la vista previa.";
+    showNotice(state.messageComposer.feedback, copied ? "info" : "warn");
+    render();
+    document.querySelector("[data-message-copy]")?.focus();
+  });
+
+  const templateForm = document.querySelector("[data-message-template-form]");
+  templateForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveMessageTemplate(templateForm);
+  });
+  templateForm?.querySelector("[data-message-template-reset]")?.addEventListener("click", async (event) => {
+    await restoreDefaultMessageTemplate(templateForm, event.currentTarget);
+  });
+}
+
+async function renderSelectedMessage(form) {
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const data = new FormData(form);
+  const contactId = clean(data.get("contactId"));
+  const templateId = clean(data.get("templateId"));
+  const submit = form.querySelector('button[type="submit"]');
+
+  if (!businessRef || !contactId || !templateId) {
+    state.messageComposer.feedback = "Selecciona contacto y plantilla.";
+    render();
+    return;
+  }
+
+  form.setAttribute("aria-busy", "true");
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = "Generando...";
+  }
+
+  try {
+    const preview = await postJson(
+      `/api/businesses/${encodeURIComponent(businessRef)}/message-templates/${encodeURIComponent(templateId)}/render`,
+      {
+        contactId,
+        demoUrl: clean(data.get("demoUrl")),
+        proposalUrl: clean(data.get("proposalUrl")),
+        reviewUrl: clean(data.get("reviewUrl"))
+      }
+    );
+    state.messageComposer = {
+      contactId,
+      templateId,
+      preview,
+      feedback: "Vista previa generada. Revisa el contenido antes de usar un canal."
+    };
+    render();
+    document.querySelector(".message-preview:not(.message-preview-empty)")?.focus?.({ preventScroll: false });
+  } catch (error) {
+    state.messageComposer.contactId = contactId;
+    state.messageComposer.templateId = templateId;
+    state.messageComposer.preview = null;
+    state.messageComposer.feedback = error.message || "No se pudo renderizar la plantilla.";
+    showNotice(state.messageComposer.feedback, "error");
+    render();
+  }
+}
+
+async function saveMessageTemplate(form) {
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const templateId = clean(form.dataset.templateId);
+  const type = clean(form.dataset.templateType);
+  const isOverride = form.dataset.templateOverride === "true";
+  const data = new FormData(form);
+  const submit = form.querySelector('button[type="submit"]');
+  const payload = {
+    type,
+    label: clean(data.get("label")),
+    subject: String(data.get("subject") || "").trim(),
+    body: String(data.get("body") || "").trim()
+  };
+
+  if (!businessRef || !type || !payload.label || !payload.body) {
+    form.reportValidity?.();
+    return;
+  }
+
+  form.setAttribute("aria-busy", "true");
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = "Guardando...";
+  }
+
+  try {
+    const result = isOverride
+      ? await patchJson(`/api/businesses/${encodeURIComponent(businessRef)}/message-templates/${encodeURIComponent(templateId)}`, payload)
+      : await postJson(`/api/businesses/${encodeURIComponent(businessRef)}/message-templates`, payload);
+    state.messageComposer.templateId = result.template?.id || templateId;
+    state.messageComposer.preview = null;
+    state.messageComposer.feedback = "Plantilla personalizada guardada.";
+    await loadMessageTemplates(businessRef, { render: true });
+    showNotice("Plantilla de seguimiento guardada.", "info");
+  } catch (error) {
+    state.messageComposer.feedback = error.message || "No se pudo guardar la plantilla.";
+    showNotice(state.messageComposer.feedback, "error");
+    render();
+  }
+}
+
+async function restoreDefaultMessageTemplate(form, button) {
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const templateId = clean(form.dataset.templateId);
+  const type = clean(form.dataset.templateType);
+
+  if (!businessRef || !templateId || form.dataset.templateOverride !== "true") {
+    return;
+  }
+
+  if (!window.confirm("Se eliminara la personalizacion y volvera la plantilla base. Continuar?")) {
+    return;
+  }
+
+  button.disabled = true;
+  try {
+    const result = await deleteJson(`/api/businesses/${encodeURIComponent(businessRef)}/message-templates/${encodeURIComponent(templateId)}`);
+    state.messageComposer.templateId = result.fallback?.id || `default_${type}`;
+    state.messageComposer.preview = null;
+    state.messageComposer.feedback = "Plantilla base restaurada.";
+    await loadMessageTemplates(businessRef, { render: true });
+    showNotice("Plantilla base restaurada.", "info");
+  } catch (error) {
+    state.messageComposer.feedback = error.message || "No se pudo restaurar la plantilla base.";
+    showNotice(state.messageComposer.feedback, "error");
+    render();
+  }
+}
+
+function startMessageForContact(contactId, options = {}) {
+  const contact = state.contacts.find((item) => item.id === contactId);
+
+  if (!contact) {
+    showNotice("No se encontro el contacto para preparar el mensaje.", "error");
+    return;
+  }
+
+  if (options.closeDialog) {
+    closeContactTimeline();
+  }
+
+  state.messageComposer = {
+    contactId,
+    templateId: state.messageComposer.templateId || state.messageTemplates[0]?.id || "",
+    preview: null,
+    feedback: `Preparando un mensaje para ${contactName(contact)}.`
+  };
+  setActiveTab("messages");
+  render();
+  window.requestAnimationFrame(() => {
+    document.querySelector('[data-message-render-form] select[name="templateId"]')?.focus({ preventScroll: true });
+    document.querySelector(".message-compose")?.scrollIntoView({ block: "start", behavior: "auto" });
+  });
+}
+
+async function copyTextToClipboard(value) {
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.append(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    return copied;
+  } catch {
+    return false;
+  }
+}
+
 async function openContactTimeline(contactId) {
   const businessRef = state.business?.id || state.business?.slug || "";
   const contact = state.contacts.find((item) => item.id === contactId) || null;
@@ -2132,6 +2676,11 @@ async function openContactTimeline(contactId) {
     refs.contactProposal.hidden = false;
     refs.contactProposal.dataset.contactId = contactId;
     refs.contactProposal.setAttribute("aria-label", `Crear propuesta para ${contactName(contact)}`);
+  }
+  if (refs.contactMessage) {
+    refs.contactMessage.hidden = false;
+    refs.contactMessage.dataset.contactId = contactId;
+    refs.contactMessage.setAttribute("aria-label", `Preparar mensaje para ${contactName(contact)}`);
   }
   refs.contactTimelineMeta.textContent = [
     statusLabel(contact.status || "new"),
@@ -2205,6 +2754,11 @@ function closeContactTimeline() {
     refs.contactProposal.hidden = true;
     refs.contactProposal.dataset.contactId = "";
     refs.contactProposal.removeAttribute("aria-label");
+  }
+  if (refs.contactMessage) {
+    refs.contactMessage.hidden = true;
+    refs.contactMessage.dataset.contactId = "";
+    refs.contactMessage.removeAttribute("aria-label");
   }
 
   if (!dialog) {
@@ -3120,6 +3674,9 @@ function renderLeadCard(lead) {
       </div>
       <div class="lead-card-actions">
         ${lead.id && state.contacts.some((contact) => contact.id === lead.id) ? `
+          <button class="message-contact-button" type="button" data-prepare-message-for-contact data-contact-id="${escapeAttr(lead.id)}" draggable="false">
+            Preparar mensaje
+          </button>
           <button class="proposal-contact-button" type="button" data-create-proposal-for-contact data-contact-id="${escapeAttr(lead.id)}" draggable="false">
             Crear propuesta
           </button>

@@ -83,6 +83,7 @@ function validateDatabase(data, label) {
     "contacts",
     "activities",
     "proposals",
+    "messageTemplates",
     "services",
     "bookings",
     "availability",

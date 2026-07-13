@@ -4,6 +4,7 @@
   "contacts": [],
   "activities": [],
   "proposals": [],
+  "messageTemplates": [],
   "services": [
     {
       "id": "svc_menu_degustacion",
