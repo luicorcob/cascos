@@ -44,6 +44,10 @@ const state = {
   slaLoading: false,
   slaError: "",
   slaRequestSequence: 0,
+  commercialDashboard: null,
+  commercialDashboardLoading: false,
+  commercialDashboardError: "",
+  commercialDashboardRequestSequence: 0,
   inbox: null,
   inboxLoading: false,
   inboxError: "",
@@ -338,6 +342,7 @@ async function loadBusiness(id, options = {}) {
   resetMessageComposer();
   resetForecastState({ keepMonth: true });
   resetSlaState({ keepHours: true });
+  resetCommercialDashboardState();
   resetInboxState({ keepStaleDays: true });
   setLoading(true);
 
@@ -354,6 +359,7 @@ async function loadBusiness(id, options = {}) {
       loadReport(businessRef),
       loadForecast(businessRef),
       loadSla(businessRef),
+      loadCommercialDashboard(businessRef),
       inboxPromise
     ]);
     if (state.clientSession) {
@@ -388,6 +394,7 @@ async function loadBusiness(id, options = {}) {
     state.report = null;
     resetForecastState({ keepMonth: true });
     resetSlaState({ keepHours: true });
+    resetCommercialDashboardState();
     resetInboxState({ keepStaleDays: true });
     state.googleStatus = null;
     state.googleDiagnostics = null;
@@ -728,6 +735,63 @@ function resetSlaState(options = {}) {
   }
 }
 
+async function loadCommercialDashboard(id, options = {}) {
+  const month = normalizeForecastMonth(options.month || state.forecastMonth);
+  const hours = normalizeSlaHours(options.hours ?? state.slaHours);
+  const requestSequence = ++state.commercialDashboardRequestSequence;
+  state.commercialDashboard = null;
+  state.commercialDashboardError = "";
+  state.commercialDashboardLoading = Boolean(id);
+
+  if (options.render && state.business) {
+    render();
+  }
+
+  if (!id) {
+    state.commercialDashboardLoading = false;
+    return;
+  }
+
+  try {
+    const payload = await getJson(
+      `/api/businesses/${encodeURIComponent(id)}/reports/commercial-dashboard?month=${encodeURIComponent(month)}&hours=${encodeURIComponent(String(hours))}`
+    );
+
+    if (requestSequence !== state.commercialDashboardRequestSequence) {
+      return;
+    }
+
+    state.commercialDashboard = payload.commercialDashboard && typeof payload.commercialDashboard === "object"
+      ? payload.commercialDashboard
+      : null;
+  } catch (error) {
+    if (requestSequence !== state.commercialDashboardRequestSequence) {
+      return;
+    }
+
+    state.commercialDashboard = null;
+    state.commercialDashboardError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar el resumen comercial de este negocio."
+      : "No se pudo cargar el resumen comercial. Revisa la conexion e intentalo de nuevo.";
+  } finally {
+    if (requestSequence !== state.commercialDashboardRequestSequence) {
+      return;
+    }
+
+    state.commercialDashboardLoading = false;
+    if (options.render && state.business) {
+      render();
+    }
+  }
+}
+
+function resetCommercialDashboardState() {
+  state.commercialDashboardRequestSequence += 1;
+  state.commercialDashboard = null;
+  state.commercialDashboardLoading = false;
+  state.commercialDashboardError = "";
+}
+
 async function loadInbox(id, options = {}) {
   const staleDays = normalizeInboxStaleDays(options.staleDays ?? state.inboxStaleDays);
   const requestSequence = ++state.inboxRequestSequence;
@@ -1003,6 +1067,7 @@ function render() {
     report: state.report,
     forecast: state.forecast,
     sla: state.sla,
+    commercialDashboard: state.commercialDashboard,
     inbox: state.inbox
   });
 
@@ -2224,12 +2289,161 @@ function renderReports(model) {
       </article>
     </div>
     ${report ? renderReportFunnel(report) : ""}
+    ${renderCommercialDashboardPanel(model)}
     ${renderForecastPanel(model)}
     ${renderSlaPanel(model)}
     <div class="recommendation-list">
       ${reportRecommendations.map((item) => `<article><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.text)}</p></article>`).join("")}
     </div>
   `;
+}
+
+function renderCommercialDashboardPanel(model) {
+  const loading = state.commercialDashboardLoading;
+
+  return `
+    <section class="commercial-dashboard forecast-panel" aria-labelledby="commercialDashboardTitle" aria-busy="${loading ? "true" : "false"}">
+      <header class="commercial-dashboard-header forecast-panel-header">
+        <div class="forecast-panel-copy">
+          <p class="eyebrow">Vision ejecutiva</p>
+          <h3 id="commercialDashboardTitle">Resumen comercial</h3>
+          <p>Una lectura unificada de captacion, avance del pipeline y resultados del periodo.</p>
+        </div>
+        <div class="commercial-dashboard-period" aria-label="Filtros aplicados">
+          <span>${escapeHtml(formatForecastMonth(state.forecastMonth))}</span>
+          <span>SLA ${escapeHtml(formatSlaThreshold(state.slaHours))}</span>
+        </div>
+      </header>
+      <div aria-live="polite" aria-atomic="false">
+        ${renderCommercialDashboardContent(model)}
+      </div>
+    </section>
+  `;
+}
+
+function renderCommercialDashboardContent(model) {
+  if (state.commercialDashboardLoading) {
+    return `
+      <div class="forecast-state forecast-state-loading" role="status">
+        <span class="forecast-spinner" aria-hidden="true"></span>
+        <div><strong>Preparando el resumen comercial</strong><p>Estamos consolidando captacion, actividad y conversion.</p></div>
+      </div>
+    `;
+  }
+
+  if (state.commercialDashboardError) {
+    return `
+      <div class="forecast-state forecast-state-error" role="alert">
+        <span class="forecast-state-icon" aria-hidden="true">!</span>
+        <div><strong>Resumen no disponible</strong><p>${escapeHtml(state.commercialDashboardError)}</p></div>
+        <button type="button" data-commercial-dashboard-retry>Reintentar</button>
+      </div>
+    `;
+  }
+
+  const dashboard = model.commercialDashboard;
+  if (!dashboard || typeof dashboard !== "object") {
+    return `
+      <div class="forecast-state forecast-state-empty">
+        <span class="forecast-state-icon" aria-hidden="true">0</span>
+        <div><strong>Sin resumen calculado</strong><p>Los indicadores apareceran cuando haya datos comerciales disponibles.</p></div>
+      </div>
+    `;
+  }
+
+  const counts = dashboard.counts && typeof dashboard.counts === "object" ? dashboard.counts : {};
+  const contacts = forecastWholeNumber(counts.contacts);
+  const customers = forecastWholeNumber(counts.customers);
+  const converted = forecastWholeNumber(counts.bookingsConvertedToCustomer);
+  const bookingDetail = dashboard.convertedBookings && typeof dashboard.convertedBookings === "object"
+    ? dashboard.convertedBookings
+    : {};
+
+  if (!contacts
+    && !forecastWholeNumber(counts.leadsCreated)
+    && !forecastWholeNumber(counts.activitiesCompleted)
+    && !forecastWholeNumber(counts.proposalsSent)
+    && !forecastWholeNumber(counts.proposalsAccepted)
+    && !forecastWholeNumber(dashboard.lostReasons?.total)
+    && !converted) {
+    return `
+      <div class="forecast-state forecast-state-empty">
+        <span class="forecast-state-icon" aria-hidden="true">0</span>
+        <div><strong>Sin actividad comercial</strong><p>No hay contactos, acciones ni conversiones para ${escapeHtml(formatForecastMonth(dashboard.period?.month || state.forecastMonth))}.</p></div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="commercial-dashboard-kpis" role="group" aria-label="Indicadores del resumen comercial">
+      ${renderCommercialKpi("Leads del mes", counts.leadsCreated, "Captados en el periodo")}
+      ${renderCommercialKpi("Actividades", counts.activitiesCompleted, "Acciones comerciales realizadas")}
+      ${renderCommercialKpi("Propuestas enviadas", counts.proposalsSent, `${forecastWholeNumber(counts.proposalsAccepted)} aceptada(s)`)}
+      ${renderCommercialKpi("Reservas convertidas", converted, `${forecastWholeNumber(bookingDetail.linkedByContactId)} por contacto, ${forecastWholeNumber(bookingDetail.linkedByIdentity)} por identidad`)}
+      ${renderCommercialKpi("Clientes", customers, `${contacts} contacto(s) en cartera`)}
+    </div>
+    <div class="commercial-dashboard-breakdowns">
+      ${renderCommercialBreakdown("Leads por fuente", dashboard.leadsBySource, "source")}
+      ${renderCommercialBreakdown("Conversion por estado", dashboard.conversionByStatus, "status")}
+      ${renderCommercialBreakdown("Actividad realizada", dashboard.activities?.byType, "type", dashboard.activities?.total)}
+      ${renderCommercialLostReasons(dashboard.lostReasons)}
+    </div>
+  `;
+}
+
+function renderCommercialKpi(label, value, note) {
+  return `
+    <article class="report-block">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(String(forecastWholeNumber(value)))}</strong>
+      <small>${escapeHtml(note)}</small>
+    </article>
+  `;
+}
+
+function renderCommercialBreakdown(title, items, labelKey, total = null) {
+  const rows = Array.isArray(items) ? items.filter((item) => forecastWholeNumber(item?.count) > 0) : [];
+  const denominator = forecastWholeNumber(total) || rows.reduce((sum, item) => sum + forecastWholeNumber(item?.count), 0);
+
+  return `
+    <article class="commercial-breakdown-card settings-block">
+      <h4>${escapeHtml(title)}</h4>
+      ${rows.length ? `<ul class="commercial-breakdown-list">
+        ${rows.map((item) => {
+          const count = forecastWholeNumber(item?.count);
+          const percentage = commercialPercentage(item?.percentage, count, denominator);
+          const rawLabel = item?.[labelKey] || "sin-dato";
+          return `<li>
+            <div><strong>${escapeHtml(statusLabel(rawLabel))}</strong><small>${escapeHtml(formatSlaPercent(percentage))}</small></div>
+            <b>${escapeHtml(String(count))}</b>
+            <progress value="${escapeAttr(String(percentage))}" max="100" aria-label="${escapeAttr(`${statusLabel(rawLabel)}: ${count}`)}"></progress>
+          </li>`;
+        }).join("")}
+      </ul>` : `<p class="commercial-breakdown-empty">Sin datos en el periodo.</p>`}
+    </article>
+  `;
+}
+
+function renderCommercialLostReasons(report) {
+  const reasons = Array.isArray(report?.reasons)
+    ? report.reasons.filter((item) => forecastWholeNumber(item?.count) > 0)
+    : [];
+  const legacyMissing = forecastWholeNumber(report?.legacyMissing);
+  const rows = legacyMissing
+    ? [...reasons, { reason: "sin_motivo", label: "Sin motivo registrado", count: legacyMissing }]
+    : reasons;
+  return renderCommercialBreakdown(
+    "Motivos de perdida",
+    rows.map((item) => ({ ...item, source: item?.label || lostReasonLabel(item?.reason) })),
+    "source",
+    report?.total
+  );
+}
+
+function commercialPercentage(value, count, total) {
+  const supplied = Number(value);
+  const percentage = Number.isFinite(supplied) ? supplied : (total ? (count / total) * 100 : 0);
+  return Math.min(100, Math.max(0, Math.round(percentage * 10) / 10));
 }
 
 function renderForecastPanel(model) {
@@ -2646,7 +2860,10 @@ function bindReportControls() {
     monthInput?.setCustomValidity("");
     const businessRef = state.business?.id || state.business?.slug || "";
     if (businessRef) {
-      await loadForecast(businessRef, { month, render: true });
+      await Promise.all([
+        loadForecast(businessRef, { month, render: true }),
+        loadCommercialDashboard(businessRef, { month, hours: state.slaHours, render: true })
+      ]);
     }
   });
 
@@ -2684,7 +2901,10 @@ function bindReportControls() {
     slaHoursSelect?.setCustomValidity("");
     const businessRef = state.business?.id || state.business?.slug || "";
     if (businessRef) {
-      await loadSla(businessRef, { hours, render: true });
+      await Promise.all([
+        loadSla(businessRef, { hours, render: true }),
+        loadCommercialDashboard(businessRef, { month: state.forecastMonth, hours, render: true })
+      ]);
     }
   });
 
@@ -2699,6 +2919,17 @@ function bindReportControls() {
     const businessRef = state.business?.id || state.business?.slug || "";
     if (businessRef) {
       await loadSla(businessRef, { hours: state.slaHours, render: true });
+    }
+  });
+
+  document.querySelector("[data-commercial-dashboard-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (businessRef) {
+      await loadCommercialDashboard(businessRef, {
+        month: state.forecastMonth,
+        hours: state.slaHours,
+        render: true
+      });
     }
   });
 }
@@ -2942,6 +3173,7 @@ function createDashboardModel(business, crm = {}) {
   const report = crm.report || null;
   const forecast = crm.forecast || null;
   const sla = crm.sla || null;
+  const commercialDashboard = crm.commercialDashboard || null;
   const inbox = crm.inbox || null;
   const orders = arrayFrom(content.orders, commerce.orders, business.orders);
   const products = arrayFrom(content.products, commerce.products, business.products);
@@ -2997,6 +3229,7 @@ function createDashboardModel(business, crm = {}) {
     report,
     forecast,
     sla,
+    commercialDashboard,
     inbox,
     orders,
     products,

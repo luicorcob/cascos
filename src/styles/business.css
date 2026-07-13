@@ -3418,6 +3418,99 @@ tr:last-child td {
   line-height: 1;
 }
 
+.commercial-dashboard {
+  border-color: rgba(22, 116, 92, 0.24);
+}
+
+.commercial-dashboard-period {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.commercial-dashboard-period span {
+  padding: 7px 10px;
+  border: 1px solid rgba(22, 116, 92, 0.18);
+  border-radius: 999px;
+  background: rgba(22, 116, 92, 0.07);
+  color: var(--green);
+  font-size: 0.75rem;
+  font-weight: 950;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.commercial-dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.commercial-dashboard-kpis .report-block {
+  min-height: 120px;
+}
+
+.commercial-dashboard-kpis .report-block strong {
+  color: var(--green);
+}
+
+.commercial-dashboard-breakdowns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.commercial-breakdown-card h4 {
+  margin: 0 0 12px;
+}
+
+.commercial-breakdown-list {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.commercial-breakdown-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+}
+
+.commercial-breakdown-list li > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.commercial-breakdown-list strong,
+.commercial-breakdown-list small {
+  overflow-wrap: anywhere;
+}
+
+.commercial-breakdown-list small,
+.commercial-breakdown-empty {
+  color: var(--muted);
+}
+
+.commercial-breakdown-list progress {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  accent-color: var(--teal);
+}
+
+.commercial-breakdown-empty {
+  margin: 0;
+}
+
 .forecast-panel {
   position: relative;
   margin: 22px 0 16px;
@@ -3825,7 +3918,8 @@ tr:last-child td {
 }
 
 @media (max-width: 1120px) {
-  .forecast-summary {
+  .forecast-summary,
+  .commercial-dashboard-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -3840,6 +3934,14 @@ tr:last-child td {
     flex-basis: auto;
     width: 100%;
   }
+
+  .commercial-dashboard-period {
+    justify-content: flex-start;
+  }
+
+  .commercial-dashboard-breakdowns {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -3848,7 +3950,8 @@ tr:last-child td {
     padding: 16px;
   }
 
-  .forecast-summary {
+  .forecast-summary,
+  .commercial-dashboard-kpis {
     grid-template-columns: 1fr;
   }
 

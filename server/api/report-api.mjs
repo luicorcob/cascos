@@ -1,5 +1,9 @@
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore } from "../lib/business-store.mjs";
+import {
+  buildCommercialDashboardReport,
+  buildCommercialLostReasons
+} from "../lib/commercial-dashboard-report.mjs";
 import { buildCommercialForecast, normalizeForecastMonth } from "../lib/commercial-forecast.mjs";
 import { buildCommercialSla, normalizeSlaHours } from "../lib/commercial-sla.mjs";
 
@@ -9,19 +13,20 @@ const DEFAULT_DB = {
   businesses: [],
   contacts: [],
   activities: [],
+  proposals: [],
   services: [],
   bookings: [],
   bookingReminders: [],
   businessEvents: [],
   auditLog: []
 };
-const LOST_REASONS = ["precio", "no_responde", "ya_tiene_proveedor", "fuera_de_zona", "pospuesto", "no_encaja", "competencia"];
 
 export function isReportApiRequest(pathname) {
   return /^\/api\/businesses\/[^/]+\/reports\/monthly$/.test(pathname)
     || /^\/api\/businesses\/[^/]+\/reports\/lost-reasons$/.test(pathname)
     || /^\/api\/businesses\/[^/]+\/reports\/forecast$/.test(pathname)
-    || /^\/api\/businesses\/[^/]+\/reports\/sla$/.test(pathname);
+    || /^\/api\/businesses\/[^/]+\/reports\/sla$/.test(pathname)
+    || /^\/api\/businesses\/[^/]+\/reports\/commercial-dashboard$/.test(pathname);
 }
 
 export async function handleReportApi(request, response, context) {
@@ -55,12 +60,32 @@ export async function handleReportApi(request, response, context) {
       return;
     }
 
+    if (segments[0] === "api" && segments[1] === "businesses" && segments[3] === "reports" && segments[4] === "commercial-dashboard" && method === "GET") {
+      await getCommercialDashboardReport(segments[2], requestUrl, response, context);
+      return;
+    }
+
     sendJson(response, 405, { error: "Method not allowed" }, context, { Allow: "GET, OPTIONS" });
   } catch (error) {
     const status = error.statusCode || 500;
     const message = status >= 500 ? "Internal report API error" : error.message;
     sendJson(response, status, { error: message }, context);
   }
+}
+
+async function getCommercialDashboardReport(businessId, requestUrl, response, context) {
+  const now = new Date();
+  const month = optionalCommercialDashboardMonth(requestUrl, now);
+  const hours = optionalSlaHours(requestUrl);
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const commercialDashboard = buildCommercialDashboardReport(db, business, { month, hours, now });
+  sendJson(response, 200, { commercialDashboard }, context);
 }
 
 async function getSlaReport(businessId, requestUrl, response, context) {
@@ -112,28 +137,7 @@ async function getLostReasonsReport(businessId, response, context) {
     throw httpError(404, "Business not found");
   }
 
-  const lostContacts = db.contacts
-    .filter((contact) => contact.businessId === business.id)
-    .filter((contact) => String(contact.status || "").toLowerCase() === "lost");
-  const counts = countBy(lostContacts, (contact) => normalizeLostReason(contact.lostReason) || "sin_motivo");
-  const byReason = new Map(counts.map((item) => [item.label, item.value]));
-  const reasons = LOST_REASONS.map((reason) => ({
-    reason,
-    label: lostReasonLabel(reason),
-    count: byReason.get(reason) || 0
-  }));
-  const legacyMissing = byReason.get("sin_motivo") || 0;
-
-  sendJson(response, 200, {
-    business: {
-      id: business.id,
-      slug: business.slug,
-      name: business.name
-    },
-    total: lostContacts.length,
-    reasons,
-    legacyMissing
-  }, context);
+  sendJson(response, 200, buildCommercialLostReasons(db, business), context);
 }
 
 function buildMonthlyReport(db, business, range) {
@@ -266,6 +270,7 @@ async function loadDb(context) {
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
   db.activities = Array.isArray(db.activities) ? db.activities : [];
+  db.proposals = Array.isArray(db.proposals) ? db.proposals : [];
   db.services = Array.isArray(db.services) ? db.services : [];
   db.bookings = Array.isArray(db.bookings) ? db.bookings : [];
   db.bookingReminders = Array.isArray(db.bookingReminders) ? db.bookingReminders : [];
@@ -297,6 +302,25 @@ function requiredForecastMonth(requestUrl) {
     return normalizeForecastMonth(value);
   } catch {
     throw httpError(400, "month is required and must use YYYY-MM");
+  }
+}
+
+function optionalCommercialDashboardMonth(requestUrl, now) {
+  const values = requestUrl.searchParams.getAll("month");
+
+  if (!values.length) {
+    return normalizeForecastMonth(undefined, now);
+  }
+
+  const value = values[0] || "";
+  if (values.length !== 1 || !/^[1-9]\d{3}-(?:0[1-9]|1[0-2])$/.test(value)) {
+    throw httpError(400, "month must use YYYY-MM");
+  }
+
+  try {
+    return normalizeForecastMonth(value, now);
+  } catch {
+    throw httpError(400, "month must use YYYY-MM");
   }
 }
 
@@ -343,29 +367,6 @@ function countBy(items, getKey) {
   return Array.from(counts.entries())
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
-}
-
-function normalizeLostReason(value) {
-  const reason = String(value || "")
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  return LOST_REASONS.includes(reason) ? reason : "";
-}
-
-function lostReasonLabel(value) {
-  const labels = {
-    precio: "Precio",
-    no_responde: "No responde",
-    ya_tiene_proveedor: "Ya tiene proveedor",
-    fuera_de_zona: "Fuera de zona",
-    pospuesto: "Pospuesto",
-    no_encaja: "No encaja",
-    competencia: "Competencia"
-  };
-
-  return labels[value] || value;
 }
 
 function arrayFrom(...values) {
