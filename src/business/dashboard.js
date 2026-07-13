@@ -23,6 +23,7 @@ const state = {
   apiBase: window.LocalLiftApi?.getBase?.() || "",
   adminToken: localStorage.getItem("locallift_admin_token") || "",
   clientSession: window.LocalLiftApi?.getClientSession?.() || null,
+  timelineRequestSequence: 0,
   crmError: "",
   bookingError: "",
   googleError: "",
@@ -68,6 +69,11 @@ function init() {
   refs.webLink = document.querySelector("[data-web-link]");
   refs.todayList = document.querySelector("[data-today-list]");
   refs.healthList = document.querySelector("[data-health-list]");
+  refs.contactTimelineDialog = document.querySelector("[data-contact-timeline-dialog]");
+  refs.contactTimelineTitle = document.querySelector("[data-contact-timeline-title]");
+  refs.contactTimelineMeta = document.querySelector("[data-contact-timeline-meta]");
+  refs.contactTimelineContent = document.querySelector("[data-contact-timeline-content]");
+  refs.contactTimelineClose = document.querySelector("[data-contact-timeline-close]");
 
   applyPortalMode();
   bindUi();
@@ -150,6 +156,16 @@ function bindUi() {
     window.LocalLiftApi?.clearClientSession?.();
     window.location.href = "../index.html";
   });
+
+  refs.contactTimelineClose?.addEventListener("click", closeContactTimeline);
+  refs.contactTimelineDialog?.addEventListener("close", () => {
+    state.timelineRequestSequence += 1;
+  });
+  refs.contactTimelineDialog?.addEventListener("click", (event) => {
+    if (event.target === refs.contactTimelineDialog) {
+      closeContactTimeline();
+    }
+  });
 }
 
 function applyPortalMode() {
@@ -220,6 +236,7 @@ async function loadBusiness(id, options = {}) {
     return;
   }
 
+  closeContactTimeline();
   setLoading(true);
 
   try {
@@ -308,7 +325,7 @@ async function loadContacts(id) {
   }
 
   try {
-    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/pipeline?includeActivities=true&includeTimeline=true`);
+    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/pipeline?includeActivities=true`);
     state.pipeline = normalizePipelinePayload(payload);
     state.contacts = flattenPipelineContacts(state.pipeline);
     await loadDuplicateContacts(id);
@@ -833,15 +850,36 @@ function renderCustomers(model) {
 
   container.innerHTML = `
     ${renderExportToolbar("customers", model.customers.length, "Exportar clientes")}
-    ${renderTable(
-    ["Cliente", "Telefono", "Email", "Ultima actividad"],
-    model.customers.map((customer) => [
-      contactName(customer),
-      clean(customer.phone || "-"),
-      clean(customer.email || "-"),
-      formatDate(customer.lastInteractionAt || customer.createdAt)
-    ])
-  )}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Telefono</th>
+            <th>Email</th>
+            <th>Ultima actividad</th>
+            <th>Ficha</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${model.customers.map((customer) => `
+            <tr>
+              <td>${escapeHtml(contactName(customer))}</td>
+              <td>${escapeHtml(clean(customer.phone || "-"))}</td>
+              <td>${escapeHtml(clean(customer.email || "-"))}</td>
+              <td>${escapeHtml(formatDate(customer.lastInteractionAt || customer.createdAt))}</td>
+              <td>
+                ${customer.id && state.contacts.some((contact) => contact.id === customer.id) ? `
+                  <button class="timeline-open-button compact" type="button" data-contact-timeline data-contact-id="${escapeAttr(customer.id)}" aria-haspopup="dialog">
+                    Ver historial
+                  </button>
+                ` : '<span class="timeline-unavailable">No disponible</span>'}
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
   `;
 }
 
@@ -1335,6 +1373,16 @@ function bindCrmControls(model) {
     });
   });
 
+  document.querySelectorAll("[data-contact-timeline]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const contactId = button.dataset.contactId || "";
+
+      if (contactId) {
+        openContactTimeline(contactId);
+      }
+    });
+  });
+
   document.querySelectorAll("[data-contact-note-form]").forEach((form) => {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -1440,6 +1488,144 @@ function bindCrmControls(model) {
   });
 }
 
+async function openContactTimeline(contactId) {
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const contact = state.contacts.find((item) => item.id === contactId) || null;
+  const requestSequence = ++state.timelineRequestSequence;
+
+  if (!businessRef || !contact || !refs.contactTimelineDialog) {
+    return;
+  }
+
+  refs.contactTimelineTitle.textContent = contactName(contact);
+  refs.contactTimelineMeta.textContent = [
+    statusLabel(contact.status || "new"),
+    contact.phone,
+    contact.email
+  ].filter(Boolean).join(" - ") || "Actividad comercial unificada";
+  refs.contactTimelineContent.innerHTML = `
+    <div class="contact-timeline-loading" role="status">
+      <span aria-hidden="true"></span>
+      <p>Cargando el historial completo...</p>
+    </div>
+  `;
+  showContactTimelineDialog();
+
+  try {
+    const payload = await getJson(
+      `/api/businesses/${encodeURIComponent(businessRef)}/contacts/${encodeURIComponent(contactId)}/timeline`
+    );
+
+    if (requestSequence !== state.timelineRequestSequence) {
+      return;
+    }
+
+    const timeline = Array.isArray(payload) ? payload : (Array.isArray(payload.timeline) ? payload.timeline : []);
+    refs.contactTimelineMeta.textContent = [
+      statusLabel(contact.status || "new"),
+      `${timeline.length} hito${timeline.length === 1 ? "" : "s"}`,
+      contact.phone,
+      contact.email
+    ].filter(Boolean).join(" - ");
+    refs.contactTimelineContent.innerHTML = renderContactTimeline(timeline);
+  } catch (error) {
+    if (requestSequence !== state.timelineRequestSequence) {
+      return;
+    }
+
+    refs.contactTimelineContent.innerHTML = `
+      <section class="contact-timeline-empty" role="alert">
+        <strong>No se pudo cargar el historial</strong>
+        <p>Comprueba la conexion con la API y vuelve a intentarlo.</p>
+        <button type="button" data-contact-timeline-retry>Reintentar</button>
+      </section>
+    `;
+    refs.contactTimelineContent.querySelector("[data-contact-timeline-retry]")?.addEventListener("click", () => {
+      openContactTimeline(contactId);
+    });
+  }
+}
+
+function showContactTimelineDialog() {
+  const dialog = refs.contactTimelineDialog;
+
+  if (!dialog) {
+    return;
+  }
+
+  if (typeof dialog.showModal === "function") {
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+  } else {
+    dialog.setAttribute("open", "");
+  }
+}
+
+function closeContactTimeline() {
+  const dialog = refs.contactTimelineDialog;
+  state.timelineRequestSequence += 1;
+
+  if (!dialog) {
+    return;
+  }
+
+  if (typeof dialog.close === "function" && dialog.open) {
+    dialog.close();
+  } else {
+    dialog.removeAttribute("open");
+  }
+}
+
+function renderContactTimeline(timeline) {
+  if (!timeline.length) {
+    return `
+      <section class="contact-timeline-empty">
+        <strong>Sin actividad registrada</strong>
+        <p>Las notas, reservas, pedidos, mensajes y cambios comerciales apareceran aqui.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <ol class="contact-timeline-list">
+      ${timeline.map((item) => renderContactTimelineItem(item)).join("")}
+    </ol>
+  `;
+}
+
+function renderContactTimelineItem(item) {
+  const type = clean(item?.type || "activity");
+  const date = clean(item?.date || "");
+  const summary = clean(item?.summary || "Actividad registrada");
+  const category = timelineCategory(type);
+
+  return `
+    <li class="contact-timeline-item" data-timeline-category="${escapeAttr(category)}">
+      <span class="contact-timeline-marker" aria-hidden="true"></span>
+      <article>
+        <header>
+          <strong>${escapeHtml(statusLabel(type))}</strong>
+          <time datetime="${escapeAttr(date)}">${escapeHtml(formatDateTime(date))}</time>
+        </header>
+        <p>${escapeHtml(summary)}</p>
+      </article>
+    </li>
+  `;
+}
+
+function timelineCategory(type) {
+  const value = String(type || "").toLowerCase();
+
+  if (value.includes("booking") || value.includes("reserva")) return "booking";
+  if (value.includes("order") || value.includes("pedido") || value.includes("store")) return "order";
+  if (value.includes("chatbot") || value.includes("message")) return "chatbot";
+  if (value.includes("status") || value.includes("lost") || value.includes("won")) return "status";
+  if (value.includes("next_action") || value.includes("task") || value.includes("reminder")) return "action";
+  if (value.includes("note") || value.includes("activity") || value.includes("lead") || value.includes("contact")) return "note";
+  return "event";
+}
+
 function bindPipelineControls(model) {
   const pipeline = model?.pipeline || buildPipelineModel(state.contacts);
 
@@ -1447,7 +1633,8 @@ function bindPipelineControls(model) {
     card.addEventListener("dragstart", (event) => {
       const contactId = card.dataset.contactId || "";
 
-      if (!contactId) {
+      if (!contactId || event.target.closest("button, input, select, textarea, label, form")) {
+        event.preventDefault();
         return;
       }
 
@@ -2255,9 +2442,7 @@ function renderBookingCard(booking) {
 
 function renderLeadCard(lead) {
   const activities = Array.isArray(lead.activities) ? lead.activities.slice(0, 2) : [];
-  const timeline = Array.isArray(lead.timeline) && lead.timeline.length
-    ? lead.timeline.slice(0, 4)
-    : activities.map(activityToTimelineItem);
+  const timelinePreview = activities.map(activityToTimelineItem);
   const contact = [lead.phone, lead.email].filter(Boolean).join(" / ") || "Sin contacto";
   const notes = clean(lead.notes || "");
   const lostReason = normalizeLostReason(lead.lostReason);
@@ -2288,10 +2473,14 @@ function renderLeadCard(lead) {
         </select>
       </label>
       <div class="activity-trail">
-        ${timeline.length
-          ? timeline.map((item) => renderTimelineItem(item)).join("")
+        ${timelinePreview.length
+          ? timelinePreview.map((item) => renderTimelineItem(item)).join("")
           : "<span>Sin historial todavia</span>"}
       </div>
+      <button class="timeline-open-button" type="button" data-contact-timeline data-contact-id="${escapeAttr(lead.id)}" aria-haspopup="dialog">
+        <span>Ver ficha e historial completo</span>
+        <span aria-hidden="true">&rarr;</span>
+      </button>
       <form class="note-form" data-contact-note-form data-contact-id="${escapeAttr(lead.id)}">
         <input name="note" type="text" placeholder="Nota o tarea rapida">
         <button type="submit">Guardar</button>
@@ -3077,8 +3266,13 @@ function statusLabel(value) {
     order: "Pedido",
     booking: "Reserva",
     "booking.reminder": "Recordatorio",
+    "booking.created": "Reserva creada",
+    "booking.updated": "Reserva actualizada",
+    "lead.created": "Lead creado",
+    "lead.updated": "Lead actualizado",
     "contact.created": "Lead creado",
     "contact.updated": "Lead actualizado",
+    "contact.merged": "Contactos fusionados",
     "contact.status_changed": "Cambio de estado",
     "next_action.created": "Proxima accion",
     "next_action.completed": "Accion completada",
@@ -3092,8 +3286,11 @@ function statusLabel(value) {
     public_booking_submit: "Reserva enviada",
     lead_form_submit: "Lead enviado",
     chatbot_open: "Chat abierto",
+    chatbot_prompt: "Opcion del chatbot",
     chatbot_message: "Mensaje chatbot",
     chatbot_lead_captured: "Lead chatbot",
+    store_add_to_cart: "Producto al carrito",
+    store_checkout_start: "Inicio de compra",
     google_maps_click: "Click mapa",
     google_review_click: "Click resena",
     caliente: "Caliente",

@@ -4748,11 +4748,16 @@ function attachChatbot(container) {
   const form = widget.querySelector("[data-chatbot-form]");
   const input = form?.elements.message;
   const history = [];
+  const conversationId = window.crypto && typeof window.crypto.randomUUID === "function"
+    ? `chat_${window.crypto.randomUUID()}`
+    : `chat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  context.chatbot = context.chatbot || {};
+  context.chatbot.conversationId = conversationId;
 
   widget.querySelector(".chatbot-launcher")?.addEventListener("click", () => {
     widget.classList.add("is-open");
     widget.querySelector(".chatbot-launcher")?.setAttribute("aria-expanded", "true");
-    trackLocalLiftEvent("chatbot_open", { business: context.business?.name || "" });
+    trackLocalLiftEvent("chatbot_open", { business: context.business?.name || "", conversationId });
     input?.focus();
   });
 
@@ -4763,14 +4768,13 @@ function attachChatbot(container) {
 
   widget.querySelectorAll("[data-chatbot-prompt]").forEach((button) => {
     button.addEventListener("click", () => {
-      trackLocalLiftEvent("chatbot_prompt", { prompt: button.dataset.chatbotPrompt || "" });
+      trackLocalLiftEvent("chatbot_prompt", { prompt: button.dataset.chatbotPrompt || "", conversationId });
       submitChatbotMessage(button.dataset.chatbotPrompt || "", { messages, input, context, history });
     });
   });
 
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
-    trackLocalLiftEvent("chatbot_message", { business: context.business?.name || "" });
     submitChatbotMessage(input?.value || "", { messages, input, context, history });
   });
 }
@@ -5132,6 +5136,8 @@ function attachStore(container, business) {
       const data = new FormData(checkoutForm);
       const fallbackUrl = `${window.location.origin}${window.location.pathname}`;
       const payload = {
+        businessId: context.business?.id || business.id || "",
+        businessSlug: context.business?.slug || business.slug || "",
         businessName: context.business?.name || business.name,
         orderEmail: commerce.orderEmail || business.email,
         currency: commerce.currency,
@@ -5153,7 +5159,11 @@ function attachStore(container, business) {
       };
 
       setStatus("Creando pago seguro...");
-      trackLocalLiftEvent("store_checkout_start", { business: business.name, items: lines.length });
+      trackLocalLiftEvent("store_checkout_start", {
+        business: business.name,
+        items: lines.length,
+        contact: payload.customer.email || payload.customer.phone || ""
+      });
 
       try {
         const response = await fetch(commerce.checkoutEndpoint, {
@@ -5189,6 +5199,13 @@ async function submitChatbotMessage(rawMessage, state) {
   if (!message) {
     return;
   }
+
+  trackLocalLiftEvent("chatbot_message", {
+    business: state.context.business?.name || "",
+    conversationId: state.context.chatbot?.conversationId || "",
+    message,
+    contact: extractContact(message)
+  });
 
   addChatMessage(state.messages, message, "user");
   state.history.push({ role: "user", content: message });
@@ -5280,7 +5297,8 @@ function generateLocalChatbotReply(message, context, history = []) {
         contact: extractContact(message) || "",
         message,
         source: "chatbot",
-        leadEndpoint: context.chatbot?.leadEndpoint || ""
+        leadEndpoint: context.chatbot?.leadEndpoint || "",
+        conversationId: context.chatbot?.conversationId || ""
       });
       return `Perfecto. Hemos recibido los datos de reserva.\n\nResumen recibido: ${quickLead.message}\n\n${buildNextStepLine(context)}\n\n${contact}`;
     }
@@ -5370,6 +5388,7 @@ function extractLeadFromMessage(message, context, history) {
     message,
     source: "chatbot",
     leadEndpoint: context.chatbot?.leadEndpoint || "",
+    conversationId: context.chatbot?.conversationId || "",
     previousIntent: history.slice(-3).map((item) => item.content).join(" | ")
   });
 }
@@ -5382,7 +5401,12 @@ function storeChatLead(lead) {
   window.localLiftLeads = window.localLiftLeads || [];
   window.localLiftLeads.push(storedLead);
   syncLeadToCrm(lead.leadEndpoint || "", storedLead).catch(() => {});
-  trackLocalLiftEvent("chatbot_lead_captured", { business: storedLead.business || "", contact: storedLead.contact || "", source: storedLead.source || "chatbot" });
+  trackLocalLiftEvent("chatbot_lead_captured", {
+    business: storedLead.business || "",
+    contact: storedLead.contact || "",
+    source: storedLead.source || "chatbot",
+    conversationId: storedLead.conversationId || ""
+  });
   return storedLead;
 }
 

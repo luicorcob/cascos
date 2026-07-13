@@ -571,6 +571,7 @@ function normalizeBooking(payload, existing, business, db, now, defaults) {
   return {
     id: existing?.id || cleanId(source.id) || `book_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
     businessId: business.id,
+    contactId: cleanId(existing?.contactId || ""),
     serviceId: service.id,
     serviceName: service.name,
     durationMinutes,
@@ -858,6 +859,7 @@ function ensureContactForBooking(db, businessId, booking, now) {
       updatedAt: now
     };
     db.contacts.push(contact);
+    booking.contactId = contact.id;
     return contact;
   }
 
@@ -871,11 +873,21 @@ function ensureContactForBooking(db, businessId, booking, now) {
   contact.lastInteractionAt = now;
   contact.updatedAt = now;
   contact.tags = Array.from(new Set([...(Array.isArray(contact.tags) ? contact.tags : []), "reserva"])).slice(0, 12);
+  booking.contactId = contact.id;
   return contact;
 }
 
 function findContactForBooking(db, businessId, booking) {
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
+  const directContactId = cleanId(booking.contactId || "");
+  const directContact = directContactId
+    ? db.contacts.find((item) => item.businessId === businessId && item.id === directContactId && !item.merged)
+    : null;
+
+  if (directContact) {
+    return directContact;
+  }
+
   const email = normalizeEmail(booking.email || extractEmail(booking.phone));
   const phone = cleanPhone(booking.phone || "");
   return db.contacts.find((item) => item.businessId === businessId && !item.merged && (

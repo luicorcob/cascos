@@ -1231,6 +1231,271 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   line-height: 1.4;
 }
 
+.timeline-open-button,
+.contact-timeline-close,
+.contact-timeline-empty button {
+  min-height: 40px;
+  border: 1px solid rgba(37, 99, 235, 0.24);
+  border-radius: var(--radius);
+  background: rgba(37, 99, 235, 0.07);
+  color: #1749b5;
+  font-weight: 900;
+}
+
+.timeline-open-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0 11px;
+  text-align: left;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.timeline-open-button:hover {
+  border-color: rgba(37, 99, 235, 0.44);
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.timeline-open-button:active {
+  transform: translateY(1px);
+}
+
+.timeline-open-button.compact {
+  display: inline-flex;
+  width: auto;
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+.timeline-unavailable {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.timeline-open-button:focus-visible,
+.contact-timeline-close:focus-visible,
+.contact-timeline-empty button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 2px;
+}
+
+.contact-timeline-dialog {
+  width: min(760px, calc(100vw - 28px));
+  max-width: none;
+  max-height: min(860px, calc(100dvh - 28px));
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(28, 24, 44, 0.16);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 32px 90px rgba(20, 19, 27, 0.24);
+}
+
+.contact-timeline-dialog::backdrop {
+  background: rgba(20, 19, 27, 0.52);
+  backdrop-filter: blur(5px);
+}
+
+.contact-timeline-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: min(860px, calc(100dvh - 28px));
+}
+
+.contact-timeline-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(8, 200, 255, 0.12), transparent 42%),
+    radial-gradient(circle at 92% 0%, rgba(181, 34, 155, 0.1), transparent 38%),
+    #ffffff;
+}
+
+.contact-timeline-header h2 {
+  margin-bottom: 4px;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+
+.contact-timeline-header p:last-child {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.contact-timeline-close {
+  flex: 0 0 auto;
+  padding: 0 13px;
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+}
+
+.contact-timeline-content {
+  min-height: 220px;
+  padding: 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: linear-gradient(180deg, rgba(243, 242, 248, 0.58), rgba(255, 255, 255, 0.92));
+}
+
+.contact-timeline-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-timeline-item {
+  --timeline-color: var(--blue);
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 14px;
+  padding: 0 0 18px;
+}
+
+.contact-timeline-item:not(:last-child)::before {
+  position: absolute;
+  top: 14px;
+  bottom: -2px;
+  left: 9px;
+  width: 2px;
+  background: rgba(28, 24, 44, 0.11);
+  content: "";
+}
+
+.contact-timeline-marker {
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  margin-top: 14px;
+  border: 5px solid #ffffff;
+  border-radius: 999px;
+  background: var(--timeline-color);
+  box-shadow: 0 0 0 1px rgba(28, 24, 44, 0.12);
+}
+
+.contact-timeline-item article {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(28, 24, 44, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 24px rgba(20, 19, 27, 0.05);
+}
+
+.contact-timeline-item article header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+
+.contact-timeline-item article strong {
+  color: var(--timeline-color);
+  font-size: 0.78rem;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.contact-timeline-item time {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.contact-timeline-item p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.52;
+  overflow-wrap: anywhere;
+}
+
+.contact-timeline-item[data-timeline-category="booking"] {
+  --timeline-color: var(--green);
+}
+
+.contact-timeline-item[data-timeline-category="order"] {
+  --timeline-color: var(--amber);
+}
+
+.contact-timeline-item[data-timeline-category="chatbot"] {
+  --timeline-color: var(--accent);
+}
+
+.contact-timeline-item[data-timeline-category="status"] {
+  --timeline-color: #6f45d8;
+}
+
+.contact-timeline-item[data-timeline-category="action"] {
+  --timeline-color: var(--teal);
+}
+
+.contact-timeline-loading,
+.contact-timeline-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  min-height: 210px;
+  padding: 24px;
+  border: 1px dashed rgba(28, 24, 44, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
+.contact-timeline-loading span {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(37, 99, 235, 0.16);
+  border-top-color: var(--blue);
+  border-radius: 999px;
+  animation: timeline-spin 0.72s linear infinite;
+}
+
+.contact-timeline-loading p,
+.contact-timeline-empty p {
+  max-width: 430px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.contact-timeline-empty button {
+  padding: 0 14px;
+}
+
+@keyframes timeline-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-open-button {
+    transition: none;
+  }
+
+  .contact-timeline-loading span {
+    animation: none;
+  }
+}
+
 .note-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1848,6 +2113,59 @@ tr:last-child td {
 }
 
 @media (max-width: 640px) {
+  .contact-timeline-dialog {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 10px;
+  }
+
+  .contact-timeline-shell {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .contact-timeline-header {
+    gap: 12px;
+    padding: 17px 16px 14px;
+  }
+
+  .contact-timeline-header p:last-child {
+    font-size: 0.82rem;
+  }
+
+  .contact-timeline-close {
+    min-height: 36px;
+    padding: 0 10px;
+  }
+
+  .contact-timeline-content {
+    padding: 16px;
+  }
+
+  .contact-timeline-item {
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .contact-timeline-item:not(:last-child)::before {
+    left: 7px;
+  }
+
+  .contact-timeline-marker {
+    width: 16px;
+    height: 16px;
+    border-width: 4px;
+  }
+
+  .contact-timeline-item article {
+    padding: 12px;
+  }
+
+  .contact-timeline-item article header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
   .business-main {
     padding: 14px;
   }

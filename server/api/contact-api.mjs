@@ -1,5 +1,7 @@
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
+import { loadCommerceOrdersForBusiness, mergeTimelineOrders } from "../lib/commerce-order-source.mjs";
+import { buildContactTimeline, isRecordAssociatedWithContact } from "../lib/contact-timeline.mjs";
 import { normalizeStoredScoreLabel, recalculateContactScore, withComputedLeadScore } from "../lib/lead-score.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.CONTACT_API_MAX_BODY_BYTES || 512 * 1024);
@@ -168,6 +170,7 @@ async function listContacts(businessId, requestUrl, response, context) {
   }
 
   if (includeTimeline) {
+    await hydrateTimelineOrders(db, business, context);
     contacts = contacts.map((contact) => ({
       ...contact,
       timeline: buildContactTimeline(db, business, contact)
@@ -187,6 +190,9 @@ async function getContactPipeline(businessId, requestUrl, response, context) {
 
   const includeActivities = requestUrl.searchParams.get("includeActivities") === "true";
   const includeTimeline = requestUrl.searchParams.get("includeTimeline") === "true";
+  if (includeTimeline) {
+    await hydrateTimelineOrders(db, business, context);
+  }
   const now = new Date();
   const contacts = db.contacts
     .filter((contact) => contact.businessId === business.id)
@@ -638,6 +644,7 @@ async function getContactTimeline(businessId, contactId, response, context) {
   }
 
   const normalizedContact = normalizeStoredContact(contact, db, business.id);
+  await hydrateTimelineOrders(db, business, context);
   const timeline = buildContactTimeline(db, business, normalizedContact);
   sendJson(response, 200, { contact: summarizeContact(normalizedContact), timeline, total: timeline.length }, context);
 }
@@ -743,106 +750,6 @@ function withContactActivities(db, businessId, contact) {
       .filter((activity) => activity.businessId === businessId && activity.contactId === contact.id)
       .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
   };
-}
-
-function buildContactTimeline(db, business, contact) {
-  const activities = db.activities
-    .filter((activity) => activity.businessId === business.id && activity.contactId === contact.id)
-    .map((activity) => ({
-      type: activity.type || "activity",
-      date: activity.createdAt || "",
-      summary: [activity.title, activity.note].filter(Boolean).join(": ") || "Actividad",
-      refId: activity.id || ""
-    }));
-  const bookings = db.bookings
-    .filter((booking) => booking.businessId === business.id && isRecordAssociatedWithContact(booking, contact))
-    .map((booking) => ({
-      type: "booking",
-      date: booking.startsAt || booking.createdAt || "",
-      summary: [booking.serviceName || booking.service || "Reserva", booking.status || "", booking.notes || ""].filter(Boolean).join(" - "),
-      refId: booking.id || ""
-    }));
-  const reminders = db.bookingReminders
-    .filter((reminder) => reminder.businessId === business.id && isRecordAssociatedWithContact(reminder, contact))
-    .map((reminder) => ({
-      type: "booking.reminder",
-      date: reminder.createdAt || "",
-      summary: [`Recordatorio ${reminder.channel || "manual"}`, reminder.message || ""].filter(Boolean).join(": "),
-      refId: reminder.id || ""
-    }));
-  const orders = getBusinessOrders(business)
-    .filter((order) => isRecordAssociatedWithContact(order, contact))
-    .map((order) => ({
-      type: "order",
-      date: order.paidAt || order.createdAt || order.updatedAt || "",
-      summary: [`Pedido ${order.reference || order.id || ""}`.trim(), order.status || "", formatTimelineMoney(order.total ?? order.amount, business)].filter(Boolean).join(" - "),
-      refId: order.id || order.reference || ""
-    }));
-  const events = db.businessEvents
-    .filter((event) => event.businessId === business.id && isRecordAssociatedWithContact(event, contact))
-    .map((event) => ({
-      type: event.type || event.name || "event",
-      date: event.createdAt || event.timestamp || "",
-      summary: [event.name || event.type || "Evento", event.detail?.source || event.page || ""].filter(Boolean).join(" - "),
-      refId: event.id || ""
-    }));
-
-  return [...activities, ...bookings, ...reminders, ...orders, ...events]
-    .filter((item) => item.date)
-    .sort((left, right) => String(right.date || "").localeCompare(String(left.date || "")));
-}
-
-function isRecordAssociatedWithContact(record, contact) {
-  const detail = record?.detail && typeof record.detail === "object" ? record.detail : {};
-  const customer = record?.customer && typeof record.customer === "object" ? record.customer : {};
-  const contactIds = [record?.contactId, record?.contact_id, detail.contactId, detail.contact_id, detail.leadId, detail.lead_id, customer.contactId]
-    .map((value) => cleanText(value))
-    .filter(Boolean);
-
-  if (contactIds.includes(contact.id)) {
-    return true;
-  }
-
-  const contactEmail = normalizeEmail(contact.email);
-  const emails = [record?.email, record?.customerEmail, detail.email, detail.contact, detail.leadContact, detail.phoneOrEmail, customer.email]
-    .map(normalizeEmail)
-    .filter(Boolean);
-
-  if (contactEmail && emails.includes(contactEmail)) {
-    return true;
-  }
-
-  const contactPhone = normalizePhone(contact.phone);
-  const phones = [record?.phone, record?.customerPhone, detail.phone, detail.contact, detail.leadContact, detail.phoneOrEmail, customer.phone]
-    .map(normalizePhone)
-    .filter(Boolean);
-
-  return Boolean(contactPhone && phones.includes(contactPhone));
-}
-
-function getBusinessOrders(business) {
-  const orders = [];
-  const seen = new Set();
-
-  [business.content?.orders, business.content?.commerce?.orders, business.orders]
-    .filter(Array.isArray)
-    .forEach((items) => {
-      items.forEach((order) => {
-        const key = cleanText(order?.id || order?.reference || "", 160);
-
-        if (key && seen.has(key)) {
-          return;
-        }
-
-        if (key) {
-          seen.add(key);
-        }
-
-        orders.push(order);
-      });
-    });
-
-  return orders;
 }
 
 function findDuplicateContactIndexForPayload(db, businessId, payload) {
@@ -963,23 +870,62 @@ function mergeContactData(survivor, duplicates, now) {
   survivor.updatedAt = now;
 }
 
-function moveContactReferences(db, business, survivorId, duplicateIds) {
+export function moveContactReferences(db, business, survivorId, duplicateIds) {
   const duplicateSet = new Set(duplicateIds);
+  const belongsToBusiness = (record) => record?.businessId === business.id;
+  const duplicateContacts = (Array.isArray(db.contacts) ? db.contacts : []).filter((contact) => (
+    contact.businessId === business.id && duplicateSet.has(contact.id)
+  ));
+  const matchesDuplicateIdentity = (record) => duplicateContacts.some((contact) => (
+    isRecordAssociatedWithContact(record, contact)
+  ));
 
-  db.activities.forEach((activity) => {
+  (Array.isArray(db.activities) ? db.activities : []).forEach((activity) => {
+    if (!belongsToBusiness(activity)) {
+      return;
+    }
+
     if (duplicateSet.has(activity.contactId)) {
       activity.contactId = survivorId;
     }
+
+    if (duplicateSet.has(activity.contact_id)) {
+      activity.contact_id = survivorId;
+    }
   });
 
-  db.bookings.forEach((booking) => {
+  (Array.isArray(db.bookings) ? db.bookings : []).forEach((booking) => {
+    if (!belongsToBusiness(booking)) {
+      return;
+    }
+
     if (duplicateSet.has(booking.contactId)) {
+      booking.contactId = survivorId;
+    }
+
+    if (duplicateSet.has(booking.contact_id)) {
+      booking.contact_id = survivorId;
+    }
+
+    if (!hasContactReference(booking) && matchesDuplicateIdentity(booking)) {
       booking.contactId = survivorId;
     }
   });
 
-  db.bookingReminders.forEach((reminder) => {
+  (Array.isArray(db.bookingReminders) ? db.bookingReminders : []).forEach((reminder) => {
+    if (!belongsToBusiness(reminder)) {
+      return;
+    }
+
     if (duplicateSet.has(reminder.contactId)) {
+      reminder.contactId = survivorId;
+    }
+
+    if (duplicateSet.has(reminder.contact_id)) {
+      reminder.contact_id = survivorId;
+    }
+
+    if (!hasContactReference(reminder) && matchesDuplicateIdentity(reminder)) {
       reminder.contactId = survivorId;
     }
   });
@@ -988,15 +934,112 @@ function moveContactReferences(db, business, survivorId, duplicateIds) {
     .filter(Array.isArray)
     .forEach((orders) => {
       orders.forEach((order) => {
-        if (duplicateSet.has(order.contactId)) {
-          order.contactId = survivorId;
+        if (order.businessId && order.businessId !== business.id) {
+          return;
         }
 
-        if (order.customer && duplicateSet.has(order.customer.contactId)) {
-          order.customer.contactId = survivorId;
-        }
+        moveOrderContactReferences(order, survivorId, duplicateSet, matchesDuplicateIdentity);
       });
     });
+
+  (Array.isArray(db.orders) ? db.orders : [])
+    .filter(belongsToBusiness)
+    .forEach((order) => moveOrderContactReferences(order, survivorId, duplicateSet, matchesDuplicateIdentity));
+
+  (Array.isArray(db.businessEvents) ? db.businessEvents : []).forEach((event) => {
+    if (!belongsToBusiness(event)) {
+      return;
+    }
+
+    if (duplicateSet.has(event.contactId)) {
+      event.contactId = survivorId;
+    }
+
+    if (duplicateSet.has(event.contact_id)) {
+      event.contact_id = survivorId;
+    }
+
+    const detail = isPlainObject(event.detail) ? { ...event.detail } : null;
+    let detailChanged = false;
+
+    if (detail) {
+      ["contactId", "contact_id", "leadId", "lead_id"].forEach((field) => {
+        if (duplicateSet.has(detail[field])) {
+          detail[field] = survivorId;
+          detailChanged = true;
+        }
+      });
+    }
+
+    if (detailChanged) {
+      event.detail = detail;
+    }
+
+    if (!hasContactReference(event) && matchesDuplicateIdentity(event)) {
+      if (detail) {
+        event.detail = { ...detail, contactId: survivorId };
+      } else {
+        event.contactId = survivorId;
+      }
+    }
+  });
+}
+
+function moveOrderContactReferences(order, survivorId, duplicateSet, matchesDuplicateIdentity) {
+  if (duplicateSet.has(order.contactId)) {
+    order.contactId = survivorId;
+  }
+
+  if (duplicateSet.has(order.contact_id)) {
+    order.contact_id = survivorId;
+  }
+
+  if (isPlainObject(order.customer)) {
+    if (duplicateSet.has(order.customer.contactId)) {
+      order.customer.contactId = survivorId;
+    }
+
+    if (duplicateSet.has(order.customer.contact_id)) {
+      order.customer.contact_id = survivorId;
+    }
+  }
+
+  if (isPlainObject(order.detail)) {
+    const detail = { ...order.detail };
+    let detailChanged = false;
+
+    ["contactId", "contact_id", "leadId", "lead_id"].forEach((field) => {
+      if (duplicateSet.has(detail[field])) {
+        detail[field] = survivorId;
+        detailChanged = true;
+      }
+    });
+
+    if (detailChanged) {
+      order.detail = detail;
+    }
+  }
+
+  if (!hasContactReference(order) && matchesDuplicateIdentity(order)) {
+    order.contactId = survivorId;
+  }
+}
+
+function hasContactReference(record) {
+  const detail = isPlainObject(record?.detail) ? record.detail : {};
+  const customer = isPlainObject(record?.customer) ? record.customer : {};
+  return [
+    record?.contactId,
+    record?.contact_id,
+    record?.leadId,
+    record?.lead_id,
+    detail.contactId,
+    detail.contact_id,
+    detail.leadId,
+    detail.lead_id,
+    customer.contactId,
+    customer.contact_id
+  ].some((value) => cleanText(value));
 }
 
 function uniqueTexts(values) {
@@ -1018,17 +1061,6 @@ function pickIso(values, sorter) {
     .sort((left, right) => sorter(left.getTime(), right.getTime()));
 
   return dates[0]?.toISOString() || "";
-}
-
-function formatTimelineMoney(value, business) {
-  const number = Number(value);
-
-  if (!Number.isFinite(number) || number <= 0) {
-    return "";
-  }
-
-  const currency = business.content?.commerce?.currency || business.content?.currency || "EUR";
-  return `${number} ${currency}`;
 }
 
 function makeActivity(businessId, contactId, payload, now, defaults) {
@@ -1062,6 +1094,11 @@ async function loadDb(context) {
 
 async function saveDb(db, context, backupLabel) {
   await saveBusinessStore(db, context, backupLabel);
+}
+
+async function hydrateTimelineOrders(db, business, context) {
+  const commerceOrders = await loadCommerceOrdersForBusiness(context, business);
+  db.orders = mergeTimelineOrders(db.orders, commerceOrders);
 }
 
 async function readJsonBody(request) {

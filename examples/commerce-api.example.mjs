@@ -360,6 +360,8 @@ async function createCheckout(body, request) {
     publicToken: randomUUID(),
     idempotencyKey,
     status: "pending",
+    businessId: cleanText(body.businessId || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 80),
+    businessSlug: slugify(body.businessSlug || ""),
     businessName: cleanText(body.businessName || db.settings.businessName || "Pedido online"),
     orderEmail: cleanText(body.orderEmail || db.settings.orderEmail || orderEmailTo),
     customer,

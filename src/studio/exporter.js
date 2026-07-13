@@ -735,6 +735,8 @@
           const data = new FormData(checkoutForm);
           const fallbackUrl = window.location.origin === "null" ? window.location.href.split("#")[0] : window.location.origin + window.location.pathname;
           const payload = {
+            businessId: context.business?.id || "",
+            businessSlug: context.business?.slug || "",
             businessName: context.business?.name || "",
             orderEmail: commerce.orderEmail || context.business?.email || "",
             currency: commerce.currency,
@@ -751,7 +753,7 @@
             items: lines.map(({ product, quantity }) => ({ id: product.id, sku: product.sku, quantity }))
           };
           status("Creando pago seguro...");
-          track("store_checkout_start", { items: lines.length });
+          track("store_checkout_start", { items: lines.length, contact: payload.customer.email || payload.customer.phone || "" });
           try {
             const response = await fetch(commerce.checkoutEndpoint, {
               method: "POST",
@@ -779,11 +781,16 @@
         const form = widget.querySelector("[data-chatbot-form]");
         const input = form?.elements.message;
         const history = [];
+        const conversationId = window.crypto && typeof window.crypto.randomUUID === "function"
+          ? "chat_" + window.crypto.randomUUID()
+          : "chat_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+        context.chatbot = context.chatbot || {};
+        context.chatbot.conversationId = conversationId;
 
         widget.querySelector(".chatbot-launcher")?.addEventListener("click", () => {
           widget.classList.add("is-open");
           widget.querySelector(".chatbot-launcher")?.setAttribute("aria-expanded", "true");
-          track("chatbot_open", { business: context.business?.name || "" });
+          track("chatbot_open", { business: context.business?.name || "", conversationId: conversationId });
           input?.focus();
         });
 
@@ -794,20 +801,25 @@
 
         widget.querySelectorAll("[data-chatbot-prompt]").forEach((button) => {
           button.addEventListener("click", () => {
-            track("chatbot_prompt", { prompt: button.dataset.chatbotPrompt || "" });
+            track("chatbot_prompt", { prompt: button.dataset.chatbotPrompt || "", conversationId: conversationId });
             submit(button.dataset.chatbotPrompt || "");
           });
         });
 
         form?.addEventListener("submit", (event) => {
           event.preventDefault();
-          track("chatbot_message", { business: context.business?.name || "" });
           submit(input?.value || "");
         });
 
         async function submit(raw) {
           const message = raw.trim();
           if (!message) return;
+          track("chatbot_message", {
+            business: context.business?.name || "",
+            conversationId: conversationId,
+            message: message,
+            contact: contactFrom(message)
+          });
           addMessage(messages, message, "user");
           history.push({ role: "user", content: message });
           if (input) input.value = "";
@@ -875,7 +887,7 @@
         }
         if (any(text, ["reserv", "cita", "mesa", "turno", "agenda", "booking"])) {
           if (/(\\+?\\d[\\d\\s().-]{7,})/.test(text)) {
-            const quickLead = storeLead({ business: business.name || "", name: "Lead desde chatbot", contact: contactFrom(message), message, source: "chatbot", leadEndpoint: context.chatbot?.leadEndpoint || "" });
+            const quickLead = storeLead({ business: business.name || "", name: "Lead desde chatbot", contact: contactFrom(message), message, source: "chatbot", leadEndpoint: context.chatbot?.leadEndpoint || "", conversationId: context.chatbot?.conversationId || "" });
             return "Perfecto. Hemos recibido los datos de reserva.\\n\\nResumen recibido: " + quickLead.message + "\\n\\n" + nextStep(context) + "\\n\\n" + contactLine(context);
           }
           return business.bookingUrl && business.bookingUrl !== "#contacto"
@@ -934,6 +946,7 @@
           message,
           source: "chatbot",
           leadEndpoint: context.chatbot?.leadEndpoint || "",
+          conversationId: context.chatbot?.conversationId || "",
           previousIntent: (history || []).slice(-3).map((item) => item.content).join(" | ")
         });
       }
@@ -943,7 +956,12 @@
         window.localLiftLeads = window.localLiftLeads || [];
         window.localLiftLeads.push(stored);
         syncLead(lead.leadEndpoint || "", stored).catch(() => {});
-        track("chatbot_lead_captured", { business: stored.business || "", contact: stored.contact || "", source: stored.source || "chatbot" });
+        track("chatbot_lead_captured", {
+          business: stored.business || "",
+          contact: stored.contact || "",
+          source: stored.source || "chatbot",
+          conversationId: stored.conversationId || ""
+        });
         return stored;
       }
 
