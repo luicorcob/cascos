@@ -39,6 +39,11 @@ const state = {
   forecastLoading: false,
   forecastError: "",
   forecastRequestSequence: 0,
+  sla: null,
+  slaHours: 24,
+  slaLoading: false,
+  slaError: "",
+  slaRequestSequence: 0,
   inbox: null,
   inboxLoading: false,
   inboxError: "",
@@ -66,6 +71,7 @@ const PROPOSAL_STATUSES = ["borrador", "enviada", "vista", "aceptada", "rechazad
 const MESSAGE_TEMPLATE_TYPES = ["primer_contacto", "envio_demo", "seguimiento_48h", "envio_propuesta", "reactivacion_lead_frio", "solicitud_resena"];
 const BOOKING_STATUSES = ["pending", "confirmed", "completed", "canceled", "no-show"];
 const INBOX_STALE_DAY_OPTIONS = [14, 30, 45, 60, 90];
+const SLA_HOUR_OPTIONS = [4, 8, 12, 24, 48, 72];
 const INBOX_SECTION_CONFIG = Object.freeze({
   overdueActions: {
     label: "Acciones vencidas",
@@ -270,6 +276,7 @@ async function loadBusinesses(options = {}) {
     if (!state.businesses.length) {
       state.business = null;
       resetForecastState({ keepMonth: true });
+      resetSlaState({ keepHours: true });
       resetInboxState({ keepStaleDays: true });
       render();
       showNotice("No hay negocios disponibles para esta sesion.", "warn");
@@ -299,6 +306,7 @@ async function loadBusinesses(options = {}) {
       state.reminderQueue = [];
       state.report = null;
       resetForecastState({ keepMonth: true });
+      resetSlaState({ keepHours: true });
       resetInboxState({ keepStaleDays: true });
       state.googleStatus = null;
       state.googleDiagnostics = null;
@@ -329,6 +337,7 @@ async function loadBusiness(id, options = {}) {
   state.proposalFeedback = { type: "", message: "" };
   resetMessageComposer();
   resetForecastState({ keepMonth: true });
+  resetSlaState({ keepHours: true });
   resetInboxState({ keepStaleDays: true });
   setLoading(true);
 
@@ -344,6 +353,7 @@ async function loadBusiness(id, options = {}) {
     await Promise.all([
       loadReport(businessRef),
       loadForecast(businessRef),
+      loadSla(businessRef),
       inboxPromise
     ]);
     if (state.clientSession) {
@@ -377,6 +387,7 @@ async function loadBusiness(id, options = {}) {
     state.reminderQueue = [];
     state.report = null;
     resetForecastState({ keepMonth: true });
+    resetSlaState({ keepHours: true });
     resetInboxState({ keepStaleDays: true });
     state.googleStatus = null;
     state.googleDiagnostics = null;
@@ -655,6 +666,68 @@ function resetForecastState(options = {}) {
   }
 }
 
+async function loadSla(id, options = {}) {
+  const hours = normalizeSlaHours(options.hours ?? state.slaHours);
+  const requestSequence = ++state.slaRequestSequence;
+  state.slaHours = hours;
+  state.sla = null;
+  state.slaError = "";
+  state.slaLoading = Boolean(id);
+
+  if (options.render && state.business) {
+    render();
+  }
+
+  if (!id) {
+    state.slaLoading = false;
+    return;
+  }
+
+  try {
+    const payload = await getJson(
+      `/api/businesses/${encodeURIComponent(id)}/reports/sla?hours=${encodeURIComponent(String(hours))}`
+    );
+
+    if (requestSequence !== state.slaRequestSequence) {
+      return;
+    }
+
+    state.sla = payload.sla && typeof payload.sla === "object"
+      ? payload.sla
+      : null;
+    state.slaHours = normalizeSlaHours(state.sla?.thresholdHours ?? hours);
+  } catch (error) {
+    if (requestSequence !== state.slaRequestSequence) {
+      return;
+    }
+
+    state.sla = null;
+    state.slaError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar el SLA comercial de este negocio."
+      : "No se pudo cargar el SLA comercial. Revisa la conexion e intentalo de nuevo.";
+  } finally {
+    if (requestSequence !== state.slaRequestSequence) {
+      return;
+    }
+
+    state.slaLoading = false;
+    if (options.render && state.business) {
+      render();
+    }
+  }
+}
+
+function resetSlaState(options = {}) {
+  state.slaRequestSequence += 1;
+  state.sla = null;
+  state.slaLoading = false;
+  state.slaError = "";
+
+  if (!options.keepHours) {
+    state.slaHours = 24;
+  }
+}
+
 async function loadInbox(id, options = {}) {
   const staleDays = normalizeInboxStaleDays(options.staleDays ?? state.inboxStaleDays);
   const requestSequence = ++state.inboxRequestSequence;
@@ -929,6 +1002,7 @@ function render() {
     reminderQueue: state.reminderQueue,
     report: state.report,
     forecast: state.forecast,
+    sla: state.sla,
     inbox: state.inbox
   });
 
@@ -2151,6 +2225,7 @@ function renderReports(model) {
     </div>
     ${report ? renderReportFunnel(report) : ""}
     ${renderForecastPanel(model)}
+    ${renderSlaPanel(model)}
     <div class="recommendation-list">
       ${reportRecommendations.map((item) => `<article><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.text)}</p></article>`).join("")}
     </div>
@@ -2346,6 +2421,214 @@ function renderForecastRows(rows, currency) {
   `;
 }
 
+function renderSlaPanel(model) {
+  const hours = normalizeSlaHours(state.slaHours || model.sla?.thresholdHours);
+  const loading = state.slaLoading;
+  const hourOptions = Array.from(new Set([...SLA_HOUR_OPTIONS, hours]))
+    .sort((left, right) => left - right);
+
+  return `
+    <section class="sla-panel forecast-panel" aria-labelledby="slaPanelTitle" aria-busy="${loading ? "true" : "false"}">
+      <header class="sla-panel-header forecast-panel-header">
+        <div class="sla-panel-copy forecast-panel-copy">
+          <p class="eyebrow">Velocidad comercial</p>
+          <h3 id="slaPanelTitle">SLA de primera respuesta</h3>
+          <p>Mide cuanto tarda el equipo en responder y detecta leads abiertos que siguen sin una interaccion humana.</p>
+        </div>
+        <form class="sla-hours-form forecast-month-form" data-sla-form>
+          <label for="slaHours">Umbral sin respuesta</label>
+          <div>
+            <select
+              id="slaHours"
+              name="hours"
+              aria-describedby="slaHoursHint"
+              data-sla-hours
+              required
+              ${loading ? "disabled" : ""}
+            >
+              ${hourOptions.map((option) => `
+                <option value="${escapeAttr(String(option))}"${option === hours ? " selected" : ""}>${escapeHtml(formatSlaThreshold(option))}</option>
+              `).join("")}
+            </select>
+            <button type="submit" ${loading ? "disabled" : ""}>${loading ? "Actualizando..." : "Actualizar"}</button>
+          </div>
+          <small id="slaHoursHint">Un lead aparece sin tocar cuando supera este umbral sin actividad humana.</small>
+        </form>
+      </header>
+      <div class="sla-live-region forecast-live-region" aria-live="polite" aria-atomic="false">
+        ${renderSlaContent(model)}
+      </div>
+    </section>
+  `;
+}
+
+function renderSlaContent(model) {
+  if (state.slaLoading) {
+    return `
+      <div class="sla-state sla-state-loading forecast-state forecast-state-loading" role="status">
+        <span class="sla-spinner forecast-spinner" aria-hidden="true"></span>
+        <div>
+          <strong>Calculando tiempos de respuesta</strong>
+          <p>Estamos revisando la primera interaccion humana de cada contacto.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  if (state.slaError) {
+    return `
+      <div class="sla-state sla-state-error forecast-state forecast-state-error" role="alert">
+        <span class="sla-state-icon forecast-state-icon" aria-hidden="true">!</span>
+        <div>
+          <strong>SLA no disponible</strong>
+          <p>${escapeHtml(state.slaError)}</p>
+        </div>
+        <button type="button" data-sla-retry>Reintentar</button>
+      </div>
+    `;
+  }
+
+  const sla = model.sla;
+  if (!sla || typeof sla !== "object") {
+    return `
+      <div class="sla-state sla-state-empty forecast-state forecast-state-empty">
+        <span class="sla-state-icon forecast-state-icon" aria-hidden="true">0</span>
+        <div>
+          <strong>Sin SLA calculado</strong>
+          <p>Selecciona un umbral para consultar los tiempos de primera respuesta.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  const totalContacts = slaWholeNumber(sla.totalContacts);
+  if (totalContacts === 0) {
+    return `
+      <div class="sla-state sla-state-empty forecast-state forecast-state-empty">
+        <span class="sla-state-icon forecast-state-icon" aria-hidden="true">0</span>
+        <div>
+          <strong>Sin contactos medibles</strong>
+          <p>Los indicadores apareceran cuando el CRM tenga contactos con una fecha de alta valida.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  const thresholdHours = normalizeSlaHours(sla.thresholdHours ?? state.slaHours);
+  const responded = slaWholeNumber(sla.responded);
+  const withinSla = Math.min(responded, slaWholeNumber(sla.withinSla));
+  const untouched = Array.isArray(sla.untouched) ? sla.untouched : [];
+  const untouchedTotal = Math.max(untouched.length, slaWholeNumber(sla.untouchedTotal));
+  const generatedAt = formatSlaGeneratedAt(sla.generatedAt);
+
+  return `
+    <div class="sla-summary forecast-summary" role="group" aria-label="Indicadores principales del SLA comercial">
+      ${renderSlaKpi(
+        "Tiempo medio",
+        responded ? formatSlaDuration(sla.averageFirstResponseMinutes) : "--",
+        "Promedio hasta la primera respuesta humana",
+        "average"
+      )}
+      ${renderSlaKpi(
+        "Mediana",
+        responded ? formatSlaDuration(sla.medianFirstResponseMinutes) : "--",
+        "Valor central, menos sensible a casos extremos",
+        "median"
+      )}
+      ${renderSlaKpi(
+        "Respondidos",
+        String(responded),
+        `${withinSla} dentro de ${formatSlaThreshold(thresholdHours)} (${formatSlaPercent(sla.complianceRate)})`,
+        "responded"
+      )}
+      ${renderSlaKpi(
+        "Sin tocar",
+        String(untouchedTotal),
+        `Leads abiertos con mas de ${formatSlaThreshold(thresholdHours)}`,
+        untouchedTotal ? "untouched" : "clear"
+      )}
+    </div>
+    ${renderSlaUntouchedList(untouched, untouchedTotal, thresholdHours, generatedAt)}
+  `;
+}
+
+function renderSlaKpi(label, value, note, tone) {
+  return `
+    <article class="sla-kpi sla-kpi-${escapeAttr(tone)} forecast-kpi forecast-kpi-${escapeAttr(tone)}">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(note)}</small>
+    </article>
+  `;
+}
+
+function renderSlaUntouchedList(contacts, total, thresholdHours, generatedAt) {
+  return `
+    <section class="sla-untouched" aria-labelledby="slaUntouchedTitle">
+      <header>
+        <div>
+          <p class="eyebrow">Requieren seguimiento</p>
+          <h4 id="slaUntouchedTitle">Leads sin tocar</h4>
+          <p>Contactos abiertos sin una primera respuesta humana tras ${escapeHtml(formatSlaThreshold(thresholdHours))}.</p>
+        </div>
+        <div class="sla-untouched-meta">
+          <strong aria-label="${escapeAttr(`${total} leads sin tocar`)}">${escapeHtml(String(total))}</strong>
+          <span>${escapeHtml(generatedAt)}</span>
+        </div>
+      </header>
+      ${contacts.length ? `
+        <ul class="sla-lead-list" aria-label="Leads que han superado el umbral sin respuesta">
+          ${contacts.map(renderSlaUntouchedContact).join("")}
+        </ul>
+      ` : `
+        <div class="sla-untouched-empty" role="status">
+          <span aria-hidden="true">OK</span>
+          <div>
+            <strong>Ningun lead fuera de plazo</strong>
+            <p>Todos los contactos abiertos estan respondidos o dentro del umbral seleccionado.</p>
+          </div>
+        </div>
+      `}
+    </section>
+  `;
+}
+
+function renderSlaUntouchedContact(contact) {
+  const name = clean(contact?.name || contact?.email || contact?.phone || "Contacto sin nombre");
+  const status = statusLabel(clean(contact?.status || "new"));
+  const source = clean(contact?.source || "manual");
+  const contactLine = [clean(contact?.phone), clean(contact?.email)].filter(Boolean).join(" · ") || "Sin telefono ni email";
+  const createdAt = normalizeSlaDate(contact?.createdAt);
+
+  return `
+    <li>
+      <article class="sla-lead-card">
+        <header>
+          <div>
+            <strong>${escapeHtml(name)}</strong>
+            <p>${escapeHtml(contactLine)}</p>
+          </div>
+          <span>${escapeHtml(status)}</span>
+        </header>
+        <dl>
+          <div>
+            <dt>Sin respuesta</dt>
+            <dd>${escapeHtml(formatSlaAge(contact?.ageHours))}</dd>
+          </div>
+          <div>
+            <dt>Origen</dt>
+            <dd>${escapeHtml(source)}</dd>
+          </div>
+          <div>
+            <dt>Alta</dt>
+            <dd>${createdAt ? `<time datetime="${escapeAttr(createdAt)}">${escapeHtml(formatDateTime(createdAt))}</time>` : "-"}</dd>
+          </div>
+        </dl>
+      </article>
+    </li>
+  `;
+}
+
 function bindReportControls() {
   const form = document.querySelector("[data-forecast-form]");
   const monthInput = form?.querySelector("[data-forecast-month]");
@@ -2381,6 +2664,41 @@ function bindReportControls() {
     const businessRef = state.business?.id || state.business?.slug || "";
     if (businessRef) {
       await loadForecast(businessRef, { month: state.forecastMonth, render: true });
+    }
+  });
+
+  const slaForm = document.querySelector("[data-sla-form]");
+  const slaHoursSelect = slaForm?.querySelector("[data-sla-hours]");
+
+  slaForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const rawHours = clean(slaHoursSelect?.value);
+    const hours = Number(rawHours);
+
+    if (!isValidSlaHours(hours) || String(hours) !== rawHours) {
+      slaHoursSelect?.setCustomValidity("Selecciona un umbral valido.");
+      slaHoursSelect?.reportValidity();
+      return;
+    }
+
+    slaHoursSelect?.setCustomValidity("");
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (businessRef) {
+      await loadSla(businessRef, { hours, render: true });
+    }
+  });
+
+  slaHoursSelect?.addEventListener("change", () => {
+    slaHoursSelect.setCustomValidity("");
+    if (slaHoursSelect.value && !state.slaLoading) {
+      slaForm?.requestSubmit();
+    }
+  });
+
+  document.querySelector("[data-sla-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (businessRef) {
+      await loadSla(businessRef, { hours: state.slaHours, render: true });
     }
   });
 }
@@ -2623,6 +2941,7 @@ function createDashboardModel(business, crm = {}) {
   const nextActions = normalizeNextActionsModel(crm.nextActions);
   const report = crm.report || null;
   const forecast = crm.forecast || null;
+  const sla = crm.sla || null;
   const inbox = crm.inbox || null;
   const orders = arrayFrom(content.orders, commerce.orders, business.orders);
   const products = arrayFrom(content.products, commerce.products, business.products);
@@ -2677,6 +2996,7 @@ function createDashboardModel(business, crm = {}) {
     nextActions,
     report,
     forecast,
+    sla,
     inbox,
     orders,
     products,
@@ -5311,6 +5631,76 @@ function forecastCurrency(value, fallback) {
 
 function formatForecastMoney(value, currency) {
   return formatMoney(forecastNumber(value), forecastCurrency(currency, "EUR"));
+}
+
+function normalizeSlaHours(value) {
+  const hours = Number(value);
+  return isValidSlaHours(hours)
+    ? Math.round(hours * 100) / 100
+    : 24;
+}
+
+function isValidSlaHours(value) {
+  return Number.isFinite(value) && value > 0 && value <= 24 * 90;
+}
+
+function slaWholeNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.trunc(number)) : 0;
+}
+
+function formatSlaThreshold(value) {
+  const hours = normalizeSlaHours(value);
+  const label = new Intl.NumberFormat("es-ES", {
+    maximumFractionDigits: 2
+  }).format(hours);
+  return `${label} h`;
+}
+
+function formatSlaDuration(value) {
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes < 0) {
+    return "--";
+  }
+
+  const rounded = Math.round(minutes);
+  if (rounded < 60) {
+    return `${rounded} min`;
+  }
+
+  const days = Math.floor(rounded / (24 * 60));
+  const remainingMinutes = rounded % (24 * 60);
+  const hours = Math.floor(remainingMinutes / 60);
+  const restMinutes = remainingMinutes % 60;
+
+  if (days) {
+    return `${days} d${hours ? ` ${hours} h` : ""}`;
+  }
+
+  return `${hours} h${restMinutes ? ` ${restMinutes} min` : ""}`;
+}
+
+function formatSlaAge(value) {
+  const hours = Number(value);
+  return Number.isFinite(hours) && hours >= 0
+    ? formatSlaDuration(hours * 60)
+    : "--";
+}
+
+function formatSlaPercent(value) {
+  const number = Number(value);
+  const percent = Number.isFinite(number) ? Math.min(100, Math.max(0, number)) : 0;
+  return `${new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 }).format(percent)}%`;
+}
+
+function normalizeSlaDate(value) {
+  const date = new Date(value || "");
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
+function formatSlaGeneratedAt(value) {
+  const generatedAt = normalizeSlaDate(value);
+  return generatedAt ? `Actualizado ${formatDateTime(generatedAt)}` : "Actualizacion reciente";
 }
 
 function formatMoney(value, currency) {
