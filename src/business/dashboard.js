@@ -34,6 +34,11 @@ const state = {
   blocks: [],
   reminderQueue: [],
   report: null,
+  forecast: null,
+  forecastMonth: currentMonthKey(),
+  forecastLoading: false,
+  forecastError: "",
+  forecastRequestSequence: 0,
   googleStatus: null,
   googleDiagnostics: null,
   apiBase: window.LocalLiftApi?.getBase?.() || "",
@@ -226,6 +231,7 @@ async function loadBusinesses(options = {}) {
 
     if (!state.businesses.length) {
       state.business = null;
+      resetForecastState({ keepMonth: true });
       render();
       showNotice("No hay negocios disponibles para esta sesion.", "warn");
       return;
@@ -253,6 +259,7 @@ async function loadBusinesses(options = {}) {
       state.blocks = [];
       state.reminderQueue = [];
       state.report = null;
+      resetForecastState({ keepMonth: true });
       state.googleStatus = null;
       state.googleDiagnostics = null;
       state.crmError = "";
@@ -281,6 +288,7 @@ async function loadBusiness(id, options = {}) {
   state.proposalDraftContactId = "";
   state.proposalFeedback = { type: "", message: "" };
   resetMessageComposer();
+  resetForecastState({ keepMonth: true });
   setLoading(true);
 
   try {
@@ -290,7 +298,10 @@ async function loadBusiness(id, options = {}) {
     await loadProposals(state.business?.id || id);
     await loadMessageTemplates(state.business?.id || id);
     await loadBookings(state.business?.id || id);
-    await loadReport(state.business?.id || id);
+    await Promise.all([
+      loadReport(state.business?.id || id),
+      loadForecast(state.business?.id || id)
+    ]);
     if (state.clientSession) {
       state.googleStatus = null;
       state.googleDiagnostics = null;
@@ -321,6 +332,7 @@ async function loadBusiness(id, options = {}) {
     state.blocks = [];
     state.reminderQueue = [];
     state.report = null;
+    resetForecastState({ keepMonth: true });
     state.googleStatus = null;
     state.googleDiagnostics = null;
     state.googleError = "";
@@ -536,6 +548,68 @@ async function loadReport(id) {
   }
 }
 
+async function loadForecast(id, options = {}) {
+  const month = normalizeForecastMonth(options.month || state.forecastMonth);
+  const requestSequence = ++state.forecastRequestSequence;
+  state.forecastMonth = month;
+  state.forecast = null;
+  state.forecastError = "";
+  state.forecastLoading = Boolean(id);
+
+  if (options.render && state.business) {
+    render();
+  }
+
+  if (!id) {
+    state.forecastLoading = false;
+    return;
+  }
+
+  try {
+    const payload = await getJson(
+      `/api/businesses/${encodeURIComponent(id)}/reports/forecast?month=${encodeURIComponent(month)}`
+    );
+
+    if (requestSequence !== state.forecastRequestSequence) {
+      return;
+    }
+
+    state.forecast = payload.forecast && typeof payload.forecast === "object"
+      ? payload.forecast
+      : null;
+    state.forecastMonth = normalizeForecastMonth(state.forecast?.month || month);
+  } catch (error) {
+    if (requestSequence !== state.forecastRequestSequence) {
+      return;
+    }
+
+    state.forecast = null;
+    state.forecastError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar el forecast de este negocio."
+      : "No se pudo cargar el forecast comercial. Revisa la conexion e intentalo de nuevo.";
+  } finally {
+    if (requestSequence !== state.forecastRequestSequence) {
+      return;
+    }
+
+    state.forecastLoading = false;
+    if (options.render && state.business) {
+      render();
+    }
+  }
+}
+
+function resetForecastState(options = {}) {
+  state.forecastRequestSequence += 1;
+  state.forecast = null;
+  state.forecastLoading = false;
+  state.forecastError = "";
+
+  if (!options.keepMonth) {
+    state.forecastMonth = currentMonthKey();
+  }
+}
+
 async function loadGoogle(id) {
   state.googleStatus = null;
   state.googleDiagnostics = null;
@@ -725,7 +799,8 @@ function render() {
     availability: state.availability,
     blocks: state.blocks,
     reminderQueue: state.reminderQueue,
-    report: state.report
+    report: state.report,
+    forecast: state.forecast
   });
 
   renderHeader(business, model);
@@ -748,6 +823,7 @@ function render() {
   bindProposalControls(model);
   bindMessageControls(model);
   bindBookingControls(model);
+  bindReportControls();
   bindGoogleControls();
 }
 
@@ -1613,10 +1689,239 @@ function renderReports(model) {
       </article>
     </div>
     ${report ? renderReportFunnel(report) : ""}
+    ${renderForecastPanel(model)}
     <div class="recommendation-list">
       ${reportRecommendations.map((item) => `<article><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.text)}</p></article>`).join("")}
     </div>
   `;
+}
+
+function renderForecastPanel(model) {
+  const month = normalizeForecastMonth(state.forecastMonth || model.forecast?.month);
+  const loading = state.forecastLoading;
+
+  return `
+    <section class="forecast-panel" aria-labelledby="forecastPanelTitle" aria-busy="${loading ? "true" : "false"}">
+      <header class="forecast-panel-header">
+        <div class="forecast-panel-copy">
+          <p class="eyebrow">Pipeline de ventas</p>
+          <h3 id="forecastPanelTitle">Forecast comercial</h3>
+          <p>Prioriza oportunidades con una proyeccion ajustada por la probabilidad de cada etapa.</p>
+        </div>
+        <form class="forecast-month-form" data-forecast-form>
+          <label for="forecastMonth">Mes de analisis</label>
+          <div>
+            <input
+              id="forecastMonth"
+              name="month"
+              type="month"
+              min="2000-01"
+              value="${escapeAttr(month)}"
+              aria-describedby="forecastMonthHint"
+              data-forecast-month
+              required
+              ${loading ? "disabled" : ""}
+            >
+            <button type="submit" ${loading ? "disabled" : ""}>${loading ? "Actualizando..." : "Actualizar"}</button>
+          </div>
+          <small id="forecastMonthHint">La foto refleja el estado disponible al cierre del mes.</small>
+        </form>
+      </header>
+      <div class="forecast-live-region" aria-live="polite" aria-atomic="false">
+        ${renderForecastContent(model)}
+      </div>
+    </section>
+  `;
+}
+
+function renderForecastContent(model) {
+  if (state.forecastLoading) {
+    return `
+      <div class="forecast-state forecast-state-loading" role="status">
+        <span class="forecast-spinner" aria-hidden="true"></span>
+        <div>
+          <strong>Calculando forecast</strong>
+          <p>Estamos ponderando el pipeline para el periodo seleccionado.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  if (state.forecastError) {
+    return `
+      <div class="forecast-state forecast-state-error" role="alert">
+        <span class="forecast-state-icon" aria-hidden="true">!</span>
+        <div>
+          <strong>Forecast no disponible</strong>
+          <p>${escapeHtml(state.forecastError)}</p>
+        </div>
+        <button type="button" data-forecast-retry>Reintentar</button>
+      </div>
+    `;
+  }
+
+  const forecast = model.forecast;
+  if (!forecast || typeof forecast !== "object") {
+    return `
+      <div class="forecast-state forecast-state-empty">
+        <span class="forecast-state-icon" aria-hidden="true">0</span>
+        <div>
+          <strong>Sin forecast calculado</strong>
+          <p>Selecciona un mes para consultar la proyeccion comercial.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  const contacts = forecastWholeNumber(forecast.contacts);
+  if (contacts === 0) {
+    return `
+      <div class="forecast-state forecast-state-empty">
+        <span class="forecast-state-icon" aria-hidden="true">0</span>
+        <div>
+          <strong>Sin oportunidades en este periodo</strong>
+          <p>No hay contactos disponibles al cierre de ${escapeHtml(formatForecastMonth(forecast.month || state.forecastMonth))}. Los importes apareceran cuando el pipeline tenga oportunidades.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  const currency = forecastCurrency(forecast.currency, model.currency);
+  const rows = Array.isArray(forecast.byStatus) ? forecast.byStatus : [];
+
+  return `
+    <div class="forecast-summary" role="group" aria-label="Indicadores principales del forecast">
+      ${renderForecastKpi(
+        "Forecast ponderado",
+        formatForecastMoney(forecast.weightedForecast, currency),
+        "Valor total ajustado por probabilidad",
+        "weighted"
+      )}
+      ${renderForecastKpi(
+        "Pipeline abierto",
+        formatForecastMoney(forecast.openWeightedForecast, currency),
+        "Ponderado de etapas aun negociables",
+        "open"
+      )}
+      ${renderForecastKpi(
+        "Valor bruto",
+        formatForecastMoney(forecast.totalValueEstimate, currency),
+        `${contacts} oportunidad${contacts === 1 ? "" : "es"} en la foto`,
+        "gross"
+      )}
+      ${renderForecastKpi(
+        "Cerrado ganado",
+        formatForecastMoney(forecast.closedWonValue, currency),
+        "Valor ganado y clientes consolidados",
+        "won"
+      )}
+    </div>
+    <section class="forecast-breakdown" aria-labelledby="forecastBreakdownTitle">
+      <header>
+        <div>
+          <p class="eyebrow">Detalle por etapa</p>
+          <h4 id="forecastBreakdownTitle">Conversion y valor esperado</h4>
+        </div>
+        <span>${escapeHtml(formatForecastMonth(forecast.month || state.forecastMonth))}</span>
+      </header>
+      ${rows.length ? renderForecastRows(rows, currency) : `
+        <div class="forecast-breakdown-empty">
+          <strong>Sin desglose disponible</strong>
+          <p>El resumen existe, pero la API no ha devuelto etapas para este periodo.</p>
+        </div>
+      `}
+    </section>
+  `;
+}
+
+function renderForecastKpi(label, value, note, tone) {
+  return `
+    <article class="forecast-kpi forecast-kpi-${escapeAttr(tone)}">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(note)}</small>
+    </article>
+  `;
+}
+
+function renderForecastRows(rows, currency) {
+  return `
+    <div class="forecast-table-scroll" tabindex="0" aria-label="Desglose desplazable del forecast">
+      <table class="forecast-table">
+        <thead>
+          <tr>
+            <th scope="col">Estado</th>
+            <th scope="col">Oportunidades</th>
+            <th scope="col">Probabilidad</th>
+            <th scope="col">Valor bruto</th>
+            <th scope="col">Valor ponderado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((row) => {
+            const status = clean(row?.status || "new").toLowerCase();
+            const probability = forecastProbability(row?.probability);
+            const probabilityLabel = formatForecastProbability(probability);
+            const label = statusLabel(status);
+
+            return `
+              <tr>
+                <th scope="row"><span class="forecast-stage">${escapeHtml(label)}</span></th>
+                <td>${escapeHtml(String(forecastWholeNumber(row?.count)))}</td>
+                <td>
+                  <div class="forecast-probability">
+                    <progress value="${escapeAttr(String(probability * 100))}" max="100" aria-label="${escapeAttr(`Probabilidad de ${label}: ${probabilityLabel}`)}"></progress>
+                    <span>${escapeHtml(probabilityLabel)}</span>
+                  </div>
+                </td>
+                <td>${escapeHtml(formatForecastMoney(row?.totalValueEstimate, currency))}</td>
+                <td><strong>${escapeHtml(formatForecastMoney(row?.weightedValue, currency))}</strong></td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function bindReportControls() {
+  const form = document.querySelector("[data-forecast-form]");
+  const monthInput = form?.querySelector("[data-forecast-month]");
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const month = clean(monthInput?.value);
+
+    if (!/^[1-9]\d{3}-(?:0[1-9]|1[0-2])$/.test(month)) {
+      monthInput?.setCustomValidity("Selecciona un mes valido.");
+      monthInput?.reportValidity();
+      return;
+    }
+
+    monthInput?.setCustomValidity("");
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (businessRef) {
+      await loadForecast(businessRef, { month, render: true });
+    }
+  });
+
+  monthInput?.addEventListener("input", () => {
+    monthInput.setCustomValidity("");
+  });
+
+  monthInput?.addEventListener("change", () => {
+    if (monthInput.value && !state.forecastLoading) {
+      form?.requestSubmit();
+    }
+  });
+
+  document.querySelector("[data-forecast-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (businessRef) {
+      await loadForecast(businessRef, { month: state.forecastMonth, render: true });
+    }
+  });
 }
 
 function getMonthlyReportUrl(model) {
@@ -1856,6 +2161,7 @@ function createDashboardModel(business, crm = {}) {
   const reminderQueue = arrayFrom(crm.reminderQueue, content.reminderQueue, business.reminderQueue);
   const nextActions = normalizeNextActionsModel(crm.nextActions);
   const report = crm.report || null;
+  const forecast = crm.forecast || null;
   const orders = arrayFrom(content.orders, commerce.orders, business.orders);
   const products = arrayFrom(content.products, commerce.products, business.products);
   const events = arrayFrom(content.metricEvents, business.metricEvents, content.events);
@@ -1908,6 +2214,7 @@ function createDashboardModel(business, crm = {}) {
     reminderQueue,
     nextActions,
     report,
+    forecast,
     orders,
     products,
     conversionEvents: events.filter((event) => String(event.type || "").includes("click") || String(event.type || "").includes("lead")),
@@ -4431,6 +4738,61 @@ function formatDateTimeRange(start, end) {
 function currentMonthKey() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function normalizeForecastMonth(value) {
+  const month = clean(value);
+  return /^[1-9]\d{3}-(?:0[1-9]|1[0-2])$/.test(month) ? month : currentMonthKey();
+}
+
+function formatForecastMonth(value) {
+  const month = normalizeForecastMonth(value);
+  const [year, monthNumber] = month.split("-").map(Number);
+  return new Intl.DateTimeFormat("es-ES", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC"
+  }).format(new Date(Date.UTC(year, monthNumber - 1, 1)));
+}
+
+function forecastWholeNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.trunc(number)) : 0;
+}
+
+function forecastNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
+}
+
+function forecastProbability(value) {
+  return Math.min(1, forecastNumber(value));
+}
+
+function formatForecastProbability(value) {
+  return new Intl.NumberFormat("es-ES", {
+    style: "percent",
+    maximumFractionDigits: 1
+  }).format(forecastProbability(value));
+}
+
+function forecastCurrency(value, fallback) {
+  const candidates = [value, fallback, "EUR"]
+    .map((candidate) => clean(candidate).toUpperCase())
+    .filter((candidate) => /^[A-Z]{3}$/.test(candidate));
+
+  return candidates.find((candidate) => {
+    try {
+      new Intl.NumberFormat("es-ES", { style: "currency", currency: candidate }).format(0);
+      return true;
+    } catch {
+      return false;
+    }
+  }) || "EUR";
+}
+
+function formatForecastMoney(value, currency) {
+  return formatMoney(forecastNumber(value), forecastCurrency(currency, "EUR"));
 }
 
 function formatMoney(value, currency) {

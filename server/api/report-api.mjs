@@ -1,5 +1,6 @@
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore } from "../lib/business-store.mjs";
+import { buildCommercialForecast, normalizeForecastMonth } from "../lib/commercial-forecast.mjs";
 
 const DEFAULT_DB = {
   version: 1,
@@ -17,7 +18,8 @@ const LOST_REASONS = ["precio", "no_responde", "ya_tiene_proveedor", "fuera_de_z
 
 export function isReportApiRequest(pathname) {
   return /^\/api\/businesses\/[^/]+\/reports\/monthly$/.test(pathname)
-    || /^\/api\/businesses\/[^/]+\/reports\/lost-reasons$/.test(pathname);
+    || /^\/api\/businesses\/[^/]+\/reports\/lost-reasons$/.test(pathname)
+    || /^\/api\/businesses\/[^/]+\/reports\/forecast$/.test(pathname);
 }
 
 export async function handleReportApi(request, response, context) {
@@ -41,12 +43,30 @@ export async function handleReportApi(request, response, context) {
       return;
     }
 
+    if (segments[0] === "api" && segments[1] === "businesses" && segments[3] === "reports" && segments[4] === "forecast" && method === "GET") {
+      await getForecastReport(segments[2], requestUrl, response, context);
+      return;
+    }
+
     sendJson(response, 405, { error: "Method not allowed" }, context, { Allow: "GET, OPTIONS" });
   } catch (error) {
     const status = error.statusCode || 500;
     const message = status >= 500 ? "Internal report API error" : error.message;
     sendJson(response, status, { error: message }, context);
   }
+}
+
+async function getForecastReport(businessId, requestUrl, response, context) {
+  const month = requiredForecastMonth(requestUrl);
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const forecast = buildCommercialForecast(db, business, { month });
+  sendJson(response, 200, { forecast }, context);
 }
 
 async function getMonthlyReport(businessId, requestUrl, response, context) {
@@ -243,6 +263,21 @@ function normalizePeriod(value) {
 
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function requiredForecastMonth(requestUrl) {
+  const values = requestUrl.searchParams.getAll("month");
+  const value = values[0] || "";
+
+  if (values.length !== 1 || !/^[1-9]\d{3}-(?:0[1-9]|1[0-2])$/.test(value)) {
+    throw httpError(400, "month is required and must use YYYY-MM");
+  }
+
+  try {
+    return normalizeForecastMonth(value);
+  } catch {
+    throw httpError(400, "month is required and must use YYYY-MM");
+  }
 }
 
 function getMonthRange(period) {
