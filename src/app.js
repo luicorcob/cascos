@@ -5771,6 +5771,7 @@ async function downloadSite(business) {
 async function publishDemo(business) {
   const resolved = withBusinessDefaults(business);
   const html = await studioExporter.buildExportDocument(resolved);
+  const contactId = getExplicitPublishContactId(resolved);
   const response = await fetch(apiUrl("/api/demo-publish"), {
     method: "POST",
     headers: apiHeaders({ json: true }),
@@ -5781,7 +5782,8 @@ async function publishDemo(business) {
         slug: currentBusinessRecord?.slug || resolved.slug || slugify(resolved.name || ""),
         name: resolved.name,
         category: resolved.category,
-        location: resolved.location || resolved.address || ""
+        location: resolved.location || resolved.address || "",
+        ...(contactId ? { contactId } : {})
       }
     })
   });
@@ -5798,6 +5800,32 @@ async function publishDemo(business) {
   }
 
   return demo;
+}
+
+function getExplicitPublishContactId(business = {}) {
+  const params = new URLSearchParams(window.location.search);
+  const candidates = [
+    params.get("contactId"),
+    params.get("contact"),
+    currentBusinessRecord?.contactId,
+    currentBusinessRecord?.contact,
+    business.contactId,
+    business.contact
+  ];
+
+  return candidates
+    .map(readExplicitContactReference)
+    .find(Boolean) || "";
+}
+
+function readExplicitContactReference(value) {
+  const reference = value && typeof value === "object" && !Array.isArray(value)
+    ? value.id || value.contactId
+    : value;
+
+  return (typeof reference === "string" || typeof reference === "number")
+    ? String(reference).replace(/\s+/g, " ").trim().slice(0, 120)
+    : "";
 }
 
 function normalizeActiveDemo(demo) {

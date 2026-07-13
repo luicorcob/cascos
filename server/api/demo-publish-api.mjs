@@ -2,6 +2,8 @@ import { randomBytes } from "node:crypto";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { corsHeaders } from "../lib/cors.mjs";
+import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
+import { applyPublishedDemoAutomation } from "../lib/crm-automation.mjs";
 
 const DEFAULT_MAX_BODY_BYTES = 14 * 1024 * 1024;
 const DEFAULT_TTL_HOURS = 7 * 24;
@@ -44,6 +46,7 @@ async function handlePublishRequest(request, response, context) {
     }
 
     const business = normalizeBusinessMeta(payload.business || payload);
+    const automationLink = readExplicitAutomationLink(payload);
     const createdAt = new Date();
     const ttlHours = readPositiveNumber(process.env.DEMO_PUBLISH_TTL_HOURS || process.env.DLS_DEMO_PUBLISH_TTL_HOURS, DEFAULT_TTL_HOURS);
     const remotePublisher = getRemotePublisherConfig();
@@ -54,7 +57,8 @@ async function handlePublishRequest(request, response, context) {
         business,
         ttlHours
       });
-      sendJson(response, 201, remotePayload, context);
+      const automation = await applyDemoPublishAutomation(automationLink, remotePayload, context);
+      sendJson(response, 201, { ...remotePayload, automation }, context);
       return;
     }
 
@@ -87,7 +91,7 @@ async function handlePublishRequest(request, response, context) {
     const demoUrl = new URL(demoPath, publicOrigin).toString();
     const shareability = describeDemoShareability(demoUrl);
 
-    sendJson(response, 201, {
+    const publishPayload = {
       demo: {
         ...metadata,
         path: demoPath,
@@ -99,12 +103,90 @@ async function handlePublishRequest(request, response, context) {
       },
       publishedUrl: demoUrl,
       warnings: shareability.shareable ? [] : [shareability.message]
-    }, context);
+    };
+    const automation = await applyDemoPublishAutomation(automationLink, publishPayload, context);
+
+    sendJson(response, 201, { ...publishPayload, automation }, context);
   } catch (error) {
     const status = error.statusCode || 500;
     const message = status >= 500 ? "Internal demo publish API error" : error.message;
     sendJson(response, status, { error: message }, context);
   }
+}
+
+async function applyDemoPublishAutomation(link, publishPayload, context) {
+  if (!link.businessRef || !link.contactId) {
+    return skippedAutomation("explicit-contact-link-required");
+  }
+
+  try {
+    const dependencies = context?.demoPublishAutomation || {};
+    const loadStore = typeof dependencies.loadBusinessStore === "function"
+      ? dependencies.loadBusinessStore
+      : loadBusinessStore;
+    const saveStore = typeof dependencies.saveBusinessStore === "function"
+      ? dependencies.saveBusinessStore
+      : saveBusinessStore;
+    const db = await loadStore(context);
+    const business = db.businesses.find((item) => (
+      cleanText(item?.id, 120) === link.businessRef
+        || cleanText(item?.slug, 120) === link.businessRef
+    ));
+
+    if (!business) {
+      return skippedAutomation("business-not-found");
+    }
+
+    const result = applyPublishedDemoAutomation(db, {
+      businessId: cleanText(business.id || business.slug, 120),
+      contactId: link.contactId,
+      demo: publishPayload?.demo || {}
+    });
+
+    if (result.applied) {
+      await saveStore(db, context, "published-demo-automation");
+    }
+
+    return result;
+  } catch (error) {
+    return skippedAutomation("automation-unavailable");
+  }
+}
+
+function readExplicitAutomationLink(payload) {
+  const source = isPlainObject(payload) ? payload : {};
+  const business = isPlainObject(source.business) ? source.business : source;
+  const contactReference = source.contactId ?? source.contact
+    ?? business.contactId ?? business.contact;
+  const contactId = cleanExplicitReference(contactReference);
+  const businessRef = cleanText(
+    source.businessId || source.businessSlug
+      || business.businessId || business.id || business.slug,
+    120
+  );
+
+  return { businessRef, contactId };
+}
+
+function cleanExplicitReference(value) {
+  if (isPlainObject(value)) {
+    return cleanText(value.id || value.contactId || "", 120);
+  }
+
+  return (typeof value === "string" || typeof value === "number")
+    ? cleanText(value, 120)
+    : "";
+}
+
+function skippedAutomation(reason) {
+  return {
+    rule: "published-demo-follow-up",
+    applied: false,
+    reason,
+    contactId: "",
+    nextAction: null,
+    activity: null
+  };
 }
 
 async function publishRemoteDemo(remotePublisher, payload) {
@@ -404,6 +486,10 @@ function slugify(value) {
 
 function cleanText(value, maxLength = 500) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function sendJson(response, status, payload, context, extraHeaders = {}) {

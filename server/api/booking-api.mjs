@@ -1,5 +1,6 @@
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
+import { buildCompletedBookingReviewSuggestion } from "../lib/crm-automation.mjs";
 import { recalculateContactScore } from "../lib/lead-score.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.BOOKING_API_MAX_BODY_BYTES || 512 * 1024);
@@ -251,7 +252,11 @@ async function createPublicBooking(slug, request, response, context) {
   recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "booking.public_created", business.id, now, booking.id);
   await saveDb(db, context, "booking");
-  sendJson(response, 201, { booking, contact }, context);
+  const reviewSuggestion = buildCompletedBookingReviewSuggestion(db, booking, {
+    business,
+    now
+  });
+  sendJson(response, 201, { booking, contact, reviewSuggestion }, context);
 }
 
 async function createAdminBooking(businessId, request, response, context) {
@@ -283,7 +288,11 @@ async function createAdminBooking(businessId, request, response, context) {
   recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, "booking.created", business.id, now, booking.id);
   await saveDb(db, context, "booking");
-  sendJson(response, 201, { booking, contact }, context);
+  const reviewSuggestion = buildCompletedBookingReviewSuggestion(db, booking, {
+    business,
+    now
+  });
+  sendJson(response, 201, { booking, contact, reviewSuggestion }, context);
 }
 
 async function updateBooking(businessId, bookingId, request, response, context) {
@@ -302,6 +311,7 @@ async function updateBooking(businessId, bookingId, request, response, context) 
 
   const payload = await readJsonBody(request);
   const now = new Date().toISOString();
+  const previousStatus = db.bookings[index].status;
   const booking = normalizeBooking(payload, db.bookings[index], business, db, now, {});
 
   ensureBookingIsAvailable(db, booking);
@@ -309,7 +319,10 @@ async function updateBooking(businessId, bookingId, request, response, context) 
   db.bookings[index] = booking;
   appendAudit(db, "booking.updated", business.id, now, booking.id);
   await saveDb(db, context, "booking-update");
-  sendJson(response, 200, { booking }, context);
+  const reviewSuggestion = previousStatus !== "completed"
+    ? buildCompletedBookingReviewSuggestion(db, booking, { business, now })
+    : null;
+  sendJson(response, 200, { booking, reviewSuggestion }, context);
 }
 
 async function createBookingReminder(businessId, bookingId, request, response, context) {

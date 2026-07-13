@@ -2,6 +2,7 @@ import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { loadCommerceOrdersForBusiness, mergeTimelineOrders } from "../lib/commerce-order-source.mjs";
 import { buildContactTimeline, isRecordAssociatedWithContact } from "../lib/contact-timeline.mjs";
+import { applyNewLeadAutomation } from "../lib/crm-automation.mjs";
 import { normalizeStoredScoreLabel, recalculateContactScore, withComputedLeadScore } from "../lib/lead-score.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.CONTACT_API_MAX_BODY_BYTES || 512 * 1024);
@@ -288,10 +289,18 @@ async function createPublicLead(slug, request, response, context) {
     db.contacts.push(contact);
   }
   db.activities.push(activity);
+  const automation = existing
+    ? null
+    : applyNewLeadAutomation(db, contact, { now });
   recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, existing ? "contact.public_lead_updated" : "contact.public_lead_created", business.id, now, contact.id);
   await saveDb(db, context, "lead");
-  sendJson(response, existing ? 200 : 201, { contact, activity, mergedWithExisting: Boolean(existing) }, context);
+  sendJson(response, existing ? 200 : 201, {
+    contact,
+    activity,
+    automation,
+    mergedWithExisting: Boolean(existing)
+  }, context);
 }
 
 async function createAdminContact(businessId, request, response, context) {
@@ -325,10 +334,18 @@ async function createAdminContact(businessId, request, response, context) {
     db.contacts.push(contact);
   }
   db.activities.push(activity);
+  const automation = existing
+    ? null
+    : applyNewLeadAutomation(db, contact, { now });
   recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, existing ? "contact.updated_from_duplicate_create" : "contact.created", business.id, now, contact.id);
   await saveDb(db, context, "contact");
-  sendJson(response, existing ? 200 : 201, { contact, activity, mergedWithExisting: Boolean(existing) }, context);
+  sendJson(response, existing ? 200 : 201, {
+    contact,
+    activity,
+    automation,
+    mergedWithExisting: Boolean(existing)
+  }, context);
 }
 
 async function listDuplicateContacts(businessId, response, context) {

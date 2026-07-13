@@ -71,6 +71,8 @@ async function main() {
     expectedStatus: 201
   });
   assert(lead.contact?.privacyAccepted === true, "Lead consent must be stored");
+  assert(lead.automation?.applied === true, "A new lead must schedule its first response automatically");
+  assert(lead.contact?.nextAction?.note === "Responder hoy", "Automatic first response must be visible on the contact");
 
   const repeatedLead = await request(baseUrl, `/api/public/${businessSlug}/leads`, {
     method: "POST",
@@ -86,6 +88,8 @@ async function main() {
   });
   assert(repeatedLead.contact?.id === lead.contact.id, "Repeated public lead must update the existing contact");
   assert(repeatedLead.mergedWithExisting === true, "Repeated public lead must be reported as an existing contact update");
+  assert(repeatedLead.automation === null, "A duplicate submission must not create a second automatic action");
+  assert(repeatedLead.contact?.nextAction?.note === "Responder hoy", "Duplicate updates must preserve the existing automatic action");
 
   await request(baseUrl, `/api/public/${businessSlug}/events`, {
     method: "POST",
@@ -263,8 +267,17 @@ async function main() {
   const waitingLead = movedPipeline.pipeline?.waiting?.contacts?.find((item) => item.id === lead.contact.id);
   assert(waitingLead?.order === 7.5, "Pipeline order must persist after reload");
 
-  const missingBeforeAction = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=sin-accion`);
-  assert(missingBeforeAction.actions?.some((item) => item.contact?.id === lead.contact.id), "Lead without nextAction must appear in missing next actions");
+  const automaticTodayActions = await adminRequest(baseUrl, `/api/businesses/${businessId}/next-actions?filter=hoy`);
+  assert(automaticTodayActions.actions?.some((item) => (
+    item.contact?.id === lead.contact.id
+      && item.nextAction?.note === "Responder hoy"
+  )), "Automatic first response must appear in today's action list");
+
+  const completedAutomaticAction = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/next-action`, {
+    method: "PATCH",
+    body: { status: "hecha" }
+  });
+  assert(completedAutomaticAction.contact?.nextAction === null, "The automatic action must be completable like a manual action");
 
   const nextAction = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/next-action`, {
     method: "POST",
@@ -328,6 +341,19 @@ async function main() {
   assert(currentReport.report?.metrics?.conversionEvents >= 1, "Current report must include the conversion event");
   assert(bookingReport.report?.metrics?.bookings >= 1, "Booking report must include the booking");
   assert(bookingReport.report?.metrics?.confirmedBookings >= 1, "Booking report must include the confirmed booking");
+
+  const completedBooking = await adminRequest(baseUrl, `/api/businesses/${businessId}/bookings/${booking.booking.id}`, {
+    method: "PATCH",
+    body: { status: "completed" }
+  });
+  assert(completedBooking.booking?.status === "completed", "Booking status must support completion");
+  assert(completedBooking.reviewSuggestion?.type === "review.suggested", "A completed booking must return a review suggestion");
+  assert(completedBooking.reviewSuggestion?.bookingId === booking.booking.id, "Review suggestion must reference the completed booking");
+
+  const bookingsAfterCompletion = await adminRequest(baseUrl, `/api/businesses/${businessId}/bookings`);
+  const persistedCompletedBooking = bookingsAfterCompletion.bookings?.find((item) => item.id === booking.booking.id);
+  assert(persistedCompletedBooking?.status === "completed", "Completed booking must persist its status");
+  assert(!Object.prototype.hasOwnProperty.call(persistedCompletedBooking || {}, "reviewSuggestion"), "Review suggestion must remain derived, not persisted");
 
   const googleStatus = await adminRequest(baseUrl, `/api/businesses/${businessId}/google`);
   assert(googleStatus.connected?.calendar === false, "Google status must report disconnected Calendar without credentials");

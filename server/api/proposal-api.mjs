@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
+import { applyAcceptedProposalAutomation } from "../lib/crm-automation.mjs";
 import { recalculateContactScore } from "../lib/lead-score.mjs";
 import { renderProposalHtml, renderProposalPdf } from "../lib/proposal-export.mjs";
 
@@ -323,41 +324,14 @@ function recordProposalActivity(db, proposal, type, now, options = {}) {
 }
 
 function convertAcceptedProposalContact(db, businessId, proposal, now) {
-  if (proposal.status !== "aceptada") {
+  const result = applyAcceptedProposalAutomation(db, proposal, { now });
+
+  if (!result.applied || !result.activity) {
     return [];
   }
 
-  const contact = requireContact(db, businessId, proposal.contactId, { allowMerged: false });
-  if (contact.status === "customer") {
-    recalculateContactScore(db, businessId, contact, new Date(now));
-    return [];
-  }
-
-  const previousStatus = contact.status || "new";
-  contact.status = "customer";
-  contact.lostReason = "";
-  contact.lastInteractionAt = now;
-  contact.updatedAt = now;
-  const activity = {
-    id: `activity_${randomUUID()}`,
-    businessId,
-    contactId: contact.id,
-    type: "contact.status_changed",
-    title: "Contacto convertido en cliente",
-    note: `Estado: ${previousStatus} -> customer. Propuesta aceptada: ${proposal.id}`,
-    source: "crm-proposals",
-    metadata: {
-      previousStatus,
-      status: "customer",
-      proposalId: proposal.id,
-      reason: "proposal.accepted"
-    },
-    createdAt: now
-  };
-  db.activities.push(activity);
-  recalculateContactScore(db, businessId, contact, new Date(now));
-  appendAudit(db, "contact.converted_from_proposal", proposal, now, contact.id);
-  return [activity];
+  appendAudit(db, "contact.converted_from_proposal", proposal, now, result.contactId);
+  return [result.activity];
 }
 
 function proposalActivityNote(proposal, previousStatus) {
