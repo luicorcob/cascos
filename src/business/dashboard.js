@@ -1,5 +1,5 @@
 const state = {
-  activeTab: "home",
+  activeTab: "inbox",
   calendarWeekOffset: 0,
   businesses: [],
   business: null,
@@ -39,6 +39,11 @@ const state = {
   forecastLoading: false,
   forecastError: "",
   forecastRequestSequence: 0,
+  inbox: null,
+  inboxLoading: false,
+  inboxError: "",
+  inboxStaleDays: 30,
+  inboxRequestSequence: 0,
   googleStatus: null,
   googleDiagnostics: null,
   apiBase: window.LocalLiftApi?.getBase?.() || "",
@@ -60,6 +65,39 @@ const PROPOSAL_PACKAGES = ["presencia_local", "conversion_pro", "growth_local", 
 const PROPOSAL_STATUSES = ["borrador", "enviada", "vista", "aceptada", "rechazada", "caducada"];
 const MESSAGE_TEMPLATE_TYPES = ["primer_contacto", "envio_demo", "seguimiento_48h", "envio_propuesta", "reactivacion_lead_frio", "solicitud_resena"];
 const BOOKING_STATUSES = ["pending", "confirmed", "completed", "canceled", "no-show"];
+const INBOX_STALE_DAY_OPTIONS = [14, 30, 45, 60, 90];
+const INBOX_SECTION_CONFIG = Object.freeze({
+  overdueActions: {
+    label: "Acciones vencidas",
+    kicker: "Atencion inmediata",
+    empty: "No hay acciones fuera de plazo."
+  },
+  newLeads: {
+    label: "Leads nuevos",
+    kicker: "Primer contacto",
+    empty: "No hay leads pendientes de primer contacto."
+  },
+  todayBookings: {
+    label: "Reservas de hoy",
+    kicker: "Agenda",
+    empty: "No hay reservas activas para hoy."
+  },
+  pendingProposals: {
+    label: "Propuestas pendientes",
+    kicker: "Seguimiento comercial",
+    empty: "No hay propuestas enviadas o vistas pendientes."
+  },
+  staleCustomers: {
+    label: "Clientes sin seguimiento",
+    kicker: "Retencion",
+    empty: "Todos los clientes tienen seguimiento reciente."
+  },
+  reviewSuggestions: {
+    label: "Sugerencias de resena",
+    kicker: "Reputacion",
+    empty: "No hay solicitudes de resena recomendadas."
+  }
+});
 const WEEKDAYS = [
   { value: 1, label: "Lunes" },
   { value: 2, label: "Martes" },
@@ -104,9 +142,9 @@ function init() {
   applyPortalMode();
   bindUi();
   const requestedTab = new URLSearchParams(window.location.search).get("tab") || "";
-  if (Array.from(document.querySelectorAll("[data-tab]")).some((button) => button.dataset.tab === requestedTab)) {
-    setActiveTab(requestedTab);
-  }
+  const validRequestedTab = Array.from(document.querySelectorAll("[data-tab]"))
+    .some((button) => button.dataset.tab === requestedTab);
+  setActiveTab(validRequestedTab ? requestedTab : "inbox");
   loadBusinesses();
 }
 
@@ -232,6 +270,7 @@ async function loadBusinesses(options = {}) {
     if (!state.businesses.length) {
       state.business = null;
       resetForecastState({ keepMonth: true });
+      resetInboxState({ keepStaleDays: true });
       render();
       showNotice("No hay negocios disponibles para esta sesion.", "warn");
       return;
@@ -260,6 +299,7 @@ async function loadBusinesses(options = {}) {
       state.reminderQueue = [];
       state.report = null;
       resetForecastState({ keepMonth: true });
+      resetInboxState({ keepStaleDays: true });
       state.googleStatus = null;
       state.googleDiagnostics = null;
       state.crmError = "";
@@ -289,18 +329,22 @@ async function loadBusiness(id, options = {}) {
   state.proposalFeedback = { type: "", message: "" };
   resetMessageComposer();
   resetForecastState({ keepMonth: true });
+  resetInboxState({ keepStaleDays: true });
   setLoading(true);
 
   try {
     const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}`);
     state.business = payload.business || null;
-    await loadContacts(state.business?.id || id);
-    await loadProposals(state.business?.id || id);
-    await loadMessageTemplates(state.business?.id || id);
-    await loadBookings(state.business?.id || id);
+    const businessRef = state.business?.id || id;
+    const inboxPromise = loadInbox(businessRef);
+    await loadContacts(businessRef);
+    await loadProposals(businessRef);
+    await loadMessageTemplates(businessRef);
+    await loadBookings(businessRef);
     await Promise.all([
-      loadReport(state.business?.id || id),
-      loadForecast(state.business?.id || id)
+      loadReport(businessRef),
+      loadForecast(businessRef),
+      inboxPromise
     ]);
     if (state.clientSession) {
       state.googleStatus = null;
@@ -333,6 +377,7 @@ async function loadBusiness(id, options = {}) {
     state.reminderQueue = [];
     state.report = null;
     resetForecastState({ keepMonth: true });
+    resetInboxState({ keepStaleDays: true });
     state.googleStatus = null;
     state.googleDiagnostics = null;
     state.googleError = "";
@@ -610,6 +655,89 @@ function resetForecastState(options = {}) {
   }
 }
 
+async function loadInbox(id, options = {}) {
+  const staleDays = normalizeInboxStaleDays(options.staleDays ?? state.inboxStaleDays);
+  const requestSequence = ++state.inboxRequestSequence;
+  state.inbox = null;
+  state.inboxError = "";
+  state.inboxLoading = Boolean(id);
+  state.inboxStaleDays = staleDays;
+
+  if (options.render && state.business) {
+    render();
+  } else {
+    renderInboxLoadingState();
+  }
+
+  if (!id) {
+    state.inboxLoading = false;
+    return;
+  }
+
+  try {
+    const payload = await getJson(
+      `/api/businesses/${encodeURIComponent(id)}/inbox?staleDays=${encodeURIComponent(staleDays)}`
+    );
+
+    if (requestSequence !== state.inboxRequestSequence) {
+      return;
+    }
+
+    if (!payload.inbox || typeof payload.inbox !== "object") {
+      throw new Error("Inbox payload is missing");
+    }
+
+    state.inbox = payload.inbox;
+    state.inboxStaleDays = normalizeInboxStaleDays(payload.inbox.staleCustomerDays || staleDays);
+  } catch (error) {
+    if (requestSequence !== state.inboxRequestSequence) {
+      return;
+    }
+
+    state.inbox = null;
+    state.inboxError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar la bandeja de este negocio."
+      : "No se pudo cargar la bandeja diaria. Revisa la conexion e intentalo de nuevo.";
+  } finally {
+    if (requestSequence !== state.inboxRequestSequence) {
+      return;
+    }
+
+    state.inboxLoading = false;
+    if (options.render && state.business) {
+      render();
+    }
+  }
+}
+
+function renderInboxLoadingState() {
+  const container = document.querySelector('[data-list="inbox"]');
+  if (!container || !state.inboxLoading) {
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="inbox-state inbox-state-loading" role="status">
+      <span class="inbox-spinner" aria-hidden="true"></span>
+      <div>
+        <strong>Preparando la bandeja</strong>
+        <p>Ordenando prioridades, reservas y seguimientos del negocio.</p>
+      </div>
+    </div>
+  `;
+}
+
+function resetInboxState(options = {}) {
+  state.inboxRequestSequence += 1;
+  state.inbox = null;
+  state.inboxLoading = false;
+  state.inboxError = "";
+
+  if (!options.keepStaleDays) {
+    state.inboxStaleDays = 30;
+  }
+}
+
 async function loadGoogle(id) {
   state.googleStatus = null;
   state.googleDiagnostics = null;
@@ -800,12 +928,14 @@ function render() {
     blocks: state.blocks,
     reminderQueue: state.reminderQueue,
     report: state.report,
-    forecast: state.forecast
+    forecast: state.forecast,
+    inbox: state.inbox
   });
 
   renderHeader(business, model);
   renderMetrics(model);
   renderActionStrip(business, model);
+  renderInbox(model);
   renderHome(model);
   renderNextActions(model);
   renderLeads(model);
@@ -823,6 +953,7 @@ function render() {
   bindProposalControls(model);
   bindMessageControls(model);
   bindBookingControls(model);
+  bindInboxControls();
   bindReportControls();
   bindGoogleControls();
 }
@@ -909,6 +1040,336 @@ function renderActionStrip(business, model) {
     link.textContent = labels[key] || "Abrir";
     link.setAttribute("href", links[key] || "#");
     link.toggleAttribute("aria-disabled", !links[key] || links[key] === "#");
+  });
+}
+
+function renderInbox(model) {
+  const container = document.querySelector('[data-list="inbox"]');
+  if (!container) {
+    return;
+  }
+
+  const staleDays = normalizeInboxStaleDays(state.inboxStaleDays);
+  const staleOptions = Array.from(new Set([...INBOX_STALE_DAY_OPTIONS, staleDays])).sort((left, right) => left - right);
+  const inbox = model.inbox;
+  const generatedAt = inbox?.generatedAt
+    ? `Actualizada ${formatInboxDateTime(inbox.generatedAt, inbox.timezone)}`
+    : "Prioridades consolidadas en una sola vista";
+
+  container.innerHTML = `
+    <div class="inbox-toolbar">
+      <div>
+        <strong>Tu siguiente mejor accion, primero</strong>
+        <p>${escapeHtml(generatedAt)}${inbox?.timezone ? ` · ${escapeHtml(inbox.timezone)}` : ""}</p>
+      </div>
+      <form class="inbox-stale-filter" data-inbox-stale-form>
+        <label for="inboxStaleDays">Cliente sin seguimiento</label>
+        <div>
+          <select id="inboxStaleDays" name="staleDays" data-inbox-stale-days ${state.inboxLoading ? "disabled" : ""}>
+            ${staleOptions.map((days) => `<option value="${days}"${days === staleDays ? " selected" : ""}>${days} dias</option>`).join("")}
+          </select>
+          <button type="submit" ${state.inboxLoading ? "disabled" : ""}>Aplicar</button>
+        </div>
+      </form>
+    </div>
+    <div class="inbox-live-region" aria-busy="${state.inboxLoading ? "true" : "false"}">
+      ${renderInboxContent(model)}
+    </div>
+  `;
+}
+
+function renderInboxContent(model) {
+  if (state.inboxLoading) {
+    return `
+      <div class="inbox-state inbox-state-loading" role="status">
+        <span class="inbox-spinner" aria-hidden="true"></span>
+        <div>
+          <strong>Preparando la bandeja</strong>
+          <p>Ordenando prioridades, reservas y seguimientos del negocio.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  if (state.inboxError) {
+    return `
+      <div class="inbox-state inbox-state-error" role="alert">
+        <span class="inbox-state-icon" aria-hidden="true">!</span>
+        <div>
+          <strong>Bandeja no disponible</strong>
+          <p>${escapeHtml(state.inboxError)}</p>
+        </div>
+        <button type="button" data-inbox-retry>Reintentar</button>
+      </div>
+    `;
+  }
+
+  const inbox = model.inbox;
+  if (!inbox || typeof inbox !== "object") {
+    return `
+      <div class="inbox-state inbox-state-empty">
+        <span class="inbox-state-icon" aria-hidden="true">0</span>
+        <div>
+          <strong>Sin bandeja calculada</strong>
+          <p>Actualiza el negocio para reunir las prioridades comerciales de hoy.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  const sections = normalizeInboxSections(inbox.sections);
+  const total = sections.reduce((sum, section) => sum + section.items.length, 0);
+
+  if (!total) {
+    return `
+      <div class="inbox-state inbox-state-empty">
+        <span class="inbox-state-icon inbox-state-success" aria-hidden="true">OK</span>
+        <div>
+          <strong>Todo al dia</strong>
+          <p>No hay acciones vencidas ni oportunidades pendientes para los criterios actuales.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    ${renderInboxKpis(sections, total)}
+    <div class="inbox-section-grid">
+      ${sections.map((section) => renderInboxSection(section, model)).join("")}
+    </div>
+  `;
+}
+
+function renderInboxKpis(sections, total) {
+  const count = (key) => sections.find((section) => section.key === key)?.items.length || 0;
+  const highPriority = sections.reduce(
+    (sum, section) => sum + section.items.filter((item) => Number(item?.urgency || 0) >= 500).length,
+    0
+  );
+
+  return `
+    <div class="inbox-kpi-grid" role="group" aria-label="Resumen de prioridades de la bandeja">
+      ${renderInboxKpi("Pendientes totales", total, "Trabajo comercial consolidado", "total")}
+      ${renderInboxKpi("Prioridad alta", highPriority, "Vencidas y leads sin primer contacto", "urgent")}
+      ${renderInboxKpi("Reservas de hoy", count("todayBookings"), "Citas activas en agenda", "booking")}
+      ${renderInboxKpi("Seguimientos", count("pendingProposals") + count("staleCustomers"), "Propuestas y clientes a reactivar", "follow-up")}
+    </div>
+  `;
+}
+
+function renderInboxKpi(label, value, note, tone) {
+  return `
+    <article class="inbox-kpi inbox-kpi-${escapeAttr(tone)}">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(String(inboxWholeNumber(value)))}</strong>
+      <small>${escapeHtml(note)}</small>
+    </article>
+  `;
+}
+
+function normalizeInboxSections(value) {
+  const source = Array.isArray(value) ? value : [];
+  const sections = [];
+  const seen = new Set();
+
+  source.forEach((section) => {
+    const key = clean(section?.key);
+    if (!INBOX_SECTION_CONFIG[key] || seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    sections.push({
+      key,
+      items: Array.isArray(section?.items) ? section.items : []
+    });
+  });
+
+  Object.keys(INBOX_SECTION_CONFIG).forEach((key) => {
+    if (!seen.has(key)) {
+      sections.push({ key, items: [] });
+    }
+  });
+  return sections;
+}
+
+function renderInboxSection(section, model) {
+  const config = INBOX_SECTION_CONFIG[section.key];
+  const headingId = `inboxSection-${section.key}`;
+
+  return `
+    <section class="inbox-section" data-inbox-section="${escapeAttr(section.key)}" aria-labelledby="${escapeAttr(headingId)}">
+      <header class="inbox-section-header">
+        <div>
+          <p class="eyebrow">${escapeHtml(config.kicker)}</p>
+          <h3 id="${escapeAttr(headingId)}">${escapeHtml(config.label)}</h3>
+        </div>
+        <span class="inbox-section-count" aria-label="${escapeAttr(`${section.items.length} elementos`)}">${escapeHtml(String(section.items.length))}</span>
+      </header>
+      <div class="inbox-item-list">
+        ${section.items.length
+          ? section.items.map((item) => renderInboxItem(item, section.key, model)).join("")
+          : `<p class="inbox-section-empty">${escapeHtml(config.empty)}</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderInboxItem(item, sectionKey, model) {
+  const urgency = inboxUrgency(item?.urgency);
+  const status = clean(item?.status);
+  const meta = inboxItemMeta(item, sectionKey, model.inbox?.timezone, model.currency);
+
+  return `
+    <article class="inbox-item inbox-item-${escapeAttr(urgency.tone)}">
+      <header class="inbox-item-header">
+        <div>
+          <strong>${escapeHtml(item?.title || "Pendiente sin titulo")}</strong>
+          ${status ? `<span class="inbox-item-status">${escapeHtml(statusLabel(status))}</span>` : ""}
+        </div>
+        <span class="inbox-urgency inbox-urgency-${escapeAttr(urgency.tone)}">${escapeHtml(urgency.label)}</span>
+      </header>
+      ${item?.summary ? `<p class="inbox-item-summary">${escapeHtml(item.summary)}</p>` : ""}
+      ${meta.length ? `<ul class="inbox-item-meta">${meta.map((entry) => `<li>${escapeHtml(entry)}</li>`).join("")}</ul>` : ""}
+      ${renderInboxItemActions(item, sectionKey)}
+    </article>
+  `;
+}
+
+function inboxUrgency(value) {
+  const urgency = Number(value || 0);
+  if (urgency >= 600) return { tone: "critical", label: "Critica" };
+  if (urgency >= 500) return { tone: "high", label: "Alta" };
+  if (urgency >= 400) return { tone: "medium", label: "Media" };
+  return { tone: "planned", label: "Planificada" };
+}
+
+function inboxItemMeta(item, sectionKey, timezone, currency) {
+  const details = item?.details && typeof item.details === "object" ? item.details : {};
+  const entries = [];
+
+  if (sectionKey === "overdueActions") {
+    const days = inboxWholeNumber(details.overdueDays);
+    if (days) entries.push(`${days} dia${days === 1 ? "" : "s"} de retraso`);
+    if (details.dueDate || item?.date) entries.push(`Vencio ${formatInboxDate(details.dueDate || item.date, timezone)}`);
+  } else if (sectionKey === "newLeads") {
+    if (item?.date) entries.push(`Alta ${formatInboxDateTime(item.date, timezone)}`);
+  } else if (sectionKey === "todayBookings") {
+    if (details.startsAt || item?.date) entries.push(`Hora ${formatInboxTime(details.startsAt || item.date, timezone)}`);
+    if (details.serviceName) entries.push(clean(details.serviceName));
+  } else if (sectionKey === "pendingProposals") {
+    if (details.expiresAt) entries.push(`Caduca ${formatInboxDate(details.expiresAt, timezone)}`);
+    const days = inboxWholeNumber(details.daysUntilExpiry);
+    entries.push(days === 0 ? "Caduca hoy" : `${days} dia${days === 1 ? "" : "s"} restantes`);
+    const hasSetupPrice = details.setupPrice !== null && details.setupPrice !== undefined && details.setupPrice !== "";
+    const hasMonthlyPrice = details.monthlyPrice !== null && details.monthlyPrice !== undefined && details.monthlyPrice !== "";
+    if ((hasSetupPrice && Number.isFinite(Number(details.setupPrice))) || (hasMonthlyPrice && Number.isFinite(Number(details.monthlyPrice)))) {
+      const setup = formatForecastMoney(details.setupPrice, currency);
+      const monthly = formatForecastMoney(details.monthlyPrice, currency);
+      entries.push(`${setup} alta · ${monthly}/mes`);
+    }
+  } else if (sectionKey === "staleCustomers") {
+    const days = details.daysWithoutFollowUp;
+    if (days !== null && days !== undefined && days !== "" && Number.isFinite(Number(days))) {
+      entries.push(`${inboxWholeNumber(days)} dias sin seguimiento`);
+    } else {
+      entries.push("Sin historial de seguimiento");
+    }
+    if (details.lastInteractionAt) entries.push(`Ultimo contacto ${formatInboxDate(details.lastInteractionAt, timezone)}`);
+  } else if (sectionKey === "reviewSuggestions") {
+    if (details.serviceName) entries.push(clean(details.serviceName));
+    if (details.completedAt || item?.date) entries.push(`Completada ${formatInboxDate(details.completedAt || item.date, timezone)}`);
+  }
+
+  return entries.filter(Boolean).slice(0, 3);
+}
+
+function renderInboxItemActions(item, sectionKey) {
+  const contactId = clean(item?.contactId);
+  const contactAvailable = Boolean(contactId && state.contacts.some((contact) => contact.id === contactId));
+  const actions = [];
+  const addButton = (label, attribute, value, primary = false) => {
+    actions.push(`<button class="${primary ? "is-primary" : ""}" type="button" ${attribute}="${escapeAttr(value)}">${escapeHtml(label)}</button>`);
+  };
+
+  if (sectionKey === "pendingProposals" && item?.refId) {
+    addButton("Ver propuesta", "data-inbox-open-proposal", clean(item.refId), true);
+  } else if (sectionKey === "todayBookings") {
+    addButton("Ver agenda", "data-inbox-open-tab", "bookings", true);
+  } else if (sectionKey === "reviewSuggestions") {
+    const reviewUrl = safeHttpUrl(item?.details?.reviewUrl);
+    if (reviewUrl) {
+      actions.push(`<a class="is-primary" href="${escapeAttr(reviewUrl)}" target="_blank" rel="noopener noreferrer">Abrir resenas</a>`);
+    }
+  }
+
+  if (contactAvailable) {
+    addButton("Abrir ficha", "data-inbox-open-contact", contactId, !actions.length);
+    addButton("Preparar mensaje", "data-inbox-message-contact", contactId);
+  }
+
+  if (sectionKey === "newLeads" && contactAvailable) {
+    addButton("Crear propuesta", "data-inbox-proposal-contact", contactId);
+  }
+
+  if (!actions.length && (sectionKey === "newLeads" || sectionKey === "overdueActions" || sectionKey === "staleCustomers")) {
+    addButton("Ver CRM", "data-inbox-open-tab", "leads", true);
+  }
+
+  return actions.length ? `<div class="inbox-item-actions">${actions.join("")}</div>` : "";
+}
+
+function bindInboxControls() {
+  const staleForm = document.querySelector("[data-inbox-stale-form]");
+  const staleSelect = staleForm?.querySelector("[data-inbox-stale-days]");
+
+  staleForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (businessRef) {
+      await loadInbox(businessRef, {
+        staleDays: normalizeInboxStaleDays(staleSelect?.value),
+        render: true
+      });
+    }
+  });
+
+  staleSelect?.addEventListener("change", () => staleForm?.requestSubmit());
+
+  document.querySelector("[data-inbox-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (businessRef) {
+      await loadInbox(businessRef, { staleDays: state.inboxStaleDays, render: true });
+    }
+  });
+
+  document.querySelectorAll("[data-inbox-open-contact]").forEach((button) => {
+    button.addEventListener("click", () => openContactTimeline(button.dataset.inboxOpenContact || ""));
+  });
+
+  document.querySelectorAll("[data-inbox-message-contact]").forEach((button) => {
+    button.addEventListener("click", () => startMessageForContact(button.dataset.inboxMessageContact || ""));
+  });
+
+  document.querySelectorAll("[data-inbox-proposal-contact]").forEach((button) => {
+    button.addEventListener("click", () => startProposalForContact(button.dataset.inboxProposalContact || ""));
+  });
+
+  document.querySelectorAll("[data-inbox-open-proposal]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setActiveTab("proposals");
+      focusProposalCard(button.dataset.inboxOpenProposal || "");
+    });
+  });
+
+  document.querySelectorAll("[data-inbox-open-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const tab = clean(button.dataset.inboxOpenTab);
+      if (!["leads", "bookings"].includes(tab)) {
+        return;
+      }
+      setActiveTab(tab);
+      document.querySelector(`[data-tab="${tab}"]`)?.focus();
+    });
   });
 }
 
@@ -2162,6 +2623,7 @@ function createDashboardModel(business, crm = {}) {
   const nextActions = normalizeNextActionsModel(crm.nextActions);
   const report = crm.report || null;
   const forecast = crm.forecast || null;
+  const inbox = crm.inbox || null;
   const orders = arrayFrom(content.orders, commerce.orders, business.orders);
   const products = arrayFrom(content.products, commerce.products, business.products);
   const events = arrayFrom(content.metricEvents, business.metricEvents, content.events);
@@ -2215,6 +2677,7 @@ function createDashboardModel(business, crm = {}) {
     nextActions,
     report,
     forecast,
+    inbox,
     orders,
     products,
     conversionEvents: events.filter((event) => String(event.type || "").includes("click") || String(event.type || "").includes("lead")),
@@ -4712,6 +5175,61 @@ function parseDate(value) {
 
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function normalizeInboxStaleDays(value) {
+  const days = Number(value);
+  return Number.isInteger(days) && days >= 1 && days <= 3650 ? days : 30;
+}
+
+function inboxWholeNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.trunc(number)) : 0;
+}
+
+function formatInboxDate(value, timezone) {
+  return formatInboxTemporal(value, timezone, { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatInboxDateTime(value, timezone) {
+  return formatInboxTemporal(value, timezone, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+function formatInboxTime(value, timezone) {
+  return formatInboxTemporal(value, timezone, { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatInboxTemporal(value, timezone, options) {
+  const parsed = parseDate(value);
+  if (!parsed) {
+    return "-";
+  }
+
+  const candidate = clean(timezone);
+  try {
+    return new Intl.DateTimeFormat("es-ES", {
+      ...options,
+      ...(candidate ? { timeZone: candidate } : {})
+    }).format(parsed);
+  } catch {
+    return new Intl.DateTimeFormat("es-ES", options).format(parsed);
+  }
+}
+
+function safeHttpUrl(value) {
+  const text = clean(value);
+  if (!text) {
+    return "";
+  }
+
+  try {
+    const url = new URL(text, window.location.origin);
+    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password
+      ? url.href
+      : "";
+  } catch {
+    return "";
+  }
 }
 
 function formatDate(value) {

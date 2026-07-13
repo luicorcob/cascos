@@ -115,7 +115,8 @@
         </section>
 
         <nav class="tab-list" aria-label="Secciones del portal">
-          <button class="tab-button is-active" type="button" data-tab="home">Inicio</button>
+          <button class="tab-button is-active" type="button" data-tab="inbox">Bandeja</button>
+          <button class="tab-button" type="button" data-tab="home">Inicio</button>
           <button class="tab-button" type="button" data-tab="today">Hoy</button>
           <button class="tab-button" type="button" data-tab="leads">Leads</button>
           <button class="tab-button" type="button" data-tab="proposals">Propuestas</button>
@@ -129,7 +130,15 @@
           <button class="tab-button" type="button" data-tab="settings">Ajustes</button>
         </nav>
 
-        <section class="tab-panel is-active" data-panel="home">
+        <section class="tab-panel is-active" data-panel="inbox">
+          <div class="panel-heading">
+            <p class="eyebrow">Prioridad comercial</p>
+            <h2>Bandeja diaria</h2>
+          </div>
+          <div data-list="inbox" aria-live="polite"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="home">
           <div class="dashboard-grid">
             <section class="work-panel">
               <div class="panel-heading">

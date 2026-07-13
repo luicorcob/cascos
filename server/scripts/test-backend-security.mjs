@@ -6,6 +6,7 @@ process.env.CLIENT_LOGIN_RATE_LIMIT_WINDOW_MS = "60000";
 const { requireApiRequestGuards } = await import("../lib/request-guards.mjs");
 const { requireAdminApiAuth } = await import("../lib/admin-auth.mjs");
 const { requirePublicApiRateLimit } = await import("../lib/public-rate-limit.mjs");
+const { isClientApiAccessPath } = await import("../lib/client-auth.mjs");
 const { corsHeaders } = await import("../lib/cors.mjs");
 const { securityHeaders } = await import("../lib/security-headers.mjs");
 const {
@@ -18,6 +19,23 @@ const context = {
   baseHeaders: { "X-Content-Type-Options": "nosniff" },
   requestOrigin: ""
 };
+
+{
+  const session = {
+    role: "client",
+    businessId: "biz_a",
+    businessSlug: "negocio-a"
+  };
+
+  assert.equal(isClientApiAccessPath("/api/businesses/biz_a/inbox", session), true);
+  assert.equal(isClientApiAccessPath("/api/businesses/negocio-a/inbox", session), true);
+  assert.equal(isClientApiAccessPath("/api/businesses/biz_a/next-actions", session), true);
+  assert.equal(isClientApiAccessPath("/api/businesses/negocio-a/next-actions", session), true);
+  assert.equal(isClientApiAccessPath("/api/businesses/biz_b/inbox", session), false);
+  assert.equal(isClientApiAccessPath("/api/businesses/biz_a/inbox/extra", session), false);
+  assert.equal(isClientApiAccessPath("/api/businesses/biz_a/next-actions/extra", session), false);
+  assert.equal(isClientApiAccessPath("/api/businesses/biz_a/inbox-other", session), false);
+}
 
 {
   const response = mockResponse();
