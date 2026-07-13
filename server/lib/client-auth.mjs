@@ -77,7 +77,7 @@ export function isClientApiAccessPath(pathname, session) {
   }
 
   const area = segments[3] || "";
-  const allowedAreas = new Set(["contacts", "services", "bookings", "availability", "blocks", "reminders", "reports", "events"]);
+  const allowedAreas = new Set(["contacts", "proposals", "services", "bookings", "availability", "blocks", "reminders", "reports", "events"]);
   return segments.length === 3 || allowedAreas.has(area);
 }
 

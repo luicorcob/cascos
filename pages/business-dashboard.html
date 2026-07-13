@@ -118,6 +118,7 @@
           <button class="tab-button is-active" type="button" data-tab="home">Inicio</button>
           <button class="tab-button" type="button" data-tab="today">Hoy</button>
           <button class="tab-button" type="button" data-tab="leads">Leads</button>
+          <button class="tab-button" type="button" data-tab="proposals">Propuestas</button>
           <button class="tab-button" type="button" data-tab="customers">Clientes</button>
           <button class="tab-button" type="button" data-tab="bookings">Reservas</button>
           <button class="tab-button" type="button" data-tab="orders">Pedidos</button>
@@ -161,6 +162,14 @@
             <h2>Leads</h2>
           </div>
           <div data-list="leads"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="proposals">
+          <div class="panel-heading">
+            <p class="eyebrow">Ventas</p>
+            <h2>Propuestas comerciales</h2>
+          </div>
+          <div data-list="proposals" aria-live="polite"></div>
         </section>
 
         <section class="tab-panel" data-panel="customers">
@@ -229,7 +238,10 @@
             <h2 id="contactTimelineTitle" data-contact-timeline-title>Historial completo</h2>
             <p data-contact-timeline-meta>Actividad comercial unificada.</p>
           </div>
-          <button class="contact-timeline-close" type="button" data-contact-timeline-close aria-label="Cerrar historial">Cerrar</button>
+          <div class="contact-timeline-actions">
+            <button class="contact-proposal-button" type="button" data-contact-proposal hidden>Crear propuesta</button>
+            <button class="contact-timeline-close" type="button" data-contact-timeline-close aria-label="Cerrar historial">Cerrar</button>
+          </div>
         </header>
         <div class="contact-timeline-content" data-contact-timeline-content aria-live="polite"></div>
       </div>

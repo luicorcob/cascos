@@ -7,6 +7,11 @@ const state = {
   pipeline: null,
   scoreLabelFilter: "all",
   duplicateGroups: [],
+  proposals: [],
+  proposalLoading: false,
+  proposalError: "",
+  proposalFeedback: { type: "", message: "" },
+  proposalDraftContactId: "",
   nextActions: {
     today: [],
     overdue: [],
@@ -35,6 +40,8 @@ const LEAD_PRIORITIES = ["alta", "media", "baja"];
 const LEAD_SCORE_LABELS = ["caliente", "templado", "frio", "perdido"];
 const LOST_REASONS = ["precio", "no_responde", "ya_tiene_proveedor", "fuera_de_zona", "pospuesto", "no_encaja", "competencia"];
 const NEXT_ACTION_TYPES = ["llamada", "whatsapp", "email", "reunion", "enviar_propuesta", "revisar_reserva"];
+const PROPOSAL_PACKAGES = ["presencia_local", "conversion_pro", "growth_local", "custom"];
+const PROPOSAL_STATUSES = ["borrador", "enviada", "vista", "aceptada", "rechazada", "caducada"];
 const BOOKING_STATUSES = ["pending", "confirmed", "completed", "canceled", "no-show"];
 const WEEKDAYS = [
   { value: 1, label: "Lunes" },
@@ -74,6 +81,7 @@ function init() {
   refs.contactTimelineMeta = document.querySelector("[data-contact-timeline-meta]");
   refs.contactTimelineContent = document.querySelector("[data-contact-timeline-content]");
   refs.contactTimelineClose = document.querySelector("[data-contact-timeline-close]");
+  refs.contactProposal = document.querySelector("[data-contact-proposal]");
 
   applyPortalMode();
   bindUi();
@@ -166,6 +174,13 @@ function bindUi() {
       closeContactTimeline();
     }
   });
+  refs.contactProposal?.addEventListener("click", () => {
+    const contactId = refs.contactProposal?.dataset.contactId || "";
+
+    if (contactId) {
+      startProposalForContact(contactId, { closeDialog: true });
+    }
+  });
 }
 
 function applyPortalMode() {
@@ -205,6 +220,7 @@ async function loadBusinesses(options = {}) {
       state.contacts = [];
       state.pipeline = null;
       state.duplicateGroups = [];
+      resetProposalState();
       state.nextActions = emptyNextActions();
       state.services = [];
       state.bookings = [];
@@ -237,12 +253,15 @@ async function loadBusiness(id, options = {}) {
   }
 
   closeContactTimeline();
+  state.proposalDraftContactId = "";
+  state.proposalFeedback = { type: "", message: "" };
   setLoading(true);
 
   try {
     const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}`);
     state.business = payload.business || null;
     await loadContacts(state.business?.id || id);
+    await loadProposals(state.business?.id || id);
     await loadBookings(state.business?.id || id);
     await loadReport(state.business?.id || id);
     if (state.clientSession) {
@@ -255,8 +274,8 @@ async function loadBusiness(id, options = {}) {
     renderBusinessSelect();
     render();
 
-    if (state.crmError || state.bookingError || state.googleError) {
-      showNotice([state.crmError, state.bookingError, state.googleError].filter(Boolean).join(" "), "warn");
+    if (state.crmError || state.proposalError || state.bookingError || state.googleError) {
+      showNotice([state.crmError, state.proposalError, state.bookingError, state.googleError].filter(Boolean).join(" "), "warn");
     } else if (!options.silent) {
       showNotice("", "info");
     }
@@ -266,6 +285,7 @@ async function loadBusiness(id, options = {}) {
     state.contacts = [];
     state.pipeline = null;
     state.duplicateGroups = [];
+    resetProposalState();
     state.nextActions = emptyNextActions();
     state.services = [];
     state.bookings = [];
@@ -344,6 +364,60 @@ async function loadDuplicateContacts(id) {
 
   const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/duplicates`);
   state.duplicateGroups = Array.isArray(payload.groups) ? payload.groups : [];
+}
+
+async function loadProposals(id, options = {}) {
+  state.proposals = [];
+  state.proposalError = "";
+  state.proposalLoading = true;
+
+  if (!id) {
+    state.proposalLoading = false;
+    return;
+  }
+
+  renderProposalLoadingState();
+
+  try {
+    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/proposals`);
+    state.proposals = Array.isArray(payload.proposals) ? payload.proposals : [];
+  } catch (error) {
+    state.proposalError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar las propuestas de este negocio."
+      : "No se pudieron cargar las propuestas comerciales.";
+  } finally {
+    state.proposalLoading = false;
+  }
+
+  if (options.render && state.business) {
+    render();
+  }
+}
+
+function renderProposalLoadingState() {
+  const container = document.querySelector('[data-list="proposals"]');
+
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = `
+    <section class="proposal-state proposal-loading" role="status">
+      <span class="proposal-spinner" aria-hidden="true"></span>
+      <div>
+        <strong>Cargando propuestas</strong>
+        <p>Estamos preparando el historial comercial del negocio.</p>
+      </div>
+    </section>
+  `;
+}
+
+function resetProposalState() {
+  state.proposals = [];
+  state.proposalLoading = false;
+  state.proposalError = "";
+  state.proposalFeedback = { type: "", message: "" };
+  state.proposalDraftContactId = "";
 }
 
 async function loadNextActions(id) {
@@ -546,6 +620,7 @@ function render() {
     contacts: state.contacts,
     pipeline: state.pipeline,
     duplicateGroups: state.duplicateGroups,
+    proposals: state.proposals,
     nextActions: state.nextActions,
     services: state.services,
     bookings: state.bookings,
@@ -561,6 +636,7 @@ function render() {
   renderHome(model);
   renderNextActions(model);
   renderLeads(model);
+  renderProposals(model);
   renderCustomers(model);
   renderBookings(model);
   renderOrders(model);
@@ -570,6 +646,7 @@ function render() {
   renderSettings(model);
   bindExportControls(model);
   bindCrmControls(model);
+  bindProposalControls(model);
   bindBookingControls(model);
   bindGoogleControls();
 }
@@ -790,6 +867,248 @@ function renderLeads(model) {
   `;
 }
 
+function renderProposals(model) {
+  const container = document.querySelector('[data-list="proposals"]');
+
+  if (!container) {
+    return;
+  }
+
+  if (state.proposalLoading) {
+    renderProposalLoadingState();
+    return;
+  }
+
+  const contacts = proposalContactOptions(model);
+  const selectedContactId = contacts.some((contact) => contact.id === state.proposalDraftContactId)
+    ? state.proposalDraftContactId
+    : (contacts[0]?.id || "");
+
+  container.innerHTML = `
+    ${state.proposalError ? renderProposalError(state.proposalError) : ""}
+    ${contacts.length
+      ? renderProposalForm(contacts, selectedContactId, model.currency)
+      : renderProposalContactEmpty()}
+    ${renderProposalList(model.proposals, contacts, model.currency)}
+  `;
+}
+
+function renderProposalError(message) {
+  return `
+    <section class="proposal-state proposal-error" role="alert">
+      <span class="proposal-state-icon" aria-hidden="true">!</span>
+      <div>
+        <strong>No pudimos consultar las propuestas</strong>
+        <p>${escapeHtml(message)}</p>
+      </div>
+      <button type="button" data-proposals-retry>Reintentar</button>
+    </section>
+  `;
+}
+
+function renderProposalContactEmpty() {
+  return `
+    <section class="proposal-state proposal-contact-empty">
+      <span class="proposal-state-icon" aria-hidden="true">+</span>
+      <div>
+        <strong>Primero necesitas un contacto</strong>
+        <p>Crea o recupera un lead del CRM para poder vincularle una propuesta comercial.</p>
+      </div>
+      <button type="button" data-proposals-go-leads>Ir a Leads</button>
+    </section>
+  `;
+}
+
+function renderProposalForm(contacts, selectedContactId, currency) {
+  const feedback = state.proposalFeedback || {};
+  const minimumExpiry = dateInputValue(new Date());
+  const defaultExpiry = dateInputValue(addDays(new Date(), 14));
+
+  return `
+    <section class="proposal-compose" aria-labelledby="proposalFormTitle">
+      <header>
+        <div>
+          <p class="eyebrow">Nueva oportunidad</p>
+          <h3 id="proposalFormTitle">Crear propuesta</h3>
+          <p>Prepara precios, condiciones y vigencia sin salir de la ficha comercial.</p>
+        </div>
+        <span class="proposal-compose-currency">${escapeHtml(currency || "EUR")}</span>
+      </header>
+      <form class="proposal-form" data-proposal-form>
+        <label class="proposal-field proposal-field-contact" for="proposalContactId">
+          Contacto
+          <select id="proposalContactId" name="contactId" required>
+            ${contacts.map((contact) => `
+              <option value="${escapeAttr(contact.id)}"${contact.id === selectedContactId ? " selected" : ""}>
+                ${escapeHtml(contactName(contact))}${contact.email ? ` - ${escapeHtml(contact.email)}` : ""}
+              </option>
+            `).join("")}
+          </select>
+        </label>
+        <label class="proposal-field" for="proposalPackage">
+          Paquete
+          <select id="proposalPackage" name="package" required>
+            ${PROPOSAL_PACKAGES.map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(proposalPackageLabel(item))}</option>`).join("")}
+          </select>
+        </label>
+        <label class="proposal-field" for="proposalSetupPrice">
+          Puesta en marcha
+          <span class="proposal-money-input">
+            <input id="proposalSetupPrice" name="setupPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required>
+            <span aria-hidden="true">${escapeHtml(currency || "EUR")}</span>
+          </span>
+        </label>
+        <label class="proposal-field" for="proposalMonthlyPrice">
+          Cuota mensual
+          <span class="proposal-money-input">
+            <input id="proposalMonthlyPrice" name="monthlyPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required>
+            <span aria-hidden="true">${escapeHtml(currency || "EUR")}</span>
+          </span>
+        </label>
+        <label class="proposal-field" for="proposalExpiresAt">
+          Valida hasta
+          <input id="proposalExpiresAt" name="expiresAt" type="date" min="${escapeAttr(minimumExpiry)}" value="${escapeAttr(defaultExpiry)}" required>
+        </label>
+        <label class="proposal-field" for="proposalStatus">
+          Estado inicial
+          <select id="proposalStatus" name="status" required>
+            ${PROPOSAL_STATUSES.map((status) => `<option value="${escapeAttr(status)}"${status === "borrador" ? " selected" : ""}>${escapeHtml(statusLabel(status))}</option>`).join("")}
+          </select>
+        </label>
+        <label class="proposal-field proposal-field-conditions" for="proposalConditions">
+          Condiciones
+          <textarea id="proposalConditions" name="conditions" rows="4" maxlength="20000" placeholder="Alcance, forma de pago, entregables y condiciones de servicio" required></textarea>
+        </label>
+        <footer class="proposal-form-footer">
+          <p class="proposal-feedback${feedback.type ? ` is-${escapeAttr(feedback.type)}` : ""}" data-proposal-feedback role="status" aria-live="polite">
+            ${feedback.message ? escapeHtml(feedback.message) : "La propuesta quedara vinculada al contacto seleccionado."}
+          </p>
+          <button type="submit">Crear propuesta</button>
+        </footer>
+      </form>
+    </section>
+  `;
+}
+
+function renderProposalList(proposals, contacts, currency) {
+  const items = Array.isArray(proposals)
+    ? [...proposals].sort(compareProposals)
+    : [];
+
+  return `
+    <section class="proposal-list" aria-labelledby="proposalListTitle">
+      <header class="proposal-list-heading">
+        <div>
+          <p class="eyebrow">Seguimiento</p>
+          <h3 id="proposalListTitle">Propuestas del negocio</h3>
+        </div>
+        <span>${escapeHtml(String(items.length))} ${items.length === 1 ? "propuesta" : "propuestas"}</span>
+      </header>
+      ${items.length
+        ? `<div class="proposal-grid">${items.map((proposal) => renderProposalCard(proposal, contacts, currency)).join("")}</div>`
+        : `
+          <section class="proposal-empty">
+            <span aria-hidden="true">01</span>
+            <div>
+              <strong>Aun no hay propuestas</strong>
+              <p>Selecciona un contacto, define la oferta y crea la primera propuesta comercial.</p>
+            </div>
+          </section>
+        `}
+    </section>
+  `;
+}
+
+function renderProposalCard(proposal, contacts, currency) {
+  const proposalId = clean(proposal?.id || "");
+  const status = normalizeProposalStatus(proposal?.status);
+  const contact = contacts.find((item) => item.id === proposal?.contactId) || proposal?.contact || null;
+  const contactLabel = contact ? contactName(contact) : clean(proposal?.contactName || proposal?.contactId || "Contacto no disponible");
+  const conditions = String(proposal?.conditions || "Sin condiciones adicionales.").trim();
+  const createdAt = proposal?.createdAt || proposal?.updatedAt || "";
+
+  return `
+    <article class="proposal-card" data-proposal-card="${escapeAttr(proposalId)}" tabindex="-1">
+      <header>
+        <div>
+          <span>${escapeHtml(proposalPackageLabel(proposal?.package))}</span>
+          <h4>${escapeHtml(contactLabel)}</h4>
+          <small>${createdAt ? `Creada ${escapeHtml(formatDate(createdAt))}` : "Propuesta comercial"}</small>
+        </div>
+        <span class="pill proposal-status ${escapeAttr(status)}">${escapeHtml(statusLabel(status))}</span>
+      </header>
+      <div class="proposal-value-grid">
+        <span>
+          <small>Puesta en marcha</small>
+          <strong>${escapeHtml(formatMoney(Number(proposal?.setupPrice || 0), currency))}</strong>
+        </span>
+        <span>
+          <small>Mensual</small>
+          <strong>${escapeHtml(formatMoney(Number(proposal?.monthlyPrice || 0), currency))}</strong>
+        </span>
+      </div>
+      <div class="proposal-expiry">
+        <span>Vigencia</span>
+        <strong>${escapeHtml(proposal?.expiresAt ? formatDate(proposal.expiresAt) : "Sin fecha")}</strong>
+      </div>
+      <p class="proposal-conditions">${escapeHtml(conditions)}</p>
+      <footer>
+        <label class="proposal-status-field">
+          Actualizar estado
+          <select data-proposal-status data-proposal-id="${escapeAttr(proposalId)}" data-current-status="${escapeAttr(status)}" aria-label="Estado de la propuesta para ${escapeAttr(contactLabel)}">
+            ${PROPOSAL_STATUSES.map((item) => `<option value="${escapeAttr(item)}"${item === status ? " selected" : ""}>${escapeHtml(statusLabel(item))}</option>`).join("")}
+          </select>
+        </label>
+        <div class="proposal-export-actions" role="group" aria-label="Exportar propuesta para ${escapeAttr(contactLabel)}">
+          <button type="button" data-proposal-export="html" data-proposal-id="${escapeAttr(proposalId)}">HTML</button>
+          <button type="button" data-proposal-export="pdf" data-proposal-id="${escapeAttr(proposalId)}">PDF</button>
+        </div>
+      </footer>
+    </article>
+  `;
+}
+
+function proposalContactOptions(model) {
+  const byId = new Map();
+
+  [model?.contacts, model?.leads, model?.customers]
+    .filter(Array.isArray)
+    .flat()
+    .forEach((contact) => {
+      const id = clean(contact?.id || "");
+      if (id && !contact?.merged && !byId.has(id)) {
+        byId.set(id, contact);
+      }
+    });
+
+  return Array.from(byId.values())
+    .sort((left, right) => contactName(left).localeCompare(contactName(right), "es", { sensitivity: "base" }));
+}
+
+function compareProposals(left, right) {
+  const leftTime = Date.parse(left?.updatedAt || left?.createdAt || left?.expiresAt || "");
+  const rightTime = Date.parse(right?.updatedAt || right?.createdAt || right?.expiresAt || "");
+  const timeDifference = (Number.isFinite(rightTime) ? rightTime : 0) - (Number.isFinite(leftTime) ? leftTime : 0);
+
+  return timeDifference || String(right?.id || "").localeCompare(String(left?.id || ""));
+}
+
+function normalizeProposalStatus(value) {
+  const status = clean(value).toLowerCase();
+  return PROPOSAL_STATUSES.includes(status) ? status : "borrador";
+}
+
+function proposalPackageLabel(value) {
+  const labels = {
+    presencia_local: "Presencia Local",
+    conversion_pro: "Conversion Pro",
+    growth_local: "Growth Local",
+    custom: "A medida"
+  };
+
+  return labels[clean(value)] || clean(value || "Propuesta a medida");
+}
+
 function renderDuplicateGroups(groups = []) {
   if (!groups.length) {
     return "";
@@ -858,7 +1177,7 @@ function renderCustomers(model) {
             <th>Telefono</th>
             <th>Email</th>
             <th>Ultima actividad</th>
-            <th>Ficha</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -870,9 +1189,14 @@ function renderCustomers(model) {
               <td>${escapeHtml(formatDate(customer.lastInteractionAt || customer.createdAt))}</td>
               <td>
                 ${customer.id && state.contacts.some((contact) => contact.id === customer.id) ? `
-                  <button class="timeline-open-button compact" type="button" data-contact-timeline data-contact-id="${escapeAttr(customer.id)}" aria-haspopup="dialog">
-                    Ver historial
-                  </button>
+                  <div class="contact-row-actions">
+                    <button class="proposal-contact-button compact" type="button" data-create-proposal-for-contact data-contact-id="${escapeAttr(customer.id)}">
+                      Crear propuesta
+                    </button>
+                    <button class="timeline-open-button compact" type="button" data-contact-timeline data-contact-id="${escapeAttr(customer.id)}" aria-haspopup="dialog">
+                      Ver historial
+                    </button>
+                  </div>
                 ` : '<span class="timeline-unavailable">No disponible</span>'}
               </td>
             </tr>
@@ -1233,6 +1557,7 @@ function createDashboardModel(business, crm = {}) {
   const currency = commerce.currency || content.currency || "EUR";
   const pipeline = crm.pipeline ? normalizePipelinePayload(crm.pipeline) : buildPipelineModel(contacts);
   const duplicateGroups = Array.isArray(crm.duplicateGroups) ? crm.duplicateGroups : [];
+  const proposals = Array.isArray(crm.proposals) ? crm.proposals : [];
   const primaryGoal = business.settings?.primaryGoal || content.conversionGoal || "Reservas y contactos";
   const bookingUrl = content.bookingUrl || google.appointmentUrl || "";
   const whatsappUrl = integrations.whatsapp?.url || content.whatsappUrl || "";
@@ -1264,9 +1589,11 @@ function createDashboardModel(business, crm = {}) {
 
   return {
     business,
+    contacts,
     leads,
     pipeline,
     duplicateGroups,
+    proposals,
     customers,
     services,
     bookings,
@@ -1488,6 +1815,309 @@ function bindCrmControls(model) {
   });
 }
 
+function bindProposalControls(model) {
+  document.querySelectorAll("[data-create-proposal-for-contact]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const contactId = button.dataset.contactId || "";
+
+      if (contactId) {
+        startProposalForContact(contactId);
+      }
+    });
+  });
+
+  document.querySelector("[data-proposals-retry]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const businessRef = state.business?.id || state.business?.slug || "";
+
+    if (!businessRef) {
+      return;
+    }
+
+    button.disabled = true;
+    await loadProposals(businessRef, { render: true });
+
+    if (state.proposalError) {
+      showNotice(state.proposalError, "error");
+    } else {
+      showNotice("Propuestas actualizadas.", "info");
+    }
+  });
+
+  document.querySelector("[data-proposals-go-leads]")?.addEventListener("click", () => {
+    setActiveTab("leads");
+    document.querySelector('[data-tab="leads"]')?.focus();
+  });
+
+  const form = document.querySelector("[data-proposal-form]");
+  form?.addEventListener("change", (event) => {
+    if (event.target?.name === "contactId") {
+      state.proposalDraftContactId = clean(event.target.value);
+    }
+  });
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await createProposalFromForm(form);
+  });
+
+  document.querySelectorAll("[data-proposal-status]").forEach((select) => {
+    select.addEventListener("change", async () => {
+      await updateProposalStatus(select);
+    });
+  });
+
+  document.querySelectorAll("[data-proposal-export]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const proposalId = button.dataset.proposalId || "";
+      const format = button.dataset.proposalExport || "html";
+
+      if (proposalId) {
+        await exportProposal(proposalId, format, button);
+      }
+    });
+  });
+}
+
+async function createProposalFromForm(form) {
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const data = new FormData(form);
+  const setupPrice = Number(data.get("setupPrice"));
+  const monthlyPrice = Number(data.get("monthlyPrice"));
+  const payload = {
+    contactId: clean(data.get("contactId")),
+    package: clean(data.get("package")),
+    setupPrice,
+    monthlyPrice,
+    conditions: String(data.get("conditions") || "").trim(),
+    expiresAt: dateInputToEndOfDayIso(data.get("expiresAt")),
+    status: normalizeProposalStatus(data.get("status"))
+  };
+
+  if (!businessRef || !payload.contactId || !PROPOSAL_PACKAGES.includes(payload.package)
+    || !Number.isFinite(setupPrice) || setupPrice < 0
+    || !Number.isFinite(monthlyPrice) || monthlyPrice < 0
+    || !payload.conditions || !payload.expiresAt) {
+    setProposalFormFeedback("Revisa los campos obligatorios y los importes.", "error");
+    form.reportValidity?.();
+    return;
+  }
+
+  const submit = form.querySelector('button[type="submit"]');
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = "Creando...";
+  }
+  form.setAttribute("aria-busy", "true");
+  setProposalFormFeedback("Guardando la propuesta comercial...", "info");
+
+  try {
+    const result = await postJson(
+      `/api/businesses/${encodeURIComponent(businessRef)}/proposals`,
+      payload
+    );
+
+    if (!result?.proposal) {
+      throw new Error("Proposal response is missing");
+    }
+
+    mergeProposal(result.proposal);
+    if (result.proposal.status === "aceptada") {
+      await loadContacts(businessRef);
+    }
+    state.proposalDraftContactId = payload.contactId;
+    state.proposalFeedback = { type: "success", message: "Propuesta creada correctamente." };
+    showNotice("Propuesta comercial creada.", "info");
+    render();
+    focusProposalCard(result.proposal.id);
+  } catch (error) {
+    state.proposalFeedback = { type: "error", message: "No se pudo crear la propuesta. Revisa los datos e intentalo de nuevo." };
+    setProposalFormFeedback(state.proposalFeedback.message, "error");
+    showNotice("No se pudo crear la propuesta comercial.", "error");
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = "Crear propuesta";
+    }
+    form.removeAttribute("aria-busy");
+  }
+}
+
+async function updateProposalStatus(select) {
+  const proposalId = select.dataset.proposalId || "";
+  const previousStatus = normalizeProposalStatus(select.dataset.currentStatus);
+  const status = normalizeProposalStatus(select.value);
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const card = select.closest("[data-proposal-card]");
+
+  if (!businessRef || !proposalId || status === previousStatus) {
+    return;
+  }
+
+  select.disabled = true;
+  card?.setAttribute("aria-busy", "true");
+
+  try {
+    const result = await patchJson(
+      `/api/businesses/${encodeURIComponent(businessRef)}/proposals/${encodeURIComponent(proposalId)}`,
+      { status }
+    );
+
+    if (!result?.proposal) {
+      throw new Error("Proposal response is missing");
+    }
+
+    mergeProposal(result.proposal);
+    if (result.proposal.status === "aceptada") {
+      await loadContacts(businessRef);
+    }
+    state.proposalFeedback = { type: "success", message: `Estado actualizado a ${statusLabel(result.proposal.status || status)}.` };
+    showNotice("Estado de la propuesta actualizado.", "info");
+    render();
+    focusProposalCard(proposalId);
+  } catch (error) {
+    select.value = previousStatus;
+    state.proposalFeedback = { type: "error", message: "No se pudo actualizar el estado de la propuesta." };
+    showNotice(state.proposalFeedback.message, "error");
+    render();
+    focusProposalCard(proposalId);
+  }
+}
+
+async function exportProposal(proposalId, format, button) {
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const normalizedFormat = format === "pdf" ? "pdf" : "html";
+
+  if (!businessRef || !proposalId) {
+    return;
+  }
+
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "Preparando...";
+  button.setAttribute("aria-busy", "true");
+
+  try {
+    const response = await fetch(
+      apiUrl(`/api/businesses/${encodeURIComponent(businessRef)}/proposals/${encodeURIComponent(proposalId)}/export?format=${encodeURIComponent(normalizedFormat)}`),
+      {
+        headers: {
+          ...apiHeaders(),
+          Accept: normalizedFormat === "pdf" ? "application/pdf" : "text/html"
+        },
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Request failed: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const filename = proposalExportFilename(response, proposalId, normalizedFormat);
+    downloadBlob(blob, filename);
+    state.proposalFeedback = { type: "success", message: `Exportacion ${normalizedFormat.toUpperCase()} preparada.` };
+    setProposalFormFeedback(state.proposalFeedback.message, "success");
+    showNotice(`Propuesta exportada en ${normalizedFormat.toUpperCase()}.`, "info");
+  } catch (error) {
+    state.proposalFeedback = { type: "error", message: `No se pudo exportar la propuesta en ${normalizedFormat.toUpperCase()}.` };
+    setProposalFormFeedback(state.proposalFeedback.message, "error");
+    showNotice(state.proposalFeedback.message, "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+    button.removeAttribute("aria-busy");
+  }
+}
+
+function startProposalForContact(contactId, options = {}) {
+  const contact = state.contacts.find((item) => item.id === contactId);
+
+  if (!contact) {
+    showNotice("No se encontro el contacto para crear la propuesta.", "error");
+    return;
+  }
+
+  if (options.closeDialog) {
+    closeContactTimeline();
+  }
+
+  state.proposalDraftContactId = contactId;
+  state.proposalFeedback = { type: "info", message: `Preparando una propuesta para ${contactName(contact)}.` };
+  setActiveTab("proposals");
+  render();
+
+  window.requestAnimationFrame(() => {
+    const select = document.querySelector('[data-proposal-form] select[name="contactId"]');
+    const packageField = document.querySelector('[data-proposal-form] select[name="package"]');
+    if (select) {
+      select.value = contactId;
+    }
+    packageField?.focus({ preventScroll: true });
+    document.querySelector(".proposal-compose")?.scrollIntoView({ block: "start", behavior: "auto" });
+  });
+}
+
+function setProposalFormFeedback(message, type = "") {
+  const node = document.querySelector("[data-proposal-feedback]");
+
+  if (!node) {
+    return;
+  }
+
+  node.textContent = message || "";
+  node.className = `proposal-feedback${type ? ` is-${type}` : ""}`;
+}
+
+function mergeProposal(proposal) {
+  const proposalId = clean(proposal?.id || "");
+
+  if (!proposalId) {
+    return;
+  }
+
+  const index = state.proposals.findIndex((item) => item.id === proposalId);
+  if (index >= 0) {
+    state.proposals[index] = { ...state.proposals[index], ...proposal };
+  } else {
+    state.proposals = [proposal, ...state.proposals];
+  }
+}
+
+function focusProposalCard(proposalId) {
+  window.requestAnimationFrame(() => {
+    Array.from(document.querySelectorAll("[data-proposal-card]"))
+      .find((card) => card.dataset.proposalCard === proposalId)
+      ?.focus({ preventScroll: false });
+  });
+}
+
+function proposalExportFilename(response, proposalId, format) {
+  const disposition = response.headers.get("Content-Disposition") || "";
+  const encodedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
+  let filename = encodedMatch?.[1] || plainMatch?.[1] || `propuesta-${proposalId}.${format}`;
+
+  try {
+    filename = decodeURIComponent(filename);
+  } catch (error) {
+    filename = `propuesta-${proposalId}.${format}`;
+  }
+
+  return filename.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-");
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.hidden = true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 async function openContactTimeline(contactId) {
   const businessRef = state.business?.id || state.business?.slug || "";
   const contact = state.contacts.find((item) => item.id === contactId) || null;
@@ -1498,6 +2128,11 @@ async function openContactTimeline(contactId) {
   }
 
   refs.contactTimelineTitle.textContent = contactName(contact);
+  if (refs.contactProposal) {
+    refs.contactProposal.hidden = false;
+    refs.contactProposal.dataset.contactId = contactId;
+    refs.contactProposal.setAttribute("aria-label", `Crear propuesta para ${contactName(contact)}`);
+  }
   refs.contactTimelineMeta.textContent = [
     statusLabel(contact.status || "new"),
     contact.phone,
@@ -1565,6 +2200,12 @@ function showContactTimelineDialog() {
 function closeContactTimeline() {
   const dialog = refs.contactTimelineDialog;
   state.timelineRequestSequence += 1;
+
+  if (refs.contactProposal) {
+    refs.contactProposal.hidden = true;
+    refs.contactProposal.dataset.contactId = "";
+    refs.contactProposal.removeAttribute("aria-label");
+  }
 
   if (!dialog) {
     return;
@@ -2477,10 +3118,17 @@ function renderLeadCard(lead) {
           ? timelinePreview.map((item) => renderTimelineItem(item)).join("")
           : "<span>Sin historial todavia</span>"}
       </div>
-      <button class="timeline-open-button" type="button" data-contact-timeline data-contact-id="${escapeAttr(lead.id)}" aria-haspopup="dialog">
-        <span>Ver ficha e historial completo</span>
-        <span aria-hidden="true">&rarr;</span>
-      </button>
+      <div class="lead-card-actions">
+        ${lead.id && state.contacts.some((contact) => contact.id === lead.id) ? `
+          <button class="proposal-contact-button" type="button" data-create-proposal-for-contact data-contact-id="${escapeAttr(lead.id)}" draggable="false">
+            Crear propuesta
+          </button>
+        ` : ""}
+        <button class="timeline-open-button" type="button" data-contact-timeline data-contact-id="${escapeAttr(lead.id)}" aria-haspopup="dialog" draggable="false">
+          <span>Ver ficha completa</span>
+          <span aria-hidden="true">&rarr;</span>
+        </button>
+      </div>
       <form class="note-form" data-contact-note-form data-contact-id="${escapeAttr(lead.id)}">
         <input name="note" type="text" placeholder="Nota o tarea rapida">
         <button type="submit">Guardar</button>
@@ -3166,6 +3814,18 @@ function dateInputToIso(value) {
   return new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0).toISOString();
 }
 
+function dateInputToEndOfDayIso(value) {
+  const text = clean(value);
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!match) {
+    return "";
+  }
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day), 23, 59, 59, 999).toISOString();
+}
+
 function sameDay(value, date) {
   const parsed = parseDate(value);
   return Boolean(parsed)
@@ -3276,6 +3936,12 @@ function statusLabel(value) {
     "contact.status_changed": "Cambio de estado",
     "next_action.created": "Proxima accion",
     "next_action.completed": "Accion completada",
+    borrador: "Borrador",
+    enviada: "Enviada",
+    vista: "Vista",
+    aceptada: "Aceptada",
+    rechazada: "Rechazada",
+    caducada: "Caducada",
     manual: "Manual",
     whatsapp: "WhatsApp",
     email: "Email",

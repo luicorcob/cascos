@@ -37,7 +37,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -986,6 +987,505 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   font-weight: 950;
 }
 
+.proposal-state,
+.proposal-compose,
+.proposal-list {
+  margin-bottom: 14px;
+}
+
+.proposal-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 96px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.proposal-state strong,
+.proposal-state p {
+  display: block;
+  margin: 0;
+}
+
+.proposal-state p {
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.proposal-state button,
+.proposal-form button,
+.proposal-export-actions button,
+.proposal-contact-button,
+.contact-proposal-button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: #fffaf0;
+  font-weight: 950;
+}
+
+.proposal-state-icon,
+.proposal-spinner {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--blue);
+  font-weight: 950;
+}
+
+.proposal-spinner {
+  border: 4px solid rgba(37, 99, 235, 0.14);
+  border-top-color: var(--blue);
+  background: transparent;
+  animation: proposal-spin 0.8s linear infinite;
+}
+
+.proposal-error {
+  border-color: rgba(181, 34, 155, 0.25);
+  background: rgba(181, 34, 155, 0.06);
+}
+
+.proposal-error .proposal-state-icon {
+  background: rgba(181, 34, 155, 0.11);
+  color: var(--accent);
+}
+
+.proposal-contact-empty {
+  border-style: dashed;
+}
+
+.proposal-compose {
+  padding: clamp(16px, 2.4vw, 24px);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(181, 34, 155, 0.07), transparent 34%),
+    radial-gradient(circle at 0% 0%, rgba(8, 200, 255, 0.08), transparent 36%),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 44px rgba(28, 24, 44, 0.06);
+}
+
+.proposal-compose > header,
+.proposal-list-heading,
+.proposal-card > header,
+.proposal-card > footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.proposal-compose > header {
+  margin-bottom: 18px;
+}
+
+.proposal-compose h3,
+.proposal-list h3,
+.proposal-card h4,
+.proposal-compose p,
+.proposal-list p {
+  margin: 0;
+}
+
+.proposal-compose > header > div > p:last-child {
+  max-width: 660px;
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.proposal-compose-currency,
+.proposal-list-heading > span {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.07);
+  color: #1749b5;
+  font-size: 0.78rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.proposal-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.proposal-field {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.proposal-field-contact {
+  grid-column: span 2;
+}
+
+.proposal-field-conditions,
+.proposal-form-footer {
+  grid-column: 1 / -1;
+}
+
+.proposal-field input,
+.proposal-field select,
+.proposal-field textarea {
+  min-height: 42px;
+  width: 100%;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--ink);
+  outline: none;
+  text-transform: none;
+}
+
+.proposal-field textarea {
+  min-height: 112px;
+  padding-block: 11px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.proposal-field input:focus,
+.proposal-field select:focus,
+.proposal-field textarea:focus,
+.proposal-status-field select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.proposal-money-input {
+  position: relative;
+  display: block;
+}
+
+.proposal-money-input input {
+  padding-right: 52px;
+}
+
+.proposal-money-input > span {
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  transform: translateY(-50%);
+}
+
+.proposal-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.proposal-feedback {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.proposal-feedback.is-success {
+  color: var(--green);
+}
+
+.proposal-feedback.is-error {
+  color: #8a261a;
+}
+
+.proposal-feedback.is-info {
+  color: #1749b5;
+}
+
+.proposal-form-footer button {
+  flex: 0 0 auto;
+  min-width: 164px;
+}
+
+.proposal-list {
+  padding-top: 6px;
+}
+
+.proposal-list-heading {
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.proposal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.proposal-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-top: 3px solid rgba(37, 99, 235, 0.72);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 14px 36px rgba(28, 24, 44, 0.05);
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.proposal-card:hover,
+.proposal-card:focus-visible {
+  border-color: rgba(37, 99, 235, 0.35);
+  box-shadow: 0 18px 42px rgba(28, 24, 44, 0.09);
+  transform: translateY(-1px);
+}
+
+.proposal-card[aria-busy="true"] {
+  opacity: 0.72;
+}
+
+.proposal-card > header > div {
+  min-width: 0;
+}
+
+.proposal-card > header > div > span,
+.proposal-card > header small,
+.proposal-expiry span,
+.proposal-value-grid small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.proposal-card h4 {
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  font-size: 1.08rem;
+  line-height: 1.25;
+}
+
+.proposal-card > header small {
+  display: block;
+  margin-top: 4px;
+  font-weight: 750;
+  text-transform: none;
+}
+
+.pill.proposal-status.borrador,
+.pill.proposal-status.caducada {
+  border-color: rgba(104, 102, 115, 0.24);
+  background: rgba(104, 102, 115, 0.08);
+  color: var(--muted);
+}
+
+.pill.proposal-status.enviada {
+  border-color: rgba(37, 99, 235, 0.26);
+  background: rgba(37, 99, 235, 0.09);
+  color: var(--blue);
+}
+
+.pill.proposal-status.vista {
+  border-color: rgba(154, 101, 0, 0.26);
+  background: rgba(154, 101, 0, 0.09);
+  color: var(--amber);
+}
+
+.pill.proposal-status.aceptada {
+  border-color: rgba(22, 116, 92, 0.28);
+  background: rgba(22, 116, 92, 0.1);
+  color: var(--green);
+}
+
+.pill.proposal-status.rechazada {
+  border-color: rgba(181, 34, 155, 0.25);
+  background: rgba(181, 34, 155, 0.08);
+  color: var(--accent);
+}
+
+.proposal-value-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.proposal-value-grid > span,
+.proposal-expiry {
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+  border: 1px solid rgba(28, 24, 44, 0.09);
+  border-radius: var(--radius);
+  background: rgba(243, 242, 248, 0.62);
+}
+
+.proposal-value-grid strong {
+  overflow-wrap: anywhere;
+  font-size: 1.22rem;
+}
+
+.proposal-expiry {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.proposal-conditions {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.proposal-card > footer {
+  align-items: end;
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.proposal-status-field {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.proposal-status-field select {
+  min-height: 38px;
+  padding-inline: 9px;
+}
+
+.proposal-export-actions,
+.contact-row-actions,
+.contact-timeline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.proposal-export-actions {
+  justify-content: flex-end;
+}
+
+.proposal-export-actions button {
+  min-height: 38px;
+  border-color: var(--line);
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 0.78rem;
+}
+
+.proposal-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-height: 150px;
+  padding: 22px;
+  border: 1px dashed rgba(28, 24, 44, 0.18);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.proposal-empty > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.09);
+  color: var(--blue);
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.proposal-empty strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.proposal-empty p {
+  max-width: 540px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.lead-card-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: 7px;
+}
+
+.proposal-contact-button {
+  width: 100%;
+  border-color: rgba(181, 34, 155, 0.24);
+  background: rgba(181, 34, 155, 0.07);
+  color: #871674;
+  font-size: 0.8rem;
+}
+
+.proposal-contact-button.compact {
+  width: auto;
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+.contact-proposal-button {
+  flex: 0 0 auto;
+  border-color: var(--ink);
+}
+
+.proposal-state button:hover,
+.proposal-form button:hover,
+.proposal-export-actions button:hover,
+.proposal-contact-button:hover,
+.contact-proposal-button:hover {
+  filter: brightness(0.96);
+}
+
+.proposal-state button:focus-visible,
+.proposal-form button:focus-visible,
+.proposal-export-actions button:focus-visible,
+.proposal-contact-button:focus-visible,
+.contact-proposal-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.26);
+  outline-offset: 2px;
+}
+
+@keyframes proposal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .booking-form {
   display: grid;
   grid-template-columns: repeat(5, minmax(140px, 1fr)) auto;
@@ -1332,6 +1832,11 @@ body.is-client-portal .tab-panel[data-panel="google"] {
   overflow-wrap: anywhere;
 }
 
+.contact-timeline-actions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
 .contact-timeline-close {
   flex: 0 0 auto;
   padding: 0 13px;
@@ -1487,12 +1992,19 @@ body.is-client-portal .tab-panel[data-panel="google"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .timeline-open-button {
+  .timeline-open-button,
+  .proposal-card {
     transition: none;
   }
 
-  .contact-timeline-loading span {
+  .contact-timeline-loading span,
+  .proposal-spinner {
     animation: none;
+  }
+
+  .proposal-card:hover,
+  .proposal-card:focus-visible {
+    transform: none;
   }
 }
 
@@ -2077,7 +2589,8 @@ tr:last-child td {
   }
 
   .booking-form,
-  .block-form {
+  .block-form,
+  .proposal-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -2124,6 +2637,8 @@ tr:last-child td {
   }
 
   .contact-timeline-header {
+    align-items: stretch;
+    flex-direction: column;
     gap: 12px;
     padding: 17px 16px 14px;
   }
@@ -2174,8 +2689,57 @@ tr:last-child td {
   .command-strip,
   .quick-nav,
   .booking-form,
-  .block-form {
+  .block-form,
+  .proposal-form,
+  .lead-card-actions {
     grid-template-columns: 1fr;
+  }
+
+  .proposal-field-contact,
+  .proposal-field-conditions,
+  .proposal-form-footer {
+    grid-column: 1;
+  }
+
+  .proposal-compose > header,
+  .proposal-list-heading,
+  .proposal-card > footer,
+  .proposal-form-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .proposal-form-footer button,
+  .proposal-status-field,
+  .proposal-export-actions {
+    width: 100%;
+  }
+
+  .proposal-export-actions {
+    justify-content: stretch;
+  }
+
+  .proposal-export-actions button {
+    flex: 1 1 96px;
+  }
+
+  .proposal-state {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .proposal-state button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .contact-timeline-actions {
+    align-items: stretch;
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .contact-timeline-actions button {
+    flex: 1 1 140px;
   }
 
   .agenda-panel > header,

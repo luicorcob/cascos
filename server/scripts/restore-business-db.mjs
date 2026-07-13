@@ -82,6 +82,7 @@ function validateDatabase(data, label) {
   const optionalArrays = [
     "contacts",
     "activities",
+    "proposals",
     "services",
     "bookings",
     "availability",

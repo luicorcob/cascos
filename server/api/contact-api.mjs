@@ -18,6 +18,7 @@ const DEFAULT_DB = {
   businesses: [],
   contacts: [],
   activities: [],
+  proposals: [],
   bookings: [],
   bookingReminders: [],
   businessEvents: [],
@@ -894,6 +895,17 @@ export function moveContactReferences(db, business, survivorId, duplicateIds) {
     }
   });
 
+  (Array.isArray(db.proposals) ? db.proposals : []).forEach((proposal) => {
+    if (!belongsToBusiness(proposal)) {
+      return;
+    }
+
+    if (duplicateSet.has(proposal.contactId)) {
+      proposal.contactId = survivorId;
+      proposal.updatedAt = new Date().toISOString();
+    }
+  });
+
   (Array.isArray(db.bookings) ? db.bookings : []).forEach((booking) => {
     if (!belongsToBusiness(booking)) {
       return;
@@ -1085,6 +1097,7 @@ async function loadDb(context) {
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
   db.activities = Array.isArray(db.activities) ? db.activities : [];
+  db.proposals = Array.isArray(db.proposals) ? db.proposals : [];
   db.bookings = Array.isArray(db.bookings) ? db.bookings : [];
   db.bookingReminders = Array.isArray(db.bookingReminders) ? db.bookingReminders : [];
   db.businessEvents = Array.isArray(db.businessEvents) ? db.businessEvents : [];
