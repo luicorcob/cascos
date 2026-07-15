@@ -4837,3 +4837,27 @@ tr:last-child td {
 @media (max-width: 640px) {
   .sla-lead-card dl { grid-template-columns: 1fr; }
 }
+
+.data-quality-panel { border-color: rgba(181, 34, 155, 0.18); }
+.data-quality-summary { display: flex; align-items: center; gap: 10px; margin: 18px 0 12px; color: var(--muted); font-size: 0.84rem; font-weight: 800; }
+.data-quality-summary strong { display: grid; width: 38px; height: 38px; place-items: center; flex: 0 0 auto; border-radius: 999px; background: rgba(181, 34, 155, 0.1); color: var(--accent); font-size: 1rem; }
+.data-quality-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.data-quality-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255, 255, 255, 0.82); }
+.data-quality-card > span { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 999px; background: rgba(22, 116, 92, 0.1); color: var(--green); font-weight: 950; }
+.data-quality-card.has-findings > span { background: rgba(181, 34, 155, 0.1); color: var(--accent); }
+.data-quality-card h4,
+.data-quality-card p { margin: 0; }
+.data-quality-card h4 { font-size: 0.82rem; }
+.data-quality-card p { margin-top: 4px; color: var(--muted); font-size: 0.74rem; overflow-wrap: anywhere; }
+.data-quality-card button { grid-column: 1 / -1; justify-self: start; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 0.74rem; font-weight: 900; cursor: pointer; }
+.data-quality-card button:hover { text-decoration: underline; }
+.data-quality-card button:focus-visible { outline: 3px solid rgba(181, 34, 155, 0.22); outline-offset: 3px; }
+.data-quality-clean .forecast-state-icon { background: rgba(22, 116, 92, 0.1); color: var(--green); font-size: 0.68rem; }
+
+@media (max-width: 1120px) {
+  .data-quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .data-quality-grid { grid-template-columns: 1fr; }
+}

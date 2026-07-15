@@ -3,6 +3,11 @@ import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs"
 import { recalculateBusinessContactScores } from "../lib/lead-score.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.EVENT_API_MAX_BODY_BYTES || 256 * 1024);
+const ATTRIBUTION_FIELDS = [
+  { key: "utmSource", alias: "utm_source", maxLength: 120 },
+  { key: "utmMedium", alias: "utm_medium", maxLength: 120 },
+  { key: "utmCampaign", alias: "utm_campaign", maxLength: 240 }
+];
 const DEFAULT_DB = {
   version: 1,
   updatedAt: null,
@@ -82,7 +87,11 @@ async function listBusinessEvents(businessId, requestUrl, response, context) {
     .filter((event) => event.businessId === business.id)
     .filter((event) => !from || new Date(event.createdAt) >= from)
     .filter((event) => !to || new Date(event.createdAt) <= to)
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+    .map((event) => ({
+      ...event,
+      ...normalizeAttribution(event, event.detail)
+    }));
 
   sendJson(response, 200, { events, total: events.length }, context);
 }
@@ -114,12 +123,15 @@ function normalizeEvent(source, businessId, now) {
     return null;
   }
 
+  const detail = isPlainObject(source.detail) ? sanitizeDetail(source.detail) : {};
+
   return {
     id: cleanId(source.id) || `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
     businessId,
     name,
     type: name,
-    detail: isPlainObject(source.detail) ? sanitizeDetail(source.detail) : {},
+    detail,
+    ...normalizeAttribution(source, detail),
     page: cleanText(source.page || source.path || source.url || "", 500),
     referrer: cleanText(source.referrer || "", 500),
     userAgent: cleanText(source.userAgent || "", 500),
@@ -231,6 +243,30 @@ function cleanEventName(value) {
 
 function cleanText(value, maxLength = 500) {
   return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function normalizeAttribution(source = {}, fallback = {}) {
+  return Object.fromEntries(ATTRIBUTION_FIELDS.map((field) => [
+    field.key,
+    readAttributionValue(source, field) || readAttributionValue(fallback, field)
+  ]));
+}
+
+function readAttributionValue(source, field) {
+  if (!isPlainObject(source)) {
+    return "";
+  }
+
+  return normalizeAttributionValue(source[field.key], field.maxLength)
+    || normalizeAttributionValue(source[field.alias], field.maxLength);
+}
+
+function normalizeAttributionValue(value, maxLength) {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return "";
+  }
+
+  return cleanText(value, maxLength);
 }
 
 function cleanId(value) {

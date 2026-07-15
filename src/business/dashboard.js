@@ -48,6 +48,10 @@ const state = {
   commercialDashboardLoading: false,
   commercialDashboardError: "",
   commercialDashboardRequestSequence: 0,
+  dataQuality: null,
+  dataQualityLoading: false,
+  dataQualityError: "",
+  dataQualityRequestSequence: 0,
   inbox: null,
   inboxLoading: false,
   inboxError: "",
@@ -281,6 +285,8 @@ async function loadBusinesses(options = {}) {
       state.business = null;
       resetForecastState({ keepMonth: true });
       resetSlaState({ keepHours: true });
+      resetCommercialDashboardState();
+      resetDataQualityState();
       resetInboxState({ keepStaleDays: true });
       render();
       showNotice("No hay negocios disponibles para esta sesion.", "warn");
@@ -311,6 +317,8 @@ async function loadBusinesses(options = {}) {
       state.report = null;
       resetForecastState({ keepMonth: true });
       resetSlaState({ keepHours: true });
+      resetCommercialDashboardState();
+      resetDataQualityState();
       resetInboxState({ keepStaleDays: true });
       state.googleStatus = null;
       state.googleDiagnostics = null;
@@ -343,6 +351,7 @@ async function loadBusiness(id, options = {}) {
   resetForecastState({ keepMonth: true });
   resetSlaState({ keepHours: true });
   resetCommercialDashboardState();
+  resetDataQualityState();
   resetInboxState({ keepStaleDays: true });
   setLoading(true);
 
@@ -360,6 +369,7 @@ async function loadBusiness(id, options = {}) {
       loadForecast(businessRef),
       loadSla(businessRef),
       loadCommercialDashboard(businessRef),
+      loadDataQuality(businessRef),
       inboxPromise
     ]);
     if (state.clientSession) {
@@ -395,6 +405,7 @@ async function loadBusiness(id, options = {}) {
     resetForecastState({ keepMonth: true });
     resetSlaState({ keepHours: true });
     resetCommercialDashboardState();
+    resetDataQualityState();
     resetInboxState({ keepStaleDays: true });
     state.googleStatus = null;
     state.googleDiagnostics = null;
@@ -792,6 +803,59 @@ function resetCommercialDashboardState() {
   state.commercialDashboardError = "";
 }
 
+async function loadDataQuality(id, options = {}) {
+  const requestSequence = ++state.dataQualityRequestSequence;
+  state.dataQuality = null;
+  state.dataQualityError = "";
+  state.dataQualityLoading = Boolean(id);
+
+  if (options.render && state.business) {
+    render();
+  }
+
+  if (!id) {
+    state.dataQualityLoading = false;
+    return;
+  }
+
+  try {
+    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/reports/data-quality`);
+
+    if (requestSequence !== state.dataQualityRequestSequence) {
+      return;
+    }
+
+    state.dataQuality = payload.dataQuality && typeof payload.dataQuality === "object"
+      ? payload.dataQuality
+      : null;
+  } catch (error) {
+    if (requestSequence !== state.dataQualityRequestSequence) {
+      return;
+    }
+
+    state.dataQuality = null;
+    state.dataQualityError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar la calidad de datos de este negocio."
+      : "No se pudo cargar la calidad de datos. Revisa la conexion e intentalo de nuevo.";
+  } finally {
+    if (requestSequence !== state.dataQualityRequestSequence) {
+      return;
+    }
+
+    state.dataQualityLoading = false;
+    if (options.render && state.business) {
+      render();
+    }
+  }
+}
+
+function resetDataQualityState() {
+  state.dataQualityRequestSequence += 1;
+  state.dataQuality = null;
+  state.dataQualityLoading = false;
+  state.dataQualityError = "";
+}
+
 async function loadInbox(id, options = {}) {
   const staleDays = normalizeInboxStaleDays(options.staleDays ?? state.inboxStaleDays);
   const requestSequence = ++state.inboxRequestSequence;
@@ -1068,6 +1132,7 @@ function render() {
     forecast: state.forecast,
     sla: state.sla,
     commercialDashboard: state.commercialDashboard,
+    dataQuality: state.dataQuality,
     inbox: state.inbox
   });
 
@@ -2292,6 +2357,7 @@ function renderReports(model) {
     ${renderCommercialDashboardPanel(model)}
     ${renderForecastPanel(model)}
     ${renderSlaPanel(model)}
+    ${renderDataQualityPanel(model)}
     <div class="recommendation-list">
       ${reportRecommendations.map((item) => `<article><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.text)}</p></article>`).join("")}
     </div>
@@ -2843,6 +2909,126 @@ function renderSlaUntouchedContact(contact) {
   `;
 }
 
+function renderDataQualityPanel(model) {
+  const loading = state.dataQualityLoading;
+
+  return `
+    <section class="data-quality-panel forecast-panel" aria-labelledby="dataQualityTitle" aria-busy="${loading ? "true" : "false"}">
+      <header class="forecast-panel-header">
+        <div class="forecast-panel-copy">
+          <p class="eyebrow">Higiene del CRM</p>
+          <h3 id="dataQualityTitle">Avisos de calidad de datos</h3>
+          <p>Corrige los datos que bloquean el seguimiento comercial y la operacion del negocio.</p>
+        </div>
+      </header>
+      <div aria-live="polite" aria-atomic="false">
+        ${renderDataQualityContent(model)}
+      </div>
+    </section>
+  `;
+}
+
+function renderDataQualityContent(model) {
+  if (state.dataQualityLoading) {
+    return `
+      <div class="forecast-state forecast-state-loading" role="status">
+        <span class="forecast-spinner" aria-hidden="true"></span>
+        <div><strong>Revisando calidad de datos</strong><p>Estamos comprobando contactos, seguimientos y configuracion.</p></div>
+      </div>
+    `;
+  }
+
+  if (state.dataQualityError) {
+    return `
+      <div class="forecast-state forecast-state-error" role="alert">
+        <span class="forecast-state-icon" aria-hidden="true">!</span>
+        <div><strong>Avisos no disponibles</strong><p>${escapeHtml(state.dataQualityError)}</p></div>
+        <button type="button" data-quality-retry>Reintentar</button>
+      </div>
+    `;
+  }
+
+  const quality = model.dataQuality;
+  if (!quality || typeof quality !== "object") {
+    return `
+      <div class="forecast-state forecast-state-empty">
+        <span class="forecast-state-icon" aria-hidden="true">0</span>
+        <div><strong>Sin revision calculada</strong><p>Actualiza el negocio para comprobar la calidad de sus datos.</p></div>
+      </div>
+    `;
+  }
+
+  const counts = quality.counts && typeof quality.counts === "object" ? quality.counts : {};
+  const totalFindings = forecastWholeNumber(counts.totalFindings);
+  if (!totalFindings) {
+    return `
+      <div class="forecast-state forecast-state-empty data-quality-clean" role="status">
+        <span class="forecast-state-icon" aria-hidden="true">OK</span>
+        <div><strong>Datos en buen estado</strong><p>No hay avisos de contacto, seguimiento, consentimiento o configuracion.</p></div>
+      </div>
+    `;
+  }
+
+  const configuration = quality.businessConfiguration && typeof quality.businessConfiguration === "object"
+    ? quality.businessConfiguration
+    : {};
+  const missingConfiguration = [
+    configuration.missingReviewUrl ? "enlace de resenas" : "",
+    configuration.missingBookingUrl ? "enlace de reserva" : ""
+  ].filter(Boolean).join(" y ") || "Configuracion operativa completa";
+  const categories = [
+    {
+      title: "Telefono o email incompleto",
+      count: counts.contactsMissingPhoneOrEmail,
+      note: `${forecastWholeNumber(counts.contactsWithoutAnyChannel)} contacto(s) sin ningun canal`,
+      target: "leads",
+      action: "Abrir CRM"
+    },
+    {
+      title: "Leads sin proxima accion",
+      count: counts.openLeadsWithoutPendingNextAction,
+      note: "Contactos abiertos sin seguimiento pendiente",
+      target: "leads",
+      action: "Abrir CRM"
+    },
+    {
+      title: "Clientes sin consentimiento",
+      count: counts.customersWithoutConsent,
+      note: "Clientes que requieren revisar su consentimiento",
+      target: "customers",
+      action: "Ver clientes"
+    },
+    {
+      title: "Configuracion del negocio",
+      count: counts.businessConfigurationIssues,
+      note: missingConfiguration,
+      target: "settings",
+      action: "Abrir Ajustes"
+    }
+  ];
+
+  return `
+    <div class="data-quality-summary">
+      <strong>${escapeHtml(String(totalFindings))}</strong>
+      <span>aviso${totalFindings === 1 ? "" : "s"} por resolver</span>
+    </div>
+    <div class="data-quality-grid" role="list" aria-label="Categorias de avisos de calidad de datos">
+      ${categories.map((category) => renderDataQualityCategory(category)).join("")}
+    </div>
+  `;
+}
+
+function renderDataQualityCategory(category) {
+  const count = forecastWholeNumber(category.count);
+  return `
+    <article class="data-quality-card${count ? " has-findings" : " is-clear"}" role="listitem">
+      <span aria-label="${escapeAttr(`${count} avisos`)}">${escapeHtml(String(count))}</span>
+      <div><h4>${escapeHtml(category.title)}</h4><p>${escapeHtml(category.note)}</p></div>
+      <button type="button" data-quality-target="${escapeAttr(category.target)}">${escapeHtml(category.action)}</button>
+    </article>
+  `;
+}
+
 function bindReportControls() {
   const form = document.querySelector("[data-forecast-form]");
   const monthInput = form?.querySelector("[data-forecast-month]");
@@ -2931,6 +3117,25 @@ function bindReportControls() {
         render: true
       });
     }
+  });
+
+  document.querySelector("[data-quality-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (businessRef) {
+      await loadDataQuality(businessRef, { render: true });
+    }
+  });
+
+  document.querySelectorAll("[data-quality-target]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const tab = clean(button.dataset.qualityTarget);
+      if (!["leads", "customers", "settings"].includes(tab)) {
+        return;
+      }
+
+      setActiveTab(tab);
+      document.querySelector(`[data-tab="${tab}"]`)?.focus();
+    });
   });
 }
 
@@ -3174,6 +3379,7 @@ function createDashboardModel(business, crm = {}) {
   const forecast = crm.forecast || null;
   const sla = crm.sla || null;
   const commercialDashboard = crm.commercialDashboard || null;
+  const dataQuality = crm.dataQuality || null;
   const inbox = crm.inbox || null;
   const orders = arrayFrom(content.orders, commerce.orders, business.orders);
   const products = arrayFrom(content.products, commerce.products, business.products);
@@ -3230,6 +3436,7 @@ function createDashboardModel(business, crm = {}) {
     forecast,
     sla,
     commercialDashboard,
+    dataQuality,
     inbox,
     orders,
     products,

@@ -6,6 +6,11 @@ import { recalculateContactScore } from "../lib/lead-score.mjs";
 const MAX_BODY_BYTES = Number(process.env.BOOKING_API_MAX_BODY_BYTES || 512 * 1024);
 const BOOKING_STATUSES = new Set(["pending", "confirmed", "canceled", "completed", "no-show"]);
 const OPEN_BOOKING_STATUSES = new Set(["pending", "confirmed"]);
+const ATTRIBUTION_FIELDS = [
+  { key: "utmSource", alias: "utm_source", maxLength: 120 },
+  { key: "utmMedium", alias: "utm_medium", maxLength: 120 },
+  { key: "utmCampaign", alias: "utm_campaign", maxLength: 240 }
+];
 const DEFAULT_DB = {
   version: 1,
   updatedAt: null,
@@ -580,6 +585,7 @@ function normalizeBooking(payload, existing, business, db, now, defaults) {
   const contactEmail = extractEmail(contactText);
   const phone = cleanText(source.phone || (contactEmail ? "" : contactText) || existing?.phone || "", 80);
   const email = cleanText(source.email || contactEmail || existing?.email || "", 320);
+  const attribution = normalizeFirstTouchAttribution(source, existing);
 
   return {
     id: existing?.id || cleanId(source.id) || `book_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -592,6 +598,7 @@ function normalizeBooking(payload, existing, business, db, now, defaults) {
     phone,
     email,
     notes: cleanText(source.notes || source.message || existing?.notes || "", 1600),
+    ...attribution,
     startsAt: startsAt.toISOString(),
     endsAt: endsAt.toISOString(),
     status: normalizeBookingStatus(source.status || existing?.status || defaults.status || "pending"),
@@ -860,6 +867,7 @@ function ensureContactForBooking(db, businessId, booking, now) {
       phone,
       email,
       source: "booking",
+      ...normalizeAttribution(booking),
       status: "reserved",
       tags: ["reserva"],
       notes: booking.notes,
@@ -883,6 +891,7 @@ function ensureContactForBooking(db, businessId, booking, now) {
   contact.privacyAccepted = contact.privacyAccepted || booking.privacyAccepted;
   contact.privacyAcceptedAt = contact.privacyAcceptedAt || booking.privacyAcceptedAt;
   contact.privacyPolicyUrl = contact.privacyPolicyUrl || booking.privacyPolicyUrl;
+  Object.assign(contact, normalizeFirstTouchAttribution(booking, contact));
   contact.lastInteractionAt = now;
   contact.updatedAt = now;
   contact.tags = Array.from(new Set([...(Array.isArray(contact.tags) ? contact.tags : []), "reserva"])).slice(0, 12);
@@ -1205,6 +1214,37 @@ function httpError(statusCode, message) {
 
 function cleanText(value, maxLength = 500) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function normalizeAttribution(source = {}) {
+  return Object.fromEntries(ATTRIBUTION_FIELDS.map((field) => [
+    field.key,
+    readAttributionValue(source, field)
+  ]));
+}
+
+function normalizeFirstTouchAttribution(source = {}, existing = {}) {
+  return Object.fromEntries(ATTRIBUTION_FIELDS.map((field) => [
+    field.key,
+    readAttributionValue(existing, field) || readAttributionValue(source, field)
+  ]));
+}
+
+function readAttributionValue(source, field) {
+  if (!source || typeof source !== "object" || Array.isArray(source)) {
+    return "";
+  }
+
+  return normalizeAttributionValue(source[field.key], field.maxLength)
+    || normalizeAttributionValue(source[field.alias], field.maxLength);
+}
+
+function normalizeAttributionValue(value, maxLength) {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return "";
+  }
+
+  return cleanText(value, maxLength);
 }
 
 function cleanId(value) {

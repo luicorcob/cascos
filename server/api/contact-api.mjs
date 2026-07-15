@@ -13,6 +13,11 @@ const CONTACT_PRIORITIES = new Set(["alta", "media", "baja"]);
 const CONTACT_LOST_REASONS = new Set(["precio", "no_responde", "ya_tiene_proveedor", "fuera_de_zona", "pospuesto", "no_encaja", "competencia"]);
 const NEXT_ACTION_TYPES = new Set(["llamada", "whatsapp", "email", "reunion", "enviar_propuesta", "revisar_reserva"]);
 const NEXT_ACTION_STATUSES = new Set(["pendiente", "hecha", "vencida"]);
+const ATTRIBUTION_FIELDS = [
+  { key: "utmSource", alias: "utm_source", maxLength: 120 },
+  { key: "utmMedium", alias: "utm_medium", maxLength: 120 },
+  { key: "utmCampaign", alias: "utm_campaign", maxLength: 240 }
+];
 const DEFAULT_DB = {
   version: 1,
   updatedAt: null,
@@ -709,6 +714,7 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
   const nextAction = Object.prototype.hasOwnProperty.call(source, "nextAction")
     ? normalizeOptionalNextAction(source.nextAction, now, true)
     : normalizeOptionalNextAction(existing?.nextAction, now);
+  const attribution = normalizeFirstTouchAttribution(source, existing);
 
   return {
     id: existing?.id || cleanId(source.id) || `contact_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -718,6 +724,7 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     phone,
     email,
     source: cleanText(source.source || existing?.source || defaults.source || "manual", 80),
+    ...attribution,
     status,
     lostReason,
     merged: Boolean(existing?.merged),
@@ -747,6 +754,7 @@ function normalizeStoredContact(contact, db = null, businessId = "", now = new D
   const lostReason = normalizeStoredLostReason(contact?.lostReason);
   const normalized = {
     ...contact,
+    ...normalizeAttribution(contact),
     status: normalizedStatus,
     lostReason: normalizedStatus === "lost" ? lostReason : "",
     merged: Boolean(contact?.merged),
@@ -870,6 +878,21 @@ function unionParents(parent, left, right) {
 }
 
 function mergeContactData(survivor, duplicates, now) {
+  const attributionCandidates = [survivor, ...duplicates]
+    .map((contact, index) => ({ contact, index, timestamp: Date.parse(contact?.createdAt || "") }))
+    .sort((left, right) => {
+      const leftTime = Number.isFinite(left.timestamp) ? left.timestamp : Number.POSITIVE_INFINITY;
+      const rightTime = Number.isFinite(right.timestamp) ? right.timestamp : Number.POSITIVE_INFINITY;
+      return leftTime - rightTime || left.index - right.index;
+    })
+    .map(({ contact }) => contact);
+
+  for (const field of ATTRIBUTION_FIELDS) {
+    survivor[field.key] = attributionCandidates
+      .map((contact) => readAttributionValue(contact, field))
+      .find(Boolean) || "";
+  }
+
   survivor.name = survivor.name || duplicates.find((contact) => contact.name)?.name || survivor.name;
   survivor.phone = survivor.phone || duplicates.find((contact) => contact.phone)?.phone || "";
   survivor.email = survivor.email || duplicates.find((contact) => contact.email)?.email || "";
@@ -1503,6 +1526,7 @@ function summarizeContact(contact) {
     phone: contact.phone,
     email: contact.email,
     source: contact.source,
+    ...normalizeAttribution(contact),
     status: contact.status,
     priority: contact.priority,
     score: contact.score,
@@ -1644,6 +1668,37 @@ function httpError(statusCode, message) {
 
 function cleanText(value, maxLength = 500) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function normalizeAttribution(source = {}) {
+  return Object.fromEntries(ATTRIBUTION_FIELDS.map((field) => [
+    field.key,
+    readAttributionValue(source, field)
+  ]));
+}
+
+function normalizeFirstTouchAttribution(source = {}, existing = {}) {
+  return Object.fromEntries(ATTRIBUTION_FIELDS.map((field) => [
+    field.key,
+    readAttributionValue(existing, field) || readAttributionValue(source, field)
+  ]));
+}
+
+function readAttributionValue(source, field) {
+  if (!source || typeof source !== "object" || Array.isArray(source)) {
+    return "";
+  }
+
+  return normalizeAttributionValue(source[field.key], field.maxLength)
+    || normalizeAttributionValue(source[field.alias], field.maxLength);
+}
+
+function normalizeAttributionValue(value, maxLength) {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return "";
+  }
+
+  return cleanText(value, maxLength);
 }
 
 function normalizeBoolean(value, fallback = false) {

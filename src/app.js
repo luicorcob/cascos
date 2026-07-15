@@ -4793,6 +4793,7 @@ function attachLeadForms(container, business) {
         privacyAcceptedAt: new Date().toISOString(),
         privacyPolicyUrl: business.privacyUrl || "",
         source: "form",
+        ...getUrlAttribution(),
         timestamp: new Date().toISOString()
       };
 
@@ -4839,6 +4840,7 @@ function attachPublicBookingForms(container, business) {
         privacyAcceptedAt: new Date().toISOString(),
         privacyPolicyUrl: business.privacyUrl || "",
         source: "public-widget",
+        ...getUrlAttribution(),
         timestamp: new Date().toISOString()
       };
       const status = bookingForm.querySelector("[data-booking-status]");
@@ -5396,6 +5398,7 @@ function extractLeadFromMessage(message, context, history) {
 function storeChatLead(lead) {
   const storedLead = {
     ...lead,
+    ...getUrlAttribution(),
     timestamp: new Date().toISOString()
   };
   window.localLiftLeads = window.localLiftLeads || [];
@@ -5653,19 +5656,38 @@ function attachTracking(container, business) {
 
 function trackLocalLiftEvent(name, detail = {}) {
   window.localLiftEvents = window.localLiftEvents || [];
+  const attribution = getUrlAttribution();
+  const eventDetail = { ...detail, ...attribution };
   const event = {
     name,
-    detail,
+    detail: eventDetail,
+    ...attribution,
     timestamp: new Date().toISOString()
   };
   window.localLiftEvents.push(event);
-  window.dataLayer?.push({ event: `locallift_${name}`, ...detail });
+  window.dataLayer?.push({ event: `locallift_${name}`, ...eventDetail });
   syncEventToMetrics(getPublicEventEndpoint(), {
     ...event,
     page: window.location?.pathname || "",
     referrer: document.referrer || "",
     userAgent: navigator.userAgent || ""
   }).catch(() => {});
+}
+
+function getUrlAttribution() {
+  const params = new URLSearchParams(window.location?.search || "");
+  const fields = [
+    ["utmSource", "utm_source", 120],
+    ["utmMedium", "utm_medium", 120],
+    ["utmCampaign", "utm_campaign", 240]
+  ];
+
+  return Object.fromEntries(fields
+    .map(([key, queryKey, maxLength]) => [
+      key,
+      String(params.get(queryKey) || "").replace(/\s+/g, " ").trim().slice(0, maxLength)
+    ])
+    .filter(([, value]) => value));
 }
 
 function getPublicLeadEndpoint(business = {}) {

@@ -6,6 +6,7 @@ import {
 } from "../lib/commercial-dashboard-report.mjs";
 import { buildCommercialForecast, normalizeForecastMonth } from "../lib/commercial-forecast.mjs";
 import { buildCommercialSla, normalizeSlaHours } from "../lib/commercial-sla.mjs";
+import { buildDataQualityReport } from "../lib/data-quality-report.mjs";
 
 const DEFAULT_DB = {
   version: 1,
@@ -26,7 +27,8 @@ export function isReportApiRequest(pathname) {
     || /^\/api\/businesses\/[^/]+\/reports\/lost-reasons$/.test(pathname)
     || /^\/api\/businesses\/[^/]+\/reports\/forecast$/.test(pathname)
     || /^\/api\/businesses\/[^/]+\/reports\/sla$/.test(pathname)
-    || /^\/api\/businesses\/[^/]+\/reports\/commercial-dashboard$/.test(pathname);
+    || /^\/api\/businesses\/[^/]+\/reports\/commercial-dashboard$/.test(pathname)
+    || /^\/api\/businesses\/[^/]+\/reports\/data-quality$/.test(pathname);
 }
 
 export async function handleReportApi(request, response, context) {
@@ -65,6 +67,11 @@ export async function handleReportApi(request, response, context) {
       return;
     }
 
+    if (segments[0] === "api" && segments[1] === "businesses" && segments[3] === "reports" && segments[4] === "data-quality" && method === "GET") {
+      await getDataQualityReport(segments[2], response, context);
+      return;
+    }
+
     sendJson(response, 405, { error: "Method not allowed" }, context, { Allow: "GET, OPTIONS" });
   } catch (error) {
     const status = error.statusCode || 500;
@@ -86,6 +93,18 @@ async function getCommercialDashboardReport(businessId, requestUrl, response, co
 
   const commercialDashboard = buildCommercialDashboardReport(db, business, { month, hours, now });
   sendJson(response, 200, { commercialDashboard }, context);
+}
+
+async function getDataQualityReport(businessId, response, context) {
+  const db = await loadDb(context);
+  const business = findBusiness(db, businessId);
+
+  if (!business) {
+    throw httpError(404, "Business not found");
+  }
+
+  const dataQuality = buildDataQualityReport(db, business);
+  sendJson(response, 200, { dataQuality }, context);
 }
 
 async function getSlaReport(businessId, requestUrl, response, context) {

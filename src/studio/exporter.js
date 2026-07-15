@@ -474,6 +474,7 @@
             privacyAcceptedAt: new Date().toISOString(),
             privacyPolicyUrl: business.privacyUrl || "",
             source: "form",
+            ...getUrlAttribution(),
             timestamp: new Date().toISOString()
           };
           window.localLiftLeads = window.localLiftLeads || [];
@@ -506,6 +507,7 @@
             privacyAcceptedAt: new Date().toISOString(),
             privacyPolicyUrl: business.privacyUrl || "",
             source: "public-widget",
+            ...getUrlAttribution(),
             timestamp: new Date().toISOString()
           };
           window.localLiftBookings = window.localLiftBookings || [];
@@ -952,7 +954,7 @@
       }
 
       function storeLead(lead) {
-        const stored = { ...lead, timestamp: new Date().toISOString() };
+        const stored = { ...lead, ...getUrlAttribution(), timestamp: new Date().toISOString() };
         window.localLiftLeads = window.localLiftLeads || [];
         window.localLiftLeads.push(stored);
         syncLead(lead.leadEndpoint || "", stored).catch(() => {});
@@ -1144,10 +1146,23 @@
       }
       function track(name, detail) {
         window.localLiftEvents = window.localLiftEvents || [];
-        const event = { name, detail: { business: business.name || "", category: business.category || "", ...detail }, timestamp: new Date().toISOString() };
+        const attribution = getUrlAttribution();
+        const eventDetail = { business: business.name || "", category: business.category || "", ...detail, ...attribution };
+        const event = { name, detail: eventDetail, ...attribution, timestamp: new Date().toISOString() };
         window.localLiftEvents.push(event);
         window.dataLayer?.push({ event: "locallift_" + name, ...event.detail });
         syncEvent(publicEventEndpoint(), event).catch(() => {});
+      }
+      function getUrlAttribution() {
+        const params = new URLSearchParams(window.location.search || "");
+        const fields = [
+          ["utmSource", "utm_source", 120],
+          ["utmMedium", "utm_medium", 120],
+          ["utmCampaign", "utm_campaign", 240]
+        ];
+        return Object.fromEntries(fields
+          .map(([key, queryKey, maxLength]) => [key, String(params.get(queryKey) || "").replace(/\\s+/g, " ").trim().slice(0, maxLength)])
+          .filter(([, value]) => value));
       }
       function publicEventEndpoint() {
         const identifier = business.slug || business.id || "";

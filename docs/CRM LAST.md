@@ -17,6 +17,27 @@ Reglas obligatorias:
 
 ---
 
+## Registro de ejecución — 13 de julio de 2026
+
+Alcance completado en esta entrega: **Tarea 1.6 → Tarea 4.3**. La implementación conserva compatibilidad con los datos existentes, aislamiento por negocio y los controles de autenticación de las API actuales.
+
+| Tarea | Estado | Entrega verificable |
+| --- | --- | --- |
+| 1.6 — Timeline unificado | ✅ Completada | Commit `25ee38c`; agregación cronológica y UI en la ficha de contacto. |
+| 2.1 — Presupuestos/propuestas | ✅ Completada | Commit `3fd7873`; modelo, CRUD, exportación y gestión comercial. |
+| 2.2 — Plantillas de seguimiento | ✅ Completada | Commit `06948bd`; CRUD, renderizado seguro y vista previa. |
+| 2.3 — Forecast comercial | ✅ Completada | Commit `c43bd0f`; cálculo ponderado, API mensual y panel de reportes. |
+| 3.1 — Reglas simples | ✅ Completada | Commit `aba0a4a`; triggers síncronos y automatización diaria programada. |
+| 3.2 — Bandeja diaria | ✅ Completada | Commit `03812a7`; endpoint agregado y vista de aterrizaje accionable. |
+| 3.3 — SLA comercial | ✅ Completada | Commit `b671df8`; primera respuesta, leads sin atender y umbral configurable. |
+| 4.1 — Dashboard comercial | ✅ Completada | Commit `e4ae9d3`; endpoint agregado, filtros, KPI y desgloses comerciales. |
+| 4.2 — Atribución | ✅ Implementada y validada | First-touch UTM en contactos, reservas y eventos; commit pendiente de registrar por el límite temporal de escritura Git del entorno. |
+| 4.3 — Calidad de datos | ✅ Implementada y validada | API y panel responsive con avisos accionables; commit pendiente de registrar por el mismo límite del entorno. |
+
+**Validación final superada:** `test:crm-attribution`, `test:crm-data-quality`, `check`, `smoke:pilot`, `test:backend-security` y `git diff --check`.
+
+---
+
 ## FASE 1 — CRM v1 práctico (objetivo: que ningún lead se pierda)
 
 ### Tarea 1.1 — Pipeline Kanban real
