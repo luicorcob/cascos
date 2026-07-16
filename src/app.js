@@ -2475,7 +2475,24 @@ function bindIntroGate() {
   const automatedLaunch = navigator.webdriver === true;
   const logoIntroContent = introGate.querySelector(".intro-gate-content");
   const studioDestination = introHub?.querySelector('[data-intro-destination="studio"]');
+  const introBackground = [
+    document.querySelector(".studio-topbar"),
+    document.querySelector("#studioWorkspace")
+  ].filter(Boolean);
   let introHelpPreviousFocus = null;
+
+  const setIntroBackgroundInert = (active) => {
+    const elements = [...introBackground, document.querySelector("#studioExperienceSwitcher")]
+      .filter((element, index, items) => element && items.indexOf(element) === index);
+    elements.forEach((element) => {
+      if (active && element.contains(document.activeElement)) {
+        document.activeElement?.blur?.();
+      }
+      element.toggleAttribute("inert", active);
+      if (active) element.setAttribute("aria-hidden", "true");
+      else element.removeAttribute("aria-hidden");
+    });
+  };
 
   const markIntroCompleted = () => {
     setIntroCompleted(true);
@@ -2544,6 +2561,7 @@ function bindIntroGate() {
       introHubBackButton.hidden = true;
     }
     document.body.classList.add("is-intro-active");
+    setIntroBackgroundInert(true);
 
     if (window.location.hash !== "#studioWorkspace") {
       setIntroHistoryState("hub");
@@ -2582,6 +2600,7 @@ function bindIntroGate() {
     introGate.classList.remove("is-closing");
     document.body.classList.remove("is-intro-active");
     document.body.classList.add("is-intro-complete");
+    setIntroBackgroundInert(false);
 
     if (focus) {
       document.querySelector("#studioWorkspace")?.focus({ preventScroll: true });
@@ -2596,6 +2615,7 @@ function bindIntroGate() {
     if (introGate.hidden || introGate.classList.contains("is-closing")) {
       markIntroCompleted();
       closeIntroHelp({ restoreFocus: false });
+      setIntroBackgroundInert(false);
       if (focus) {
         document.querySelector("#studioWorkspace")?.focus({ preventScroll: true });
       }
@@ -2604,6 +2624,7 @@ function bindIntroGate() {
 
     closeIntroHelp({ restoreFocus: false });
     introGate.classList.add("is-closing");
+    setIntroBackgroundInert(true);
     document.body.classList.remove("is-intro-active");
     document.body.classList.add("is-intro-complete");
     setIntroCompleted(true);
@@ -2613,6 +2634,7 @@ function bindIntroGate() {
       window.clearTimeout(fallbackTimer);
       introGate.hidden = true;
       introGate.classList.remove("is-closing");
+      setIntroBackgroundInert(false);
       document.querySelector("#studioWorkspace")?.focus({ preventScroll: true });
     };
 
@@ -2776,6 +2798,7 @@ function bindIntroGate() {
   logoIntroContent?.removeAttribute("aria-hidden");
   introGate.classList.remove("is-choosing", "is-closing");
   document.body.classList.add("is-intro-active");
+  setIntroBackgroundInert(true);
   setIntroHistoryState("intro");
 }
 
@@ -4747,6 +4770,7 @@ function attachChatbot(container) {
   const messages = widget.querySelector("[data-chatbot-messages]");
   const form = widget.querySelector("[data-chatbot-form]");
   const input = form?.elements.message;
+  const launcher = widget.querySelector(".chatbot-launcher");
   const history = [];
   const conversationId = window.crypto && typeof window.crypto.randomUUID === "function"
     ? `chat_${window.crypto.randomUUID()}`
@@ -4754,16 +4778,30 @@ function attachChatbot(container) {
   context.chatbot = context.chatbot || {};
   context.chatbot.conversationId = conversationId;
 
-  widget.querySelector(".chatbot-launcher")?.addEventListener("click", () => {
+  const closeChatbot = ({ restoreFocus = true } = {}) => {
+    widget.classList.remove("is-open");
+    launcher?.setAttribute("aria-expanded", "false");
+    if (restoreFocus) {
+      launcher?.focus();
+    }
+  };
+
+  launcher?.addEventListener("click", () => {
     widget.classList.add("is-open");
-    widget.querySelector(".chatbot-launcher")?.setAttribute("aria-expanded", "true");
+    launcher.setAttribute("aria-expanded", "true");
     trackLocalLiftEvent("chatbot_open", { business: context.business?.name || "", conversationId });
     input?.focus();
   });
 
   widget.querySelector(".chatbot-close")?.addEventListener("click", () => {
-    widget.classList.remove("is-open");
-    widget.querySelector(".chatbot-launcher")?.setAttribute("aria-expanded", "false");
+    closeChatbot();
+  });
+
+  widget.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && widget.classList.contains("is-open")) {
+      event.preventDefault();
+      closeChatbot();
+    }
   });
 
   widget.querySelectorAll("[data-chatbot-prompt]").forEach((button) => {

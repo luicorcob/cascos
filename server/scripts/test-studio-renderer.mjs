@@ -293,7 +293,21 @@ assert.equal((visualHtml.match(/class="service-card/g) || []).length, 3);
 assert.doesNotMatch(visualHtml, /data-edit-list="services" data-edit-index="3"/);
 assert.doesNotMatch(visualHtml, /data-edit-list="features" data-edit-index="2"/);
 assert.doesNotMatch(visualHtml, /data-edit-list="faqs" data-edit-index="2"/);
-assert.match(visualHtml, /Uno dos tres cuatro cinco seis siete ocho nueve diez once doce\.\.\./);
+assert.match(
+  visualHtml,
+  /data-edit-field="servicesIntro"[^>]*>Uno dos tres cuatro cinco seis siete ocho nueve\.\.\.<\/p>/
+);
+assert.match(
+  visualHtml,
+  /<p class="reveal"[^>]*data-edit-field="description"[^>]*>Uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince\.<\/p>/
+);
+assert.match(visualHtml, /aria-controls="chatbot-panel-luma-studio"/);
+assert.match(visualHtml, /id="chatbot-panel-luma-studio" role="dialog"/);
+const visualDockMarkup = visualHtml.match(/<aside class="conversion-dock"[\s\S]*?<\/aside>/)?.[0] || "";
+assert.equal((visualDockMarkup.match(/primary-site-action/g) || []).length, 1);
+const fallbackDockHtml = renderer.renderSite({ ...demoBusiness, showBooking: false });
+const fallbackDockMarkup = fallbackDockHtml.match(/<aside class="conversion-dock"[\s\S]*?<\/aside>/)?.[0] || "";
+assert.match(fallbackDockMarkup, /class="primary-site-action" href="tel:[^"]+"[^>]*>Llamar<\/a>/);
 assert.match(visualHtml, /<span class="proof-number">25<\/span>/);
 assert.match(visualHtml, /resenas en Google/);
 assert.doesNotMatch(visualHtml, /rating Google con 25 resenas conectables/);

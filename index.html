@@ -16,6 +16,8 @@
     <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
     <link rel="stylesheet" href="src/generated-responsive.css?v=20260629-4">
     <link rel="stylesheet" href="src/hero-layouts-responsive.css?v=20260626-1">
+    <link rel="stylesheet" href="src/product-polish.css?v=20260715-1">
+    <link rel="stylesheet" href="src/studio-precision.css?v=20260715-1">
   </head>
   <body>
     <div class="cursor-glow" aria-hidden="true"></div>
@@ -34,6 +36,20 @@
         <span aria-hidden="true">i</span>
       </button>
       <div class="intro-gate-content">
+        <div class="intro-launch-copy">
+          <p class="intro-launch-status"><span aria-hidden="true"></span> DLS Product Suite <strong>Online</strong></p>
+          <p class="intro-launch-kicker">El sistema operativo para negocios locales</p>
+          <h1>Diseña una marca. Lanza una web. Haz crecer el negocio.</h1>
+          <p class="intro-launch-summary">
+            Del primer lead a una presencia digital lista para vender: estrategia, producción,
+            operaciones y entrega en un único espacio de trabajo.
+          </p>
+          <div class="intro-launch-points" aria-label="Capacidades de DLS">
+            <span><b>01</b> Descubrir</span>
+            <span><b>02</b> Diseñar</span>
+            <span><b>03</b> Publicar</span>
+          </div>
+        </div>
         <div class="intro-logo-stage">
           <svg class="intro-logo-svg" viewBox="0 0 1180 900" role="img" aria-label="DLS Digital Local Sites">
             <defs>
@@ -109,7 +125,8 @@
           </svg>
         </div>
         <button class="intro-start-button" id="introStartButton" type="button" aria-controls="introHub">
-          <span>Start</span>
+          <span>Abrir workspace</span>
+          <span class="intro-start-arrow" aria-hidden="true">&#8599;</span>
         </button>
       </div>
 
@@ -123,21 +140,21 @@
         </div>
 
         <div class="intro-hub-copy">
-          <p class="intro-hub-kicker">Selecciona modo</p>
-          <h1>Quien entra hoy?</h1>
-          <p>Developer abre la cabina completa. Cliente entra solo a su negocio, su portal y su web publicada.</p>
+          <p class="intro-hub-kicker">Tu espacio de trabajo</p>
+          <h1>¿Qué quieres impulsar hoy?</h1>
+          <p>Accede a la suite completa de producción o entra en el portal privado de un negocio.</p>
         </div>
 
         <div class="intro-mode-grid" role="tablist" aria-label="Modo de acceso">
           <button class="intro-mode-card is-active" type="button" data-intro-mode="developer" aria-selected="true">
-            <span>Developer</span>
-            <strong>Command Center</strong>
-            <small>Studio, Radar, brief, tienda, Google Ops y vision interna.</small>
+            <span>Equipo DLS</span>
+            <strong>Centro de producción</strong>
+            <small>Studio, proyectos, radar comercial, brief, tienda y operaciones.</small>
           </button>
           <button class="intro-mode-card" type="button" data-intro-mode="client" aria-selected="false">
             <span>Cliente</span>
             <strong>Portal privado</strong>
-            <small>Reservas, contactos, reportes y acciones de su propio negocio.</small>
+            <small>Reservas, contactos, reportes y acciones de un único negocio.</small>
           </button>
         </div>
 
@@ -1442,5 +1459,6 @@ npm.cmd start</code></pre>
     <script src="src/studio/renderer.js?v=20260622-2"></script>
     <script src="src/studio/exporter.js?v=20260622-1"></script>
     <script src="src/app.js?v=20260709-1"></script>
+    <script src="src/studio-experience.js?v=20260715-1"></script>
   </body>
 </html>

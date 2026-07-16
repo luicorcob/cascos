@@ -410,29 +410,34 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="../src/product-polish.css?v=20260715-1">
   </head>
-  <body>
+  <body class="store-body">
     <main class="shell">
       <aside class="side">
         <div>
           <div class="store-brand"><img src="../Logo.png" alt="DLS"><p class="eyebrow">DLS Commerce</p></div>
-          <h1>Store Console</h1>
+          <h1>Comercio</h1>
+          <p class="store-side-copy">Productos, pedidos y crecimiento en un mismo centro operativo.</p>
         </div>
 
-        <section class="box" aria-label="Conexion API">
-          <label>
-            URL API
-            <input id="apiUrl" type="url" value="http://127.0.0.1:8795">
-          </label>
-          <label>
-            Token admin
-            <input id="adminToken" type="password" value="change-me">
-          </label>
-          <div class="actions">
-            <button class="primary" id="saveSettingsButton" type="button">Guardar conexion</button>
-            <button id="reloadButton" type="button">Recargar todo</button>
-          </div>
-        </section>
+        <details class="store-connection">
+          <summary><span>Conexión avanzada <small>API y credenciales</small></span></summary>
+          <section class="box" aria-label="Conexión API">
+            <label>
+              URL API
+              <input id="apiUrl" type="url" value="http://127.0.0.1:8795">
+            </label>
+            <label>
+              Token admin
+              <input id="adminToken" type="password" value="change-me">
+            </label>
+            <div class="actions">
+              <button class="primary" id="saveSettingsButton" type="button">Guardar conexión</button>
+              <button id="reloadButton" type="button">Recargar todo</button>
+            </div>
+          </section>
+        </details>
 
         <nav class="tabs" aria-label="Secciones admin">
           <button class="tab is-active" type="button" data-tab="dashboard">Resumen</button>
@@ -446,6 +451,16 @@
       </aside>
 
       <section class="main">
+        <header class="store-topbar">
+          <div>
+            <p class="eyebrow">Operación de tienda</p>
+            <strong>Centro de comercio</strong>
+          </div>
+          <nav aria-label="Herramientas DLS">
+            <a href="../index.html?skipIntro=1">Studio</a>
+            <a href="business-dashboard.html">Portal</a>
+          </nav>
+        </header>
         <section class="panel is-active" data-panel="dashboard">
           <h2>Resumen operativo</h2>
           <div class="metrics" id="metrics"></div>

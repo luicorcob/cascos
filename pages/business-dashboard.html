@@ -8,10 +8,11 @@
     <meta name="theme-color" content="#050509">
     <link rel="icon" type="image/png" href="../Logo.png">
     <link rel="stylesheet" href="../src/styles/business.css">
+    <link rel="stylesheet" href="../src/suite-precision.css?v=20260715-1">
     <script src="../src/shared/api-config.js"></script>
     <script type="module" src="../src/business/dashboard.js"></script>
   </head>
-  <body>
+  <body class="business-body">
     <div class="business-shell">
       <aside class="business-side">
         <a class="brand-lockup" href="../index.html" aria-label="Volver a DLS Studio">
@@ -29,27 +30,35 @@
           </select>
         </label>
 
-        <form class="admin-token-form api-base-form" data-api-base-form>
-          <label for="apiBase">
-            URL API
-            <input id="apiBase" type="url" inputmode="url" placeholder="Mismo dominio o https://api..." data-api-base-input>
-          </label>
-          <div>
-            <button type="submit">Guardar</button>
-            <button type="button" data-api-base-clear>Limpiar</button>
-          </div>
-        </form>
+        <details class="suite-advanced business-advanced">
+          <summary aria-label="Abrir conexión avanzada" title="Conexión avanzada">
+            <span>Conexión avanzada</span>
+            <small>API y credenciales</small>
+          </summary>
+          <div class="suite-advanced-body">
+            <form class="admin-token-form api-base-form" data-api-base-form>
+              <label for="apiBase">
+                URL API
+                <input id="apiBase" type="url" inputmode="url" placeholder="Mismo dominio o https://api..." data-api-base-input>
+              </label>
+              <div>
+                <button type="submit">Guardar</button>
+                <button type="button" data-api-base-clear>Limpiar</button>
+              </div>
+            </form>
 
-        <form class="admin-token-form" data-admin-token-form>
-          <label for="adminToken">
-            Token admin
-            <input id="adminToken" type="password" autocomplete="off" placeholder="Opcional en local" data-admin-token-input>
-          </label>
-          <div>
-            <button type="submit">Guardar</button>
-            <button type="button" data-admin-token-clear>Limpiar</button>
+            <form class="admin-token-form" data-admin-token-form>
+              <label for="adminToken">
+                Token admin
+                <input id="adminToken" type="password" autocomplete="off" placeholder="Opcional en local" data-admin-token-input>
+              </label>
+              <div>
+                <button type="submit">Guardar</button>
+                <button type="button" data-admin-token-clear>Limpiar</button>
+              </div>
+            </form>
           </div>
-        </form>
+        </details>
 
         <button class="client-logout" type="button" data-client-logout hidden>Salir del portal</button>
 

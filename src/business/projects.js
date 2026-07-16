@@ -675,7 +675,7 @@ function showNotice(message, type = "info") {
 function setLoading(isLoading) {
   if (refs.refresh) {
     refs.refresh.disabled = isLoading;
-    refs.refresh.textContent = isLoading ? "Cargando" : "Actualizar";
+    refs.refresh.textContent = isLoading ? "Sincronizando" : "Sincronizar";
   }
 }
 

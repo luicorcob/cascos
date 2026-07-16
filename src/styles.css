@@ -1271,6 +1271,11 @@ input[type="range"] {
   outline-offset: 3px;
 }
 
+.site-preview .preview-floating-layer :where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--site-accent-readable, #8d2d21);
+  outline-offset: 3px;
+}
+
 .site-skip-link {
   position: fixed;
   left: 12px;
@@ -1311,6 +1316,7 @@ input[type="range"] {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   min-width: 0;
   font-weight: 900;
 }
@@ -1376,14 +1382,14 @@ input[type="range"] {
   border: 1px solid color-mix(in srgb, var(--accent), #ffffff 28%);
   background:
     linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent), #171513 24%));
-  color: #ffffff;
+  color: var(--on-accent);
   box-shadow: 0 14px 34px color-mix(in srgb, var(--accent), transparent 68%);
 }
 
 .generated-site .primary-site-action:hover {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--accent), #ffffff 8%), var(--accent-readable));
-  color: #ffffff;
+  color: var(--on-accent);
   box-shadow: 0 18px 42px color-mix(in srgb, var(--accent), transparent 58%);
 }
 
@@ -2777,14 +2783,15 @@ input[type="range"] {
 .lead-form .form-consent {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
+  min-height: 44px;
   font-size: 0.76rem;
   font-weight: 700;
   line-height: 1.45;
 }
 
 .lead-form .form-consent input {
-  width: 18px;
-  min-height: 18px;
+  width: 24px;
+  min-height: 24px;
   margin-top: 1px;
   accent-color: var(--accent);
 }
@@ -2958,11 +2965,11 @@ input[type="range"] {
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
 }
 
-.conversion-dock a:first-child {
+.conversion-dock a.primary-site-action {
   border-color: color-mix(in srgb, var(--accent), #ffffff 28%);
   background:
     linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent), #171513 24%));
-  color: #ffffff;
+  color: var(--on-accent, #ffffff);
   box-shadow: 0 10px 26px color-mix(in srgb, var(--accent), transparent 62%);
 }
 
@@ -3111,8 +3118,8 @@ input[type="range"] {
 .chatbot-close {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--chatbot-line);
   border-radius: var(--site-radius);
   background: var(--chatbot-card);
@@ -3166,7 +3173,7 @@ input[type="range"] {
 
 .chatbot-prompts button {
   flex: 0 0 auto;
-  min-height: 34px;
+  min-height: 44px;
   padding: 0 10px;
   border: 1px solid var(--chatbot-line);
   border-radius: var(--site-radius);
@@ -3186,7 +3193,7 @@ input[type="range"] {
 }
 
 .chatbot-form input {
-  min-height: 42px;
+  min-height: 44px;
   border: 1px solid var(--chatbot-line);
   border-radius: var(--site-radius);
   background: var(--chatbot-card);
@@ -3194,7 +3201,7 @@ input[type="range"] {
 }
 
 .chatbot-form button {
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 12px;
   border: 0;
   border-radius: var(--site-radius);
@@ -3514,7 +3521,7 @@ input[type="range"] {
 
 .device-frame[data-size="mobile"] .site-nav-links a,
 .device-frame[data-size="mobile"] .site-nav-links .site-cta {
-  min-height: 36px;
+  min-height: 44px;
   padding: 0 11px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -3725,20 +3732,21 @@ input[type="range"] {
 .device-frame[data-size="mobile"] .site-footer {
   align-items: stretch;
   flex-direction: column;
-  padding: 18px 14px 138px;
+  padding: 18px 14px calc(92px + env(safe-area-inset-bottom, 0px));
 }
 
 .device-frame[data-size="mobile"] .generated-site.has-mobile-cart .site-footer {
-  padding-bottom: 198px;
+  padding-bottom: calc(152px + env(safe-area-inset-bottom, 0px));
 }
 
 .device-frame[data-size="mobile"] .conversion-dock,
 .device-frame[data-size="mobile"] .site-preview .conversion-dock {
   left: 10px;
-  right: 10px;
+  right: 72px;
   bottom: 10px;
-  max-width: none;
-  margin: 0 10px 10px;
+  width: auto;
+  max-width: 360px;
+  margin: 0;
 }
 
 .device-frame[data-size="mobile"] .site-preview .conversion-dock {
@@ -3757,26 +3765,27 @@ input[type="range"] {
 
 .device-frame[data-size="mobile"] .chatbot-widget,
 .device-frame[data-size="mobile"] .site-preview .chatbot-widget {
+  left: auto;
   right: 10px;
-  bottom: 70px;
-  width: calc(100% - 20px);
-  margin: 0 10px 10px;
+  bottom: 10px;
+  width: 52px;
+  margin: 0;
 }
 
 .device-frame[data-size="mobile"] .site-preview .chatbot-widget {
   top: auto;
-  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   margin: 0;
   transform: none;
 }
 
 .device-frame[data-size="mobile"] .generated-site.has-mobile-cart .chatbot-widget {
-  bottom: 130px;
+  bottom: 10px;
 }
 
 .device-frame[data-size="mobile"] .site-preview .generated-site.has-mobile-cart .chatbot-widget {
   top: auto;
-  bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
 }
 
 .device-frame[data-size="mobile"] .chatbot-messages {
@@ -3896,7 +3905,7 @@ input[type="range"] {
 
   .site-nav-links a,
   .site-nav-links .site-cta {
-    min-height: 36px;
+    min-height: 44px;
     padding: 0 11px;
     border: 1px solid var(--line);
     border-radius: 999px;
@@ -4379,7 +4388,7 @@ body:has(> .generated-site) {
   }
 
   .generated-site .site-nav-links .site-cta {
-    min-height: 36px;
+    min-height: 44px;
     padding: 0 10px;
     border: 0;
     border-radius: var(--site-radius);
@@ -5023,7 +5032,6 @@ body:has(> .generated-site) {
   display: none;
 }
 
-.content-visual .hero-content p,
 .content-visual .testimonial-card p,
 .content-visual .faq-item p,
 .content-visual .lead-panel p,
@@ -5035,6 +5043,10 @@ body:has(> .generated-site) {
 }
 
 .content-visual .hero-content p {
+  display: block;
+  overflow: visible;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: initial;
   max-width: min(520px, 92%);
   font-size: clamp(1rem, 1.5vw, 1.2rem);
 }
@@ -6054,15 +6066,14 @@ body:has(> .generated-site) {
   color: var(--on-solid);
 }
 
-.generated-site .site-cta.primary-site-action,
-.generated-site .hero-actions .site-cta.primary-site-action,
-.generated-site .conversion-dock a.primary-site-action,
-.generated-site .conversion-dock a:first-child,
-.generated-site button.primary-site-action {
+.generated-site:not([data-primary-button-custom="true"]) .site-cta.primary-site-action,
+.generated-site:not([data-primary-button-custom="true"]) .hero-actions .site-cta.primary-site-action,
+.generated-site:not([data-primary-button-custom="true"]) .conversion-dock a.primary-site-action,
+.generated-site:not([data-primary-button-custom="true"]) button.primary-site-action {
   border: 1px solid color-mix(in srgb, var(--accent), #ffffff 28%);
   background:
     linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent), #171513 24%));
-  color: #ffffff;
+  color: var(--on-accent);
   box-shadow: 0 14px 34px color-mix(in srgb, var(--accent), transparent 66%);
   opacity: 1;
 }

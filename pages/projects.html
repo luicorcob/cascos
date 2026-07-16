@@ -8,6 +8,7 @@
     <meta name="theme-color" content="#090b10">
     <link rel="icon" type="image/png" href="../Logo.png">
     <link rel="stylesheet" href="../src/styles/projects.css">
+    <link rel="stylesheet" href="../src/suite-precision.css?v=20260715-1">
     <script src="../src/shared/api-config.js"></script>
     <script type="module" src="../src/business/projects.js"></script>
   </head>
@@ -38,25 +39,33 @@
           </div>
 
           <div class="projects-actions">
-            <form class="projects-config-form" data-api-base-form>
-              <label>
-                API
-                <input type="url" inputmode="url" placeholder="Mismo dominio" data-api-base-input>
-              </label>
-              <button type="submit">Guardar</button>
-              <button type="button" data-api-base-clear>Limpiar</button>
-            </form>
+            <button class="projects-refresh" type="button" data-refresh>Sincronizar</button>
 
-            <form class="projects-config-form" data-admin-token-form>
-              <label>
-                Token
-                <input type="password" autocomplete="off" placeholder="Admin token" data-admin-token-input>
-              </label>
-              <button type="submit">Guardar</button>
-              <button type="button" data-admin-token-clear>Limpiar</button>
-            </form>
+            <details class="suite-advanced projects-advanced">
+              <summary aria-label="Abrir conexión avanzada" title="Conexión avanzada">
+                <span>Conexión avanzada</span>
+                <small>API y credenciales</small>
+              </summary>
+              <div class="suite-advanced-body">
+                <form class="projects-config-form" data-api-base-form>
+                  <label>
+                    URL API
+                    <input type="url" inputmode="url" placeholder="Mismo dominio" data-api-base-input>
+                  </label>
+                  <button type="submit">Guardar</button>
+                  <button type="button" data-api-base-clear>Limpiar</button>
+                </form>
 
-            <button class="projects-refresh" type="button" data-refresh>Actualizar</button>
+                <form class="projects-config-form" data-admin-token-form>
+                  <label>
+                    Token admin
+                    <input type="password" autocomplete="off" placeholder="Admin token" data-admin-token-input>
+                  </label>
+                  <button type="submit">Guardar</button>
+                  <button type="button" data-admin-token-clear>Limpiar</button>
+                </form>
+              </div>
+            </details>
           </div>
         </section>
 

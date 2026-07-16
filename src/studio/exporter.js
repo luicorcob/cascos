@@ -782,6 +782,7 @@
         const messages = widget.querySelector("[data-chatbot-messages]");
         const form = widget.querySelector("[data-chatbot-form]");
         const input = form?.elements.message;
+        const launcher = widget.querySelector(".chatbot-launcher");
         const history = [];
         const conversationId = window.crypto && typeof window.crypto.randomUUID === "function"
           ? "chat_" + window.crypto.randomUUID()
@@ -789,16 +790,30 @@
         context.chatbot = context.chatbot || {};
         context.chatbot.conversationId = conversationId;
 
-        widget.querySelector(".chatbot-launcher")?.addEventListener("click", () => {
+        const closeChatbot = ({ restoreFocus = true } = {}) => {
+          widget.classList.remove("is-open");
+          launcher?.setAttribute("aria-expanded", "false");
+          if (restoreFocus) {
+            launcher?.focus();
+          }
+        };
+
+        launcher?.addEventListener("click", () => {
           widget.classList.add("is-open");
-          widget.querySelector(".chatbot-launcher")?.setAttribute("aria-expanded", "true");
+          launcher.setAttribute("aria-expanded", "true");
           track("chatbot_open", { business: context.business?.name || "", conversationId: conversationId });
           input?.focus();
         });
 
         widget.querySelector(".chatbot-close")?.addEventListener("click", () => {
-          widget.classList.remove("is-open");
-          widget.querySelector(".chatbot-launcher")?.setAttribute("aria-expanded", "false");
+          closeChatbot();
+        });
+
+        widget.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && widget.classList.contains("is-open")) {
+            event.preventDefault();
+            closeChatbot();
+          }
         });
 
         widget.querySelectorAll("[data-chatbot-prompt]").forEach((button) => {

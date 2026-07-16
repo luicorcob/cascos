@@ -237,7 +237,7 @@
 
 @container client-site (max-width: 760px) {
   .generated-site {
-    --mobile-floating-actions-space: clamp(128px, 36cqw, 164px);
+    --mobile-floating-actions-space: clamp(72px, 20cqw, 86px);
   }
 
   .generated-site .hero-content,
@@ -258,7 +258,7 @@
 
 @container site-canvas (max-width: 680px) {
   .generated-site {
-    --mobile-floating-actions-space: clamp(128px, 36cqw, 164px);
+    --mobile-floating-actions-space: clamp(72px, 20cqw, 86px);
   }
 
   .generated-site .hero-content,
@@ -278,7 +278,7 @@
 }
 
 .device-frame[data-size="mobile"] .site-preview .generated-site {
-  --mobile-floating-actions-space: clamp(128px, 36cqw, 164px);
+  --mobile-floating-actions-space: clamp(72px, 20cqw, 86px);
 }
 
 .device-frame[data-size="mobile"] .site-preview .generated-site .hero-content,

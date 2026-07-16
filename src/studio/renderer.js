@@ -248,7 +248,10 @@
         3,
         5
       );
-      const heroDescription = compactText(business.description, contentMode, 12, 30);
+      // The hero is the product's opening promise: keep the authored copy intact.
+      // Compact modes may simplify supporting sections, but should never manufacture
+      // an unfinished sentence ending in an artificial ellipsis here.
+      const heroDescription = textOr(business.description, demoBusiness.description);
       const styleVars = [
         `--site-accent:${escapeAttr(business.accent)}`,
         `--site-accent-2:${palette.accent2}`,
@@ -934,6 +937,12 @@
         return "";
       }
 
+      // Keep a single, intentional visual priority. Booking wins when available;
+      // otherwise the first viable conversion action becomes the primary action.
+      if (!actions.some((action) => action.primary)) {
+        actions[0].primary = true;
+      }
+
       return `
         <aside class="conversion-dock" aria-label="Acciones rapidas">
           ${actions.map((action) => `<a class="${action.primary ? "primary-site-action" : ""}" href="${escapeAttr(action.url)}" data-track="${escapeAttr(action.track)}"${action.primary ? ' data-edit-button-style="primary"' : ""}>${escapeHtml(action.label)}</a>`).join("")}
@@ -952,17 +961,18 @@
         ? chatbot.quickPrompts
         : demoBusiness.chatbot.quickPrompts;
       const context = getChatbotContext(business, resolved);
+      const panelId = `chatbot-panel-${slugify(business.name || "site") || "site"}`;
 
       return `
         <aside class="chatbot-widget" data-chatbot-context="${escapeAttr(JSON.stringify(context))}" aria-label="Asistente virtual">
-          <button class="chatbot-launcher" type="button" aria-expanded="false">
+          <button class="chatbot-launcher" type="button" aria-expanded="false" aria-controls="${escapeAttr(panelId)}">
             <span class="chatbot-pulse" aria-hidden="true"></span>
             <span>
               <strong>${escapeHtml(chatbot.name)}</strong>
               <small>Atencion instantanea</small>
             </span>
           </button>
-          <div class="chatbot-panel" role="dialog" aria-label="${escapeAttr(chatbot.name)}">
+          <div class="chatbot-panel" id="${escapeAttr(panelId)}" role="dialog" aria-label="${escapeAttr(chatbot.name)}">
             <header class="chatbot-header">
               <div>
                 <strong>${escapeHtml(chatbot.name)}</strong>

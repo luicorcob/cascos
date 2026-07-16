@@ -8,13 +8,14 @@
     <meta name="theme-color" content="#050509">
     <link rel="icon" type="image/png" href="../Logo.png">
     <link rel="stylesheet" href="onboarding.css">
+    <link rel="stylesheet" href="../src/product-polish.css?v=20260715-1">
   </head>
-  <body>
+  <body class="brief-body">
     <main class="brief-shell">
       <header class="brief-hero">
         <a class="dls-home" href="../index.html"><img src="../Logo.png" alt=""><span>DLS Studio</span></a>
         <p class="eyebrow">Brief cliente + Google Ops</p>
-        <h1>Recopila todo lo necesario para entregar una web premium en 7 dias.</h1>
+        <h1>Un brief completo. Una web premium en 7 d&iacute;as.</h1>
         <p>
           Este formulario sirve como guion de onboarding. Cuando los campos clave esten completos, DLS Studio puede generar una primera web adaptada a la categoria, el objetivo de conversion y el contenido real del cliente.
         </p>
@@ -24,10 +25,26 @@
           <button id="printBriefButton" type="button">Imprimir</button>
         </div>
         <p class="brief-status" id="briefStatus" role="status">Completa los campos marcados para activar un brief listo para generar.</p>
+        <div class="brief-progress-card" aria-label="Progreso del brief">
+          <div class="brief-progress-head">
+            <span>Progreso del proyecto</span>
+            <strong id="briefProgressValue">0%</strong>
+          </div>
+          <div class="brief-progress-track" aria-hidden="true"><span id="briefProgressBar"></span></div>
+          <nav class="brief-step-nav" aria-label="Secciones del brief">
+            <a href="#brief-identidad"><b>01</b> Identidad</a>
+            <a href="#brief-conversion"><b>02</b> Conversion</a>
+            <a href="#brief-contenido"><b>03</b> Contenido</a>
+            <a href="#brief-recursos"><b>04</b> Recursos <small>Opcional</small></a>
+            <a href="#brief-chatbot"><b>05</b> Chatbot</a>
+            <a href="#brief-entrega"><b>06</b> Entrega</a>
+            <a href="#google-gestionado"><b>07</b> Google Ops <small>Opcional</small></a>
+          </nav>
+        </div>
       </header>
 
       <form class="brief-form" id="briefForm" novalidate>
-        <section>
+        <section id="brief-identidad">
           <h2>1. Identidad</h2>
           <label>
             Nombre comercial
@@ -71,7 +88,7 @@
           </label>
         </section>
 
-        <section>
+        <section id="brief-conversion">
           <h2>2. Conversion</h2>
           <label>
             Objetivo principal
@@ -114,7 +131,7 @@
           </label>
         </section>
 
-        <section>
+        <section id="brief-contenido">
           <h2>3. Contenido</h2>
           <label>
             Servicios principales
@@ -205,7 +222,7 @@
           </label>
         </section>
 
-        <section>
+        <section id="brief-recursos">
           <h2>4. Recursos</h2>
           <label>
             Imagen principal
@@ -229,7 +246,7 @@
           </label>
         </section>
 
-        <section>
+        <section id="brief-chatbot">
           <h2>5. Chatbot</h2>
           <label>
             Nombre del asistente
@@ -253,7 +270,7 @@
           </label>
         </section>
 
-        <section>
+        <section id="brief-entrega">
           <h2>6. Entrega y aprobacion</h2>
           <label>
             Dominio actual o deseado
@@ -907,30 +924,34 @@
         let firstField = null;
         const missing = requiredFields.filter((field) => !readFieldValue(field).trim());
         missing.forEach((field) => {
-          field.setAttribute("aria-invalid", "true");
+          if (reveal) field.setAttribute("aria-invalid", "true");
           firstField ||= field;
         });
 
         if (getSelectedCategory().key === "custom" && !value("categoryCustom")) {
           const customField = form.elements.categoryCustom;
-          customField?.setAttribute("aria-invalid", "true");
-          categoryFieldBlock?.classList.add("is-invalid");
+          if (reveal) {
+            customField?.setAttribute("aria-invalid", "true");
+            categoryFieldBlock?.classList.add("is-invalid");
+          }
           firstField ||= customField;
         }
 
         if (parseLines(value("services")).length < 3) {
           const field = form.elements.services;
-          field?.setAttribute("aria-invalid", "true");
+          if (reveal) field?.setAttribute("aria-invalid", "true");
           firstField ||= field;
         }
 
         if (!buildHours().length) {
-          hoursFieldset?.classList.add("is-invalid");
+          if (reveal) hoursFieldset?.classList.add("is-invalid");
           firstField ||= hoursFieldset?.querySelector("input, textarea");
         }
 
         if (!value("phone") && !value("email") && !value("bookingUrl")) {
-          ["phone", "email", "bookingUrl"].forEach((name) => form.elements[name]?.setAttribute("aria-invalid", "true"));
+          if (reveal) {
+            ["phone", "email", "bookingUrl"].forEach((name) => form.elements[name]?.setAttribute("aria-invalid", "true"));
+          }
           firstField ||= form.elements.phone;
         }
 
@@ -956,6 +977,14 @@
         const hasHours = buildHours().length > 0;
         const serviceCount = parseLines(value("services")).length;
         const ready = validateBrief({ reveal: false }).ok;
+        const baseProgress = requiredFields.length ? completed / requiredFields.length : 0;
+        const completionSignals = [hasContact, hasHours, serviceCount >= 3].filter(Boolean).length;
+        const progress = ready ? 100 : Math.min(99, Math.round((baseProgress * 0.82 + (completionSignals / 3) * 0.18) * 100));
+        const progressValue = document.querySelector("#briefProgressValue");
+        const progressBar = document.querySelector("#briefProgressBar");
+        if (progressValue) progressValue.textContent = `${progress}%`;
+        if (progressBar) progressBar.style.width = `${progress}%`;
+        document.querySelector(".brief-progress-card")?.classList.toggle("is-ready", ready);
         document.querySelector("#generateWebsiteButton")?.classList.toggle("is-ready", ready);
         setStatus(
           ready
@@ -1152,5 +1181,6 @@
         return String(field.value || "").trim();
       }
     </script>
+    <script src="../src/brief-experience.js?v=20260715-1"></script>
   </body>
 </html>
