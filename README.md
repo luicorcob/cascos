@@ -77,7 +77,7 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 - Import/export de datos por cliente en JSON.
 - Modulo de tienda online: catalogo, productos con imagen/precio, carrito, checkout Stripe y panel admin.
 - Checklist de calidad con score de entrega.
-- QA visual y accesibilidad automatica con capturas desktop/movil, teclado, contraste, foco, formularios y solapes.
+- QA visual y accesibilidad profunda con capturas desktop/tablet y movil a 390/320 px, barrido de toda la pagina, contraste WCAG y contraste sobre los pixeles renderizados, tamano y recorte de imagenes, tipografia, teclado, foco, formularios y solapes.
 - Modo `Entrega Pro` con preflight operativo, bloqueos, avisos, checklist y siguiente paso recomendado.
 - Paquete de entrega en ZIP con web standalone, datos del negocio, ficha operativa y registro de cambios.
 - Validacion de entrega que marca campos y bloquea exportaciones invalidas.

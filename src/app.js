@@ -4233,7 +4233,7 @@ async function runVisualQaFromStudio(event) {
     currentBusiness = businessFromForm();
     renderQualityPanel(currentBusiness);
     renderVisualQaPending("Analizando web actual...");
-    setStatus("QA visual en marcha: preparando HTML y capturas desktop/movil.");
+    setStatus("QA visual profundo en marcha: desktop, tablet y movil a 390/320 px.");
 
     const resolved = withBusinessDefaults(currentBusiness);
     const html = await studioExporter.buildExportDocument(resolved);
@@ -4249,7 +4249,7 @@ async function runVisualQaFromStudio(event) {
           category: resolved.category,
           location: resolved.location || resolved.address || ""
         },
-        viewports: ["desktop", "mobile"]
+        viewports: ["desktop", "tablet", "mobile"]
       })
     });
     const payload = await response.json().catch(() => ({}));
@@ -4301,7 +4301,14 @@ function applyVisualQaAutoFixes(event) {
       "horizontal-overflow-source",
       "interactive-covered",
       "text-covered",
-      "touch-target-small"
+      "touch-target-small",
+      "image-mostly-clipped",
+      "image-partially-clipped",
+      "image-cover-severe-crop",
+      "image-covered",
+      "text-clipped",
+      "text-mostly-clipped",
+      "text-size-critical"
     ])) {
       setValue("designPack", "custom");
       setRadioValue("contentDensity", "compact");
@@ -4321,7 +4328,7 @@ function applyVisualQaAutoFixes(event) {
       applied.push("Dock flotante ocultado para evitar solapes.");
     }
 
-    if (!hadReport || hasAnyVisualQaCode(codes, ["contrast-low", "focus-not-visible"])) {
+    if (!hadReport || hasAnyVisualQaCode(codes, ["contrast-low", "contrast-rendered-low", "focus-not-visible"])) {
       applyHighContrastPrimaryButton();
       applied.push("Boton principal con contraste alto y sin neon.");
     }
@@ -4380,7 +4387,7 @@ function renderVisualQaPayload(payload) {
   const issues = getVisualQaIssues(report);
   const tone = blockers ? "blocked" : warnings ? "warning" : "ready";
   const label = blockers ? `${blockers} bloqueo${blockers === 1 ? "" : "s"}` : warnings ? `${warnings} aviso${warnings === 1 ? "" : "s"}` : "QA limpio";
-  const topIssues = issues.slice(0, 5);
+  const topIssues = prioritizeVisualQaIssues(issues).slice(0, 5);
   const reportLink = payload.reportUrl
     ? `<a href="${escapeAttr(payload.reportUrl)}" target="_blank" rel="noopener">Abrir reporte completo</a>`
     : "";
@@ -4450,6 +4457,24 @@ function getVisualQaIssues(report) {
   return (report?.viewports || []).flatMap((run) => {
     const viewport = run.viewport?.name || "";
     return (run.issues || []).map((issue) => ({ ...issue, viewport }));
+  });
+}
+
+function prioritizeVisualQaIssues(issues) {
+  const severityPriority = { blocker: 0, warning: 1, info: 2 };
+  const viewportPriority = {
+    "mobile-narrow": 0,
+    mobile: 1,
+    tablet: 2,
+    desktop: 3
+  };
+
+  return [...issues].sort((left, right) => {
+    const severity = (severityPriority[left.severity] ?? 9) - (severityPriority[right.severity] ?? 9);
+    if (severity) return severity;
+    const viewport = (viewportPriority[left.viewport] ?? 9) - (viewportPriority[right.viewport] ?? 9);
+    if (viewport) return viewport;
+    return String(left.code || "").localeCompare(String(right.code || ""), "es");
   });
 }
 

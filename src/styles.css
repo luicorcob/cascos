@@ -6105,6 +6105,10 @@ body:has(> .generated-site) {
     align-self: end;
     width: 100%;
     padding: 390px 18px 38px;
+    /* These layouts move copy below the image on small screens. Override any
+       art-direction white-on-photo color before it lands on --bg. */
+    color: var(--ink);
+    text-shadow: none;
   }
 
   .generated-site:is(.block-hero-split, .block-hero-oval) .hero-media {
@@ -6145,6 +6149,9 @@ body:has(> .generated-site) {
   align-self: end;
   width: 100%;
   padding: 390px 18px 38px;
+  /* Match the exported mobile layout: copy sits on the theme background. */
+  color: var(--ink);
+  text-shadow: none;
 }
 
 .device-frame[data-size="mobile"] .generated-site:is(.block-hero-split, .block-hero-oval) .hero-media {

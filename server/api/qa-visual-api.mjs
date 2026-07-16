@@ -5,7 +5,7 @@ import path from "node:path";
 import { corsHeaders } from "../lib/cors.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.QA_VISUAL_API_MAX_BODY_BYTES || 16 * 1024 * 1024);
-const DEFAULT_TIMEOUT_MS = 90_000;
+const DEFAULT_TIMEOUT_MS = 150_000;
 const DEFAULT_KEEP_HOURS = 24;
 const SAFE_RUN_ID = /^[a-z0-9][a-z0-9_-]{8,160}$/;
 
@@ -172,7 +172,7 @@ async function readJsonBody(request) {
 }
 
 function normalizeViewports(value) {
-  const allowed = new Set(["desktop", "mobile"]);
+  const allowed = new Set(["desktop", "tablet", "mobile"]);
   const viewports = Array.isArray(value)
     ? value
     : String(value || "").split(",");

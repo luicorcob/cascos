@@ -4,12 +4,15 @@ import { createServer as createNetServer } from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { inflateSync } from "node:zlib";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const defaultRoute = "/index.html?presentation=true";
 const defaultViewports = [
-  { name: "desktop", width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false },
-  { name: "mobile", width: 390, height: 844, deviceScaleFactor: 2, mobile: true }
+  { name: "desktop", width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false, touch: false },
+  { name: "tablet", width: 768, height: 1024, deviceScaleFactor: 1, mobile: true, touch: true },
+  { name: "mobile", width: 390, height: 844, deviceScaleFactor: 2, mobile: true, touch: true },
+  { name: "mobile-narrow", width: 320, height: 720, deviceScaleFactor: 2, mobile: true, touch: true }
 ];
 
 const options = parseArgs(process.argv.slice(2));
@@ -126,17 +129,19 @@ async function auditViewport(viewport) {
   await waitForExpression("document.readyState === 'complete' && !!document.body", 15_000);
   await waitForStudioIfPresent();
   await settlePage();
+  await stabilizePageForAudit();
 
   const screenshot = await captureScreenshot(viewport);
   const domAudit = await evaluateObject(browserDomAuditSource(viewport));
+  const deepVisualAudit = await runDeepVisualAudit(viewport);
   const keyboardAudit = await runKeyboardAudit(viewport);
 
   return {
     viewport,
     screenshot,
-    metrics: domAudit.metrics,
-    passes: [...domAudit.passes, ...keyboardAudit.passes],
-    issues: [...domAudit.issues, ...keyboardAudit.issues]
+    metrics: { ...domAudit.metrics, ...deepVisualAudit.metrics },
+    passes: [...domAudit.passes, ...deepVisualAudit.passes, ...keyboardAudit.passes],
+    issues: [...domAudit.issues, ...deepVisualAudit.issues, ...keyboardAudit.issues]
   };
 }
 
@@ -169,6 +174,20 @@ async function settlePage() {
       setTimeout(() => resolve(true), wait);
     }));
   })()`);
+}
+
+async function stabilizePageForAudit() {
+  await evaluateObject(`(() => {
+    const id = "qa-visual-stabilize";
+    document.getElementById(id)?.remove();
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = "*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }";
+    document.head?.append(style);
+    window.scrollTo(0, 0);
+    return true;
+  })()`);
+  await delay(100);
 }
 
 async function waitForStudioIfPresent() {
@@ -211,6 +230,617 @@ async function captureScreenshot(viewport) {
     height: fullHeight,
     truncated: contentHeight > fullHeight
   };
+}
+
+async function captureViewportScreenshot() {
+  const screenshot = await cdp.send("Page.captureScreenshot", {
+    format: "png",
+    fromSurface: true,
+    captureBeyondViewport: false
+  });
+  return Buffer.from(screenshot.data, "base64");
+}
+
+async function runDeepVisualAudit(viewport) {
+  const plan = await evaluateObject(deepScanPlanSource());
+  const issues = [];
+  const passes = [];
+  const metrics = {
+    deepScanCheckpoints: 0,
+    renderedContrastChecked: 0,
+    renderedContrastSkipped: 0,
+    renderedContrastFailures: 0,
+    overlayCheckpoints: 0
+  };
+
+  try {
+    for (let index = 0; index < (plan.positions || []).length; index += 1) {
+      const y = plan.positions[index];
+      await evaluateObject(`(() => { window.scrollTo(0, ${Math.max(0, Math.round(y))}); return window.scrollY; })()`);
+      await delay(80);
+
+      const layerAudit = await evaluateObject(visibleLayerAuditSource(viewport, index));
+      appendBoundedIssues(issues, layerAudit.issues, 12);
+      metrics.overlayCheckpoints += 1;
+
+      const samples = await evaluateObject(renderedTextSamplesSource());
+      if (!samples.length) continue;
+
+      const before = await captureViewportScreenshot();
+      await evaluateObject(hideRenderedTextSource());
+      const background = await captureViewportScreenshot();
+      await evaluateObject(restoreRenderedTextSource());
+
+      const pixelAudit = auditRenderedTextContrast({ before, background, samples, viewport, checkpoint: index + 1 });
+      appendBoundedIssues(issues, pixelAudit.issues, 12);
+      metrics.renderedContrastChecked += pixelAudit.checked;
+      metrics.renderedContrastSkipped += pixelAudit.skipped;
+      metrics.renderedContrastFailures += pixelAudit.failures;
+      metrics.deepScanCheckpoints += 1;
+    }
+  } finally {
+    await evaluateObject(restoreRenderedTextSource()).catch(() => {});
+    await evaluateObject("(() => { window.scrollTo(0, 0); return true; })()").catch(() => {});
+  }
+
+  if (metrics.deepScanCheckpoints > 0) {
+    passes.push(`${metrics.deepScanCheckpoints} zonas de la pagina revisadas con contraste de pixeles reales.`);
+  }
+  if (metrics.overlayCheckpoints > 0) {
+    passes.push(`${metrics.overlayCheckpoints} posiciones de scroll revisadas contra solapes.`);
+  }
+
+  return { issues, passes, metrics };
+}
+
+function appendBoundedIssues(target, source, maxPerCode) {
+  const counts = new Map(target.map((issue) => [issue.code, 0]));
+  target.forEach((issue) => counts.set(issue.code, (counts.get(issue.code) || 0) + 1));
+  source.forEach((issue) => {
+    const count = counts.get(issue.code) || 0;
+    if (count >= maxPerCode) return;
+    counts.set(issue.code, count + 1);
+    target.push(issue);
+  });
+}
+
+function deepScanPlanSource() {
+  return `(() => {
+    const documentHeight = Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight || 0);
+    const viewportHeight = Math.max(window.innerHeight || 0, 1);
+    const maxScroll = Math.max(0, documentHeight - viewportHeight);
+    if (maxScroll < viewportHeight * 0.55) {
+      return { documentHeight, viewportHeight, positions: [0] };
+    }
+    const checkpointCount = Math.min(9, Math.max(3, Math.ceil(documentHeight / viewportHeight)));
+    const positions = new Set([0, maxScroll]);
+    for (let index = 1; index < checkpointCount - 1; index += 1) {
+      positions.add(Math.round((maxScroll * index) / (checkpointCount - 1)));
+    }
+    return { documentHeight, viewportHeight, positions: Array.from(positions).sort((a, b) => a - b) };
+  })()`;
+}
+
+function visibleLayerAuditSource(viewport, checkpoint) {
+  return `(() => {
+    const viewport = ${JSON.stringify(viewport)};
+    const checkpoint = ${Number(checkpoint) + 1};
+    const issues = [];
+    const limits = new Map();
+    const interactive = Array.from(document.querySelectorAll("a[href], button, input, select, textarea, summary, [tabindex], [role='button'], [role='link'], [contenteditable='true']"))
+      .filter((element) => isVisible(element) && !element.disabled && element.getAttribute("aria-hidden") !== "true" && element.tabIndex !== -1)
+      .filter((element) => intersectsViewport(element.getBoundingClientRect()));
+
+    interactive.forEach((element) => {
+      const blocker = coveringElement(element);
+      if (blocker) {
+        addIssue("blocker", "interactive-covered", "Elemento interactivo tapado en una posicion de scroll.", selectorFor(element), "Zona " + checkpoint + "; encima: " + selectorFor(blocker));
+      }
+    });
+
+    Array.from(document.images)
+      .filter((image) => isVisible(image) && intersectsViewport(image.getBoundingClientRect()))
+      .filter((image) => !image.closest(".hero-section, .hero-media, .block-hero, .hero-collage"))
+      .forEach((image) => {
+        const blocker = coveringElement(image);
+        if (blocker) {
+          addIssue("warning", "image-covered", "Una imagen queda tapada por otra capa en esta posicion de scroll.", selectorFor(image), "Zona " + checkpoint + "; encima: " + selectorFor(blocker));
+        }
+      });
+
+    const seenText = new Set();
+    const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const text = node.nodeValue.replace(/\\s+/g, " ").trim();
+        const element = node.parentElement;
+        if (!text || !element || !isVisible(element) || !intersectsViewport(element.getBoundingClientRect())) return NodeFilter.FILTER_REJECT;
+        if (["SCRIPT", "STYLE", "NOSCRIPT"].includes(element.tagName)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let node;
+    while ((node = walker.nextNode()) && seenText.size < 70) {
+      const element = node.parentElement;
+      if (seenText.has(element)) continue;
+      seenText.add(element);
+      const blocker = coveringElement(element);
+      if (blocker) {
+        addIssue("warning", "text-covered", "Texto tapado en una posicion de scroll.", selectorFor(element), "Zona " + checkpoint + "; " + trimText(node.nodeValue) + " / encima: " + selectorFor(blocker));
+      }
+    }
+
+    if (viewport.touch) {
+      interactive.forEach((element) => {
+        const rect = element.getBoundingClientRect();
+        if (Math.min(rect.width, rect.height) < 40) {
+          addIssue("warning", "touch-target-small", "Objetivo tactil pequeno en una zona visible.", selectorFor(element), "Zona " + checkpoint + "; " + rectSummary(rect));
+        }
+      });
+    }
+
+    return { issues };
+
+    function coveringElement(element) {
+      const rect = element.getBoundingClientRect();
+      if (rect.width < 3 || rect.height < 3) return null;
+      const points = samplePoints(rect);
+      let covered = 0;
+      let blocker = null;
+      points.forEach(([x, y]) => {
+        if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) return;
+        const top = document.elementFromPoint(x, y);
+        if (!top || top === element || element.contains(top) || top.contains(element) || sameControl(element, top)) return;
+        covered += 1;
+        blocker = top;
+      });
+      return covered >= Math.max(1, Math.ceil(points.length / 2)) ? blocker : null;
+    }
+
+    function samplePoints(rect) {
+      const insetX = Math.min(10, rect.width / 3);
+      const insetY = Math.min(10, rect.height / 3);
+      return [
+        [rect.left + rect.width / 2, rect.top + rect.height / 2],
+        [rect.left + insetX, rect.top + rect.height / 2],
+        [rect.right - insetX, rect.top + rect.height / 2],
+        [rect.left + rect.width / 2, rect.top + insetY],
+        [rect.left + rect.width / 2, rect.bottom - insetY]
+      ];
+    }
+
+    function sameControl(a, b) {
+      const aControl = a.closest("a, button, label, [role='button'], [role='link']");
+      const bControl = b.closest("a, button, label, [role='button'], [role='link']");
+      return aControl && bControl && aControl === bControl;
+    }
+
+    function isVisible(element) {
+      const style = getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden" || inheritedOpacity(element) === 0 || element.hidden || element.closest("[hidden], [aria-hidden='true']")) return false;
+      return Array.from(element.getClientRects()).some((rect) => rect.width > 0.5 && rect.height > 0.5);
+    }
+
+    function inheritedOpacity(element) {
+      let opacity = 1;
+      let current = element;
+      while (current && current instanceof Element) {
+        opacity *= Number(getComputedStyle(current).opacity || 1);
+        current = current.parentElement;
+      }
+      return Math.max(0, Math.min(1, opacity));
+    }
+
+    function intersectsViewport(rect) {
+      return rect.bottom > 0 && rect.right > 0 && rect.left < innerWidth && rect.top < innerHeight;
+    }
+
+    function addIssue(severity, code, message, selector, context) {
+      const count = limits.get(code) || 0;
+      if (count >= 12) return;
+      limits.set(code, count + 1);
+      issues.push({ severity, code, message, selector, context: String(context || "") });
+    }
+
+    function selectorFor(element) {
+      if (element.id) return "#" + cssEscape(element.id);
+      const parts = [];
+      let current = element;
+      while (current && current !== document.body && parts.length < 4) {
+        let part = current.tagName.toLowerCase();
+        if (current.classList.length) part += "." + Array.from(current.classList).slice(0, 2).map(cssEscape).join(".");
+        const parent = current.parentElement;
+        if (parent) {
+          const siblings = Array.from(parent.children).filter((child) => child.tagName === current.tagName);
+          if (siblings.length > 1) part += ":nth-of-type(" + (siblings.indexOf(current) + 1) + ")";
+        }
+        parts.unshift(part);
+        current = parent;
+      }
+      return parts.join(" > ");
+    }
+
+    function cssEscape(value) {
+      return window.CSS?.escape ? CSS.escape(String(value)) : String(value).replace(/[^a-zA-Z0-9_-]/g, "\\\\$&");
+    }
+
+    function rectSummary(rect) {
+      return Math.round(rect.width) + "x" + Math.round(rect.height) + " en " + Math.round(rect.left) + "," + Math.round(rect.top);
+    }
+
+    function trimText(value) {
+      return String(value || "").replace(/\\s+/g, " ").trim().slice(0, 80);
+    }
+  })()`;
+}
+
+function renderedTextSamplesSource() {
+  return `(() => {
+    const marker = "data-qa-rendered-text";
+    document.querySelectorAll("[" + marker + "]").forEach((element) => element.removeAttribute(marker));
+    const candidates = new Map();
+    const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const text = node.nodeValue.replace(/\\s+/g, " ").trim();
+        const element = node.parentElement;
+        if (text.length < 2 || !element || !(element instanceof HTMLElement) || inheritedOpacity(element) === 0 || !isVisible(element)) return NodeFilter.FILTER_REJECT;
+        if (["SCRIPT", "STYLE", "NOSCRIPT"].includes(element.tagName)) return NodeFilter.FILTER_REJECT;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const visible = Array.from(range.getClientRects()).some(intersectsViewport);
+        return visible ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+
+    let node;
+    while ((node = walker.nextNode()) && candidates.size < 70) {
+      const element = node.parentElement;
+      const style = getComputedStyle(element);
+      const color = parseColor(style.color);
+      if (!color || color.a <= 0) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const rects = Array.from(range.getClientRects())
+        .filter(intersectsViewport)
+        .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom }));
+      if (!rects.length) continue;
+
+      let candidate = candidates.get(element);
+      if (!candidate) {
+        const fontSize = parseFloat(style.fontSize) || 16;
+        const fontWeight = parseInt(style.fontWeight, 10) || 400;
+        const largeText = fontSize >= 24 || (fontSize >= 18.66 && fontWeight >= 700);
+        candidate = {
+          element,
+          selector: selectorFor(element),
+          text: "",
+          color: { ...color, a: color.a * inheritedOpacity(element) },
+          threshold: largeText ? 3 : 4.5,
+          fontSize,
+          rects: []
+        };
+        candidates.set(element, candidate);
+      }
+      candidate.text = (candidate.text + " " + node.nodeValue).replace(/\\s+/g, " ").trim().slice(0, 120);
+      candidate.rects.push(...rects);
+    }
+
+    return Array.from(candidates.values()).map((candidate, index) => {
+      candidate.element.setAttribute(marker, String(index));
+      return {
+        selector: candidate.selector,
+        text: candidate.text,
+        color: candidate.color,
+        threshold: candidate.threshold,
+        fontSize: candidate.fontSize,
+        rects: candidate.rects.slice(0, 16)
+      };
+    });
+
+    function isVisible(element) {
+      const style = getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0 || element.hidden || element.closest("[hidden], [aria-hidden='true']")) return false;
+      return Array.from(element.getClientRects()).some((rect) => rect.width > 0.5 && rect.height > 0.5);
+    }
+
+    function intersectsViewport(rect) {
+      return rect.bottom > 0 && rect.right > 0 && rect.left < innerWidth && rect.top < innerHeight;
+    }
+
+    function inheritedOpacity(element) {
+      let opacity = 1;
+      let current = element;
+      while (current && current instanceof Element) {
+        opacity *= Number(getComputedStyle(current).opacity || 1);
+        current = current.parentElement;
+      }
+      return Math.max(0, Math.min(1, opacity));
+    }
+
+    function parseColor(value) {
+      const match = String(value || "").match(/rgba?\\(([^)]+)\\)/i);
+      if (!match) return null;
+      const parts = match[1].split(",").map((part) => Number(part.trim()));
+      if (parts.length < 3 || parts.slice(0, 3).some((part) => !Number.isFinite(part))) return null;
+      return { r: parts[0], g: parts[1], b: parts[2], a: Number.isFinite(parts[3]) ? parts[3] : 1 };
+    }
+
+    function selectorFor(element) {
+      if (element.id) return "#" + cssEscape(element.id);
+      const parts = [];
+      let current = element;
+      while (current && current !== document.body && parts.length < 4) {
+        let part = current.tagName.toLowerCase();
+        if (current.classList.length) part += "." + Array.from(current.classList).slice(0, 2).map(cssEscape).join(".");
+        const parent = current.parentElement;
+        if (parent) {
+          const siblings = Array.from(parent.children).filter((child) => child.tagName === current.tagName);
+          if (siblings.length > 1) part += ":nth-of-type(" + (siblings.indexOf(current) + 1) + ")";
+        }
+        parts.unshift(part);
+        current = parent;
+      }
+      return parts.join(" > ");
+    }
+
+    function cssEscape(value) {
+      return window.CSS?.escape ? CSS.escape(String(value)) : String(value).replace(/[^a-zA-Z0-9_-]/g, "\\\\$&");
+    }
+  })()`;
+}
+
+function hideRenderedTextSource() {
+  return `(() => {
+    const id = "qa-rendered-text-hidden";
+    document.getElementById(id)?.remove();
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = "[data-qa-rendered-text] { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; }";
+    document.head?.append(style);
+    return true;
+  })()`;
+}
+
+function restoreRenderedTextSource() {
+  return `(() => {
+    document.getElementById("qa-rendered-text-hidden")?.remove();
+    document.querySelectorAll("[data-qa-rendered-text]").forEach((element) => element.removeAttribute("data-qa-rendered-text"));
+    return true;
+  })()`;
+}
+
+function auditRenderedTextContrast({ before, background, samples, viewport, checkpoint }) {
+  const issues = [];
+  let checked = 0;
+  let skipped = 0;
+  let failures = 0;
+  let original;
+  let withoutText;
+
+  try {
+    original = decodePng(before);
+    withoutText = decodePng(background);
+  } catch (error) {
+    return {
+      issues: [{
+        severity: "warning",
+        code: "contrast-rendered-unavailable",
+        message: "No se pudo verificar el contraste contra los pixeles renderizados.",
+        selector: "html",
+        context: String(error.message || error).slice(0, 180)
+      }],
+      checked,
+      skipped: samples.length,
+      failures
+    };
+  }
+
+  if (original.width !== withoutText.width || original.height !== withoutText.height) {
+    return {
+      issues: [{
+        severity: "warning",
+        code: "contrast-rendered-unavailable",
+        message: "Las capturas de contraste no tienen las mismas dimensiones.",
+        selector: "html",
+        context: `Zona ${checkpoint}`
+      }],
+      checked,
+      skipped: samples.length,
+      failures
+    };
+  }
+
+  const scaleX = original.width / viewport.width;
+  const scaleY = original.height / viewport.height;
+  samples.forEach((sample) => {
+    const result = sampleRenderedTextContrast(original, withoutText, sample, scaleX, scaleY);
+    if (!result) {
+      skipped += 1;
+      return;
+    }
+    checked += 1;
+    if (result.ratio >= sample.threshold) return;
+
+    failures += 1;
+    const severity = result.ratio < 3 ? "blocker" : "warning";
+    const confidence = result.changedPixels >= 5 ? "medido debajo de los glifos" : "texto sin diferencia visible frente al fondo";
+    issues.push({
+      severity,
+      code: "contrast-rendered-low",
+      message: "Contraste insuficiente en los pixeles renderizados.",
+      selector: sample.selector,
+      context: `${trimForReport(sample.text)} (${result.ratio.toFixed(2)}:1; minimo ${sample.threshold}:1; ${confidence}; zona ${checkpoint})`
+    });
+  });
+
+  return { issues, checked, skipped, failures };
+}
+
+function sampleRenderedTextContrast(original, background, sample, scaleX, scaleY) {
+  const allRatios = [];
+  const changedRatios = [];
+  let changedPixels = 0;
+
+  sample.rects.forEach((rect) => {
+    const left = clamp(Math.floor(rect.left * scaleX), 0, original.width - 1);
+    const right = clamp(Math.ceil(rect.right * scaleX), 0, original.width);
+    const top = clamp(Math.floor(rect.top * scaleY), 0, original.height - 1);
+    const bottom = clamp(Math.ceil(rect.bottom * scaleY), 0, original.height);
+    const width = Math.max(0, right - left);
+    const height = Math.max(0, bottom - top);
+    if (!width || !height) return;
+    const stride = Math.max(1, Math.ceil(Math.sqrt((width * height) / 1800)));
+
+    for (let y = top; y < bottom; y += stride) {
+      for (let x = left; x < right; x += stride) {
+        const index = (y * original.width + x) * 4;
+        const under = {
+          r: background.data[index],
+          g: background.data[index + 1],
+          b: background.data[index + 2],
+          a: background.data[index + 3] / 255
+        };
+        const foreground = compositeColor(sample.color, under);
+        const ratio = contrastRatio(foreground, under);
+        allRatios.push(ratio);
+        const delta = Math.abs(original.data[index] - background.data[index])
+          + Math.abs(original.data[index + 1] - background.data[index + 1])
+          + Math.abs(original.data[index + 2] - background.data[index + 2]);
+        if (delta >= 18) {
+          changedPixels += 1;
+          changedRatios.push(ratio);
+        }
+      }
+    }
+  });
+
+  const ratios = changedRatios.length >= 5 ? changedRatios : allRatios;
+  if (!ratios.length) return null;
+  return { ratio: percentile(ratios, 0.1), changedPixels };
+}
+
+function compositeColor(foreground, background) {
+  const alpha = clamp(Number(foreground.a ?? 1), 0, 1);
+  return {
+    r: foreground.r * alpha + background.r * (1 - alpha),
+    g: foreground.g * alpha + background.g * (1 - alpha),
+    b: foreground.b * alpha + background.b * (1 - alpha),
+    a: 1
+  };
+}
+
+function contrastRatio(a, b) {
+  const light = Math.max(colorLuminance(a), colorLuminance(b));
+  const dark = Math.min(colorLuminance(a), colorLuminance(b));
+  return (light + 0.05) / (dark + 0.05);
+}
+
+function colorLuminance(color) {
+  const channels = [color.r, color.g, color.b].map((channel) => {
+    const value = clamp(Number(channel), 0, 255) / 255;
+    return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  });
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+}
+
+function percentile(values, value) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = clamp(Math.floor((sorted.length - 1) * value), 0, sorted.length - 1);
+  return sorted[index];
+}
+
+function decodePng(buffer) {
+  const signature = "89504e470d0a1a0a";
+  if (buffer.subarray(0, 8).toString("hex") !== signature) throw new Error("La captura no es PNG");
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let bitDepth = 0;
+  let colorType = 0;
+  const idat = [];
+
+  while (offset + 12 <= buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.subarray(offset + 4, offset + 8).toString("ascii");
+    const dataStart = offset + 8;
+    const dataEnd = dataStart + length;
+    if (dataEnd + 4 > buffer.length) throw new Error("PNG incompleto");
+    const chunk = buffer.subarray(dataStart, dataEnd);
+    if (type === "IHDR") {
+      width = chunk.readUInt32BE(0);
+      height = chunk.readUInt32BE(4);
+      bitDepth = chunk[8];
+      colorType = chunk[9];
+      if (chunk[12] !== 0) throw new Error("PNG entrelazado no compatible");
+    } else if (type === "IDAT") {
+      idat.push(chunk);
+    } else if (type === "IEND") {
+      break;
+    }
+    offset = dataEnd + 4;
+  }
+
+  const channels = { 0: 1, 2: 3, 4: 2, 6: 4 }[colorType];
+  if (!width || !height || bitDepth !== 8 || !channels) throw new Error("Formato PNG de captura no compatible");
+  const bytesPerPixel = channels;
+  const rowLength = width * bytesPerPixel;
+  const source = inflateSync(Buffer.concat(idat));
+  if (source.length < (rowLength + 1) * height) throw new Error("Datos PNG incompletos");
+  const raw = Buffer.alloc(rowLength * height);
+  let sourceOffset = 0;
+  for (let y = 0; y < height; y += 1) {
+    const filter = source[sourceOffset++];
+    const rowOffset = y * rowLength;
+    const previousOffset = rowOffset - rowLength;
+    for (let x = 0; x < rowLength; x += 1) {
+      const value = source[sourceOffset++];
+      const left = x >= bytesPerPixel ? raw[rowOffset + x - bytesPerPixel] : 0;
+      const up = y > 0 ? raw[previousOffset + x] : 0;
+      const upLeft = y > 0 && x >= bytesPerPixel ? raw[previousOffset + x - bytesPerPixel] : 0;
+      if (filter === 0) raw[rowOffset + x] = value;
+      else if (filter === 1) raw[rowOffset + x] = (value + left) & 255;
+      else if (filter === 2) raw[rowOffset + x] = (value + up) & 255;
+      else if (filter === 3) raw[rowOffset + x] = (value + Math.floor((left + up) / 2)) & 255;
+      else if (filter === 4) raw[rowOffset + x] = (value + paeth(left, up, upLeft)) & 255;
+      else throw new Error("Filtro PNG no compatible");
+    }
+  }
+
+  const data = Buffer.alloc(width * height * 4);
+  for (let pixel = 0; pixel < width * height; pixel += 1) {
+    const input = pixel * channels;
+    const output = pixel * 4;
+    if (colorType === 6) {
+      raw.copy(data, output, input, input + 4);
+    } else if (colorType === 2) {
+      data[output] = raw[input];
+      data[output + 1] = raw[input + 1];
+      data[output + 2] = raw[input + 2];
+      data[output + 3] = 255;
+    } else if (colorType === 4) {
+      data[output] = data[output + 1] = data[output + 2] = raw[input];
+      data[output + 3] = raw[input + 1];
+    } else {
+      data[output] = data[output + 1] = data[output + 2] = raw[input];
+      data[output + 3] = 255;
+    }
+  }
+  return { width, height, data };
+}
+
+function paeth(a, b, c) {
+  const p = a + b - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b);
+  const pc = Math.abs(p - c);
+  return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function trimForReport(value) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, 90);
 }
 
 async function runKeyboardAudit(viewport) {
@@ -291,13 +921,21 @@ function browserDomAuditSource(viewport) {
       focusables: 0,
       contrastChecked: 0,
       contrastSkipped: 0,
-      overlapChecked: 0
+      overlapChecked: 0,
+      imagesChecked: 0,
+      imageLoadFailures: 0,
+      imageSeverelyCropped: 0,
+      textChecked: 0,
+      textTooSmall: 0,
+      textClipped: 0
     };
 
     auditBoot();
     auditHorizontalOverflow();
     auditNamesAndForms();
     auditImages();
+    auditTextLegibility();
+    auditTextClipping();
     auditTouchTargets();
     auditOverlapAndOcclusion();
     auditTextContrast();
@@ -381,16 +1019,127 @@ function browserDomAuditSource(viewport) {
 
     function auditImages() {
       Array.from(document.images).filter(isVisible).forEach((image) => {
+        metrics.imagesChecked += 1;
         const alt = image.getAttribute("alt");
         const role = image.getAttribute("role");
         if (alt === null && role !== "presentation") {
           addIssue("warning", "image-alt-missing", "Imagen visible sin atributo alt.", selectorFor(image), image.currentSrc || image.src || "");
         }
+
+        const rect = image.getBoundingClientRect();
+        const selector = selectorFor(image);
+        if (!image.complete || !image.naturalWidth || !image.naturalHeight) {
+          metrics.imageLoadFailures += 1;
+          addIssue("blocker", "image-load-failed", "Una imagen visible no se ha podido cargar o no tiene dimensiones.", selector, image.currentSrc || image.src || "");
+          return;
+        }
+
+        const clipping = visibleRectWithinClippingAncestors(image, rect);
+        const exposed = rect.width * rect.height ? (clipping.width * clipping.height) / (rect.width * rect.height) : 1;
+        if (rect.width * rect.height > 1800 && exposed < 0.35) {
+          addIssue("blocker", "image-mostly-clipped", "La mayor parte de una imagen queda recortada por el layout.", selector, Math.round(exposed * 100) + "% visible; " + rectSummary(rect));
+        } else if (rect.width * rect.height > 1800 && exposed < 0.65) {
+          addIssue("warning", "image-partially-clipped", "Una imagen queda recortada de forma notable por el layout.", selector, Math.round(exposed * 100) + "% visible; " + rectSummary(rect));
+        }
+
+        const style = getComputedStyle(image);
+        const sourceRatio = image.naturalWidth / image.naturalHeight;
+        const boxRatio = rect.width / Math.max(rect.height, 1);
+        const retained = Math.min(sourceRatio / boxRatio, boxRatio / sourceRatio);
+        if (style.objectFit === "cover" && rect.width * rect.height > 2500 && retained < 0.18) {
+          metrics.imageSeverelyCropped += 1;
+          addIssue("warning", "image-cover-severe-crop", "El encuadre 'cover' elimina una parte excesiva de la imagen.", selector, Math.round(retained * 100) + "% del encuadre de origen retenido; " + rectSummary(rect));
+        }
+
+        const requiredWidth = rect.width * (viewport.deviceScaleFactor || 1) * 0.75;
+        if (image.naturalWidth < requiredWidth && rect.width >= 160) {
+          addIssue("warning", "image-resolution-low", "La resolucion de imagen es baja para su tamano renderizado.", selector, image.naturalWidth + "px de origen para " + Math.round(rect.width) + "px renderizados");
+        }
+      });
+
+      if (metrics.imagesChecked > 0) passes.push(metrics.imagesChecked + " imagenes comprobadas: carga, resolucion, recorte y encuadre.");
+    }
+
+    function auditTextLegibility() {
+      const checkedElements = new Set();
+      const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          const text = node.nodeValue.replace(/\\s+/g, " ").trim();
+          const element = node.parentElement;
+          if (text.length < 2 || !element || !isVisible(element) || ["SCRIPT", "STYLE", "NOSCRIPT"].includes(element.tagName)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      let node;
+      while ((node = walker.nextNode()) && checkedElements.size < 240) {
+        const element = node.parentElement;
+        if (checkedElements.has(element)) continue;
+        checkedElements.add(element);
+        metrics.textChecked += 1;
+        const style = getComputedStyle(element);
+        const fontSize = parseFloat(style.fontSize) || 16;
+        const text = node.nodeValue.replace(/\\s+/g, " ").trim();
+        const selector = selectorFor(element);
+        const mobileMinimum = viewport.mobile ? 14 : viewport.name === "tablet" ? 13 : 12;
+
+        if (fontSize < 10 && text.length > 3) {
+          metrics.textTooSmall += 1;
+          addIssue("blocker", "text-size-critical", "Texto demasiado pequeno para leerse con seguridad.", selector, trimText(text) + " (" + fontSize.toFixed(1) + "px; minimo " + mobileMinimum + "px)");
+        } else if (fontSize < mobileMinimum && text.length > 3) {
+          metrics.textTooSmall += 1;
+          addIssue("warning", "text-size-small", "Texto por debajo del tamano recomendado para esta pantalla.", selector, trimText(text) + " (" + fontSize.toFixed(1) + "px; recomendado " + mobileMinimum + "px)");
+        }
+
+        const opacity = inheritedOpacity(element);
+        if (opacity < 0.38) {
+          addIssue("blocker", "text-opacity-critical", "La opacidad hace que el texto sea dificil de leer.", selector, trimText(text) + " (opacidad " + opacity.toFixed(2) + ")");
+        } else if (opacity < 0.62) {
+          addIssue("warning", "text-opacity-low", "La opacidad reduce demasiado la legibilidad del texto.", selector, trimText(text) + " (opacidad " + opacity.toFixed(2) + ")");
+        }
+
+        const lineHeight = parseFloat(style.lineHeight);
+        if (Number.isFinite(lineHeight) && text.length > 28 && fontSize < 28) {
+          const ratio = lineHeight / Math.max(fontSize, 1);
+          if (ratio < 1.08) {
+            addIssue("blocker", "line-height-critical", "Interlineado demasiado cerrado para un bloque de texto.", selector, trimText(text) + " (" + ratio.toFixed(2) + ")");
+          } else if (ratio < 1.22) {
+            addIssue("warning", "line-height-tight", "Interlineado ajustado que puede dificultar la lectura.", selector, trimText(text) + " (" + ratio.toFixed(2) + ")");
+          }
+        }
+
+        const letterSpacing = parseFloat(style.letterSpacing);
+        if (Number.isFinite(letterSpacing) && letterSpacing < -0.65 && text.length > 10 && fontSize < 28) {
+          addIssue("warning", "letter-spacing-tight", "Espaciado de letras demasiado cerrado para lectura continua.", selector, trimText(text) + " (" + letterSpacing.toFixed(2) + "px)");
+        }
+      }
+      if (metrics.textChecked > 0) passes.push(metrics.textChecked + " bloques de texto revisados: tamano, opacidad e interlineado.");
+    }
+
+    function auditTextClipping() {
+      const seen = new Set();
+      collectTextBlocks().forEach(({ element, text }) => {
+        if (seen.has(element)) return;
+        seen.add(element);
+        const style = getComputedStyle(element);
+        const selector = selectorFor(element);
+        const isClipped = /hidden|clip/.test(style.overflowX + " " + style.overflowY);
+        if (isClipped && (element.scrollWidth > element.clientWidth + 2 || element.scrollHeight > element.clientHeight + 2)) {
+          metrics.textClipped += 1;
+          addIssue("blocker", "text-clipped", "El contenedor oculta parte de un texto visible.", selector, trimText(text) + "; contenido " + element.scrollWidth + "x" + element.scrollHeight + " frente a caja " + element.clientWidth + "x" + element.clientHeight);
+        }
+
+        const rect = element.getBoundingClientRect();
+        const clipping = visibleRectWithinClippingAncestors(element, rect);
+        const exposed = rect.width * rect.height ? (clipping.width * clipping.height) / (rect.width * rect.height) : 1;
+        if (rect.width * rect.height > 420 && exposed < 0.45) {
+          metrics.textClipped += 1;
+          addIssue("blocker", "text-mostly-clipped", "Un bloque de texto queda mayoritariamente oculto por el layout.", selector, trimText(text) + "; " + Math.round(exposed * 100) + "% visible");
+        }
       });
     }
 
     function auditTouchTargets() {
-      if (!viewport.mobile) return;
+      if (!viewport.touch) return;
       getInteractiveElements().forEach((element) => {
         const rect = element.getBoundingClientRect();
         if (rect.width < 2 || rect.height < 2) return;
@@ -455,7 +1204,7 @@ function browserDomAuditSource(viewport) {
         checked += 1;
 
         if (ratio < threshold) {
-          addIssue("warning", "contrast-low", "Contraste de texto por debajo de WCAG AA.", selectorFor(element), trimText(node.nodeValue) + " (" + ratio.toFixed(2) + ":1, minimo " + threshold + ":1)");
+          addIssue(ratio < 3 ? "blocker" : "warning", "contrast-low", "Contraste de texto por debajo de WCAG AA.", selectorFor(element), trimText(node.nodeValue) + " (" + ratio.toFixed(2) + ":1, minimo " + threshold + ":1)");
         }
       }
 
@@ -528,10 +1277,41 @@ function browserDomAuditSource(viewport) {
     function isVisible(element) {
       if (!element || !(element instanceof Element)) return false;
       const style = getComputedStyle(element);
-      if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
+      if (style.display === "none" || style.visibility === "hidden" || inheritedOpacity(element) === 0) return false;
       if (element.hidden || element.closest("[hidden], [aria-hidden='true']")) return false;
       const rects = element.getClientRects();
       return Array.from(rects).some((rect) => rect.width > 0.5 && rect.height > 0.5);
+    }
+
+    function visibleRectWithinClippingAncestors(element, rect) {
+      let left = rect.left;
+      let top = rect.top;
+      let right = rect.right;
+      let bottom = rect.bottom;
+      let current = element.parentElement;
+      while (current && current !== document.documentElement) {
+        const style = getComputedStyle(current);
+        if (/hidden|clip|scroll|auto/.test(style.overflow + " " + style.overflowX + " " + style.overflowY)) {
+          const parent = current.getBoundingClientRect();
+          left = Math.max(left, parent.left);
+          top = Math.max(top, parent.top);
+          right = Math.min(right, parent.right);
+          bottom = Math.min(bottom, parent.bottom);
+          if (right <= left || bottom <= top) return { width: 0, height: 0 };
+        }
+        current = current.parentElement;
+      }
+      return { width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+    }
+
+    function inheritedOpacity(element) {
+      let opacity = 1;
+      let current = element;
+      while (current && current instanceof Element) {
+        opacity *= Number(getComputedStyle(current).opacity || 1);
+        current = current.parentElement;
+      }
+      return Math.max(0, Math.min(1, opacity));
     }
 
     function intersectsViewport(rect) {
@@ -777,7 +1557,7 @@ function renderHtmlReport(report) {
             <h3>Resumen</h3>
             <p><strong>${run.issues.filter((issue) => issue.severity === "blocker").length}</strong> bloqueos,
             <strong>${run.issues.filter((issue) => issue.severity === "warning").length}</strong> avisos.</p>
-            <p class="muted">Ancho documento: ${run.metrics.scrollWidth}px / ventana: ${run.metrics.clientWidth}px. Contraste: ${run.metrics.contrastChecked} muestras.</p>
+            <p class="muted">Ancho documento: ${run.metrics.scrollWidth}px / ventana: ${run.metrics.clientWidth}px. Contraste CSS: ${run.metrics.contrastChecked} muestras; contraste sobre pixeles: ${run.metrics.renderedContrastChecked || 0}; zonas recorridas: ${run.metrics.deepScanCheckpoints || 0}.</p>
             ${passes}
           </div>
           <div>
@@ -1008,7 +1788,9 @@ function parseViewportOption(value) {
   if (!value) return defaultViewports;
   const names = String(value).split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
   const presets = new Map(defaultViewports.map((viewport) => [viewport.name, viewport]));
-  const selected = names.map((name) => presets.get(name)).filter(Boolean);
+  const selected = names.flatMap((name) => name === "mobile"
+    ? [presets.get("mobile"), presets.get("mobile-narrow")]
+    : [presets.get(name)]).filter(Boolean);
   return selected.length ? selected : defaultViewports;
 }
 
@@ -1057,13 +1839,13 @@ function printHelp() {
 Uso:
   npm.cmd run qa:visual
   npm.cmd run qa:visual -- --url=http://127.0.0.1:5173/index.html?presentation=true
-  npm.cmd run qa:visual -- --path=/pages/business-dashboard.html --viewports=desktop,mobile
+  npm.cmd run qa:visual -- --path=/pages/business-dashboard.html --viewports=desktop,tablet,mobile
 
 Opciones:
   --url URL               Audita una URL ya levantada. Si no se pasa, arranca server/server.mjs.
   --path RUTA             Ruta local para auditar con servidor automatico. Default: ${defaultRoute}
   --out DIR               Carpeta de capturas y reporte. Default: .tmp-qa-visual
-  --viewports LISTA       Presets separados por coma: desktop,mobile
+  --viewports LISTA       Presets separados por coma: desktop,tablet,mobile
   --fail-on-warnings      Devuelve codigo 1 tambien con avisos.
   --debug                 Muestra logs del servidor y navegador.
 `);

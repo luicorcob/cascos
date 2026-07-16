@@ -119,6 +119,33 @@ try {
   await evaluate('document.querySelector("#quickUndoButton").click()');
   await waitForExpression('!document.querySelector(".generated-site").classList.contains("block-hero-collage")');
 
+  // The Studio frame emulates mobile with a data attribute rather than by
+  // shrinking the browser window. Keep this visual contract aligned with the
+  // exported @media rules: editorial copy below an oval hero image must use
+  // the theme ink, never the white-on-photo color.
+  await evaluate(`
+    document.querySelector('input[name="artDirection"][value="editorial"]').click();
+    document.querySelector('input[name="theme"][value="aurora"]').click();
+    document.querySelector('#heroLayoutPicker [data-block-variant="oval"]').click();
+    document.querySelector('.viewport-button[data-size="mobile"]').click();
+    true
+  `);
+  await waitForExpression(`
+    document.querySelector('.device-frame')?.dataset.size === 'mobile' &&
+    document.querySelector('.generated-site')?.classList.contains('art-editorial') &&
+    document.querySelector('.generated-site')?.classList.contains('block-hero-oval')
+  `);
+  assert.equal(
+    await evaluate('getComputedStyle(document.querySelector(".generated-site .hero-content")).color'),
+    "rgb(23, 21, 19)",
+    "Mobile editorial copy below a light hero must keep the theme ink"
+  );
+  assert.equal(
+    await evaluate('getComputedStyle(document.querySelector(".generated-site .hero-content")).textShadow'),
+    "none",
+    "Mobile editorial copy below a light hero must not retain a photo text shadow"
+  );
+
   const serviceCountBefore = await evaluate('document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/).filter(Boolean).length');
   await evaluate('document.querySelector(\'[data-preview-section-action="add-item"][data-section-key="services"]\').click()');
   await waitForExpression(`document.querySelector("#businessForm").elements.services.value.trim().split(/\\n+/).filter(Boolean).length === ${serviceCountBefore + 1}`);
