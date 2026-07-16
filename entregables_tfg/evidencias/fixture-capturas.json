@@ -1,0 +1,506 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-16T12:00:00.000Z",
+  "businesses": [
+    {
+      "id": "biz_tfg_demo",
+      "slug": "luma-cafe-demo",
+      "name": "Luma Café — entorno de prueba",
+      "category": "Cafetería",
+      "city": "Sevilla",
+      "ownerName": "Persona de prueba",
+      "ownerEmail": "propietario@example.test",
+      "ownerPhone": "+34 000 000 000",
+      "plan": "conversion-pro",
+      "status": "published",
+      "publishedUrl": "https://example.test/luma-cafe",
+      "brand": {
+        "theme": "aurora",
+        "accent": "#d14aa6",
+        "typography": "editorial"
+      },
+      "integrations": {
+        "google": {
+          "enabled": false,
+          "mapsUrl": "",
+          "reviewUrl": ""
+        },
+        "stripe": {
+          "enabled": false
+        },
+        "whatsapp": {
+          "enabled": false,
+          "url": ""
+        }
+      },
+      "settings": {
+        "primaryGoal": "Reservas y captación local",
+        "deliveryScore": 92,
+        "source": "fixture-tfg",
+        "updatedFromStudioAt": "2026-07-15T18:30:00.000Z",
+        "portal": {
+          "enabled": false,
+          "passwordUpdatedAt": ""
+        },
+        "activeDemo": {
+          "id": "demo_fixture",
+          "url": "https://example.test/demos/luma-cafe-demo/",
+          "path": "/demos/luma-cafe-demo/",
+          "createdAt": "2026-07-15T18:35:00.000Z",
+          "expiresAt": "2026-07-22T18:35:00.000Z",
+          "publicBaseUrl": "https://example.test",
+          "shareable": true,
+          "shareStatus": "fixture",
+          "shareMessage": "URL ficticia utilizada exclusivamente para documentación.",
+          "source": "fixture-tfg"
+        }
+      },
+      "content": {
+        "name": "Luma Café",
+        "category": "Cafetería",
+        "location": "Sevilla",
+        "tagline": "Café de especialidad y desayunos tranquilos en el centro",
+        "description": "Un espacio ficticio creado para verificar de forma segura los flujos del TFG.",
+        "conversionGoal": "Reservar mesa o solicitar información",
+        "announcement": "Datos de demostración: ninguna reserva corresponde a una persona real.",
+        "phone": "+34 000 000 000",
+        "email": "hola@example.test",
+        "address": "Calle de Ejemplo 1, Sevilla",
+        "bookingLabel": "Reservar mesa",
+        "bookingUrl": "#reservas",
+        "privacyUrl": "/pages/privacy-demo.html",
+        "heroImage": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1800&q=85",
+        "gallery": [
+          "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1511081692775-05d0f180a065?auto=format&fit=crop&w=1200&q=80"
+        ],
+        "services": [
+          "Café de especialidad: selección rotativa y preparación al momento.",
+          "Desayunos: opciones dulces y saladas durante toda la mañana.",
+          "Reservas de grupo: mesas preparadas con antelación para reuniones pequeñas."
+        ],
+        "features": [
+          "Producto de proximidad",
+          "Opciones sin lactosa",
+          "Espacio tranquilo para reuniones"
+        ],
+        "testimonials": [
+          "Reseña ficticia para validar el diseño | Cliente de prueba",
+          "Texto de demostración sin identidad real | Perfil de prueba"
+        ],
+        "faqs": [
+          "¿Se puede reservar? | Sí, mediante el formulario de demostración.",
+          "¿Los datos son reales? | No. Todo el contenido de esta captura es ficticio."
+        ],
+        "hours": [
+          "Lunes a viernes | 08:00–20:00",
+          "Sábado | 09:00–14:00"
+        ],
+        "showBooking": true,
+        "showGallery": true,
+        "showTestimonials": true,
+        "showLeadForm": true,
+        "showFaq": true,
+        "showMenu": true,
+        "showConversionDock": true,
+        "showAnnouncement": true,
+        "showTrustRail": true,
+        "theme": "aurora",
+        "artDirection": "editorial",
+        "contentMode": "balanced",
+        "premiumEffects": true,
+        "sectionOrder": [
+          "services",
+          "booking",
+          "gallery",
+          "testimonials",
+          "map",
+          "features",
+          "faq",
+          "lead",
+          "menu",
+          "store"
+        ],
+        "google": {
+          "enabled": false,
+          "mapsUrl": "",
+          "rating": 0,
+          "reviewCount": 0
+        },
+        "chatbot": {
+          "enabled": true,
+          "mode": "local",
+          "endpoint": ""
+        },
+        "commerce": {
+          "enabled": true,
+          "currency": "EUR",
+          "products": [
+            {
+              "id": "prod_cafe",
+              "sku": "DEMO-CAFE",
+              "name": "Bolsa de café de prueba",
+              "price": 14.9,
+              "description": "Producto ficticio para verificar la interfaz.",
+              "stock": 12,
+              "active": true,
+              "image": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=900&q=80"
+            }
+          ],
+          "orders": [
+            {
+              "id": "order_demo_1",
+              "businessId": "biz_tfg_demo",
+              "customerName": "Cliente de prueba",
+              "email": "pedido@example.test",
+              "status": "paid",
+              "total": 29.8,
+              "currency": "EUR",
+              "createdAt": "2026-07-10T10:20:00.000Z",
+              "paidAt": "2026-07-10T10:21:00.000Z"
+            }
+          ]
+        }
+      },
+      "createdAt": "2026-06-01T09:00:00.000Z",
+      "updatedAt": "2026-07-15T18:35:00.000Z",
+      "archivedAt": ""
+    }
+  ],
+  "contacts": [
+    {
+      "id": "contact_demo_new",
+      "businessId": "biz_tfg_demo",
+      "type": "lead",
+      "name": "Contacto de prueba A",
+      "phone": "+34 000 000 001",
+      "email": "contacto.a@example.test",
+      "source": "web",
+      "utmSource": "google",
+      "utmMedium": "organic",
+      "utmCampaign": "demo-tfg",
+      "status": "new",
+      "lostReason": "",
+      "merged": false,
+      "mergedInto": "",
+      "priority": "alta",
+      "order": 1,
+      "tags": ["demo", "desayuno"],
+      "notes": "Consulta ficticia sobre una reserva de grupo.",
+      "valueEstimate": 120,
+      "privacyAccepted": true,
+      "privacyAcceptedAt": "2026-07-16T08:30:00.000Z",
+      "privacyPolicyUrl": "/pages/privacy-demo.html",
+      "nextAction": {
+        "type": "llamada",
+        "dueDate": "2026-07-16T15:00:00.000Z",
+        "status": "pendiente",
+        "note": "Confirmar número de asistentes.",
+        "createdAt": "2026-07-16T08:31:00.000Z",
+        "updatedAt": "2026-07-16T08:31:00.000Z"
+      },
+      "score": 82,
+      "scoreLabel": "caliente",
+      "lastInteractionAt": "2026-07-16T08:31:00.000Z",
+      "createdAt": "2026-07-16T08:30:00.000Z",
+      "updatedAt": "2026-07-16T08:31:00.000Z"
+    },
+    {
+      "id": "contact_demo_waiting",
+      "businessId": "biz_tfg_demo",
+      "type": "lead",
+      "name": "Contacto de prueba B",
+      "phone": "+34 000 000 002",
+      "email": "contacto.b@example.test",
+      "source": "radar",
+      "status": "waiting",
+      "lostReason": "",
+      "merged": false,
+      "mergedInto": "",
+      "priority": "media",
+      "order": 2,
+      "tags": ["demo"],
+      "notes": "Seguimiento ficticio tras enviar una demo.",
+      "valueEstimate": 350,
+      "privacyAccepted": true,
+      "privacyAcceptedAt": "2026-07-12T11:00:00.000Z",
+      "privacyPolicyUrl": "/pages/privacy-demo.html",
+      "nextAction": {
+        "type": "email",
+        "dueDate": "2026-07-17T09:00:00.000Z",
+        "status": "pendiente",
+        "note": "Enviar recordatorio de prueba.",
+        "createdAt": "2026-07-15T09:00:00.000Z",
+        "updatedAt": "2026-07-15T09:00:00.000Z"
+      },
+      "score": 58,
+      "scoreLabel": "templado",
+      "lastInteractionAt": "2026-07-15T09:00:00.000Z",
+      "createdAt": "2026-07-12T11:00:00.000Z",
+      "updatedAt": "2026-07-15T09:00:00.000Z"
+    },
+    {
+      "id": "contact_demo_customer",
+      "businessId": "biz_tfg_demo",
+      "type": "customer",
+      "name": "Cliente de prueba C",
+      "phone": "+34 000 000 003",
+      "email": "cliente.c@example.test",
+      "source": "manual",
+      "status": "customer",
+      "lostReason": "",
+      "merged": false,
+      "mergedInto": "",
+      "priority": "baja",
+      "order": 3,
+      "tags": ["cliente-demo"],
+      "notes": "Registro ficticio para el panel de clientes.",
+      "valueEstimate": 80,
+      "privacyAccepted": true,
+      "privacyAcceptedAt": "2026-07-01T09:00:00.000Z",
+      "privacyPolicyUrl": "/pages/privacy-demo.html",
+      "nextAction": null,
+      "score": 66,
+      "scoreLabel": "templado",
+      "lastInteractionAt": "2026-07-14T12:00:00.000Z",
+      "createdAt": "2026-07-01T09:00:00.000Z",
+      "updatedAt": "2026-07-14T12:00:00.000Z"
+    },
+    {
+      "id": "contact_demo_lost",
+      "businessId": "biz_tfg_demo",
+      "type": "lead",
+      "name": "Contacto de prueba D",
+      "phone": "",
+      "email": "contacto.d@example.test",
+      "source": "instagram",
+      "status": "lost",
+      "lostReason": "pospuesto",
+      "merged": false,
+      "mergedInto": "",
+      "priority": "baja",
+      "order": 4,
+      "tags": ["demo"],
+      "notes": "Oportunidad ficticia aplazada.",
+      "valueEstimate": 200,
+      "privacyAccepted": true,
+      "privacyAcceptedAt": "2026-07-03T10:00:00.000Z",
+      "privacyPolicyUrl": "/pages/privacy-demo.html",
+      "nextAction": null,
+      "score": 0,
+      "scoreLabel": "perdido",
+      "lastInteractionAt": "2026-07-08T10:00:00.000Z",
+      "createdAt": "2026-07-03T10:00:00.000Z",
+      "updatedAt": "2026-07-08T10:00:00.000Z"
+    }
+  ],
+  "activities": [
+    {
+      "id": "activity_demo_1",
+      "businessId": "biz_tfg_demo",
+      "contactId": "contact_demo_new",
+      "type": "lead.created",
+      "title": "Lead recibido desde la web",
+      "note": "Actividad ficticia para la memoria.",
+      "source": "web",
+      "createdAt": "2026-07-16T08:30:00.000Z"
+    },
+    {
+      "id": "activity_demo_2",
+      "businessId": "biz_tfg_demo",
+      "contactId": "contact_demo_waiting",
+      "type": "demo.sent",
+      "title": "Demo enviada",
+      "note": "Enlace de ejemplo, sin destinatario real.",
+      "source": "dashboard",
+      "createdAt": "2026-07-15T09:00:00.000Z"
+    },
+    {
+      "id": "activity_demo_3",
+      "businessId": "biz_tfg_demo",
+      "contactId": "contact_demo_customer",
+      "type": "booking.completed",
+      "title": "Reserva de prueba completada",
+      "note": "Resultado simulado para el panel.",
+      "source": "dashboard",
+      "createdAt": "2026-07-14T12:00:00.000Z"
+    }
+  ],
+  "proposals": [
+    {
+      "id": "proposal_demo_1",
+      "businessId": "biz_tfg_demo",
+      "contactId": "contact_demo_waiting",
+      "package": "conversion_pro",
+      "setupPrice": 490,
+      "monthlyPrice": 59,
+      "conditions": "Propuesta ficticia para verificar la interfaz y la exportación.",
+      "expiresAt": "2026-08-01T23:59:59.000Z",
+      "status": "enviada",
+      "createdAt": "2026-07-15T09:05:00.000Z",
+      "updatedAt": "2026-07-15T09:05:00.000Z"
+    }
+  ],
+  "messageTemplates": [],
+  "services": [
+    {
+      "id": "svc_desayuno",
+      "businessId": "biz_tfg_demo",
+      "name": "Desayuno de prueba",
+      "durationMinutes": 60,
+      "price": 12.5,
+      "description": "Servicio ficticio para validar las reservas.",
+      "active": true,
+      "createdAt": "2026-06-01T09:00:00.000Z",
+      "updatedAt": "2026-07-01T09:00:00.000Z"
+    },
+    {
+      "id": "svc_grupo",
+      "businessId": "biz_tfg_demo",
+      "name": "Mesa de grupo de prueba",
+      "durationMinutes": 90,
+      "price": 0,
+      "description": "Reserva ficticia para grupos pequeños.",
+      "active": true,
+      "createdAt": "2026-06-01T09:00:00.000Z",
+      "updatedAt": "2026-07-01T09:00:00.000Z"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "book_demo_1",
+      "businessId": "biz_tfg_demo",
+      "contactId": "contact_demo_new",
+      "serviceId": "svc_grupo",
+      "serviceName": "Mesa de grupo de prueba",
+      "durationMinutes": 90,
+      "customerName": "Contacto de prueba A",
+      "phone": "+34 000 000 001",
+      "email": "contacto.a@example.test",
+      "notes": "Reserva ficticia para cinco asistentes.",
+      "startsAt": "2026-07-18T09:00:00.000Z",
+      "endsAt": "2026-07-18T10:30:00.000Z",
+      "status": "confirmed",
+      "source": "web",
+      "privacyAccepted": true,
+      "privacyAcceptedAt": "2026-07-16T08:30:00.000Z",
+      "privacyPolicyUrl": "/pages/privacy-demo.html",
+      "createdAt": "2026-07-16T08:30:00.000Z",
+      "updatedAt": "2026-07-16T08:32:00.000Z"
+    },
+    {
+      "id": "book_demo_2",
+      "businessId": "biz_tfg_demo",
+      "contactId": "contact_demo_customer",
+      "serviceId": "svc_desayuno",
+      "serviceName": "Desayuno de prueba",
+      "durationMinutes": 60,
+      "customerName": "Cliente de prueba C",
+      "phone": "+34 000 000 003",
+      "email": "cliente.c@example.test",
+      "notes": "Reserva ficticia ya completada.",
+      "startsAt": "2026-07-14T10:00:00.000Z",
+      "endsAt": "2026-07-14T11:00:00.000Z",
+      "status": "completed",
+      "source": "dashboard",
+      "privacyAccepted": true,
+      "privacyAcceptedAt": "2026-07-01T09:00:00.000Z",
+      "privacyPolicyUrl": "/pages/privacy-demo.html",
+      "createdAt": "2026-07-01T09:00:00.000Z",
+      "updatedAt": "2026-07-14T11:05:00.000Z"
+    }
+  ],
+  "availability": [
+    {
+      "id": "av_demo_1",
+      "businessId": "biz_tfg_demo",
+      "weekday": 1,
+      "startTime": "08:00",
+      "endTime": "14:00",
+      "active": true,
+      "createdAt": "2026-06-01T09:00:00.000Z",
+      "updatedAt": "2026-07-01T09:00:00.000Z"
+    },
+    {
+      "id": "av_demo_2",
+      "businessId": "biz_tfg_demo",
+      "weekday": 5,
+      "startTime": "08:00",
+      "endTime": "20:00",
+      "active": true,
+      "createdAt": "2026-06-01T09:00:00.000Z",
+      "updatedAt": "2026-07-01T09:00:00.000Z"
+    }
+  ],
+  "bookingBlocks": [
+    {
+      "id": "block_demo_1",
+      "businessId": "biz_tfg_demo",
+      "startsAt": "2026-07-20T12:00:00.000Z",
+      "endsAt": "2026-07-20T14:00:00.000Z",
+      "reason": "Bloqueo ficticio de mantenimiento",
+      "active": true,
+      "createdAt": "2026-07-10T09:00:00.000Z",
+      "updatedAt": "2026-07-10T09:00:00.000Z"
+    }
+  ],
+  "bookingReminders": [
+    {
+      "id": "rem_demo_1",
+      "businessId": "biz_tfg_demo",
+      "bookingId": "book_demo_1",
+      "contactId": "contact_demo_new",
+      "channel": "email",
+      "message": "Recordatorio ficticio de la reserva de prueba.",
+      "status": "ready",
+      "source": "dashboard",
+      "createdAt": "2026-07-16T09:00:00.000Z",
+      "updatedAt": "2026-07-16T09:00:00.000Z"
+    }
+  ],
+  "businessEvents": [
+    {
+      "id": "evt_demo_1",
+      "businessId": "biz_tfg_demo",
+      "name": "booking_click",
+      "type": "booking_click",
+      "detail": {
+        "source": "web",
+        "label": "Reservar mesa"
+      },
+      "utmSource": "google",
+      "utmMedium": "organic",
+      "utmCampaign": "demo-tfg",
+      "page": "/",
+      "referrer": "",
+      "userAgent": "TFG fixture",
+      "createdAt": "2026-07-16T08:28:00.000Z"
+    },
+    {
+      "id": "evt_demo_2",
+      "businessId": "biz_tfg_demo",
+      "name": "lead_form_submit",
+      "type": "lead_form_submit",
+      "detail": {
+        "source": "web"
+      },
+      "utmSource": "google",
+      "utmMedium": "organic",
+      "utmCampaign": "demo-tfg",
+      "page": "/",
+      "referrer": "",
+      "userAgent": "TFG fixture",
+      "createdAt": "2026-07-16T08:30:00.000Z"
+    }
+  ],
+  "auditLog": [
+    {
+      "id": "audit_demo_1",
+      "type": "fixture.created",
+      "businessId": "biz_tfg_demo",
+      "subjectId": "",
+      "createdAt": "2026-07-16T12:00:00.000Z"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "headings": {
+    "resumen": 3,
+    "abstract": 4,
+    "1-introduccion": 5,
+    "2-metodologia-de-auditoria-y-redaccion": 8,
+    "3-vision-general-del-sistema": 9,
+    "4-arquitectura": 11,
+    "5-dls-studio-y-generacion-web": 13,
+    "6-onboarding-y-radar": 15,
+    "7-portal-operativo-y-crm": 17,
+    "8-agenda-y-reservas": 20,
+    "9-web-publica-conversion-y-responsive": 22,
+    "10-informes-y-analitica": 24,
+    "11-persistencia-y-modelo-de-datos": 26,
+    "12-integraciones-externas": 28,
+    "13-seguridad": 30,
+    "14-ejecucion-configuracion-y-despliegue": 32,
+    "15-verificacion-y-calidad": 33,
+    "16-evolucion-y-contradicciones-documentales": 35,
+    "17-limitaciones-y-deuda-tecnica": 36,
+    "18-trabajo-futuro-propuesto": 37,
+    "19-conclusiones": 38,
+    "20-fuentes-tecnicas-del-repositorio": 39,
+    "anexo-a-ficha-de-reproducibilidad": 40,
+    "anexo-b-metadatos-pendientes-del-documento": 41,
+    "anexo-c-declaracion-de-tratamiento-de-evidencias": 42
+  }
+}

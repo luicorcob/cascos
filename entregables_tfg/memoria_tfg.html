@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memoria técnica · DLS Digital Local Sites</title>
+  <style>
+    :root { --ink:#142038; --muted:#637087; --paper:#fff; --soft:#f2f5fa; --line:#dbe1ea; --cyan:#20c8e9; --magenta:#c83caa; --violet:#6b63e8; --green:#138f6a; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:#e9edf3; color:var(--ink); font-family:"Segoe UI",Arial,sans-serif; font-size:10.35pt; line-height:1.52; }
+    .cover, .toc-sheet, main { width:210mm; margin:0 auto 8mm; background:var(--paper); box-shadow:0 12px 50px rgba(20,32,56,.08); }
+    .cover { min-height:297mm; padding:25mm 22mm 20mm; display:flex; flex-direction:column; color:#fff; background:radial-gradient(circle at 82% 18%,rgba(200,60,170,.35),transparent 31%),radial-gradient(circle at 16% 72%,rgba(32,200,233,.25),transparent 34%),linear-gradient(145deg,#06101b 0%,#111022 63%,#1d1020 100%); }
+    .cover-mark { width:25mm; height:16mm; display:grid; place-items:center; border:1px solid rgba(255,255,255,.25); border-radius:5mm; background:linear-gradient(110deg,rgba(32,200,233,.18),rgba(200,60,170,.22)); font-weight:900; letter-spacing:.14em; }
+    .cover-kicker,.section-kicker { margin:31mm 0 6mm; color:#77e6fa; font-weight:800; text-transform:uppercase; letter-spacing:.15em; font-size:9pt; }
+    .cover h1 { margin:0; color:#fff; font-size:47pt; line-height:.94; letter-spacing:-.045em; }
+    .cover-subtitle { width:138mm; margin:9mm 0 0; color:#cdd5e2; font-size:16pt; line-height:1.35; }
+    .cover-rule { width:100%; height:1.2mm; margin:17mm 0 10mm; background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta),#ff8758); }
+    .cover-meta { display:grid; grid-template-columns:1fr 1fr; gap:6mm 10mm; margin:auto 0 0; }
+    .cover-meta div { padding-top:4mm; border-top:1px solid rgba(255,255,255,.18); }
+    .cover-meta dt { color:#8898af; font-size:8pt; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    .cover-meta dd { margin:1.5mm 0 0; color:#fff; font-size:10pt; font-weight:650; }
+    .cover-note { margin:8mm 0 0; color:#8793a5; font-size:8.5pt; }
+    .toc-sheet { min-height:297mm; padding:20mm 20mm 18mm; }
+    .toc-sheet .section-kicker { margin:0 0 2mm; color:var(--magenta); }
+    .toc-sheet h1 { margin:0 0 8mm; font-size:30pt; letter-spacing:-.035em; }
+    .toc-list { display:grid; gap:1.15mm; }
+    .toc-list a { display:flex; align-items:baseline; gap:2mm; color:var(--ink); text-decoration:none; font-size:9.2pt; line-height:1.25; }
+    .toc-list a i { flex:1; border-bottom:1px dotted #b6c0cf; transform:translateY(-1.5px); }
+    .toc-list a b { width:8mm; text-align:right; font-variant-numeric:tabular-nums; }
+    .toc-level-1 { margin-top:1.5mm; font-weight:800; }
+    .toc-level-2 { padding-left:6mm; color:var(--muted)!important; font-size:8.5pt!important; }
+    .toc-note { margin-top:8mm; padding:4mm; border-left:1mm solid var(--cyan); background:var(--soft); color:var(--muted); font-size:8.4pt; }
+    main { padding:16mm 18mm 20mm; }
+    main > h1 { margin:0 0 7mm; padding-top:2mm; color:var(--ink); font-size:27pt; line-height:1.04; letter-spacing:-.036em; break-before:page; page-break-before:always; }
+    main > h1:first-child { break-before:auto; page-break-before:auto; }
+    h2 { margin:10mm 0 3.5mm; padding-top:2.5mm; border-top:.5mm solid var(--line); font-size:17pt; line-height:1.14; letter-spacing:-.025em; break-after:avoid; page-break-after:avoid; }
+    h3 { margin:7mm 0 2.5mm; color:#3e51a2; font-size:12.8pt; break-after:avoid; page-break-after:avoid; }
+    h4 { margin:5mm 0 2mm; font-size:11pt; break-after:avoid; }
+    p { margin:0 0 3.4mm; orphans:3; widows:3; }
+    ul,ol { margin:0 0 4mm 6mm; padding-left:4mm; }
+    li { margin:1.2mm 0; orphans:2; widows:2; }
+    strong { font-weight:750; }
+    a { color:#4055b5; }
+    code { font-family:"Cascadia Mono",Consolas,monospace; font-size:.9em; }
+    :not(pre)>code { padding:.25mm 1mm; border:1px solid #d5dce8; border-radius:1mm; background:#f2f5fa; }
+    pre { margin:5mm 0; padding:4.5mm; overflow:hidden; white-space:pre-wrap; border-radius:3mm; background:#0a111d; color:#e9f1fb; font-size:7.8pt; line-height:1.42; break-inside:avoid; page-break-inside:avoid; }
+    blockquote { margin:5mm 0; padding:4mm 5mm; border-left:1.2mm solid var(--magenta); background:#fbf2f9; color:#4a3550; break-inside:avoid; }
+    hr { border:0; border-top:.4mm solid var(--line); margin:8mm 0; }
+    table { width:100%; margin:4.5mm 0 6mm; border-collapse:separate; border-spacing:0; border:1px solid var(--line); border-radius:2.5mm; overflow:hidden; font-size:8.15pt; line-height:1.35; break-inside:auto; }
+    thead { display:table-header-group; }
+    tr { break-inside:avoid; page-break-inside:avoid; }
+    th,td { padding:2.6mm 3mm; text-align:left; vertical-align:top; border-right:1px solid var(--line); border-bottom:1px solid var(--line); }
+    th:last-child,td:last-child { border-right:0; }
+    tbody tr:last-child td { border-bottom:0; }
+    th { background:#eef2f8; color:#31405a; font-size:7.8pt; letter-spacing:.02em; }
+    tbody tr:nth-child(even) td { background:#fafbfd; }
+    .document-figure { margin:6mm 0 7mm; padding:3mm; border:1px solid var(--line); border-radius:3.5mm; background:#f8fafc; break-inside:avoid; page-break-inside:avoid; }
+    .document-figure img { display:block; width:100%; height:auto; max-height:174mm; object-fit:contain; border-radius:2mm; background:#0a101a; }
+    .document-figure.is-portrait { text-align:center; }
+    .document-figure.is-portrait img { width:auto; max-width:72mm; max-height:190mm; margin:0 auto; }
+    figcaption { margin-top:2.5mm; padding:0 1mm 1mm; color:#526078; font-size:8.1pt; line-height:1.38; }
+    figcaption strong { color:var(--ink); }
+    @media screen and (max-width:900px) { .cover,.toc-sheet,main { width:min(100%,210mm); } }
+    @media print {
+      @page { size:A4; margin:15mm 16mm 17mm; }
+      html,body { background:#fff; }
+      body { font-size:9.7pt; }
+      .cover,.toc-sheet,main { width:auto; margin:0; box-shadow:none; }
+      .cover { height:265mm; min-height:265mm; margin:-15mm -16mm -17mm; padding:22mm 20mm 17mm; break-after:page; page-break-after:always; }
+      .toc-sheet { min-height:auto; padding:0; break-after:page; page-break-after:always; }
+      main { padding:0; }
+      a { color:inherit; text-decoration:none; }
+      .toc-note { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="cover-mark">DLS</div>
+    <p class="cover-kicker">Trabajo Fin de Grado · Memoria técnica</p>
+    <h1>DLS · Digital<br>Local Sites</h1>
+    <p class="cover-subtitle">Diseño, generación y operación de presencia digital para negocios locales</p>
+    <div class="cover-rule"></div>
+    <dl class="cover-meta">
+      <div><dt>Autor</dt><dd>[pendiente de confirmar]</dd></div>
+      <div><dt>Tutor/a</dt><dd>[pendiente de confirmar]</dd></div>
+      <div><dt>Titulación y centro</dt><dd>[pendiente de confirmar]</dd></div>
+      <div><dt>Corte técnico</dt><dd>16 de julio de 2026 · commit 8b12378</dd></div>
+    </dl>
+    <p class="cover-note">Documento construido a partir del código, pruebas y ejecución del repositorio.</p>
+  </section>
+  <section class="toc-sheet">
+    <p class="section-kicker">Contenido</p>
+    <h1>Índice</h1>
+    <div class="toc-list"><a class="toc-level-1" href="#resumen"><span>Resumen</span><i></i><b>3</b></a>
+<a class="toc-level-1" href="#abstract"><span>Abstract</span><i></i><b>4</b></a>
+<a class="toc-level-1" href="#1-introduccion"><span>1. Introducción</span><i></i><b>5</b></a>
+<a class="toc-level-1" href="#2-metodologia-de-auditoria-y-redaccion"><span>2. Metodología de auditoría y redacción</span><i></i><b>8</b></a>
+<a class="toc-level-1" href="#3-vision-general-del-sistema"><span>3. Visión general del sistema</span><i></i><b>9</b></a>
+<a class="toc-level-1" href="#4-arquitectura"><span>4. Arquitectura</span><i></i><b>11</b></a>
+<a class="toc-level-1" href="#5-dls-studio-y-generacion-web"><span>5. DLS Studio y generación web</span><i></i><b>13</b></a>
+<a class="toc-level-1" href="#6-onboarding-y-radar"><span>6. Onboarding y Radar</span><i></i><b>15</b></a>
+<a class="toc-level-1" href="#7-portal-operativo-y-crm"><span>7. Portal operativo y CRM</span><i></i><b>17</b></a>
+<a class="toc-level-1" href="#8-agenda-y-reservas"><span>8. Agenda y reservas</span><i></i><b>20</b></a>
+<a class="toc-level-1" href="#9-web-publica-conversion-y-responsive"><span>9. Web pública, conversión y responsive</span><i></i><b>22</b></a>
+<a class="toc-level-1" href="#10-informes-y-analitica"><span>10. Informes y analítica</span><i></i><b>24</b></a>
+<a class="toc-level-1" href="#11-persistencia-y-modelo-de-datos"><span>11. Persistencia y modelo de datos</span><i></i><b>26</b></a>
+<a class="toc-level-1" href="#12-integraciones-externas"><span>12. Integraciones externas</span><i></i><b>28</b></a>
+<a class="toc-level-1" href="#13-seguridad"><span>13. Seguridad</span><i></i><b>30</b></a>
+<a class="toc-level-1" href="#14-ejecucion-configuracion-y-despliegue"><span>14. Ejecución, configuración y despliegue</span><i></i><b>32</b></a>
+<a class="toc-level-1" href="#15-verificacion-y-calidad"><span>15. Verificación y calidad</span><i></i><b>33</b></a>
+<a class="toc-level-1" href="#16-evolucion-y-contradicciones-documentales"><span>16. Evolución y contradicciones documentales</span><i></i><b>35</b></a>
+<a class="toc-level-1" href="#17-limitaciones-y-deuda-tecnica"><span>17. Limitaciones y deuda técnica</span><i></i><b>36</b></a>
+<a class="toc-level-1" href="#18-trabajo-futuro-propuesto"><span>18. Trabajo futuro propuesto</span><i></i><b>37</b></a>
+<a class="toc-level-1" href="#19-conclusiones"><span>19. Conclusiones</span><i></i><b>38</b></a>
+<a class="toc-level-1" href="#20-fuentes-tecnicas-del-repositorio"><span>20. Fuentes técnicas del repositorio</span><i></i><b>39</b></a>
+<a class="toc-level-1" href="#anexo-a-ficha-de-reproducibilidad"><span>Anexo A. Ficha de reproducibilidad</span><i></i><b>40</b></a>
+<a class="toc-level-1" href="#anexo-b-metadatos-pendientes-del-documento"><span>Anexo B. Metadatos pendientes del documento</span><i></i><b>41</b></a>
+<a class="toc-level-1" href="#anexo-c-declaracion-de-tratamiento-de-evidencias"><span>Anexo C. Declaración de tratamiento de evidencias</span><i></i><b>42</b></a></div>
+    <p class="toc-note">Los guiones indican paginación pendiente de fijar. La versión final se genera con la tabla de paginación validada tras la primera revisión.</p>
+  </section>
+  <main><h1 id="resumen">Resumen</h1>
+<p>DLS · Digital Local Sites es una aplicación web orientada a crear y operar la presencia digital de negocios locales. El sistema auditado integra un editor visual —DLS Studio—, gestión de proyectos, prospección de oportunidades, generación y publicación de webs, CRM, propuestas, mensajería preparada, reservas, eventos de conversión, informes y un área de operaciones Google. La solución utiliza HTML, CSS y JavaScript en el navegador, un servidor HTTP nativo de Node.js y una capa de persistencia con dos modos: documento JSON atómico y PostgreSQL con registros JSONB.</p>
+<p>Esta memoria no parte de especificaciones históricas como fuente de verdad. Se ha elaborado mediante ingeniería inversa del repositorio, seguimiento de referencias entre módulos, revisión de configuración, ejecución aislada, pruebas automatizadas y capturas reales. El corte analizado corresponde al commit <code>8b123783eb2d8750aafdfa4a1e58d340ed82f6a3</code>, de 16 de julio de 2026. La ejecución visual se realizó con un fixture ficticio, sin cargar el archivo <code>.env</code> del proyecto, sin conectarse a bases remotas y sin mostrar datos personales o credenciales.</p>
+<p>Los resultados confirman que el proyecto es una aplicación ejecutable y conectada, no una colección de maquetas. El smoke integral, la validación sintáctica, la QA visual y las suites backend seleccionadas superan sus comprobaciones. También se identifican límites: el orquestador <code>src/app.js</code> supera el guard de arquitectura —253.766 bytes frente a 180.000— y la prueba E2E larga del Studio provoca el cierre del objetivo del navegador en el entorno auditado. Google está implementado en el backend principal y probado con simulaciones, pero no se verificó contra cuentas reales. Stripe, Resend y OpenAI pertenecen a servicios de ejemplo o endpoints configurables, por lo que no se presentan como integraciones productivas del servidor principal.</p>
+<p><strong>Palabras clave:</strong> negocio local, editor web, CRM, reservas, Node.js, PostgreSQL, JavaScript, integración Google, digitalización.</p>
+<h1 id="abstract">Abstract</h1>
+<p>DLS · Digital Local Sites is a web application designed to create and operate the digital presence of local businesses. The audited system combines a visual editor —DLS Studio—, project management, opportunity discovery, website generation and publishing, CRM, proposals, prepared messaging, bookings, conversion events, reports, and a Google operations area. Its runtime uses HTML, CSS and JavaScript in the browser, a native Node.js HTTP server, and two persistence modes: atomic JSON documents and PostgreSQL records stored as JSONB.</p>
+<p>This report does not treat legacy documentation as the primary source of truth. It is based on repository reverse engineering, reference tracing, configuration review, isolated execution, automated tests, and real application screenshots. The audited revision is commit <code>8b123783eb2d8750aafdfa4a1e58d340ed82f6a3</code>, dated 16 July 2026. Visual evidence was produced with a fictional fixture, without loading the project <code>.env</code>, without connecting to remote databases, and without exposing personal data or credentials.</p>
+<p>The results show an executable and connected product rather than a set of mock-ups. Syntax checks, the functional smoke test, visual QA, and selected backend suites pass. Two relevant limitations remain: <code>src/app.js</code> exceeds its architecture guard —253,766 bytes versus a 180,000-byte threshold— and the long Studio browser test crashes its browser target in the audited environment. Google functionality is connected to the main server and tested with simulations, but no live account was verified. Stripe, Resend, and OpenAI remain examples or configurable external services and are therefore not reported as production integrations of the main backend.</p>
+<p><strong>Keywords:</strong> local business, website builder, CRM, bookings, Node.js, PostgreSQL, JavaScript, Google integration, digitalisation.</p>
+<h1 id="1-introduccion">1. Introducción</h1>
+<h2 id="1-1-objeto-de-la-memoria">1.1 Objeto de la memoria</h2>
+<p>El objeto de este documento es describir técnicamente el sistema que existe en el repositorio auditado. La memoria diferencia entre comportamiento actual, configuración disponible, resultados de pruebas, inferencias justificadas, antecedentes históricos y extremos que no pueden verificarse localmente. Este criterio es necesario porque el proyecto conserva documentos redactados en momentos distintos: algunas decisiones que allí aparecen como futuras —PostgreSQL, autenticación de cliente, OAuth Google o pruebas automatizadas— ya cuentan con implementación; otras, como Supabase, siguen siendo planes o runbooks sin presencia en el runtime.</p>
+<p>La aplicación observada propone un flujo amplio de digitalización. La entrada da acceso al Studio, proyectos, Radar, brief, portal y tienda. Esa organización se aprecia en la figura 1 y, de forma más explícita, en el selector de destino de la figura 2.</p>
+<figure class="document-figure"><img src="capturas/originales/01-intro-studio.png" alt="Figura 1. Entrada principal de DLS Studio. La captura muestra la portada real desde la que se inicia el espacio de trabajo; acredita la carga de la aplicación y su identidad visual, no una operación de negocio."><figcaption>Figura 1. Entrada principal de DLS Studio. La captura muestra la portada real desde la que se inicia el espacio de trabajo; acredita la carga de la aplicación y su identidad visual, no una operación de negocio.</figcaption></figure>
+<figure class="document-figure"><img src="capturas/originales/02-selector-destino.png" alt="Figura 2. Selector de destino de la suite. La captura permite comprender la navegación entre producción, proyectos, prospección, brief, portal y comercio."><figcaption>Figura 2. Selector de destino de la suite. La captura permite comprender la navegación entre producción, proyectos, prospección, brief, portal y comercio.</figcaption></figure>
+<h2 id="1-2-problema-abordado-segun-el-sistema-observable">1.2 Problema abordado, según el sistema observable</h2>
+<p><strong>Inferencia con evidencia suficiente.</strong> Los textos de interfaz, el catálogo de módulos y los flujos conectados indican que el sistema intenta reducir la fragmentación entre la creación de una web y la operación cotidiana de un negocio local. La solución reúne en una misma base técnica la producción del sitio, la captación de contactos, la agenda, el seguimiento comercial y los informes. Esta formulación describe la intención observable del producto; no sustituye a la motivación personal o académica del autor, que debe confirmarse.</p>
+<h2 id="1-3-alcance-actual">1.3 Alcance actual</h2>
+<p>El alcance confirmado incluye:</p>
+<ul><li>edición y previsualización de webs;</li><li>layouts, imágenes, control de calidad y exportación;</li><li>publicación de demos local o remota configurable;</li><li>inventario multi-negocio y portal de cliente;</li><li>prospección Radar y traspaso de oportunidades;</li><li>CRM, pipeline, scoring, timeline y siguientes acciones;</li><li>propuestas y plantillas de mensajes;</li><li>servicios, reservas, disponibilidad, bloqueos y recordatorios;</li><li>eventos y reportes operativos/comerciales;</li><li>integración técnica con varias APIs de Google;</li><li>persistencia JSON/PostgreSQL;</li><li>seguridad HTTP, autenticación y logging;</li><li>configuración Docker, Render y Cloudflare opcional.</li></ul>
+<p>Quedan fuera de lo que puede afirmarse como productivo: cuentas externas activas, usuarios o clientes reales, métricas de conversión, cumplimiento jurídico integral, Stripe/Resend/OpenAI desplegados y existencia de un servicio público concreto.</p>
+<h1 id="2-metodologia-de-auditoria-y-redaccion">2. Metodología de auditoría y redacción</h1>
+<h2 id="2-1-principio-de-fuente-de-verdad">2.1 Principio de fuente de verdad</h2>
+<p>La jerarquía aplicada ha sido: comportamiento reproducido y pruebas ejecutadas; código conectado a puntos de entrada; configuración; inferencia explícita; documentación histórica. Un nombre de archivo, una dependencia instalada o un comentario no se consideraron suficientes para dar una funcionalidad por implementada.</p>
+<p>Para cada módulo se comprobó, en la medida permitida por el entorno, su conexión con un punto de entrada, su activación desde la interfaz o el router, el tratamiento de datos y errores, la persistencia asociada y la existencia de pruebas. Los documentos antiguos solo se usaron para detectar evolución y contradicciones.</p>
+<h2 id="2-2-inspeccion-estatica">2.2 Inspección estática</h2>
+<p>La inspección cubrió el árbol del repositorio, manifiestos, HTML, CSS, JavaScript, servidor, APIs, librerías, scripts, datos de ejemplo, contenedores, configuración de despliegue, Worker, workflows y documentación. Se rastrearon importaciones, scripts cargados y referencias a módulos. El repositorio contiene 1.644 archivos rastreados por Git; 1.401 están bajo <code>node_modules</code>, una anomalía de mantenimiento pese a que <code>.gitignore</code> ya excluye esa carpeta.</p>
+<h2 id="2-3-ejecucion-controlada">2.3 Ejecución controlada</h2>
+<p>Se dedujeron los comandos desde <code>package.json</code>. La aplicación se ejecutó con Node.js y el servidor real. Para las capturas se creó un directorio de trabajo temporal, se forzó <code>BUSINESS_STORE=json</code>, se anularon las URLs de PostgreSQL, se desactivaron backups y se usó un fixture ficticio. El proceso no cargó el <code>.env</code> del proyecto y se cerró al finalizar.</p>
+<p>El fixture representa “Luma Café — entorno de prueba” y usa <code>example.test</code>, teléfonos no reales y textos que avisan del carácter simulado. El endpoint de salud confirmó el modelo cargado antes del recorrido visual.</p>
+<h2 id="2-4-pruebas">2.4 Pruebas</h2>
+<p>Se ejecutaron la validación sintáctica, suites Studio y backend, smoke funcional, QA visual y prueba de navegador. Los resultados se explican en el capítulo 15 y en el anexo de pruebas. “Prueba superada” se limita al alcance de sus aserciones; no se equipara una simulación de proveedor con una cuenta productiva.</p>
+<h2 id="2-5-evidencia-visual">2.5 Evidencia visual</h2>
+<p>Las dieciséis figuras proceden de la aplicación ejecutada. Antes de cada captura se esperó al DOM requerido y a la estabilización de imágenes. Las capturas de formularios no se usan como única evidencia de procesamiento: se relacionan con rutas API y pruebas funcionales. El catálogo completo se conserva en <code>anexos/inventario_capturas.md</code>.</p>
+<h1 id="3-vision-general-del-sistema">3. Visión general del sistema</h1>
+<h2 id="3-1-areas-funcionales">3.1 Áreas funcionales</h2>
+<p>DLS se organiza en tres planos conectados:</p>
+<ol><li><strong>Producción interna:</strong> brief, Radar, Studio y proyectos.</li><li><strong>Operación del negocio:</strong> portal, CRM, agenda, propuestas, mensajes, Google e informes.</li><li><strong>Canal público:</strong> web generada, formularios, reservas, eventos, chatbot y tienda visual.</li></ol>
+<p>El mismo registro de negocio actúa como nexo. Contiene identidad, marca, contenido, integraciones y configuración. El backend asocia contactos, actividades, propuestas, servicios, reservas y eventos mediante <code>businessId</code>.</p>
+<h2 id="3-2-actores-deducidos">3.2 Actores deducidos</h2>
+<p><strong>Inferencia.</strong> El código distingue al menos tres roles operativos, aunque no implementa un IAM completo:</p>
+<ul><li>equipo administrador DLS, autenticado mediante token admin;</li><li>cliente de un negocio, autenticado con contraseña y token limitado al negocio/áreas;</li><li>visitante público, que accede a la web y a endpoints de captación, reservas y eventos con rate limit.</li></ul>
+<p>No hay una tabla general de usuarios internos ni una matriz completa de roles. Los roles <code>owner</code>, <code>admin</code>, <code>editor</code> y <code>viewer</code> aparecen en SQL de Supabase documental, no en el runtime actual.</p>
+<h2 id="3-3-estado-observado">3.3 Estado observado</h2>
+<p>El Studio, Radar demo, proyectos, portal, web de cliente, informe y onboarding cargaron correctamente. La figura 3 muestra que la vista de proyectos obtiene el negocio del servidor, en lugar de limitarse a HTML estático.</p>
+<figure class="document-figure"><img src="capturas/originales/06-proyectos.png" alt="Figura 3. Inventario de proyectos alimentado por la API. Se muestra un negocio ficticio, su estado, plan y demo; el dato procede del fixture cargado por el backend."><figcaption>Figura 3. Inventario de proyectos alimentado por la API. Se muestra un negocio ficticio, su estado, plan y demo; el dato procede del fixture cargado por el backend.</figcaption></figure>
+<h1 id="4-arquitectura">4. Arquitectura</h1>
+<h2 id="4-1-vista-logica">4.1 Vista lógica</h2>
+<p>La arquitectura se deduce como un monolito modular ligero con frontend multipágina y extensiones externas opcionales.</p>
+<pre><code class="language-text">┌──────────────────────────────── Navegador ────────────────────────────────┐
+│ Studio │ Radar │ Proyectos │ Portal │ Web cliente │ Informe │ Brief      │
+│ módulos DOM + namespace LocalLiftStudio + fetch JSON                     │
+└───────────────────────────────┬───────────────────────────────────────────┘
+                                │ HTTP/JSON
+┌───────────────────────────────▼───────────────────────────────────────────┐
+│ Servidor Node nativo                                                      │
+│ router modular · auth · CORS · guards · rate limit · logging             │
+│ negocios · CRM · agenda · propuestas · informes · Google · imágenes      │
+└───────────────────────────────┬───────────────────────────────────────────┘
+                                │ adaptador
+                 ┌──────────────┴──────────────┐
+                 │ JSON atómico │ PostgreSQL   │
+                 └──────────────┬──────────────┘
+                                │ opcional
+        Google · OSM · bancos de imagen · Cloudflare · servicios separados</code></pre>
+<p>El servidor principal se inicia con <code>node server/server.mjs</code>. No se requiere compilación ni bundle para el frontend. Esta simplicidad favorece la inspección y la exportación standalone, pero traslada al navegador la responsabilidad de cargar scripts en orden.</p>
+<h2 id="4-2-puntos-de-entrada">4.2 Puntos de entrada</h2>
+<ul><li><code>index.html</code>: entrada del Studio y centro de destinos.</li><li><code>server/server.mjs</code>: servidor estático y router de API.</li><li><code>pages/business-dashboard.html</code>: portal operativo.</li><li><code>pages/business-radar.html</code>: prospección.</li><li><code>pages/projects.html</code>: gestión de proyectos.</li><li><code>pages/client-site.html</code>: web generada desde un registro.</li><li><code>pages/monthly-report.html</code>: salida imprimible.</li><li><code>pages/onboarding.html</code>: brief.</li><li><code>pages/store-admin.html</code>: cliente de un backend de comercio separado.</li><li><code>examples/commerce-api.example.mjs</code> y <code>examples/chatbot-api.example.mjs</code>: procesos opcionales de ejemplo.</li></ul>
+<h2 id="4-3-organizacion-frontend">4.3 Organización frontend</h2>
+<p>Los módulos Studio publican funciones en <code>window.LocalLiftStudio</code>. <code>src/app.js</code> consume utilidades, estado, layouts, medios, datos, renderer, exporter, validación, QA, stock y estilos de botón. La estrategia permite que <code>pages/client-site.html</code> cargue <code>core-utils</code>, <code>catalog</code> y <code>renderer</code> sin empaquetador.</p>
+<p>El principal riesgo estructural es el tamaño del orquestador. <code>src/app.js</code> contiene aproximadamente 6.893 líneas y 253.766 bytes. El proyecto define un guard de 180.000 bytes, por lo que la propia prueba confirma una regresión de modularidad. El hallazgo no significa que el Studio no arranque; significa que la frontera arquitectónica acordada no se respeta.</p>
+<h2 id="4-4-organizacion-backend">4.4 Organización backend</h2>
+<p><code>server/server.mjs</code> importa manejadores para salud, stock, autenticación, reservas, Google, plantillas, propuestas, bandeja, reportes, QA, imágenes, demos, eventos, contactos, descubrimiento y negocios. Cada módulo reconoce rutas y métodos, valida autorización y opera sobre el store común.</p>
+<p>La solución no usa Express. El control HTTP —cuerpo, CORS, cabeceras, rutas y errores— se implementa con módulos propios. Esto reduce dependencias pero aumenta la cantidad de infraestructura que debe mantenerse y probarse internamente.</p>
+<h1 id="5-dls-studio-y-generacion-web">5. DLS Studio y generación web</h1>
+<h2 id="5-1-edicion-y-preview">5.1 Edición y preview</h2>
+<p>El Studio reúne controles de contenido, dirección visual, orden de secciones, biblioteca de bloques, imágenes, responsive y preparación de entrega. El renderer genera la web dentro de un marco de navegador. La figura 4 muestra el editor y un preview realmente renderizado; no es una maqueta incorporada a la memoria.</p>
+<figure class="document-figure"><img src="capturas/originales/03-studio-editor.png" alt="Figura 4. DLS Studio en vista de escritorio. El panel de edición y el preview comparten el estado del negocio; la imagen verifica la carga del editor y del renderer."><figcaption>Figura 4. DLS Studio en vista de escritorio. El panel de edición y el preview comparten el estado del negocio; la imagen verifica la carga del editor y del renderer.</figcaption></figure>
+<p>La aplicación proporciona historial, undo/redo y autosave sobre <code>localStorage</code>. El botón de guardado conserva una copia local y, si existe contexto API, sincroniza el negocio con el backend. También puede cargar desde almacenamiento local o desde la API.</p>
+<h2 id="5-2-modelo-visual">5.2 Modelo visual</h2>
+<p>El catálogo permite combinar tema, dirección artística, tipografía, densidad, forma, proporción de imagen y variantes de bloques. El renderer normaliza esos valores y produce una estructura <code>.generated-site</code> con clases de tema y composición. El código responsive se comparte entre Studio, web de cliente y exportación.</p>
+<p>La figura 5 muestra el cambio de viewport dentro del Studio. Esta evidencia demuestra que el control de viewport responde y que el CSS adapta la composición; no sustituye a una auditoría exhaustiva en todos los dispositivos.</p>
+<figure class="document-figure"><img src="capturas/originales/04-studio-preview-movil.png" alt="Figura 5. Preview móvil dentro del Studio. Se observa la misma web reorganizada en un marco estrecho y con acciones de conversión adaptadas."><figcaption>Figura 5. Preview móvil dentro del Studio. Se observa la misma web reorganizada en un marco estrecho y con acciones de conversión adaptadas.</figcaption></figure>
+<h2 id="5-3-recursos-e-imagenes">5.3 Recursos e imágenes</h2>
+<p>El Studio contiene una colección curada y dos APIs de servidor:</p>
+<ul><li>stock genérico, con Unsplash si hay clave y Wikimedia Commons como alternativa;</li><li>packs de imágenes de sitio, capaces de consultar Unsplash, Pexels y Pixabay según credenciales;</li><li>seguimiento del endpoint de descarga exigido por Unsplash;</li><li>normalización de URLs, proveedores, autoría y licencia mostrada.</li></ul>
+<p>Las pruebas sustituyen las llamadas externas para comprobar selección y formato. No se ha verificado la licencia final de cada imagen incluida históricamente en catálogos; debe revisarse antes de una explotación pública.</p>
+<h2 id="5-4-validacion-y-entrega">5.4 Validación y entrega</h2>
+<p>La validación del negocio, el control de calidad y la QA visual detectan campos incompletos, contraste, estructura, imágenes y preparación de entrega. La salida puede adoptar tres formas:</p>
+<ul><li>HTML standalone descargable;</li><li>datos JSON reutilizables;</li><li>paquete ZIP con HTML, <code>business.json</code>, ficha y registro de cambios.</li></ul>
+<p>El mismo renderer se usa para preview y salida, lo que reduce divergencias. La publicación de demo es una operación diferente: guarda HTML en filesystem o lo envía a un publicador remoto con TTL. La interfaz explica esta separación.</p>
+<h1 id="6-onboarding-y-radar">6. Onboarding y Radar</h1>
+<h2 id="6-1-brief-de-onboarding">6.1 Brief de onboarding</h2>
+<p>El onboarding divide la entrada de información en identidad, conversión, contenido, recursos, chatbot y entrega. El progreso se calcula a partir de campos clave y el resultado puede transferirse al Studio. La figura 6 muestra el primer paso del flujo; el procesamiento se acredita además por el código de handoff.</p>
+<figure class="document-figure"><img src="capturas/originales/15-brief-onboarding.png" alt="Figura 6. Primer paso del brief de onboarding. El formulario captura identidad y contexto del negocio antes de generar una configuración para el Studio."><figcaption>Figura 6. Primer paso del brief de onboarding. El formulario captura identidad y contexto del negocio antes de generar una configuración para el Studio.</figcaption></figure>
+<h2 id="6-2-descubrimiento-de-oportunidades">6.2 Descubrimiento de oportunidades</h2>
+<p>Radar dispone de un proveedor de demostración y un proveedor OpenStreetMap. En modo OSM, el backend y el cliente usan servicios geográficos para buscar negocios; el cliente calcula señales de oportunidad y muestra lista, métricas, recomendaciones y mapa. La ausencia de una web declarada en la fuente no se interpreta como certeza absoluta de que el negocio no tenga web.</p>
+<p>La captura se realizó en modo demo para evitar depender de red y de datos de terceros. La propia interfaz muestra “Ejemplo · datos simulados”, por lo que no debe presentarse como una búsqueda real.</p>
+<figure class="document-figure"><img src="capturas/originales/05-radar-modo-demostracion.png" alt="Figura 7. Radar en modo de demostración. Se muestran métricas y oportunidades simuladas, claramente etiquetadas, para explicar el flujo de scoring sin atribuir datos a negocios reales."><figcaption>Figura 7. Radar en modo de demostración. Se muestran métricas y oportunidades simuladas, claramente etiquetadas, para explicar el flujo de scoring sin atribuir datos a negocios reales.</figcaption></figure>
+<h2 id="6-3-traspaso-al-studio">6.3 Traspaso al Studio</h2>
+<p>Una oportunidad puede transformarse en brief: se normalizan nombre, categoría, localidad, señales, datos de contacto y recursos. El endpoint <code>/api/studio/from-opportunity</code> y el módulo <code>studio-handoff</code> conectan las dos áreas. La prueba específica de handoff pasa. La integración no depende de que la búsqueda sea live: también se puede ensayar con fixture.</p>
+<h1 id="7-portal-operativo-y-crm">7. Portal operativo y CRM</h1>
+<h2 id="7-1-carga-multi-negocio">7.1 Carga multi-negocio</h2>
+<p>El portal consulta <code>/api/businesses</code>, selecciona un negocio y carga en paralelo contactos, pipeline, acciones, servicios, reservas, disponibilidad, bloqueos, recordatorios, eventos, reportes, propuestas, plantillas, inbox y Google. La navegación por pestañas no es un conjunto de páginas inconexas: comparte un estado de negocio y un modelo derivado.</p>
+<h2 id="7-2-bandeja-diaria">7.2 Bandeja diaria</h2>
+<p>La bandeja agrega vencimientos, leads sin primer contacto, reservas del día, propuestas pendientes y clientes a reactivar. En la figura 8 se observan los indicadores del fixture. El cálculo de secciones y sus acciones se prueba mediante las suites de inbox y automatización.</p>
+<figure class="document-figure"><img src="capturas/originales/07-portal-bandeja.png" alt="Figura 8. Bandeja diaria del portal. La vista agrega pendientes y siguientes acciones del negocio ficticio; el procesamiento se valida también con pruebas de inbox."><figcaption>Figura 8. Bandeja diaria del portal. La vista agrega pendientes y siguientes acciones del negocio ficticio; el procesamiento se valida también con pruebas de inbox.</figcaption></figure>
+<h2 id="7-3-contactos-pipeline-y-scoring">7.3 Contactos, pipeline y scoring</h2>
+<p>Los contactos almacenan identidad, canales, fuente, UTM, estado, motivo de pérdida, prioridad, orden, valor, privacidad, siguiente acción y score. La API permite:</p>
+<ul><li>crear y actualizar contactos;</li><li>agruparlos por pipeline;</li><li>cambiar estado y orden;</li><li>exigir motivo al marcar una pérdida;</li><li>detectar duplicados y fusionarlos de forma blanda;</li><li>registrar actividades y timeline;</li><li>programar o modificar siguiente acción;</li><li>recalcular score.</li></ul>
+<p>La figura 9 representa contactos ficticios en distintas columnas. La deduplicación, los motivos de pérdida, el score y la persistencia no se dan por probados por la imagen: se apoyan en smoke y tests CRM.</p>
+<figure class="document-figure"><img src="capturas/originales/08-portal-pipeline-leads.png" alt="Figura 9. Pipeline de leads. Los contactos ficticios aparecen por estado, valor y temperatura; la API permite mover, puntuar y fusionar registros."><figcaption>Figura 9. Pipeline de leads. Los contactos ficticios aparecen por estado, valor y temperatura; la API permite mover, puntuar y fusionar registros.</figcaption></figure>
+<h2 id="7-4-propuestas">7.4 Propuestas</h2>
+<p>El módulo de propuestas enlaza una oferta a un contacto, con paquete, alta, cuota, condiciones, vencimiento y estado. La API aplica separación por negocio, transiciones, expiración y conversión. El exportador produce HTML y PDF. La figura 10 muestra la interfaz de creación; las pruebas de CRUD y exportación completan la evidencia.</p>
+<figure class="document-figure"><img src="capturas/originales/09-portal-propuestas.png" alt="Figura 10. Módulo de propuestas comerciales. El formulario se alimenta de contactos del CRM; creación, transiciones y exportación están cubiertas por pruebas específicas."><figcaption>Figura 10. Módulo de propuestas comerciales. El formulario se alimenta de contactos del CRM; creación, transiciones y exportación están cubiertas por pruebas específicas.</figcaption></figure>
+<h2 id="7-5-mensajes">7.5 Mensajes</h2>
+<p>Las plantillas admiten tipo, etiqueta, asunto y cuerpo. El servidor sustituye variables con datos de negocio/contacto y genera enlaces <code>wa.me</code> o <code>mailto</code>. La funcionalidad confirmada es preparación y apertura del canal, no envío automático mediante WhatsApp Business o correo transaccional. El transporte real queda como integración externa futura.</p>
+<h1 id="8-agenda-y-reservas">8. Agenda y reservas</h1>
+<h2 id="8-1-entidades-y-reglas">8.1 Entidades y reglas</h2>
+<p>La agenda combina servicios, reservas, reglas semanales, bloqueos manuales y recordatorios. Un servicio define duración, precio, descripción y estado. La disponibilidad determina intervalos por día; los bloqueos excluyen periodos; la reserva vincula servicio, contacto, datos del cliente, inicio/fin, origen y consentimiento.</p>
+<h2 id="8-2-flujo-publico">8.2 Flujo público</h2>
+<p>El visitante envía una reserva al endpoint público del negocio. El backend:</p>
+<ol><li>valida cuerpo y consentimiento;</li><li>localiza negocio y servicio;</li><li>calcula fin según duración;</li><li>comprueba disponibilidad, bloqueos y solapes;</li><li>crea o relaciona el contacto;</li><li>persiste reserva y actividad;</li><li>devuelve el resultado.</li></ol>
+<p>El smoke ejecutó el flujo con datos temporales y creó un recordatorio. La figura 11 muestra el estado de agenda del fixture, incluidos horarios y un bloqueo ficticio.</p>
+<figure class="document-figure"><img src="capturas/originales/10-portal-reservas.png" alt="Figura 11. Agenda de reservas. Se muestran disponibilidad semanal y un bloqueo ficticio; la validación y persistencia de una reserva se comprobaron mediante el smoke funcional."><figcaption>Figura 11. Agenda de reservas. Se muestran disponibilidad semanal y un bloqueo ficticio; la validación y persistencia de una reserva se comprobaron mediante el smoke funcional.</figcaption></figure>
+<h2 id="8-3-recordatorios-y-calendar">8.3 Recordatorios y Calendar</h2>
+<p>Los recordatorios se preparan por canal y quedan en una cola con estado; no se envían mediante un proveedor de mensajería en el servidor principal. Google Calendar puede consultar free/busy, crear eventos y sincronizar una reserva cuando existe OAuth. Ese último flujo no se ejecutó con una cuenta real.</p>
+<h1 id="9-web-publica-conversion-y-responsive">9. Web pública, conversión y responsive</h1>
+<h2 id="9-1-renderer-compartido">9.1 Renderer compartido</h2>
+<p><code>pages/client-site.html</code> carga utilidades, catálogo y renderer del Studio. Obtiene el registro de negocio desde la API, lo convierte al modelo visual y monta la web. A continuación conecta formularios de lead, reserva, carrito, chatbot y eventos.</p>
+<p>La figura 12 utiliza un registro ficticio y muestra un aviso inequívoco de demostración. Esto evita confundir la evidencia con un cliente real.</p>
+<figure class="document-figure"><img src="capturas/originales/13-web-cliente.png" alt="Figura 12. Web generada para el negocio ficticio. La salida desktop reutiliza el renderer del Studio e incorpora navegación y llamadas a la acción."><figcaption>Figura 12. Web generada para el negocio ficticio. La salida desktop reutiliza el renderer del Studio e incorpora navegación y llamadas a la acción.</figcaption></figure>
+<h2 id="9-2-captacion-y-eventos">9.2 Captación y eventos</h2>
+<p>Los formularios públicos envían leads y reservas a rutas ligadas al slug del negocio. El evento de conversión registra nombre, detalle, UTM, página, referrer y agente. El rate limit separa categorías de endpoint. Los consentimientos de lead y reserva se almacenan y fueron verificados en el smoke.</p>
+<h2 id="9-3-chatbot">9.3 Chatbot</h2>
+<p>El renderer admite chatbot local o remoto. En modo local, responde con reglas y contexto del negocio sin servicio externo. Si existe endpoint, envía la conversación a ese servicio. El ejemplo OpenAI demuestra cómo implementar un endpoint con Responses API, pero no forma parte del router principal.</p>
+<h2 id="9-4-comercio-visual">9.4 Comercio visual</h2>
+<p>La web puede mostrar productos, carrito y acciones de checkout. El catálogo conserva productos embebidos como fallback. La validación y el checkout se derivan de endpoints configurables. El servidor principal no expone esas rutas; el backend Stripe reside en un ejemplo independiente que arranca, por defecto, en el puerto 8795. Por tanto, la memoria lo clasifica como extensión parcial, no como pago productivo confirmado.</p>
+<h2 id="9-5-adaptacion-movil">9.5 Adaptación móvil</h2>
+<p>La figura 13 se capturó a 390×844. La navegación se vuelve desplazable, el hero reorganiza texto y acciones, y el dock de conversión permanece accesible. Se observa una salida real del renderer, no una imagen rediseñada para este documento.</p>
+<figure class="document-figure is-portrait"><img src="capturas/originales/16-web-cliente-movil.png" alt="Figura 13. Web del negocio ficticio en viewport móvil. La composición, navegación y llamadas a la acción se adaptan a 390 px de anchura."><figcaption>Figura 13. Web del negocio ficticio en viewport móvil. La composición, navegación y llamadas a la acción se adaptan a 390 px de anchura.</figcaption></figure>
+<h1 id="10-informes-y-analitica">10. Informes y analítica</h1>
+<h2 id="10-1-reporte-mensual">10.1 Reporte mensual</h2>
+<p>El endpoint mensual agrega contactos, reservas, recordatorios, pedidos y eventos para un periodo. El cliente imprime métricas, embudo, fuentes, estados de reserva, conversiones, actividad y recomendaciones. Los importes de comercio se derivan de pedidos almacenados en el modelo del negocio; no implican cobros Stripe reales.</p>
+<p>La figura 14 muestra el resumen dentro del portal y la figura 15 la salida imprimible completa.</p>
+<figure class="document-figure"><img src="capturas/originales/11-portal-reportes.png" alt="Figura 14. Pestaña de reportes del portal. El resumen mensual consume métricas agregadas para el negocio ficticio."><figcaption>Figura 14. Pestaña de reportes del portal. El resumen mensual consume métricas agregadas para el negocio ficticio.</figcaption></figure>
+<figure class="document-figure"><img src="capturas/originales/14-reporte-mensual.png" alt="Figura 15. Informe mensual imprimible. La API y el cliente presentan contactos, reservas, recordatorios, ingresos de prueba y fuentes del periodo."><figcaption>Figura 15. Informe mensual imprimible. La API y el cliente presentan contactos, reservas, recordatorios, ingresos de prueba y fuentes del periodo.</figcaption></figure>
+<h2 id="10-2-informes-comerciales-adicionales">10.2 Informes comerciales adicionales</h2>
+<p>El backend ofrece:</p>
+<ul><li>motivos de pérdida;</li><li>forecast de oportunidades y propuestas;</li><li>cumplimiento SLA y tiempos de primera respuesta;</li><li>dashboard comercial agregado;</li><li>calidad de datos;</li><li>inbox operativo.</li></ul>
+<p>Las pruebas verifican separación por negocio, fechas, agregaciones y casos límite. Estos informes no se traducen en una métrica académica de impacto: describen datos operativos del modelo.</p>
+<h2 id="10-3-exportacion">10.3 Exportación</h2>
+<p>El dashboard permite exportar contactos, leads y reservas en CSV. Las propuestas tienen salida HTML/PDF y el informe mensual puede imprimirse. La memoria evita afirmar que existe un pipeline de BI externo o almacenamiento analítico separado, porque no aparece en el runtime.</p>
+<h1 id="11-persistencia-y-modelo-de-datos">11. Persistencia y modelo de datos</h1>
+<h2 id="11-1-persistencia-json">11.1 Persistencia JSON</h2>
+<p>El modo JSON guarda un documento agregado con colecciones de negocios, contactos, actividades, propuestas, plantillas, servicios, reservas, disponibilidad, bloqueos, recordatorios, eventos y auditoría. La escritura se realiza a un temporal y después se renombra, evitando reemplazos parciales. Los backups son configurables.</p>
+<p>Este modo es apropiado para desarrollo y demostraciones controladas. Su principal límite es la coordinación entre procesos: la atomicidad del archivo no equivale a control relacional o transaccional multiinstancia.</p>
+<h2 id="11-2-persistencia-postgresql">11.2 Persistencia PostgreSQL</h2>
+<p>El store PostgreSQL crea una tabla por colección. Cada fila guarda identificadores e índices básicos junto con <code>data JSONB</code>. La operación de reemplazo usa transacción y <code>pg_advisory_xact_lock</code>; una tabla meta conserva información general. Render configura <code>BUSINESS_STORE=postgres</code> e inyecta <code>DATABASE_URL</code>.</p>
+<p><strong>Inferencia.</strong> El diseño migra el documento a una infraestructura concurrente sin normalizar todas sus relaciones. Esta decisión reduce el acoplamiento de una migración temprana, aunque la integridad referencial depende principalmente de la aplicación.</p>
+<h2 id="11-3-modelo-resumido">11.3 Modelo resumido</h2>
+<table><thead><tr><th>Entidad</th><th>Relaciones y finalidad</th></tr></thead><tbody><tr><td>Negocio</td><td>Raíz de tenant; marca, contenido, configuración, integraciones y demo.</td></tr><tr><td>Contacto</td><td>Pertenece a negocio; participa en pipeline, propuestas, reservas y actividades.</td></tr><tr><td>Actividad</td><td>Historial de contacto y fuente de timeline/SLA.</td></tr><tr><td>Propuesta</td><td>Pertenece a negocio y contacto; representa oferta y transición comercial.</td></tr><tr><td>Plantilla</td><td>Pertenece a negocio; prepara mensajes personalizados.</td></tr><tr><td>Servicio</td><td>Pertenece a negocio; define duración/precio de reserva.</td></tr><tr><td>Reserva</td><td>Pertenece a negocio, contacto y servicio.</td></tr><tr><td>Disponibilidad/bloqueo</td><td>Regulan la agenda del negocio.</td></tr><tr><td>Recordatorio</td><td>Pertenece a reserva y negocio.</td></tr><tr><td>Evento</td><td>Señal pública asociada a negocio y contexto de atribución.</td></tr><tr><td>Auditoría</td><td>Registra mutaciones relevantes.</td></tr></tbody></table>
+<h2 id="11-4-tenancy">11.4 Tenancy</h2>
+<p>La separación se implementa aplicando <code>businessId</code> en lecturas y escrituras, y autorizando el token cliente contra un negocio/slug y áreas. Las pruebas de propuestas, reportes y CRM incluyen escenarios de dos tenants. No existe un esquema por tenant ni Row Level Security de base de datos en el runtime.</p>
+<h1 id="12-integraciones-externas">12. Integraciones externas</h1>
+<h2 id="12-1-google">12.1 Google</h2>
+<p>El backend principal contiene OAuth por negocio, callback, refresh, desconexión, diagnósticos, Places, Calendar, Business Profile y Workspace. Los tokens se cifran con AES-256-GCM; el estado OAuth se guarda como hash con una vida de diez minutos.</p>
+<p>La figura 16 es deliberadamente una evidencia de estado no configurado. Muestra botones y diagnósticos del módulo, pero también que OAuth, cifrado y Places no están preparados en el entorno. No se incluye una captura inventada de conexión exitosa.</p>
+<figure class="document-figure"><img src="capturas/originales/12-portal-google-no-configurado.png" alt="Figura 16. Google Ops sin credenciales externas. La interfaz confirma la existencia del módulo y, al mismo tiempo, muestra que OAuth, cifrado, Places y servicios conectados no están disponibles en el entorno de prueba."><figcaption>Figura 16. Google Ops sin credenciales externas. La interfaz confirma la existencia del módulo y, al mismo tiempo, muestra que OAuth, cifrado, Places y servicios conectados no están disponibles en el entorno de prueba.</figcaption></figure>
+<p>Las pruebas Google usan respuestas simuladas. Permiten afirmar que el código forma solicitudes y procesa respuestas, no que una cuenta de Google haya concedido scopes o que Business Profile esté habilitado.</p>
+<h2 id="12-2-geografia-y-mapas">12.2 Geografía y mapas</h2>
+<p>Radar utiliza OpenStreetMap como modo por defecto, Nominatim/Overpass para descubrimiento y Leaflet/MarkerCluster para mapa. Leaflet se carga desde unpkg; una caída o restricción del CDN afecta al mapa, aunque el listado puede seguir procesándose.</p>
+<h2 id="12-3-proveedores-visuales">12.3 Proveedores visuales</h2>
+<p>Unsplash, Wikimedia Commons, Pexels y Pixabay aportan imágenes según configuración. El backend filtra y normaliza URLs y conserva metadatos. Para una entrega pública debe mantenerse la atribución y revisar las condiciones de cada proveedor.</p>
+<h2 id="12-4-cloudflare">12.4 Cloudflare</h2>
+<p>El Worker permite publicar HTML en KV con caducidad y token compartido. Replica cabeceras de seguridad. Los tests locales pasan. No hay evidencia de que el Worker esté desplegado ni de que un dominio esté vinculado.</p>
+<h2 id="12-5-integraciones-de-ejemplo">12.5 Integraciones de ejemplo</h2>
+<p>El backend de comercio incluye Stripe Checkout, webhooks, stock, cupones, pedidos y Resend. El chatbot de ejemplo llama a OpenAI Responses. Ambos son técnicamente relevantes como prototipos de integración, pero se ejecutan al margen del servidor principal. Esta distinción evita convertir ejemplos en funcionalidades productivas por el mero hecho de que exista código.</p>
+<h1 id="13-seguridad">13. Seguridad</h1>
+<h2 id="13-1-autenticacion-administrativa">13.1 Autenticación administrativa</h2>
+<p>Las rutas sensibles aceptan Bearer o <code>X-LocalLift-Admin-Token</code>. La comparación usa <code>timingSafeEqual</code>. En desarrollo, la ausencia de token permite el modo local abierto; en producción el validador exige una credencial. Este comportamiento facilita el uso local, pero requiere controlar correctamente <code>NODE_ENV</code>.</p>
+<h2 id="13-2-autenticacion-de-cliente">13.2 Autenticación de cliente</h2>
+<p>Las contraseñas se almacenan como <code>scrypt:salt:hash</code>. Tras verificarla, el servidor genera un token con payload y firma HMAC SHA-256; el TTL por defecto es de catorce días. El cliente lo conserva en <code>localStorage</code> y lo envía en una cabecera. El backend limita el negocio y las áreas permitidas.</p>
+<p>Riesgo: <code>localStorage</code> no es inmune a XSS. La medida complementaria debe ser reducir inyección y endurecer la política de contenido. En el corte actual, la CSP todavía permite scripts y estilos inline.</p>
+<h2 id="13-3-seguridad-http">13.3 Seguridad HTTP</h2>
+<p>El servidor aplica:</p>
+<ul><li>rechazo de TRACE;</li><li>límite de URL y cuerpo;</li><li>exigencia de JSON en métodos mutantes;</li><li>CORS configurable;</li><li>CSP, <code>nosniff</code>, <code>SAMEORIGIN</code>, políticas de referrer/permisos y HSTS en producción;</li><li><code>Cache-Control: no-store</code> para API;</li><li>prevención de path traversal;</li><li>límites por IP y categoría de endpoint;</li><li>mensajes de error estructurados sin exponer la traza al cliente.</li></ul>
+<p>Los límites viven en memoria y no se comparten entre réplicas. Además, el primer <code>X-Forwarded-For</code> se acepta sin una política explícita de proxies de confianza. Son límites relevantes si el sistema escala.</p>
+<h2 id="13-4-secretos-y-oauth">13.4 Secretos y OAuth</h2>
+<p>El <code>.env</code> está ignorado por Git. Durante la auditoría solo se comprobó la presencia de nombres de variables, nunca sus valores. Los tokens Google se cifran; el logger redacta claves cuyo nombre parece sensible. La CI incluye auditoría de dependencias y un script busca patrones de secretos.</p>
+<p>No puede demostrarse desde el repositorio que ningún secreto histórico haya sido filtrado o que todos los proveedores hayan rotado claves. Tampoco se verificó WAF, DNS o backup externos.</p>
+<h2 id="13-5-privacidad">13.5 Privacidad</h2>
+<p>Los endpoints públicos almacenan aceptación, fecha y URL de política para leads/reservas. Esto es una base técnica, no una certificación RGPD. Faltan evidencias externas sobre base jurídica, información al interesado, contratos, conservación, ejercicio de derechos y procedimientos reales.</p>
+<h1 id="14-ejecucion-configuracion-y-despliegue">14. Ejecución, configuración y despliegue</h1>
+<h2 id="14-1-comandos-comprobados">14.1 Comandos comprobados</h2>
+<ul><li><code>npm start</code>: servidor local.</li><li><code>npm run start:prod</code>: valida el entorno y arranca.</li><li><code>npm run check</code>: sintaxis.</li><li><code>npm run smoke:pilot</code>: smoke funcional aislado.</li><li><code>npm run test:studio</code>: suite compuesta Studio.</li><li>scripts CRM, Google, seguridad, QA y despliegue específicos.</li></ul>
+<p>El proyecto declara solo tres dependencias npm directas: Atropos, <code>pg</code> y Stripe. Parte de las librerías visuales se guarda en <code>assets/vendor</code> y no requiere descarga en runtime.</p>
+<h2 id="14-2-variables">14.2 Variables</h2>
+<p>La configuración cubre host/puerto, entorno, token admin, sesión cliente, store, PostgreSQL, backups, CORS, rate limits, Google, proveedores de imagen, publicador de demos y logging. Las variables reales no se incluyen en la memoria.</p>
+<h2 id="14-3-docker-y-render">14.3 Docker y Render</h2>
+<p>El contenedor usa Node 22 Alpine, instala dependencias de producción, expone el servidor y define healthcheck. El Blueprint de Render configura un servicio web, PostgreSQL gestionado, disco persistente y un cron de automatización diaria.</p>
+<p><strong>Clasificación:</strong> esto confirma preparación de despliegue. Sin URL, panel o respuesta externa no confirma que Render esté ejecutando este commit.</p>
+<h2 id="14-4-operacion">14.4 Operación</h2>
+<p>El healthcheck devuelve estado, latencia, store, contadores y preparación Google sin mostrar secretos. El logging produce JSON con request ID y redacción. Hay scripts de migración JSON→PostgreSQL, restauración y automatización CRM. La restauración de una base productiva no fue ensayada.</p>
+<h1 id="15-verificacion-y-calidad">15. Verificación y calidad</h1>
+<h2 id="15-1-resultados-positivos">15.1 Resultados positivos</h2>
+<p>La validación sintáctica finalizó sin errores. El smoke levantó un servidor temporal, protegió rutas admin, creó y deduplicó un lead con consentimiento, registró eventos, creó una reserva válida, generó recordatorio y timeline, ejercitó scoring, pérdida, merge, pipeline, reportes y preparación Google. Su salida final fue:</p>
+<pre><code class="language-text">Pilot smoke test passed.
+Health: ok; contacts: 6; bookings: 1; events: 1.
+Verified: admin auth, lead consent, booking consent, status changes,
+monthly reports and Google readiness.</code></pre>
+<p>También pasaron las suites de seguridad backend, Google simulada, timeline, propuestas, plantillas, forecast, automatización, inbox, SLA, dashboard, atribución, calidad de datos, imágenes y handoff Radar. La QA visual profunda pasó de forma independiente.</p>
+<h2 id="15-2-guard-de-arquitectura">15.2 Guard de arquitectura</h2>
+<p>La suite Studio pasa sus bloques de core, estado, layouts, medios, stock, publicación, worker, datos, validación y renderer. Se detiene en:</p>
+<pre><code class="language-text">src/app.js must remain below 180 KB; current size is 253766</code></pre>
+<p>El fallo es valioso: demuestra que el control detecta una desviación. La solución no debe ser elevar silenciosamente el límite, sino extraer responsabilidades y mantener pruebas sobre los nuevos módulos.</p>
+<h2 id="15-3-navegador-e2e">15.3 Navegador E2E</h2>
+<p><code>test:studio-browser</code> abre un navegador CDP y pretende recorrer edición directa, layouts, historial, entrega y descargas. En dos intentos controlados el target se cerró mientras esperaba <code>document.documentElement.dataset.studioReady</code>. Por ello no se afirma que esa secuencia haya pasado.</p>
+<p>Un capturador más corto sí cargó el Studio, esperó el mismo indicador, cambió a viewport móvil y generó figuras válidas. La diferencia sugiere una interacción entre el perfil de flags, recursos y estabilidad del navegador, pero la causa exacta no se determina en esta memoria.</p>
+<h2 id="15-4-ausencias-de-calidad">15.4 Ausencias de calidad</h2>
+<p>No se encontró:</p>
+<ul><li>informe de cobertura de líneas/ramas;</li><li>prueba de carga o concurrencia;</li><li>pentest independiente;</li><li>prueba de restauración de PostgreSQL real;</li><li>matriz completa WCAG con lector de pantalla;</li><li>evaluación UX documentada con participantes;</li><li>monitorización productiva con métricas y alertas externas.</li></ul>
+<p>Estas ausencias son líneas de mejora, no pruebas de que el sistema falle en todos esos ámbitos.</p>
+<h1 id="16-evolucion-y-contradicciones-documentales">16. Evolución y contradicciones documentales</h1>
+<h2 id="16-1-de-json-a-persistencia-dual">16.1 De JSON a persistencia dual</h2>
+<p>La memoria anterior describía JSON como base del MVP y PostgreSQL como futuro. El estado actual conserva JSON y añade un driver PostgreSQL, migrador y configuración Render. La evolución es observable en código; la fecha o motivación exacta requiere confirmación del autor.</p>
+<h2 id="16-2-de-google-ejemplo-a-modulo-principal">16.2 De Google ejemplo a módulo principal</h2>
+<p>Los planes antiguos situaban OAuth Google y Business Profile como trabajo posterior. El backend actual contiene el flujo completo de autorización, cifrado y rutas operativas. La disponibilidad real de cuentas y APIs continúa sin verificar.</p>
+<h2 id="16-3-crecimiento-de-pruebas">16.3 Crecimiento de pruebas</h2>
+<p>Una versión histórica proponía “añadir pruebas automatizadas”. El repositorio actual expone 34 scripts y aproximadamente 1.012 usos de <code>assert</code>. El número muestra evolución, pero no equivale a cobertura.</p>
+<h2 id="16-4-regresion-de-modularidad">16.4 Regresión de modularidad</h2>
+<p><code>docs/AHORA.md</code> afirma que <code>src/app.js</code> había bajado a 156 KB. El corte actual alcanza 253.766 bytes. La contradicción se resuelve a favor del archivo y del guard ejecutado. Esto ilustra por qué la memoria no puede basarse en un documento de estado sin volver a medir.</p>
+<h2 id="16-5-supabase">16.5 Supabase</h2>
+<p><code>docs/CIBERSEGURIDAD.md</code> enumera Supabase DB/Auth como stack, mientras que otros documentos del propio repositorio reconocen que no hay SDK ni instancia verificable. El runtime usa PostgreSQL directo o JSON; el SQL RLS queda como preparación futura.</p>
+<h1 id="17-limitaciones-y-deuda-tecnica">17. Limitaciones y deuda técnica</h1>
+<h2 id="17-1-deuda-prioritaria">17.1 Deuda prioritaria</h2>
+<ol><li><strong>Modularizar <code>src/app.js</code>.</strong> Extraer publicación, comercio, chatbot, acciones rápidas, entrega y coordinación de UI.</li><li><strong>Estabilizar el E2E de navegador.</strong> Reducir flags, capturar logs/crash dumps, separar escenarios y ejecutarlo en CI con navegador fijado.</li><li><strong>Limpiar el índice Git.</strong> Retirar <code>node_modules</code> rastreado mediante un cambio controlado y verificar reproducibilidad con <code>npm ci</code>.</li><li><strong>Aclarar el alcance de comercio.</strong> Integrar rutas en un servicio desplegado o etiquetar inequívocamente la tienda como extensión de ejemplo.</li><li><strong>Endurecer sesión/CSP.</strong> Evaluar cookie HttpOnly/SameSite y reducir <code>&#039;unsafe-inline&#039;</code> cuando la arquitectura lo permita.</li><li><strong>Rate limit distribuido.</strong> Sustituir memoria local si se usan réplicas.</li><li><strong>Revisar módulos huérfanos.</strong> Confirmar el destino de <code>business-defaults.js</code>, <code>radar-review.js</code> e <code>intro-smoke.png</code>.</li><li><strong>Alinear documentación y scripts.</strong> Actualizar estado, aceptación y alcance sin borrar el histórico.</li></ol>
+<h2 id="17-2-limitaciones-de-producto">17.2 Limitaciones de producto</h2>
+<ul><li>No hay administración multiusuario/roles completa.</li><li>Mensajería automática real no está en el servidor principal.</li><li>Comercio y chatbot remoto dependen de servicios separados.</li><li>La conexión Google necesita credenciales, consentimiento y aprobación externa.</li><li>No existe prueba de uso productivo o impacto comercial.</li><li>La capa PostgreSQL no normaliza todas las relaciones.</li><li>Parte de la UI depende de CDN/servicios externos.</li></ul>
+<h2 id="17-3-limitaciones-de-esta-memoria">17.3 Limitaciones de esta memoria</h2>
+<p>La auditoría no accedió a proveedores ni datos reales; no realizó pruebas jurídicas, de carga o pentest; y no puede reconstruir motivaciones históricas no registradas. El commit auditado tiene el asunto <code>BASURA</code>, por lo que el autor debe confirmar que sea el corte correcto para defensa.</p>
+<h1 id="18-trabajo-futuro-propuesto">18. Trabajo futuro propuesto</h1>
+<p>El trabajo futuro debe priorizar evidencia y riesgo:</p>
+<h2 id="18-1-corto-plazo">18.1 Corto plazo</h2>
+<ul><li>corregir el guard de arquitectura mediante extracción real;</li><li>hacer reproducible <code>test:studio-browser</code> en CI;</li><li>decidir y documentar el servicio de comercio;</li><li>verificar secrets, licencias y datos antes de publicar el repositorio;</li><li>añadir una matriz de endpoints y permisos como contrato mantenible;</li><li>limpiar dependencias versionadas.</li></ul>
+<h2 id="18-2-medio-plazo">18.2 Medio plazo</h2>
+<ul><li>introducir usuarios internos, roles y revocación de sesiones;</li><li>añadir migraciones incrementales y restricciones relacionales;</li><li>usar rate limit compartido y observabilidad externa;</li><li>crear pruebas de restauración, carga y fallo de proveedores;</li><li>reducir inline script/style y endurecer CSP;</li><li>automatizar envío mediante proveedores elegidos, con auditoría y reintentos.</li></ul>
+<h2 id="18-3-validacion-externa">18.3 Validación externa</h2>
+<ul><li>ejecutar un piloto con consentimiento y objetivos medibles;</li><li>definir métricas antes de observar resultados;</li><li>realizar evaluación de accesibilidad con usuarios y tecnologías asistivas;</li><li>documentar privacidad y conservación con asesoramiento adecuado;</li><li>validar Google/Stripe/Cloudflare en entornos de prueba de proveedor;</li><li>registrar commit, configuración no sensible y fecha de cada despliegue.</li></ul>
+<h1 id="19-conclusiones">19. Conclusiones</h1>
+<p>DLS muestra una evolución desde un generador web hacia una suite operativa para negocios locales. La arquitectura actual combina un frontend multipágina sin framework pesado, módulos Studio compartidos, un backend Node nativo y persistencia dual. La continuidad entre web, captación, CRM, reservas e informes está respaldada por rutas, modelos y pruebas. El Studio y la web final comparten renderer, y el backend organiza dominios funcionales mediante manejadores independientes.</p>
+<p>La evaluación también impone límites claros. Un archivo central excesivo incumple el guard arquitectónico; la prueba E2E larga no es estable en el entorno auditado; la configuración de despliegue no demuestra un despliegue real; y las integraciones externas presentan grados de madurez distintos. Google puede describirse como implementación conectada y simulada, mientras que Stripe, Resend y OpenAI deben permanecer como extensiones de ejemplo o configurables.</p>
+<p>La principal aportación técnica observable es la integración de producción y operación en un sistema portable, capaz de funcionar localmente con JSON y de migrar a PostgreSQL. La siguiente etapa no consiste solo en añadir funciones, sino en consolidar modularidad, identidad/roles, seguridad de sesión, observabilidad y validación externa. Esta conclusión se limita a la evidencia disponible y no atribuye resultados comerciales o de usuarios que el repositorio no contiene.</p>
+<h1 id="20-fuentes-tecnicas-del-repositorio">20. Fuentes técnicas del repositorio</h1>
+<h2 id="20-1-codigo-y-configuracion-primaria">20.1 Código y configuración primaria</h2>
+<ol><li><code>package.json</code>. Manifiesto, runtime, dependencias y scripts.</li><li><code>index.html</code> y <code>src/app.js</code>. Entrada y orquestación Studio.</li><li><code>src/studio/</code>. Utilidades, estado, layouts, medios, validación, renderer y exporter.</li><li><code>src/business/</code> y <code>src/radar/</code>. Vistas operativas y prospección.</li><li><code>server/server.mjs</code> y <code>server/api/</code>. Router y contratos HTTP.</li><li><code>server/lib/</code>. Persistencia, autenticación, seguridad, logging y lógica de dominio.</li><li><code>server/scripts/</code>. Pruebas, smoke, migración, validación y operaciones.</li><li><code>Dockerfile</code>, <code>render.yaml</code>, <code>cloudflare/</code> y <code>.github/</code>. Despliegue y automatización.</li><li><code>data/*.example.json</code>. Forma de datos de ejemplo.</li></ol>
+<h2 id="20-2-documentacion-historica-contrastada">20.2 Documentación histórica contrastada</h2>
+<ol><li><code>docs/AHORA.md</code>.</li><li><code>docs/CIBERSEGURIDAD.md</code>.</li><li><code>docs/referencia/LOCAL_LIFT_STUDIO_MEMORIA_TFG.md</code>.</li><li><code>docs/operaciones/DEPLOYMENT.md</code>.</li><li><code>docs/operaciones/SUPABASE_RLS_FASE_2.md</code>.</li><li><code>docs/referencia/GOOGLE_INTEGRATION_PLAN.md</code>.</li></ol>
+<p>Estas fuentes históricas no prevalecen sobre el corte actual. Las contradicciones están registradas en <code>anexos/contradicciones_documentacion.md</code>.</p>
+<h1 id="anexo-a-ficha-de-reproducibilidad">Anexo A. Ficha de reproducibilidad</h1>
+<table><thead><tr><th>Elemento</th><th>Valor auditado</th></tr></thead><tbody><tr><td>Commit</td><td><code>8b123783eb2d8750aafdfa4a1e58d340ed82f6a3</code></td></tr><tr><td>Fecha</td><td>16/07/2026</td></tr><tr><td>Node local</td><td><code>v24.13.1</code></td></tr><tr><td>npm local</td><td><code>11.8.0</code></td></tr><tr><td>Runtime declarado</td><td>Node <code>&gt;=22.19</code></td></tr><tr><td>Store de capturas</td><td>JSON aislado</td></tr><tr><td>Negocio</td><td>Luma Café — entorno de prueba</td></tr><tr><td>Datos reales</td><td>No utilizados</td></tr><tr><td>Servicios externos productivos</td><td>No consultados</td></tr><tr><td>Capturas</td><td>16</td></tr><tr><td>Smoke</td><td>Superado</td></tr><tr><td>QA visual</td><td>Superada</td></tr><tr><td>Guard arquitectura</td><td>Fallido por tamaño</td></tr><tr><td>E2E navegador largo</td><td>Fallido por cierre del target</td></tr></tbody></table>
+<h1 id="anexo-b-metadatos-pendientes-del-documento">Anexo B. Metadatos pendientes del documento</h1>
+<ul><li><strong>Título oficial:</strong> [pendiente de confirmar].</li><li><strong>Autor:</strong> [pendiente de confirmar].</li><li><strong>Tutor/a:</strong> [pendiente de confirmar].</li><li><strong>Titulación:</strong> [pendiente de confirmar].</li><li><strong>Centro/universidad:</strong> [pendiente de confirmar].</li><li><strong>Curso y convocatoria:</strong> [pendiente de confirmar].</li><li><strong>Norma de referencias:</strong> [pendiente de confirmar].</li></ul>
+<h1 id="anexo-c-declaracion-de-tratamiento-de-evidencias">Anexo C. Declaración de tratamiento de evidencias</h1>
+<p>Las capturas se obtuvieron automáticamente a partir del runtime del repositorio. El fixture y el capturador quedan incluidos para reproducibilidad. No se alteró el código de la aplicación para aparentar una funcionalidad. No se sustituyeron flujos imposibles por imágenes generadas. Los servicios que requerían credenciales se documentaron con su estado no configurado o se trasladaron al listado de capturas no obtenidas.</p>
+<p>La revisión final del PDF se documenta mediante las imágenes de <code>revision_pdf/</code> y su informe. Cualquier cambio posterior del código invalida la correspondencia exacta entre esta memoria y el sistema, por lo que debe registrarse un nuevo commit y repetir las comprobaciones relevantes.</p></main>
+</body>
+</html>

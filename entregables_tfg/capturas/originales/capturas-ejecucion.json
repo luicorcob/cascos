@@ -1,0 +1,103 @@
+{
+  "generatedAt": "2026-07-16T16:10:31.424Z",
+  "baseUrl": "http://127.0.0.1:5173",
+  "fixture": "entregables_tfg\\evidencias\\fixture-capturas.json",
+  "results": [
+    {
+      "file": "01-intro-studio.png",
+      "route": "/index.html?intro=1",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "02-selector-destino.png",
+      "route": "interaction",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "03-studio-editor.png",
+      "route": "/index.html?skipIntro=1",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "04-studio-preview-movil.png",
+      "route": "interaction",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "05-radar-modo-demostracion.png",
+      "route": "/pages/business-radar.html?provider=demo",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "06-proyectos.png",
+      "route": "/pages/projects.html?apiBase=http%3A%2F%2F127.0.0.1%3A5173",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "07-portal-bandeja.png",
+      "route": "/pages/business-dashboard.html?business=biz_tfg_demo&tab=inbox",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "08-portal-pipeline-leads.png",
+      "route": "/pages/business-dashboard.html?business=biz_tfg_demo&tab=leads",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "09-portal-propuestas.png",
+      "route": "/pages/business-dashboard.html?business=biz_tfg_demo&tab=proposals",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "10-portal-reservas.png",
+      "route": "/pages/business-dashboard.html?business=biz_tfg_demo&tab=bookings",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "11-portal-reportes.png",
+      "route": "/pages/business-dashboard.html?business=biz_tfg_demo&tab=reports",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "12-portal-google-no-configurado.png",
+      "route": "/pages/business-dashboard.html?business=biz_tfg_demo&tab=google",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "13-web-cliente.png",
+      "route": "/pages/client-site.html?business=biz_tfg_demo",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "14-reporte-mensual.png",
+      "route": "/pages/monthly-report.html?business=biz_tfg_demo&month=2026-07",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "15-brief-onboarding.png",
+      "route": "/pages/onboarding.html",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "16-web-cliente-movil.png",
+      "route": "/pages/client-site.html?business=biz_tfg_demo",
+      "width": 390,
+      "height": 844
+    }
+  ]
+}
