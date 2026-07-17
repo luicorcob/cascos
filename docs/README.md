@@ -15,10 +15,10 @@ Cuando dos documentos parezcan contradecirse, manda el primero que aparezca en
 esta lista:
 
 1. [`AHORA.md`](AHORA.md): prioridades y siguiente accion.
-2. [`activo/PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md`](activo/PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md):
-   objetivo comercial, alcance y reglas hasta cerrar cinco fundadores.
-3. [`activo/FASE_0_EJECUCION.md`](activo/FASE_0_EJECUCION.md): estado y evidencia
-   de la fase actual.
+2. [`activo/CRM_2_EJECUCION.md`](activo/CRM_2_EJECUCION.md): arquitectura,
+   alcance, fases y registro del CRM 2.0 activo.
+3. Los demas documentos de `activo/`: evidencia historica o instrucciones que
+   solo se reactivan cuando `AHORA.md` las señale.
 4. Documentos de `ventas/`, `producto/` y `operaciones/`: instrucciones para
    ejecutar tareas concretas.
 5. Documentos de `referencia/`: contexto, investigacion y vision futura; nunca
@@ -30,6 +30,7 @@ esta lista:
 
 Solo contiene documentos que cambian durante la ejecucion del objetivo actual:
 
+- Ejecucion del CRM 2.0 y suite operativa vertical.
 - Plan vinculante para conseguir los primeros clientes.
 - Tracker de la fase actual.
 - Plan y base de datos de prospeccion.
@@ -71,6 +72,7 @@ Documentos utiles que no marcan prioridades actuales:
 | Area | Documento | Funcion |
 | --- | --- | --- |
 | Mando | [`AHORA.md`](AHORA.md) | Objetivo, fase y siguientes acciones. |
+| Activo | [`CRM_2_EJECUCION.md`](activo/CRM_2_EJECUCION.md) | Ejecucion canonica del CRM 2.0. |
 | Activo | [`PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md`](activo/PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md) | Alcance y reglas vinculantes. |
 | Activo | [`FASE_0_EJECUCION.md`](activo/FASE_0_EJECUCION.md) | Estado y evidencia de la fase actual. |
 | Activo | [`CIERRE_FASE_0.md`](activo/CIERRE_FASE_0.md) | Gate binario y handoff de cierre. |

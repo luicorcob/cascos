@@ -55,6 +55,11 @@
   }
 
   function getBase() {
+    const queryBase = new URLSearchParams(window.location.search).get("apiBase");
+    if (String(queryBase || "").trim().toLowerCase() === "same-origin") {
+      return "";
+    }
+
     const configured = cleanBase(window.LOCALLIFT_API_BASE)
       || cleanBase(document.querySelector('meta[name="locallift-api-base"]')?.content)
       || cleanBase(localStorage.getItem(API_BASE_KEY));

@@ -1,9 +1,12 @@
 import { corsHeaders } from "../lib/cors.mjs";
+import { moveAssociationEntity } from "../lib/association-model.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { loadCommerceOrdersForBusiness, mergeTimelineOrders } from "../lib/commerce-order-source.mjs";
 import { buildContactTimeline, isRecordAssociatedWithContact } from "../lib/contact-timeline.mjs";
 import { applyNewLeadAutomation } from "../lib/crm-automation.mjs";
 import { normalizeStoredScoreLabel, recalculateContactScore, withComputedLeadScore } from "../lib/lead-score.mjs";
+import { completeLegacyNextActionTask, syncLegacyNextActionTask } from "../lib/task-model.mjs";
+import { recordPrivacyAcknowledgement } from "../lib/consent-model.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.CONTACT_API_MAX_BODY_BYTES || 512 * 1024);
 const CONTACT_TYPES = new Set(["lead", "customer"]);
@@ -24,6 +27,9 @@ const DEFAULT_DB = {
   businesses: [],
   contacts: [],
   activities: [],
+  tasks: [],
+  associations: [],
+  consentEvents: [],
   proposals: [],
   bookings: [],
   bookingReminders: [],
@@ -294,6 +300,18 @@ async function createPublicLead(slug, request, response, context) {
     db.contacts.push(contact);
   }
   db.activities.push(activity);
+  if (contact.privacyAccepted) {
+    recordPrivacyAcknowledgement(db, {
+      businessId: business.id,
+      contactId: contact.id,
+      source: contact.source || "public-lead",
+      occurredAt: contact.privacyAcceptedAt || now,
+      policyUrl: contact.privacyPolicyUrl || "",
+      actorType: "contact",
+      actorId: contact.id,
+      evidence: { recordType: "contact", recordId: contact.id, submission: existing ? "repeat" : "new" }
+    });
+  }
   const automation = existing
     ? null
     : applyNewLeadAutomation(db, contact, { now });
@@ -399,6 +417,13 @@ async function mergeDuplicateContacts(businessId, request, response, context) {
   const now = new Date().toISOString();
   mergeContactData(survivor, duplicates, now);
   moveContactReferences(db, business, survivor.id, duplicateIds);
+  moveAssociationEntity(db, business.id, "contact", duplicateIds, survivor.id, now);
+  db.tasks.forEach((task) => {
+    if (task.businessId === business.id && duplicateIds.includes(task.legacyContactId)) {
+      task.legacyContactId = survivor.id;
+      task.updatedAt = now;
+    }
+  });
 
   duplicates.forEach((contact) => {
     contact.merged = true;
@@ -543,6 +568,9 @@ async function createNextAction(businessId, contactId, request, response, contex
   const now = new Date().toISOString();
   const nextAction = normalizeNextAction(payload, now);
 
+  const taskSync = syncLegacyNextActionTask(db, contact, nextAction, { now });
+  if (taskSync.task) nextAction.taskId = taskSync.task.id;
+
   contact.nextAction = nextAction;
   contact.lastInteractionAt = now;
   contact.updatedAt = now;
@@ -608,9 +636,12 @@ async function updateNextAction(businessId, contactId, request, response, contex
       source: "dashboard"
     });
     db.activities.push(activity);
+    completeLegacyNextActionTask(db, contact, nextAction, { now, result: nextAction.note });
     contact.nextAction = null;
   } else {
     contact.nextAction = normalizeNextAction(nextAction, now);
+    const taskSync = syncLegacyNextActionTask(db, contact, contact.nextAction, { now });
+    if (taskSync.task) contact.nextAction.taskId = taskSync.task.id;
   }
 
   contact.lastInteractionAt = now;
@@ -946,6 +977,15 @@ export function moveContactReferences(db, business, survivorId, duplicateIds) {
     }
   });
 
+  (Array.isArray(db.deals) ? db.deals : []).forEach((deal) => {
+    if (!belongsToBusiness(deal) || !duplicateSet.has(deal.contactId)) {
+      return;
+    }
+
+    deal.contactId = survivorId;
+    deal.updatedAt = new Date().toISOString();
+  });
+
   (Array.isArray(db.bookings) ? db.bookings : []).forEach((booking) => {
     if (!belongsToBusiness(booking)) {
       return;
@@ -1137,6 +1177,9 @@ async function loadDb(context) {
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
   db.activities = Array.isArray(db.activities) ? db.activities : [];
+  db.tasks = Array.isArray(db.tasks) ? db.tasks : [];
+  db.associations = Array.isArray(db.associations) ? db.associations : [];
+  db.consentEvents = Array.isArray(db.consentEvents) ? db.consentEvents : [];
   db.proposals = Array.isArray(db.proposals) ? db.proposals : [];
   db.bookings = Array.isArray(db.bookings) ? db.bookings : [];
   db.bookingReminders = Array.isArray(db.bookingReminders) ? db.bookingReminders : [];
@@ -1388,6 +1431,7 @@ function normalizeNextAction(payload, now = new Date().toISOString()) {
     dueDate,
     status,
     note: cleanText(source.note || source.notes || "", 1000),
+    taskId: cleanId(source.taskId || ""),
     createdAt: cleanText(source.createdAt || now, 80),
     updatedAt: now
   };

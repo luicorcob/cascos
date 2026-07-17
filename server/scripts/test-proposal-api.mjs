@@ -47,6 +47,7 @@ async function main() {
 
   const initialHealth = await waitForHealth(baseUrl);
   assert.equal(initialHealth.counts.proposals, 0);
+  assert.equal(initialHealth.counts.projects, 0);
   await jsonRequest(baseUrl, `/api/businesses/${businessId}/proposals`, { expectedStatus: 401 });
 
   const contact = await adminJson(baseUrl, `/api/businesses/${businessId}/contacts`, {
@@ -83,6 +84,8 @@ async function main() {
   });
   assert.equal(draft.proposal.status, "borrador", "Past drafts must not expire");
   assert.equal(draft.activities[0].type, "proposal.created");
+  const draftRelations = await adminJson(baseUrl, `/api/businesses/${businessId}/associations?entityType=proposal&entityId=${encodeURIComponent(draft.proposal.id)}`);
+  assert.ok(draftRelations.associations.some((item) => item.related?.id === contactId && item.kind === "primary"), "Proposal must be associated with its contact");
 
   const expired = await adminJson(baseUrl, `/api/businesses/${businessId}/proposals/${draft.proposal.id}`, {
     method: "PATCH",
@@ -98,6 +101,15 @@ async function main() {
   });
   assert.equal(accepted.proposal.status, "aceptada", "Accepted proposals must never auto-expire");
   assert.ok(accepted.activities.some((item) => item.type === "contact.status_changed"));
+  assert.equal(accepted.project.proposalId, accepted.proposal.id, "Acceptance must create a linked project");
+  const acceptedRelations = await adminJson(baseUrl, `/api/businesses/${businessId}/associations?entityType=proposal&entityId=${encodeURIComponent(accepted.proposal.id)}`);
+  assert.ok(acceptedRelations.associations.some((item) => item.related?.id === accepted.project.id), "Accepted proposal must be associated with its project");
+
+  const acceptedAgain = await adminJson(baseUrl, `/api/businesses/${businessId}/proposals/${accepted.proposal.id}`, {
+    method: "PATCH",
+    body: { status: "aceptada" }
+  });
+  assert.equal(acceptedAgain.project.id, accepted.project.id, "Repeated acceptance must reuse the same project");
 
   const contacts = await adminJson(baseUrl, `/api/businesses/${businessId}/contacts`);
   assert.equal(contacts.contacts.find((item) => item.id === contactId)?.status, "customer", "Acceptance must convert the contact");
@@ -171,6 +183,7 @@ async function main() {
 
   const finalHealth = await jsonRequest(baseUrl, "/api/health");
   assert.equal(finalHealth.counts.proposals, 2, "Health must expose persisted proposal count");
+  assert.equal(finalHealth.counts.projects, 1, "Health must expose the automatically created project");
   const persisted = JSON.parse(await readFile(dbPath, "utf8"));
   assert.equal(persisted.proposals.find((item) => item.id === draft.proposal.id)?.status, "caducada");
   assert.ok(persisted.auditLog.some((item) => item.type === "proposal.created" && item.proposalId));

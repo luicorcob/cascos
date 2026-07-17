@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
+import { archiveEntityAssociations, upsertAssociation } from "../lib/association-model.mjs";
 import { corsHeaders } from "../lib/cors.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { applyAcceptedProposalAutomation } from "../lib/crm-automation.mjs";
 import { recalculateContactScore } from "../lib/lead-score.mjs";
+import { ensureProjectForAcceptedProposal } from "../lib/project-automation.mjs";
 import { renderProposalHtml, renderProposalPdf } from "../lib/proposal-export.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.PROPOSAL_API_MAX_BODY_BYTES || 128 * 1024);
@@ -17,7 +19,11 @@ const DEFAULT_DB = {
   businesses: [],
   contacts: [],
   activities: [],
+  associations: [],
   proposals: [],
+  projects: [],
+  projectTasks: [],
+  projectFiles: [],
   auditLog: []
 };
 
@@ -132,9 +138,11 @@ async function createProposal(businessRef, request, response, context) {
     previousStatus: ""
   })];
   activities.push(...convertAcceptedProposalContact(db, business.id, proposal, now));
+  const projectResult = createAcceptedProposalProject(db, business, contact, proposal, now);
+  syncProposalAssociations(db, proposal, projectResult.project, now);
   appendAudit(db, "proposal.created", proposal, now);
   await saveDb(db, context, "proposal-create");
-  sendJson(response, 201, { proposal: copyProposal(proposal), activities }, context);
+  sendJson(response, 201, { proposal: copyProposal(proposal), activities, project: projectResult.project }, context);
 }
 
 async function getProposal(businessRef, proposalId, response, context) {
@@ -201,9 +209,12 @@ async function updateProposal(businessRef, proposalId, request, response, contex
     previousStatus
   }));
   activities.push(...convertAcceptedProposalContact(db, business.id, proposal, now));
+  const contact = requireContact(db, business.id, proposal.contactId, { allowMerged: true });
+  const projectResult = createAcceptedProposalProject(db, business, contact, proposal, now);
+  syncProposalAssociations(db, proposal, projectResult.project, now);
   appendAudit(db, "proposal.updated", proposal, now);
   await saveDb(db, context, "proposal-update");
-  sendJson(response, 200, { proposal: copyProposal(proposal), activities }, context);
+  sendJson(response, 200, { proposal: copyProposal(proposal), activities, project: projectResult.project }, context);
 }
 
 async function deleteProposal(businessRef, proposalId, response, context) {
@@ -217,6 +228,7 @@ async function deleteProposal(businessRef, proposalId, response, context) {
 
   const [proposal] = db.proposals.splice(index, 1);
   const now = new Date().toISOString();
+  archiveEntityAssociations(db, business.id, "proposal", proposal.id, now);
   const activity = recordProposalActivity(db, proposal, "proposal.deleted", now, {
     title: "Propuesta eliminada",
     previousStatus: proposal.status
@@ -334,6 +346,62 @@ function convertAcceptedProposalContact(db, businessId, proposal, now) {
   return [result.activity];
 }
 
+function createAcceptedProposalProject(db, business, contact, proposal, now) {
+  const result = ensureProjectForAcceptedProposal(db, proposal, { business, contact, now });
+
+  if (result.created) {
+    db.activities.push({
+      id: `activity_${randomUUID()}`,
+      businessId: proposal.businessId,
+      contactId: proposal.contactId,
+      type: "project.created_from_proposal",
+      title: "Proyecto creado automaticamente",
+      note: `Proyecto ${result.project.name} creado al aceptar la propuesta ${proposal.id}.`,
+      source: "crm-proposals",
+      metadata: { proposalId: proposal.id, projectId: result.project.id },
+      createdAt: now
+    });
+    appendAudit(db, "project.created_from_proposal", proposal, now);
+  }
+
+  return result;
+}
+
+function syncProposalAssociations(db, proposal, project, now) {
+  upsertAssociation(db, {
+    businessId: proposal.businessId,
+    fromType: "contact",
+    fromId: proposal.contactId,
+    toType: "proposal",
+    toId: proposal.id,
+    kind: "primary",
+    isPrimary: true,
+    now
+  });
+  if (project) {
+    upsertAssociation(db, {
+      businessId: proposal.businessId,
+      fromType: "proposal",
+      fromId: proposal.id,
+      toType: "project",
+      toId: project.id,
+      kind: "related",
+      isPrimary: false,
+      now
+    });
+    upsertAssociation(db, {
+      businessId: proposal.businessId,
+      fromType: "contact",
+      fromId: proposal.contactId,
+      toType: "project",
+      toId: project.id,
+      kind: "customer",
+      isPrimary: true,
+      now
+    });
+  }
+}
+
 function proposalActivityNote(proposal, previousStatus) {
   const transition = previousStatus && previousStatus !== proposal.status
     ? ` Estado: ${previousStatus} -> ${proposal.status}.`
@@ -347,7 +415,11 @@ async function loadDb(context) {
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
   db.activities = Array.isArray(db.activities) ? db.activities : [];
+  db.associations = Array.isArray(db.associations) ? db.associations : [];
   db.proposals = Array.isArray(db.proposals) ? db.proposals : [];
+  db.projects = Array.isArray(db.projects) ? db.projects : [];
+  db.projectTasks = Array.isArray(db.projectTasks) ? db.projectTasks : [];
+  db.projectFiles = Array.isArray(db.projectFiles) ? db.projectFiles : [];
   db.auditLog = Array.isArray(db.auditLog) ? db.auditLog : [];
   return db;
 }

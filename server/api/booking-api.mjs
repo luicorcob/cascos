@@ -1,4 +1,6 @@
 import { corsHeaders } from "../lib/cors.mjs";
+import { upsertAssociation } from "../lib/association-model.mjs";
+import { recordPrivacyAcknowledgement } from "../lib/consent-model.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { buildCompletedBookingReviewSuggestion } from "../lib/crm-automation.mjs";
 import { recalculateContactScore } from "../lib/lead-score.mjs";
@@ -22,6 +24,8 @@ const DEFAULT_DB = {
   availability: [],
   bookingBlocks: [],
   bookingReminders: [],
+  associations: [],
+  consentEvents: [],
   auditLog: []
 };
 
@@ -247,6 +251,8 @@ async function createPublicBooking(slug, request, response, context) {
   ensureNoBookingConflict(db, booking);
   db.bookings.push(booking);
   const contact = ensureContactForBooking(db, business.id, booking, now);
+  syncBookingAssociation(db, booking, contact, now);
+  recordBookingPrivacy(db, business, booking, contact, now);
   db.activities.push(makeActivity(business.id, contact.id, now, {
     type: "booking.created",
     title: "Reserva creada",
@@ -283,6 +289,8 @@ async function createAdminBooking(businessId, request, response, context) {
   ensureNoBookingConflict(db, booking);
   db.bookings.push(booking);
   const contact = ensureContactForBooking(db, business.id, booking, now);
+  syncBookingAssociation(db, booking, contact, now);
+  recordBookingPrivacy(db, business, booking, contact, now);
   db.activities.push(makeActivity(business.id, contact.id, now, {
     type: "booking.created",
     title: "Reserva creada",
@@ -322,6 +330,10 @@ async function updateBooking(businessId, bookingId, request, response, context) 
   ensureBookingIsAvailable(db, booking);
   ensureNoBookingConflict(db, booking, booking.id);
   db.bookings[index] = booking;
+  const contact = booking.contactId
+    ? db.contacts.find((item) => item.businessId === business.id && item.id === booking.contactId && !item.merged)
+    : null;
+  syncBookingAssociation(db, booking, contact, now);
   appendAudit(db, "booking.updated", business.id, now, booking.id);
   await saveDb(db, context, "booking-update");
   const reviewSuggestion = previousStatus !== "completed"
@@ -899,6 +911,34 @@ function ensureContactForBooking(db, businessId, booking, now) {
   return contact;
 }
 
+function syncBookingAssociation(db, booking, contact, now) {
+  if (!contact) return;
+  upsertAssociation(db, {
+    businessId: booking.businessId,
+    fromType: "contact",
+    fromId: contact.id,
+    toType: "booking",
+    toId: booking.id,
+    kind: "customer",
+    isPrimary: true,
+    now
+  });
+}
+
+function recordBookingPrivacy(db, business, booking, contact, now) {
+  if (!booking.privacyAccepted || !contact) return null;
+  return recordPrivacyAcknowledgement(db, {
+    businessId: business.id,
+    contactId: contact.id,
+    source: booking.source || "booking",
+    occurredAt: booking.privacyAcceptedAt || now,
+    policyUrl: booking.privacyPolicyUrl || "",
+    actorType: "contact",
+    actorId: contact.id,
+    evidence: { recordType: "booking", recordId: booking.id }
+  });
+}
+
 function findContactForBooking(db, businessId, booking) {
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
   const directContactId = cleanId(booking.contactId || "");
@@ -952,6 +992,8 @@ async function loadDb(context) {
   db.availability = Array.isArray(db.availability) ? db.availability : [];
   db.bookingBlocks = Array.isArray(db.bookingBlocks) ? db.bookingBlocks : [];
   db.bookingReminders = Array.isArray(db.bookingReminders) ? db.bookingReminders : [];
+  db.associations = Array.isArray(db.associations) ? db.associations : [];
+  db.consentEvents = Array.isArray(db.consentEvents) ? db.consentEvents : [];
   db.auditLog = Array.isArray(db.auditLog) ? db.auditLog : [];
   return db;
 }

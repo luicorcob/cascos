@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mi proyecto · DLS</title>
+    <meta name="description" content="Portal privado para consultar proyectos, diseños, documentos, facturas y pagos con DLS.">
+    <meta name="theme-color" content="#090b10">
+    <script>
+      (() => {
+        const target = new URL("business-dashboard.html", window.location.href);
+        const params = new URLSearchParams(window.location.search);
+        params.set("tab", "project");
+        target.search = params.toString();
+        target.hash = window.location.hash;
+        window.location.replace(target.href);
+      })();
+    </script>
+    <link rel="icon" type="image/png" href="../Logo.png">
+    <link rel="stylesheet" href="../src/styles/client-portal.css">
+    <link rel="stylesheet" href="../src/suite-precision.css?v=20260715-1">
+    <script src="../src/shared/api-config.js"></script>
+    <script type="module" src="../src/business/client-portal.js"></script>
+  </head>
+  <body>
+    <header class="client-header">
+      <a class="client-brand" href="../index.html">
+        <img src="../Logo.png" alt="">
+        <span><small>DLS</small><strong>Portal de cliente</strong></span>
+      </a>
+      <nav aria-label="Portal">
+        <a href="business-dashboard.html">Mi negocio</a>
+        <a href="client-site.html" data-client-web>Mi web</a>
+        <button type="button" data-client-logout>Salir</button>
+      </nav>
+    </header>
+
+    <main class="client-main">
+      <section class="client-hero">
+        <div>
+          <p class="client-eyebrow">Área privada</p>
+          <h1 data-client-title>Mi proyecto</h1>
+          <p data-client-subtitle>Consulta el avance, aprueba diseños y revisa tu facturación.</p>
+        </div>
+        <button type="button" data-client-refresh>Actualizar</button>
+      </section>
+
+      <section class="client-notice" data-client-notice hidden></section>
+
+      <section class="client-auth-state" data-client-auth-state hidden>
+        <p class="client-eyebrow">Acceso requerido</p>
+        <h2>Entra primero en tu portal privado</h2>
+        <p>Usa el acceso Cliente de la pantalla inicial con el nombre de tu negocio y tu contraseña.</p>
+        <a href="../index.html">Ir al acceso de cliente</a>
+      </section>
+
+      <section class="client-metrics" aria-label="Resumen">
+        <article><span>Proyectos</span><strong data-client-metric="projects">0</strong><small data-client-note="projects">Sin proyectos</small></article>
+        <article><span>Progreso</span><strong data-client-metric="progress">0%</strong><small>Tareas completadas</small></article>
+        <article><span>Facturas pendientes</span><strong data-client-metric="balance">0 €</strong><small>Saldo por pagar</small></article>
+        <article><span>Próxima renovación</span><strong data-client-metric="renewal">—</strong><small data-client-note="renewal">Sin servicios activos</small></article>
+      </section>
+
+      <nav class="client-tabs" role="tablist" aria-label="Secciones">
+        <button class="is-active" type="button" role="tab" aria-selected="true" data-client-tab="projects">Proyectos</button>
+        <button type="button" role="tab" aria-selected="false" data-client-tab="billing">Facturas y pagos</button>
+        <button type="button" role="tab" aria-selected="false" data-client-tab="documents">Documentos</button>
+        <button type="button" role="tab" aria-selected="false" data-client-tab="support">Atención DLS <span class="client-unread" data-client-support-unread hidden></span></button>
+        <button type="button" role="tab" aria-selected="false" data-client-tab="team">Equipo privado</button>
+      </nav>
+
+      <section class="client-panel is-active" data-client-panel="projects">
+        <header><p class="client-eyebrow">Producción</p><h2>Estado de tus proyectos</h2></header>
+        <div class="client-card-grid" data-client-projects></div>
+      </section>
+
+      <section class="client-panel" data-client-panel="billing" hidden>
+        <header><p class="client-eyebrow">Transparencia</p><h2>Presupuestos, facturas y pagos</h2></header>
+        <div class="client-billing-grid">
+          <section><h3>Facturas</h3><div data-client-invoices></div></section>
+          <section><h3>Presupuestos aceptados</h3><div data-client-proposals></div></section>
+          <section><h3>Servicios recurrentes</h3><div data-client-subscriptions></div></section>
+        </div>
+      </section>
+
+      <section class="client-panel" data-client-panel="documents" hidden>
+        <header><p class="client-eyebrow">Archivos compartidos</p><h2>Documentos</h2></header>
+        <form class="client-upload-form" data-client-document-form>
+          <label>Proyecto<select name="projectId" data-client-document-project><option value="">General</option></select></label>
+          <label>Nombre del archivo<input name="name" maxlength="240" required placeholder="Logotipo, contenido, contrato..."></label>
+          <label>Enlace seguro<input type="url" name="url" maxlength="2000" required placeholder="https://..."></label>
+          <button type="submit">Enviar archivo</button>
+        </form>
+        <div class="client-document-grid" data-client-documents></div>
+      </section>
+
+      <section class="client-panel" data-client-panel="support" hidden>
+        <header>
+          <p class="client-eyebrow">Atención al cliente</p>
+          <h2>Habla directamente con DLS</h2>
+          <p>Cuéntanos una duda o incidencia. El equipo de desarrollo recibirá aquí la conversación completa.</p>
+        </header>
+        <div class="client-chat-card">
+          <div class="client-chat-log" data-client-support-messages aria-live="polite"></div>
+          <form class="client-chat-form" data-client-support-form>
+            <label>Tu nombre<input name="senderName" maxlength="120" required placeholder="Cómo quieres que te identifiquemos"></label>
+            <label class="is-wide">Mensaje<textarea name="body" maxlength="5000" rows="3" placeholder="Escribe tu consulta..."></textarea></label>
+            <label>Nombre del adjunto<input name="attachmentName" maxlength="240" placeholder="Captura o documento"></label>
+            <label>Enlace al adjunto<input type="url" name="attachmentUrl" maxlength="2000" placeholder="https://..."></label>
+            <button type="submit">Enviar a DLS</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="client-panel" data-client-panel="team" hidden>
+        <header>
+          <p class="client-eyebrow">Mensajería interna</p>
+          <h2>Equipo privado de tu negocio</h2>
+          <p>Crea canales sencillos para coordinarte con las personas de tu empresa. DLS no participa en estas conversaciones.</p>
+        </header>
+        <form class="client-profile-form" data-client-profile-form>
+          <label>Tu nombre<input name="name" maxlength="120" required placeholder="Nombre del empleado"></label>
+          <label>Perfil<select name="role"><option value="employee">Empleado</option><option value="manager">Responsable</option><option value="owner">Propietario</option></select></label>
+          <button type="submit">Guardar perfil</button>
+        </form>
+        <div class="client-team-shell">
+          <aside class="client-team-sidebar">
+            <section>
+              <h3>Personas</h3>
+              <div class="client-member-list" data-client-team-members></div>
+            </section>
+            <section>
+              <h3>Canales</h3>
+              <form class="client-room-form" data-client-room-form>
+                <input name="title" maxlength="160" required aria-label="Nombre del canal" placeholder="Ej. Equipo general">
+                <button type="submit">Crear</button>
+              </form>
+              <div class="client-room-list" data-client-team-rooms></div>
+            </section>
+          </aside>
+          <section class="client-team-chat">
+            <header><h3 data-client-team-title>Selecciona un canal</h3></header>
+            <div class="client-chat-log" data-client-team-messages aria-live="polite"></div>
+            <form class="client-chat-form" data-client-team-message-form>
+              <label class="is-wide">Mensaje<textarea name="body" maxlength="5000" rows="3" placeholder="Escribe al equipo..."></textarea></label>
+              <label>Nombre del adjunto<input name="attachmentName" maxlength="240" placeholder="Documento"></label>
+              <label>Enlace al adjunto<input type="url" name="attachmentUrl" maxlength="2000" placeholder="https://..."></label>
+              <button type="submit">Enviar al canal</button>
+            </form>
+          </section>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

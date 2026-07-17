@@ -5,6 +5,16 @@ const state = {
   business: null,
   contacts: [],
   pipeline: null,
+  accounts: [],
+  accountDuplicateGroups: [],
+  accountLoading: false,
+  accountError: "",
+  pipelines: [],
+  deals: [],
+  dealPipeline: null,
+  dealPipelineId: "",
+  dealLoading: false,
+  dealError: "",
   scoreLabelFilter: "all",
   duplicateGroups: [],
   proposals: [],
@@ -28,6 +38,12 @@ const state = {
     overdue: [],
     missing: []
   },
+  taskQueues: emptyTaskQueues(),
+  taskMembers: [],
+  taskOwnerId: "",
+  taskLoading: false,
+  taskError: "",
+  consentCenter: { contactId: "", data: null, loading: false, error: "" },
   services: [],
   bookings: [],
   availability: [],
@@ -158,7 +174,7 @@ function init() {
   const requestedTab = new URLSearchParams(window.location.search).get("tab") || "";
   const validRequestedTab = Array.from(document.querySelectorAll("[data-tab]"))
     .some((button) => button.dataset.tab === requestedTab);
-  setActiveTab(validRequestedTab ? requestedTab : "inbox");
+  setActiveTab(validRequestedTab ? requestedTab : (state.clientSession ? "home" : "inbox"));
   loadBusinesses();
 }
 
@@ -283,6 +299,9 @@ async function loadBusinesses(options = {}) {
 
     if (!state.businesses.length) {
       state.business = null;
+      resetDealState();
+      resetTaskState({ keepOwner: true });
+      resetConsentCenter();
       resetForecastState({ keepMonth: true });
       resetSlaState({ keepHours: true });
       resetCommercialDashboardState();
@@ -305,10 +324,12 @@ async function loadBusinesses(options = {}) {
       state.business = null;
       state.contacts = [];
       state.pipeline = null;
+      resetDealState();
       state.duplicateGroups = [];
       resetProposalState();
       resetMessageState();
       state.nextActions = emptyNextActions();
+      resetTaskState({ keepOwner: true });
       state.services = [];
       state.bookings = [];
       state.availability = [];
@@ -348,6 +369,9 @@ async function loadBusiness(id, options = {}) {
   state.proposalDraftContactId = "";
   state.proposalFeedback = { type: "", message: "" };
   resetMessageComposer();
+  resetDealState();
+  resetTaskState({ keepOwner: true });
+  resetConsentCenter({ keepContact: true });
   resetForecastState({ keepMonth: true });
   resetSlaState({ keepHours: true });
   resetCommercialDashboardState();
@@ -361,6 +385,10 @@ async function loadBusiness(id, options = {}) {
     const businessRef = state.business?.id || id;
     const inboxPromise = loadInbox(businessRef);
     await loadContacts(businessRef);
+    await loadConsentCenter(businessRef, state.consentCenter.contactId || state.contacts.find((contact) => !contact.merged)?.id || "");
+    await loadAccounts(businessRef);
+    await loadDeals(businessRef);
+    await loadTasks(businessRef);
     await loadProposals(businessRef);
     await loadMessageTemplates(businessRef);
     await loadBookings(businessRef);
@@ -381,9 +409,15 @@ async function loadBusiness(id, options = {}) {
     }
     renderBusinessSelect();
     render();
+    document.dispatchEvent(new CustomEvent("dls:business-changed", {
+      detail: {
+        businessId: state.business?.id || id,
+        businessName: state.business?.name || ""
+      }
+    }));
 
-    if (state.crmError || state.proposalError || state.messageError || state.bookingError || state.googleError) {
-      showNotice([state.crmError, state.proposalError, state.messageError, state.bookingError, state.googleError].filter(Boolean).join(" "), "warn");
+    if (state.crmError || state.accountError || state.dealError || state.taskError || state.proposalError || state.messageError || state.bookingError || state.googleError) {
+      showNotice([state.crmError, state.accountError, state.dealError, state.taskError, state.proposalError, state.messageError, state.bookingError, state.googleError].filter(Boolean).join(" "), "warn");
     } else if (!options.silent) {
       showNotice("", "info");
     }
@@ -392,10 +426,13 @@ async function loadBusiness(id, options = {}) {
     state.business = fallback || null;
     state.contacts = [];
     state.pipeline = null;
+    resetDealState();
     state.duplicateGroups = [];
     resetProposalState();
     resetMessageState();
     state.nextActions = emptyNextActions();
+    resetTaskState({ keepOwner: true });
+    resetConsentCenter();
     state.services = [];
     state.bookings = [];
     state.availability = [];
@@ -467,6 +504,140 @@ async function loadContacts(id) {
   } catch (error) {
     state.crmError = "El CRM no respondio. El dashboard seguira con datos del negocio, pero sin contactos reales.";
   }
+}
+
+async function loadDeals(id, options = {}) {
+  state.dealLoading = true;
+  state.dealError = "";
+
+  if (!id) {
+    state.dealLoading = false;
+    return;
+  }
+
+  try {
+    const pipelinePayload = await getJson(`/api/businesses/${encodeURIComponent(id)}/pipelines`);
+    state.pipelines = Array.isArray(pipelinePayload.pipelines) ? pipelinePayload.pipelines : [];
+    const requestedPipelineId = options.pipelineId || state.dealPipelineId;
+    const selectedPipeline = state.pipelines.find((pipeline) => pipeline.id === requestedPipelineId)
+      || state.pipelines.find((pipeline) => pipeline.isDefault)
+      || state.pipelines[0]
+      || null;
+    state.dealPipelineId = selectedPipeline?.id || "";
+    const query = state.dealPipelineId ? `?pipelineId=${encodeURIComponent(state.dealPipelineId)}` : "";
+    const dealPayload = await getJson(`/api/businesses/${encodeURIComponent(id)}/deals/pipeline${query}`);
+    state.dealPipeline = normalizeDealPipelinePayload(dealPayload);
+    state.deals = state.dealPipeline.columns.flatMap((column) => column.deals);
+  } catch (error) {
+    state.deals = [];
+    state.dealPipeline = null;
+    state.dealError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar las oportunidades."
+      : "No se pudieron cargar las oportunidades comerciales.";
+  } finally {
+    state.dealLoading = false;
+  }
+}
+
+async function loadTasks(id, options = {}) {
+  state.taskLoading = true;
+  state.taskError = "";
+  if (!id) {
+    state.taskLoading = false;
+    return;
+  }
+  try {
+    const ownerQuery = state.taskOwnerId ? `?ownerId=${encodeURIComponent(state.taskOwnerId)}` : "";
+    const payload = await getJson(`/api/businesses/${encodeURIComponent(id)}/tasks/queues${ownerQuery}`);
+    state.taskMembers = Array.isArray(payload.members) ? payload.members : [];
+    if (!state.taskMembers.some((member) => member.id === state.taskOwnerId)) {
+      state.taskOwnerId = state.taskMembers[0]?.id || "";
+    }
+    state.taskQueues = normalizeTaskQueues(payload.queues);
+    if (state.taskOwnerId && !ownerQuery) {
+      state.taskQueues.mine = state.taskQueues.team.filter((task) => task.ownerId === state.taskOwnerId);
+    }
+    state.taskQueues.unownedDeals = Array.isArray(payload.unownedDeals) ? payload.unownedDeals : [];
+  } catch (error) {
+    state.taskQueues = emptyTaskQueues();
+    state.taskMembers = [];
+    state.taskError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar las tareas."
+      : "No se pudieron cargar las tareas y colas de trabajo.";
+  } finally {
+    state.taskLoading = false;
+  }
+  if (options.render && state.business) render();
+}
+
+function resetTaskState(options = {}) {
+  state.taskQueues = emptyTaskQueues();
+  state.taskMembers = [];
+  if (!options.keepOwner) state.taskOwnerId = "";
+  state.taskLoading = false;
+  state.taskError = "";
+}
+
+async function loadConsentCenter(id, contactId, options = {}) {
+  state.consentCenter.loading = true;
+  state.consentCenter.error = "";
+  state.consentCenter.contactId = contactId || "";
+  if (!id || !contactId) {
+    state.consentCenter.data = null;
+    state.consentCenter.loading = false;
+    return;
+  }
+  try {
+    state.consentCenter.data = await getJson(`/api/businesses/${encodeURIComponent(id)}/contacts/${encodeURIComponent(contactId)}/consents`);
+  } catch (error) {
+    state.consentCenter.data = null;
+    state.consentCenter.error = error.status === 401 || error.status === 403 ? "No tienes permisos para consultar consentimientos." : "No se pudo cargar el centro de preferencias.";
+  } finally {
+    state.consentCenter.loading = false;
+  }
+  if (options.render && state.business) render();
+}
+
+function resetConsentCenter(options = {}) {
+  state.consentCenter = { contactId: options.keepContact ? state.consentCenter?.contactId || "" : "", data: null, loading: false, error: "" };
+}
+
+async function loadAccounts(id) {
+  state.accountLoading = true;
+  state.accountError = "";
+  state.accounts = [];
+  state.accountDuplicateGroups = [];
+  if (!id) {
+    state.accountLoading = false;
+    return;
+  }
+  try {
+    const [accountsPayload, duplicatesPayload] = await Promise.all([
+      getJson(`/api/businesses/${encodeURIComponent(id)}/accounts?includeRelations=true`),
+      getJson(`/api/businesses/${encodeURIComponent(id)}/accounts/duplicates`)
+    ]);
+    state.accounts = Array.isArray(accountsPayload.accounts) ? accountsPayload.accounts : [];
+    state.accountDuplicateGroups = Array.isArray(duplicatesPayload.groups) ? duplicatesPayload.groups : [];
+  } catch (error) {
+    state.accountError = error.status === 401 || error.status === 403
+      ? "No tienes permisos para consultar las cuentas."
+      : "No se pudieron cargar las cuentas y sus relaciones.";
+  } finally {
+    state.accountLoading = false;
+  }
+}
+
+function resetDealState() {
+  state.accounts = [];
+  state.accountDuplicateGroups = [];
+  state.accountLoading = false;
+  state.accountError = "";
+  state.pipelines = [];
+  state.deals = [];
+  state.dealPipeline = null;
+  state.dealPipelineId = "";
+  state.dealLoading = false;
+  state.dealError = "";
 }
 
 async function loadDuplicateContacts(id) {
@@ -1099,14 +1270,23 @@ function pickBusiness(requested) {
 
 function setActiveTab(tab) {
   state.activeTab = tab;
+  document.body.classList.toggle("is-project-view", tab === "project");
 
   document.querySelectorAll("[data-tab]").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.tab === tab);
+    const active = button.dataset.tab === tab;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", String(active));
   });
 
   document.querySelectorAll("[data-panel]").forEach((panel) => {
-    panel.classList.toggle("is-active", panel.dataset.panel === tab);
+    const active = panel.dataset.panel === tab;
+    panel.classList.toggle("is-active", active);
+    panel.hidden = !active;
   });
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("tab", tab);
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
 function render() {
@@ -1120,9 +1300,18 @@ function render() {
   const model = createDashboardModel(business, {
     contacts: state.contacts,
     pipeline: state.pipeline,
+    accounts: state.accounts,
+    accountDuplicateGroups: state.accountDuplicateGroups,
+    pipelines: state.pipelines,
+    deals: state.deals,
+    dealPipeline: state.dealPipeline,
     duplicateGroups: state.duplicateGroups,
     proposals: state.proposals,
     nextActions: state.nextActions,
+    taskQueues: state.taskQueues,
+    taskMembers: state.taskMembers,
+    taskOwnerId: state.taskOwnerId,
+    consentCenter: state.consentCenter,
     services: state.services,
     bookings: state.bookings,
     availability: state.availability,
@@ -1154,6 +1343,8 @@ function render() {
   renderSettings(model);
   bindExportControls(model);
   bindCrmControls(model);
+  bindTaskControls(model);
+  bindConsentControls();
   bindProposalControls(model);
   bindMessageControls(model);
   bindBookingControls(model);
@@ -1615,72 +1806,185 @@ function renderNextActions(model) {
     return;
   }
 
+  const queues = model.taskQueues || emptyTaskQueues();
+  const members = model.taskMembers || [];
+  const linkOptions = taskLinkOptions(model);
+  const dependencyOptions = queues.team || [];
   container.innerHTML = `
-    <div class="next-actions-grid">
-      ${renderNextActionList("Hoy", "Acciones con fecha de hoy.", model.nextActions.today, "today")}
-      ${renderNextActionList("Vencidas", "Seguimientos pendientes con fecha pasada.", model.nextActions.overdue, "overdue")}
-      ${renderNextActionList("Sin proxima accion", "Leads abiertos que necesitan siguiente paso.", model.nextActions.missing, "missing")}
-    </div>
-  `;
-}
-
-function renderNextActionList(title, subtitle, items, type) {
-  return `
-    <section class="next-action-panel ${escapeAttr(type)}">
-      <header>
-        <span>
-          <strong>${escapeHtml(title)}</strong>
-          <small>${escapeHtml(subtitle)}</small>
-        </span>
-        <span>${escapeHtml(String(items.length))}</span>
+    <section class="task-workspace" data-task-workspace>
+      <header class="task-workspace-header">
+        <div>
+          <p class="eyebrow">Trabajo coordinado</p>
+          <h3>Tareas y responsables</h3>
+          <p>Varias tareas por cliente u oportunidad, con vencimientos, recordatorios, recurrencia y trazabilidad.</p>
+        </div>
+        <div class="task-workspace-metrics">
+          <span><strong>${escapeHtml(String(queues.today.length))}</strong> hoy</span>
+          <span><strong>${escapeHtml(String(queues.overdue.length))}</strong> vencidas</span>
+          <span><strong>${escapeHtml(String(queues.unassigned.length))}</strong> sin asignar</span>
+        </div>
       </header>
-      <div class="next-action-list">
-        ${items.length
-          ? items.map((item) => renderNextActionItem(item, type)).join("")
-          : `<p class="pipeline-empty">${escapeHtml(type === "missing" ? "Todos los leads abiertos tienen seguimiento." : "Sin acciones en esta lista.")}</p>`}
-      </div>
+
+      ${state.taskError ? `<div class="task-state task-state-error" role="alert"><strong>Tareas no disponibles</strong><span>${escapeHtml(state.taskError)}</span><button type="button" data-tasks-retry>Reintentar</button></div>` : ""}
+
+      <form class="task-create-form" data-task-create-form>
+        <div class="task-create-intro"><strong>Nueva tarea</strong><small>Relaciona el trabajo con el registro que le da contexto.</small></div>
+        <label class="task-title-field">Titulo<input name="title" maxlength="240" required placeholder="Ej. Confirmar alcance y siguiente paso"></label>
+        <label>Tipo<select name="type"><option value="follow_up">Seguimiento</option><option value="call">Llamada</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="meeting">Reunion</option><option value="proposal">Propuesta</option><option value="booking">Reserva</option><option value="admin">Administrativa</option><option value="other">Otra</option></select></label>
+        <label>Prioridad<select name="priority"><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option><option value="low">Baja</option></select></label>
+        <label>Responsable<select name="ownerId"><option value="">Sin asignar</option>${members.map((member) => `<option value="${escapeAttr(member.id)}">${escapeHtml(member.name)}</option>`).join("")}</select></label>
+        <label>Vence<input name="dueAt" type="datetime-local" value="${escapeAttr(dateTimeLocalValue(addHours(new Date(), 1)))}"></label>
+        <label>Recordar<input name="reminderAt" type="datetime-local"></label>
+        <label>Recurrencia<select name="recurrence"><option value="none">No se repite</option><option value="daily">Diaria</option><option value="weekly">Semanal</option><option value="monthly">Mensual</option><option value="yearly">Anual</option></select></label>
+        <label>Relacion<select name="link"><option value="">Sin relacion</option>${linkOptions}</select></label>
+        <label>Participantes<select name="participantIds" multiple size="3">${members.map((member) => `<option value="${escapeAttr(member.id)}">${escapeHtml(member.name)}</option>`).join("")}</select></label>
+        <label>Depende de<select name="dependencyIds" multiple size="3">${dependencyOptions.map((task) => `<option value="${escapeAttr(task.id)}">${escapeHtml(task.title)}</option>`).join("")}</select></label>
+        <label class="task-description-field">Detalle<textarea name="description" rows="2" maxlength="10000" placeholder="Contexto, entregable o criterio de cierre"></textarea></label>
+        <button type="submit">Crear tarea</button>
+      </form>
+
+      ${members.length ? `
+        <div class="task-owner-filter">
+          <label>Vista «Mias»<select data-task-owner-filter>${members.map((member) => `<option value="${escapeAttr(member.id)}"${member.id === model.taskOwnerId ? " selected" : ""}>${escapeHtml(member.name)}</option>`).join("")}</select></label>
+          <small>La seleccion solo cambia la cola personal; la vista de equipo conserva todo el trabajo activo.</small>
+        </div>
+      ` : '<p class="task-member-empty">Añade integrantes desde el portal de cliente para asignar responsables y participantes.</p>'}
+
+      ${renderUnownedDeals(queues.unownedDeals, members, model.currency)}
+      ${state.taskLoading ? '<div class="task-state" role="status"><strong>Cargando tareas...</strong></div>' : `
+        <div class="task-queue-grid">
+          ${renderTaskQueue("Hoy", "Vencen durante el dia.", queues.today, "today", members)}
+          ${renderTaskQueue("Vencidas", "Fuera de plazo y aun abiertas.", queues.overdue, "overdue", members)}
+          ${renderTaskQueue("Sin asignar", "Necesitan un responsable.", queues.unassigned, "unassigned", members)}
+          ${renderTaskQueue("Mias", model.taskOwnerId ? "Trabajo del responsable seleccionado." : "Selecciona un responsable.", queues.mine, "mine", members)}
+          ${renderTaskQueue("Equipo", "Todo el trabajo activo, sin ocultar tareas.", queues.team, "team", members)}
+        </div>
+      `}
     </section>
   `;
 }
 
-function renderNextActionItem(item, type) {
-  const contact = item.contact || {};
-  const nextAction = item.nextAction || null;
-  const contactDetail = [contact.phone, contact.email].filter(Boolean).join(" / ") || "Sin contacto";
-
+function renderTaskQueue(title, subtitle, tasks, kind, members) {
   return `
-    <article class="next-action-item">
-      <header>
-        <strong>${escapeHtml(contactName(contact))}</strong>
-        <div class="lead-card-badges">
-          ${scorePill(contact)}
-          ${priorityPill(contact.priority)}
-        </div>
-      </header>
-      <p>${escapeHtml(contactDetail)}</p>
-      ${nextAction ? `<p>${escapeHtml(`${nextActionTypeLabel(nextAction.type)} - ${formatDate(nextAction.dueDate)}`)}</p>` : '<p>Crear seguimiento desde la tarjeta del lead.</p>'}
-      <div class="next-action-item-footer">
-        <span class="pill ${escapeAttr(contact.status || "new")}">${escapeHtml(statusLabel(contact.status || "new"))}</span>
-        ${type !== "missing" ? `<button type="button" data-next-action-done data-contact-id="${escapeAttr(contact.id)}">Hecha</button>` : ""}
+    <section class="task-queue task-queue-${escapeAttr(kind)}" data-task-queue="${escapeAttr(kind)}">
+      <header><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(subtitle)}</small></span><b>${escapeHtml(String(tasks.length))}</b></header>
+      <div class="task-list">${tasks.length ? tasks.map((task) => renderTaskCard(task, members)).join("") : '<p class="pipeline-empty">Sin tareas en esta cola.</p>'}</div>
+    </section>
+  `;
+}
+
+function renderTaskCard(task, members) {
+  const relations = Array.isArray(task.relations) ? task.relations.filter((relation) => relation.related) : [];
+  const ownerName = task.owner?.name || "Sin asignar";
+  return `
+    <article class="task-card${task.isOverdue ? " is-overdue" : ""}" data-task-card data-task-id="${escapeAttr(task.id)}">
+      <header><strong>${escapeHtml(task.title || "Tarea")}</strong><span class="task-priority task-priority-${escapeAttr(task.priority || "normal")}">${escapeHtml(taskPriorityLabel(task.priority))}</span></header>
+      ${task.description ? `<p>${escapeHtml(task.description)}</p>` : ""}
+      <div class="task-card-meta">
+        <span>${escapeHtml(taskTypeLabel(task.type))}</span>
+        <span>${task.dueAt ? escapeHtml(formatDateTime(task.dueAt)) : "Sin vencimiento"}</span>
+        ${task.reminderAt ? `<span>Recordatorio ${escapeHtml(formatDateTime(task.reminderAt))}</span>` : ""}
+        ${task.recurrence && task.recurrence !== "none" ? `<span>${escapeHtml(taskRecurrenceLabel(task.recurrence))}</span>` : ""}
       </div>
+      ${relations.length ? `<div class="task-relations">${relations.slice(0, 3).map((relation) => `<span>${escapeHtml(`${entityTypeLabel(relation.related.type)}: ${relation.related.name}`)}</span>`).join("")}</div>` : ""}
+      ${task.dependencies?.length ? `<small class="task-dependencies">Depende de: ${escapeHtml(task.dependencies.map((item) => item.title).join(", "))}</small>` : ""}
+      <label class="task-owner-control">Responsable<select data-task-owner data-task-id="${escapeAttr(task.id)}"><option value="">Sin asignar</option>${members.map((member) => `<option value="${escapeAttr(member.id)}"${member.id === task.ownerId ? " selected" : ""}>${escapeHtml(member.name)}</option>`).join("")}</select></label>
+      <footer><small>${escapeHtml(ownerName)}</small><span>${task.status === "pending" ? `<button type="button" data-task-start data-task-id="${escapeAttr(task.id)}">En curso</button>` : ""}<button type="button" data-task-complete data-task-id="${escapeAttr(task.id)}">Completar</button><button class="task-archive" type="button" data-task-archive data-task-id="${escapeAttr(task.id)}">Archivar</button></span></footer>
     </article>
   `;
+}
+
+function renderUnownedDeals(deals, members, currency) {
+  if (!deals.length) return "";
+  return `
+    <section class="unowned-deals" data-unowned-deals>
+      <header><div><strong>Oportunidades sin responsable</strong><small>Asignarlas evita ventas abiertas sin dueño.</small></div><span>${escapeHtml(String(deals.length))}</span></header>
+      <div>${deals.map((deal) => `<article><span><strong>${escapeHtml(deal.title || "Oportunidad")}</strong><small>${escapeHtml(formatMoney(deal.value || 0, currency))}</small></span><select data-unowned-deal-owner data-deal-id="${escapeAttr(deal.id)}"><option value="">Asignar...</option>${members.map((member) => `<option value="${escapeAttr(member.id)}">${escapeHtml(member.name)}</option>`).join("")}</select></article>`).join("")}</div>
+    </section>
+  `;
+}
+
+function taskLinkOptions(model) {
+  const groups = [
+    ["deal", model.deals, (item) => item.title],
+    ["contact", model.contacts.filter((item) => !item.merged), (item) => contactName(item)],
+    ["account", model.accounts, (item) => item.name],
+    ["proposal", model.proposals, (item) => item.title || item.package || item.id],
+    ["booking", model.bookings, (item) => item.customerName || item.serviceName || item.id]
+  ];
+  return groups.flatMap(([type, items, label]) => items.map((item) => `<option value="${escapeAttr(`${type}:${item.id}`)}">${escapeHtml(`${entityTypeLabel(type)} · ${label(item)}`)}</option>`)).join("");
 }
 
 function renderLeads(model) {
   const container = document.querySelector('[data-list="leads"]');
 
-  if (!model.leads.length) {
-    container.innerHTML = emptyState("Sin leads reales", "El formulario web y el chatbot ya pueden guardar aqui los nuevos contactos.");
+  if (!container) {
     return;
   }
 
+  if (!model.contacts.length && !model.deals.length && !state.dealError) {
+    container.innerHTML = emptyState("Sin contactos ni oportunidades", "El formulario web y el chatbot guardaran aqui las personas; despues podras abrir una o varias oportunidades para cada una.");
+    return;
+  }
+
+  container.innerHTML = `
+    ${renderDealWorkspace(model)}
+    ${renderConsentCenter(model)}
+    ${model.leads.length ? `
+      <details class="legacy-crm-panel"${model.deals.length ? "" : " open"}>
+        <summary>
+          <span>
+            <strong>Contactos y seguimiento heredado</strong>
+            <small>Compatibilidad temporal: estado, scoring, proxima accion, notas y timeline de la persona.</small>
+          </span>
+          <span>${escapeHtml(String(model.leads.length))}</span>
+        </summary>
+        <div class="legacy-crm-content">
+          ${renderLegacyContactPipeline(model)}
+        </div>
+      </details>
+    ` : ""}
+  `;
+}
+
+function renderConsentCenter(model) {
+  const contacts = model.contacts.filter((contact) => !contact.merged);
+  if (!contacts.length) return "";
+  const center = model.consentCenter || {};
+  const selectedId = contacts.some((contact) => contact.id === center.contactId) ? center.contactId : contacts[0].id;
+  const data = center.data || {};
+  const preferences = data.preferences || {};
+  const enabled = (channel, purpose) => preferences[channel]?.[purpose]?.allowed === true && preferences[channel]?.[purpose]?.suppressed !== true;
+  const events = Array.isArray(data.events) ? data.events.slice(0, 5) : [];
+  return `
+    <section class="consent-center" data-consent-center>
+      <header><div><p class="eyebrow">Privacidad demostrable</p><h3>Consentimientos y preferencias</h3><p>El aviso de privacidad no activa marketing. Cada permiso, retirada y supresion queda como evento inmutable.</p></div><span>${escapeHtml(String(data.total || 0))} evento(s)</span></header>
+      ${center.error ? `<div class="task-state task-state-error"><span>${escapeHtml(center.error)}</span><button type="button" data-consent-retry>Reintentar</button></div>` : ""}
+      <div class="consent-center-grid">
+        <form data-consent-form data-contact-id="${escapeAttr(selectedId)}">
+          <label>Contacto<select data-consent-contact>${contacts.map((contact) => `<option value="${escapeAttr(contact.id)}"${contact.id === selectedId ? " selected" : ""}>${escapeHtml(contactName(contact))}</option>`).join("")}</select></label>
+          <label class="consent-toggle"><input type="checkbox" name="emailMarketing"${enabled("email", "marketing") ? " checked" : ""}>Email comercial</label>
+          <label class="consent-toggle"><input type="checkbox" name="whatsappMarketing"${enabled("whatsapp", "marketing") ? " checked" : ""}>WhatsApp comercial</label>
+          <label class="consent-toggle"><input type="checkbox" name="emailReviews"${enabled("email", "reviews") ? " checked" : ""}>Solicitudes de reseña por email</label>
+          <label class="consent-toggle consent-suppression"><input type="checkbox" name="globalSuppressed"${data.globalSuppressed ? " checked" : ""}>Supresion global: no contactar</label>
+          <button type="submit"${center.loading ? " disabled" : ""}>Guardar preferencias</button>
+        </form>
+        <div class="consent-ledger">
+          <header><strong>Ledger reciente</strong><small>${data.lastNotice ? `Aviso ${escapeHtml(data.lastNotice.textVersion || "registrado")}` : "Sin aviso registrado"}</small></header>
+          ${center.loading ? '<p class="pipeline-empty">Cargando preferencias...</p>' : events.length ? events.map((event) => `<article><span><strong>${escapeHtml(consentActionLabel(event.action))}</strong><small>${escapeHtml(`${consentScopeLabel(event.channel, event.purpose)} · ${event.source || "sistema"}`)}</small></span><time datetime="${escapeAttr(event.occurredAt || event.createdAt || "")}">${escapeHtml(formatDateTime(event.occurredAt || event.createdAt))}</time></article>`).join("") : '<p class="pipeline-empty">Todavia no hay evidencias de consentimiento.</p>'}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderLegacyContactPipeline(model) {
   const filteredLeads = filterLeadsByScore(model.leads);
   const pipeline = state.scoreLabelFilter === "all"
     ? (model.pipeline || buildPipelineModel(model.leads))
     : buildPipelineModel(filteredLeads);
 
-  container.innerHTML = `
+  return `
     ${renderExportToolbar("leads", model.leads.length, "Exportar leads")}
     ${renderDuplicateGroups(model.duplicateGroups)}
     ${renderLeadScoreFilter(model.leads.length, pipeline.total)}
@@ -1705,6 +2009,227 @@ function renderLeads(model) {
       }).join("")}
     </div>
     ` : emptyState("Sin leads en este filtro", "Cambia la temperatura para volver a ver el pipeline completo.")}
+  `;
+}
+
+function renderDealWorkspace(model) {
+  const board = model.dealPipeline || normalizeDealPipelinePayload({});
+  const selectedPipeline = board.pipeline || model.pipelines.find((pipeline) => pipeline.id === state.dealPipelineId) || model.pipelines[0] || null;
+  const contacts = model.contacts.filter((contact) => !contact.merged);
+
+  return `
+    <section class="deal-workspace" data-deal-workspace>
+      <header class="deal-workspace-header">
+        <span>
+          <p class="eyebrow">Pipeline relacional</p>
+          <h3>Oportunidades</h3>
+          <small>Una persona puede tener varias ventas con etapa, valor y cierre independientes.</small>
+        </span>
+        <div class="deal-workspace-metrics" aria-label="Resumen de oportunidades">
+          <span><strong>${escapeHtml(String(board.total || 0))}</strong> activas</span>
+          <span><strong>${escapeHtml(formatMoney(board.totalValue || 0, model.currency))}</strong> valor</span>
+        </div>
+      </header>
+
+      ${state.dealError ? `
+        <div class="deal-state deal-state-error" role="alert">
+          <strong>No pudimos consultar las oportunidades</strong>
+          <span>${escapeHtml(state.dealError)}</span>
+          <button type="button" data-deals-retry>Reintentar</button>
+        </div>
+      ` : ""}
+
+      ${renderAccountWorkspace(model)}
+
+      ${contacts.length && model.pipelines.length ? `
+        <form class="deal-create-form" data-deal-create-form>
+          <div>
+            <strong>Nueva oportunidad</strong>
+            <small>Crea otra venta sin duplicar la persona.</small>
+          </div>
+          <label>Nombre<input name="title" maxlength="180" required placeholder="Ej. Web y captacion local"></label>
+          <label>Persona<select name="contactId" required>${contacts.map((contact) => `<option value="${escapeAttr(contact.id)}">${escapeHtml(contactName(contact))}</option>`).join("")}</select></label>
+          <label>Cuenta<select name="accountId"><option value="">Sin cuenta</option>${model.accounts.map((account) => `<option value="${escapeAttr(account.id)}">${escapeHtml(account.name)}</option>`).join("")}</select></label>
+          <label>Pipeline<select name="pipelineId" required>${model.pipelines.map((pipeline) => `<option value="${escapeAttr(pipeline.id)}"${pipeline.id === selectedPipeline?.id ? " selected" : ""}>${escapeHtml(pipeline.name || "Ventas")}</option>`).join("")}</select></label>
+          <label>Valor<input name="value" type="number" min="0" max="100000000" step="0.01" value="0" required></label>
+          <label>Prioridad<select name="priority"><option value="alta">Alta</option><option value="media" selected>Media</option><option value="baja">Baja</option></select></label>
+          <label>Responsable<select name="ownerId"><option value="">Sin asignar</option>${model.taskMembers.map((member) => `<option value="${escapeAttr(member.id)}">${escapeHtml(member.name)}</option>`).join("")}</select></label>
+          <label>Cierre previsto<input name="expectedCloseAt" type="date"></label>
+          <button type="submit">Crear oportunidad</button>
+        </form>
+      ` : contacts.length ? '<p class="pipeline-empty">Configura un pipeline para poder crear oportunidades.</p>' : '<p class="pipeline-empty">Primero crea o captura una persona en el CRM.</p>'}
+
+      ${model.pipelines.length > 1 ? `
+        <div class="deal-pipeline-toolbar">
+          <label>Pipeline
+            <select data-deal-pipeline-select>
+              ${model.pipelines.map((pipeline) => `<option value="${escapeAttr(pipeline.id)}"${pipeline.id === selectedPipeline?.id ? " selected" : ""}>${escapeHtml(pipeline.name || "Ventas")}</option>`).join("")}
+            </select>
+          </label>
+        </div>
+      ` : ""}
+
+      ${state.dealLoading ? '<div class="deal-state" role="status"><strong>Cargando oportunidades...</strong></div>' : renderDealBoard(board, model.currency)}
+    </section>
+  `;
+}
+
+function renderAccountWorkspace(model) {
+  const contacts = model.contacts.filter((contact) => !contact.merged);
+  return `
+    <details class="account-workspace"${model.accounts.length ? "" : " open"}>
+      <summary>
+        <span>
+          <strong>Cuentas y relaciones</strong>
+          <small>Empresas, hogares o grupos conectados con personas, oportunidades y operaciones.</small>
+        </span>
+        <span>${escapeHtml(String(model.accounts.length))}</span>
+      </summary>
+      <div class="account-workspace-content">
+        ${state.accountError ? `<div class="deal-state deal-state-error" role="alert"><strong>Cuentas no disponibles</strong><span>${escapeHtml(state.accountError)}</span><button type="button" data-accounts-retry>Reintentar</button></div>` : ""}
+        <form class="account-create-form" data-account-create-form>
+          <div><strong>Nueva cuenta</strong><small>No duplica a la persona; la agrupa.</small></div>
+          <label>Nombre<input name="name" maxlength="180" required placeholder="Ej. Acme Sevilla"></label>
+          <label>Tipo<select name="type"><option value="company">Empresa</option><option value="household">Hogar</option><option value="group">Grupo</option></select></label>
+          <label>Dominio<input name="domain" maxlength="240" placeholder="empresa.com"></label>
+          <label>NIF / CIF<input name="taxId" maxlength="80"></label>
+          <label>Ciudad<input name="city" maxlength="160"></label>
+          <button type="submit">Crear cuenta</button>
+        </form>
+        ${renderAccountDuplicateGroups(model.accountDuplicateGroups)}
+        <div class="account-grid">
+          ${state.accountLoading
+            ? '<div class="deal-state" role="status"><strong>Cargando cuentas...</strong></div>'
+            : model.accounts.length
+              ? model.accounts.map((account) => renderAccountCard(account, contacts)).join("")
+              : '<p class="pipeline-empty">Aun no hay cuentas. Puedes trabajar con personas individuales o crear la primera empresa o grupo.</p>'}
+        </div>
+      </div>
+    </details>
+  `;
+}
+
+function renderAccountDuplicateGroups(groups) {
+  if (!Array.isArray(groups) || !groups.length) return "";
+  return `
+    <section class="account-duplicate-panel">
+      <header><strong>Posibles cuentas duplicadas</strong><span>${escapeHtml(String(groups.length))}</span></header>
+      ${groups.map((group) => `
+        <article data-account-duplicate-group="${escapeAttr(group.id)}">
+          <label>Conservar
+            <select data-account-merge-survivor>
+              ${(group.accounts || []).map((account) => `<option value="${escapeAttr(account.id)}">${escapeHtml(account.name)}</option>`).join("")}
+            </select>
+          </label>
+          <small>${escapeHtml((group.accounts || []).map((account) => account.domain || account.taxId || account.name).join(" · "))}</small>
+          <button type="button" data-account-merge data-group-id="${escapeAttr(group.id)}">Fusionar sin borrar historial</button>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
+function renderAccountCard(account, contacts) {
+  const relations = Array.isArray(account.relations) ? account.relations : [];
+  return `
+    <article class="account-card" data-account-card data-account-id="${escapeAttr(account.id)}">
+      <header>
+        <span><strong>${escapeHtml(account.name)}</strong><small>${escapeHtml(accountTypeLabel(account.type))}${account.city ? ` · ${escapeHtml(account.city)}` : ""}</small></span>
+        <span>${escapeHtml(String(relations.length))} relaciones</span>
+      </header>
+      <p>${escapeHtml([account.domain, account.taxId, account.phone, account.email].filter(Boolean).join(" · ") || "Sin identificadores adicionales")}</p>
+      ${relations.length ? `
+        <ul class="account-relation-list">
+          ${relations.map((relation) => `
+            <li>
+              <span><strong>${escapeHtml(relation.related?.name || "Registro relacionado")}</strong><small>${escapeHtml(`${associationTypeLabel(relation.related?.type)} · ${associationKindLabel(relation.kind)}`)}</small></span>
+              <button type="button" data-association-archive data-association-id="${escapeAttr(relation.id)}" aria-label="Quitar relacion con ${escapeAttr(relation.related?.name || "registro")}">Quitar</button>
+            </li>
+          `).join("")}
+        </ul>
+      ` : '<p class="account-empty-relations">Sin relaciones todavia.</p>'}
+      ${contacts.length ? `
+        <form class="account-link-form" data-account-link-form data-account-id="${escapeAttr(account.id)}">
+          <label>Vincular persona<select name="contactId">${contacts.map((contact) => `<option value="${escapeAttr(contact.id)}">${escapeHtml(contactName(contact))}</option>`).join("")}</select></label>
+          <label>Relacion<select name="kind"><option value="member">Miembro</option><option value="decision_maker">Decisor</option><option value="billing">Facturacion</option><option value="owner">Propietario</option><option value="related">Relacionada</option></select></label>
+          <button type="submit">Vincular</button>
+        </form>
+      ` : ""}
+      <button class="account-archive-button" type="button" data-account-archive data-account-id="${escapeAttr(account.id)}">Archivar cuenta</button>
+    </article>
+  `;
+}
+
+function renderDealBoard(board, fallbackCurrency) {
+  if (!board.pipeline || !board.columns.length) {
+    return '<p class="pipeline-empty">El pipeline aparecera aqui cuando este disponible.</p>';
+  }
+
+  return `
+    <div class="pipeline-grid deal-pipeline-grid" data-deal-board data-pipeline-id="${escapeAttr(board.pipeline.id)}">
+      ${board.columns.map((column) => `
+        <section class="pipeline-column deal-pipeline-column" data-deal-pipeline-column="${escapeAttr(column.stageId)}">
+          <header>
+            <span>
+              <strong>${escapeHtml(column.stage?.name || column.stageId)}</strong>
+              <small>${escapeHtml(formatMoney(column.totalValue || 0, fallbackCurrency))} · ${escapeHtml(String(column.stage?.probability ?? 0))}%</small>
+            </span>
+            <span>${escapeHtml(String(column.count || column.deals.length))}</span>
+          </header>
+          <div class="pipeline-stack" data-deal-dropzone data-stage-id="${escapeAttr(column.stageId)}">
+            ${column.deals.length
+              ? column.deals.map((deal) => renderDealCard(deal, board.pipeline, fallbackCurrency)).join("")
+              : '<p class="pipeline-empty">Sin oportunidades</p>'}
+          </div>
+        </section>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderDealCard(deal, pipeline, fallbackCurrency) {
+  const contact = deal.contact || state.contacts.find((item) => item.id === deal.contactId) || {};
+  const stages = Array.isArray(pipeline?.stages) ? pipeline.stages.slice().sort((left, right) => Number(left.order || 0) - Number(right.order || 0)) : [];
+  const detail = [contact.phone, contact.email].filter(Boolean).join(" / ") || "Sin contacto directo";
+
+  return `
+    <article class="lead-card deal-card" draggable="true" data-deal-card data-deal-id="${escapeAttr(deal.id)}" data-stage-id="${escapeAttr(deal.stageId)}" data-order="${escapeAttr(deal.order ?? "")}">
+      <header>
+        <strong>${escapeHtml(deal.title || "Oportunidad")}</strong>
+        <div class="lead-card-badges">
+          ${priorityPill(deal.priority)}
+          <span class="pill neutral">${escapeHtml(`${deal.probability || 0}%`)}</span>
+        </div>
+      </header>
+      <p class="deal-contact-name">${escapeHtml(contactName(contact))}</p>
+      ${deal.account ? `<p class="deal-account-name">Cuenta: ${escapeHtml(deal.account.name)}</p>` : ""}
+      <div class="lead-card-meta">
+        <span>${escapeHtml(deal.source || "dashboard")}</span>
+        <strong>${escapeHtml(formatMoney(deal.value || 0, deal.currency || fallbackCurrency))}</strong>
+      </div>
+      <p>${escapeHtml(detail)}</p>
+      ${deal.expectedCloseAt ? `<small>Cierre previsto: ${escapeHtml(formatDate(deal.expectedCloseAt))}</small>` : ""}
+      <label class="status-field">Responsable
+        <select data-deal-owner data-deal-id="${escapeAttr(deal.id)}">
+          <option value="">Sin asignar</option>
+          ${state.taskMembers.map((member) => `<option value="${escapeAttr(member.id)}"${member.id === deal.ownerId ? " selected" : ""}>${escapeHtml(member.name)}</option>`).join("")}
+        </select>
+      </label>
+      ${deal.status === "lost" && deal.lostReason ? `<span class="lost-reason-chip">Motivo: ${escapeHtml(lostReasonLabel(deal.lostReason))}</span>` : ""}
+      <label class="status-field">Etapa
+        <select data-deal-stage data-deal-id="${escapeAttr(deal.id)}">
+          ${stages.map((stage) => `<option value="${escapeAttr(stage.id)}"${stage.id === deal.stageId ? " selected" : ""}>${escapeHtml(stage.name || stage.id)}</option>`).join("")}
+        </select>
+      </label>
+      <div class="lead-card-actions">
+        ${contact.id ? `
+          <button class="message-contact-button" type="button" data-prepare-message-for-contact data-contact-id="${escapeAttr(contact.id)}" draggable="false">Preparar mensaje</button>
+          <button class="proposal-contact-button" type="button" data-create-proposal-for-contact data-contact-id="${escapeAttr(contact.id)}" draggable="false">Crear propuesta</button>
+          <button class="timeline-open-button" type="button" data-contact-timeline data-contact-id="${escapeAttr(contact.id)}" draggable="false">Ver persona</button>
+        ` : ""}
+        <button class="deal-archive-button" type="button" data-deal-archive data-deal-id="${escapeAttr(deal.id)}" draggable="false">Archivar</button>
+      </div>
+    </article>
   `;
 }
 
@@ -3375,6 +3900,9 @@ function createDashboardModel(business, crm = {}) {
   const blocks = arrayFrom(crm.blocks, content.bookingBlocks, business.bookingBlocks);
   const reminderQueue = arrayFrom(crm.reminderQueue, content.reminderQueue, business.reminderQueue);
   const nextActions = normalizeNextActionsModel(crm.nextActions);
+  const taskQueues = normalizeTaskQueues(crm.taskQueues);
+  const taskMembers = Array.isArray(crm.taskMembers) ? crm.taskMembers : [];
+  const consentCenter = crm.consentCenter && typeof crm.consentCenter === "object" ? crm.consentCenter : { contactId: "", data: null, loading: false, error: "" };
   const report = crm.report || null;
   const forecast = crm.forecast || null;
   const sla = crm.sla || null;
@@ -3387,6 +3915,11 @@ function createDashboardModel(business, crm = {}) {
   const today = new Date();
   const currency = commerce.currency || content.currency || "EUR";
   const pipeline = crm.pipeline ? normalizePipelinePayload(crm.pipeline) : buildPipelineModel(contacts);
+  const pipelines = Array.isArray(crm.pipelines) ? crm.pipelines : [];
+  const accounts = Array.isArray(crm.accounts) ? crm.accounts : [];
+  const accountDuplicateGroups = Array.isArray(crm.accountDuplicateGroups) ? crm.accountDuplicateGroups : [];
+  const deals = Array.isArray(crm.deals) ? crm.deals : [];
+  const dealPipeline = crm.dealPipeline ? normalizeDealPipelinePayload(crm.dealPipeline) : normalizeDealPipelinePayload({});
   const duplicateGroups = Array.isArray(crm.duplicateGroups) ? crm.duplicateGroups : [];
   const proposals = Array.isArray(crm.proposals) ? crm.proposals : [];
   const primaryGoal = business.settings?.primaryGoal || content.conversionGoal || "Reservas y contactos";
@@ -3423,6 +3956,11 @@ function createDashboardModel(business, crm = {}) {
     contacts,
     leads,
     pipeline,
+    accounts,
+    accountDuplicateGroups,
+    pipelines,
+    deals,
+    dealPipeline,
     duplicateGroups,
     proposals,
     customers,
@@ -3432,6 +3970,10 @@ function createDashboardModel(business, crm = {}) {
     blocks,
     reminderQueue,
     nextActions,
+    taskQueues,
+    taskMembers,
+    taskOwnerId: crm.taskOwnerId || "",
+    consentCenter,
     report,
     forecast,
     sla,
@@ -3463,6 +4005,7 @@ function createDashboardModel(business, crm = {}) {
 }
 
 function bindCrmControls(model) {
+  bindDealControls(model);
   bindPipelineControls(model);
 
   document.querySelectorAll("[data-merge-duplicates]").forEach((button) => {
@@ -3486,6 +4029,7 @@ function bindCrmControls(model) {
           { survivorId, duplicateIds }
         );
         await loadContacts(state.business.id || state.business.slug);
+        await loadDeals(state.business.id || state.business.slug, { pipelineId: state.dealPipelineId });
         showNotice("Contactos fusionados.", "info");
         render();
       } catch (error) {
@@ -3649,6 +4193,501 @@ function bindCrmControls(model) {
       }
     });
   });
+}
+
+function bindTaskControls() {
+  document.querySelector("[data-tasks-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (!businessRef) return;
+    await loadTasks(businessRef, { render: true });
+  });
+
+  document.querySelector("[data-task-create-form]")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const businessRef = state.business?.id || state.business?.slug || "";
+    const data = new FormData(form);
+    const dueAt = dateTimeLocalToIso(data.get("dueAt"));
+    const reminderAt = dateTimeLocalToIso(data.get("reminderAt"));
+    const payload = {
+      title: clean(data.get("title")),
+      description: clean(data.get("description")),
+      type: clean(data.get("type")) || "follow_up",
+      priority: clean(data.get("priority")) || "normal",
+      ownerId: clean(data.get("ownerId")),
+      participantIds: data.getAll("participantIds").map(clean).filter(Boolean),
+      dependencyIds: data.getAll("dependencyIds").map(clean).filter(Boolean),
+      dueAt,
+      reminderAt,
+      recurrence: clean(data.get("recurrence")) || "none",
+      source: "dashboard"
+    };
+    const link = clean(data.get("link"));
+    if (link) {
+      const separator = link.indexOf(":");
+      if (separator > 0) payload.links = [{ type: link.slice(0, separator), id: link.slice(separator + 1), kind: "related", isPrimary: true }];
+    }
+    if (!payload.ownerId) delete payload.ownerId;
+    if (!payload.dueAt) delete payload.dueAt;
+    if (!payload.reminderAt) delete payload.reminderAt;
+    if (!businessRef || !payload.title) return;
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      await postJson(`/api/businesses/${encodeURIComponent(businessRef)}/tasks`, payload);
+      await Promise.all([loadTasks(businessRef), loadDeals(businessRef, { pipelineId: state.dealPipelineId })]);
+      showNotice("Tarea creada con su contexto, responsable y vencimiento.", "info");
+      render();
+    } catch (error) {
+      showNotice(error.message || "No se pudo crear la tarea.", "error");
+      if (button) button.disabled = false;
+    }
+  });
+
+  document.querySelector("[data-task-owner-filter]")?.addEventListener("change", async (event) => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    state.taskOwnerId = event.currentTarget.value || "";
+    if (!businessRef) return;
+    await loadTasks(businessRef, { render: true });
+  });
+
+  document.querySelectorAll("[data-task-owner]").forEach((select) => {
+    select.addEventListener("change", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const taskId = select.dataset.taskId || "";
+      if (!businessRef || !taskId) return;
+      select.disabled = true;
+      try {
+        await patchJson(`/api/businesses/${encodeURIComponent(businessRef)}/tasks/${encodeURIComponent(taskId)}`, { ownerId: select.value || "" });
+        await Promise.all([loadTasks(businessRef), loadDeals(businessRef, { pipelineId: state.dealPipelineId })]);
+        showNotice("Responsable de la tarea actualizado.", "info");
+        render();
+      } catch (error) {
+        showNotice(error.message || "No se pudo reasignar la tarea.", "error");
+        select.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-task-start], [data-task-complete]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const taskId = button.dataset.taskId || "";
+      const status = button.hasAttribute("data-task-complete") ? "completed" : "in_progress";
+      if (!businessRef || !taskId) return;
+      button.disabled = true;
+      try {
+        const result = await patchJson(`/api/businesses/${encodeURIComponent(businessRef)}/tasks/${encodeURIComponent(taskId)}`, { status });
+        await loadTasks(businessRef);
+        showNotice(result.recurringTask ? "Tarea completada y siguiente recurrencia creada." : (status === "completed" ? "Tarea completada." : "Tarea puesta en curso."), "info");
+        render();
+      } catch (error) {
+        showNotice(error.message || "No se pudo actualizar la tarea.", "error");
+        button.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-task-archive]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const taskId = button.dataset.taskId || "";
+      if (!businessRef || !taskId || !window.confirm("Archivar esta tarea? Se conservara en auditoria.")) return;
+      button.disabled = true;
+      try {
+        await deleteJson(`/api/businesses/${encodeURIComponent(businessRef)}/tasks/${encodeURIComponent(taskId)}`);
+        await loadTasks(businessRef);
+        showNotice("Tarea archivada sin borrar su historial.", "info");
+        render();
+      } catch (error) {
+        showNotice(error.message || "No se pudo archivar la tarea.", "error");
+        button.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-unowned-deal-owner]").forEach((select) => {
+    select.addEventListener("change", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const dealId = select.dataset.dealId || "";
+      if (!businessRef || !dealId || !select.value) return;
+      select.disabled = true;
+      try {
+        await patchJson(`/api/businesses/${encodeURIComponent(businessRef)}/deals/${encodeURIComponent(dealId)}`, { ownerId: select.value });
+        await Promise.all([loadDeals(businessRef, { pipelineId: state.dealPipelineId }), loadTasks(businessRef)]);
+        showNotice("Oportunidad asignada a un responsable.", "info");
+        render();
+      } catch (error) {
+        showNotice(error.message || "No se pudo asignar la oportunidad.", "error");
+        select.disabled = false;
+      }
+    });
+  });
+}
+
+function bindConsentControls() {
+  document.querySelector("[data-consent-contact]")?.addEventListener("change", async (event) => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (!businessRef || !event.currentTarget.value) return;
+    await loadConsentCenter(businessRef, event.currentTarget.value, { render: true });
+  });
+  document.querySelector("[data-consent-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (!businessRef || !state.consentCenter.contactId) return;
+    await loadConsentCenter(businessRef, state.consentCenter.contactId, { render: true });
+  });
+  document.querySelector("[data-consent-form]")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const businessRef = state.business?.id || state.business?.slug || "";
+    const contactId = form.dataset.contactId || "";
+    const data = new FormData(form);
+    if (!businessRef || !contactId) return;
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      await putJson(`/api/businesses/${encodeURIComponent(businessRef)}/contacts/${encodeURIComponent(contactId)}/preferences`, {
+        globalSuppressed: data.get("globalSuppressed") === "on",
+        source: "dashboard-preference-center",
+        textVersion: "crm-preferences-v1",
+        textSnapshot: "Preferencias de comunicaciones seleccionadas por el contacto o por un operador autorizado.",
+        actorType: state.clientSession ? "contact" : "operator",
+        actorId: contactId,
+        evidence: { surface: "business-dashboard" },
+        preferences: [
+          { channel: "email", purpose: "marketing", allowed: data.get("emailMarketing") === "on" },
+          { channel: "whatsapp", purpose: "marketing", allowed: data.get("whatsappMarketing") === "on" },
+          { channel: "email", purpose: "reviews", allowed: data.get("emailReviews") === "on" }
+        ]
+      });
+      await loadConsentCenter(businessRef, contactId);
+      showNotice("Preferencias guardadas con evidencia inmutable.", "info");
+      render();
+    } catch (error) {
+      showNotice(error.message || "No se pudieron guardar las preferencias.", "error");
+      if (button) button.disabled = false;
+    }
+  });
+}
+
+function bindDealControls(model) {
+  bindAccountControls(model);
+  document.querySelector("[data-deal-create-form]")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const businessRef = state.business?.id || state.business?.slug || "";
+    const expectedCloseAt = clean(data.get("expectedCloseAt"));
+    const payload = {
+      title: clean(data.get("title")),
+      contactId: clean(data.get("contactId")),
+      pipelineId: clean(data.get("pipelineId")),
+      value: Number(data.get("value") || 0),
+      priority: clean(data.get("priority")) || "media"
+    };
+    const accountId = clean(data.get("accountId"));
+    const ownerId = clean(data.get("ownerId"));
+    if (accountId) payload.accountId = accountId;
+    if (ownerId) payload.ownerId = ownerId;
+    if (expectedCloseAt) payload.expectedCloseAt = dateInputToIso(expectedCloseAt);
+    if (!businessRef || !payload.title || !payload.contactId || !payload.pipelineId || !Number.isFinite(payload.value)) return;
+
+    const button = form.querySelector("button[type='submit']");
+    if (button) button.disabled = true;
+    try {
+      const result = await postJson(`/api/businesses/${encodeURIComponent(businessRef)}/deals`, payload);
+      state.dealPipelineId = result.deal?.pipelineId || payload.pipelineId;
+      await loadAccounts(businessRef);
+      await loadDeals(businessRef, { pipelineId: state.dealPipelineId });
+      showNotice("Oportunidad creada sin duplicar el contacto.", "info");
+      render();
+    } catch (error) {
+      showNotice(error.message || "No se pudo crear la oportunidad.", "error");
+      if (button) button.disabled = false;
+    }
+  });
+
+  document.querySelector("[data-deal-pipeline-select]")?.addEventListener("change", async (event) => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (!businessRef) return;
+    state.dealPipelineId = event.currentTarget.value;
+    state.dealLoading = true;
+    render();
+    await loadDeals(businessRef, { pipelineId: state.dealPipelineId });
+    render();
+  });
+
+  document.querySelector("[data-deals-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (!businessRef) return;
+    await loadDeals(businessRef, { pipelineId: state.dealPipelineId });
+    render();
+  });
+
+  document.querySelectorAll("[data-deal-stage]").forEach((select) => {
+    select.addEventListener("change", async () => {
+      const dealId = select.dataset.dealId || "";
+      const deal = state.deals.find((item) => item.id === dealId);
+      if (!deal) return;
+      select.disabled = true;
+      const moved = await moveDealInPipeline(dealId, select.value, deal.order);
+      if (!moved) {
+        select.value = deal.stageId;
+        select.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-deal-owner]").forEach((select) => {
+    select.addEventListener("change", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const dealId = select.dataset.dealId || "";
+      if (!businessRef || !dealId) return;
+      select.disabled = true;
+      try {
+        await patchJson(`/api/businesses/${encodeURIComponent(businessRef)}/deals/${encodeURIComponent(dealId)}`, { ownerId: select.value || "" });
+        await Promise.all([loadDeals(businessRef, { pipelineId: state.dealPipelineId }), loadTasks(businessRef)]);
+        showNotice(select.value ? "Responsable de la oportunidad actualizado." : "Oportunidad marcada sin responsable.", "info");
+        render();
+      } catch (error) {
+        showNotice(error.message || "No se pudo reasignar la oportunidad.", "error");
+        select.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-deal-archive]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const dealId = button.dataset.dealId || "";
+      const deal = state.deals.find((item) => item.id === dealId);
+      const businessRef = state.business?.id || state.business?.slug || "";
+      if (!deal || !businessRef || !window.confirm(`Archivar la oportunidad "${deal.title}"? Se conserva en el historial.`)) return;
+      button.disabled = true;
+      try {
+        await deleteJson(`/api/businesses/${encodeURIComponent(businessRef)}/deals/${encodeURIComponent(dealId)}`);
+        await loadDeals(businessRef, { pipelineId: state.dealPipelineId });
+        showNotice("Oportunidad archivada; los datos y la auditoria se conservan.", "info");
+        render();
+      } catch (error) {
+        showNotice("No se pudo archivar la oportunidad.", "error");
+        button.disabled = false;
+      }
+    });
+  });
+
+  bindDealPipelineControls(model);
+}
+
+function bindAccountControls(model) {
+  document.querySelector("[data-accounts-retry]")?.addEventListener("click", async () => {
+    const businessRef = state.business?.id || state.business?.slug || "";
+    if (!businessRef) return;
+    await loadAccounts(businessRef);
+    render();
+  });
+
+  document.querySelector("[data-account-create-form]")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const businessRef = state.business?.id || state.business?.slug || "";
+    const payload = {
+      name: clean(data.get("name")),
+      type: clean(data.get("type")) || "company",
+      domain: clean(data.get("domain")),
+      taxId: clean(data.get("taxId")),
+      city: clean(data.get("city"))
+    };
+    if (!businessRef || !payload.name) return;
+    const button = form.querySelector("button[type='submit']");
+    if (button) button.disabled = true;
+    try {
+      await postJson(`/api/businesses/${encodeURIComponent(businessRef)}/accounts`, payload);
+      await loadAccounts(businessRef);
+      showNotice("Cuenta creada y disponible para relacionarla.", "info");
+      render();
+    } catch (error) {
+      showNotice(error.message || "No se pudo crear la cuenta.", "error");
+      if (button) button.disabled = false;
+    }
+  });
+
+  document.querySelectorAll("[data-account-link-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const accountId = form.dataset.accountId || "";
+      const data = new FormData(form);
+      const contactId = clean(data.get("contactId"));
+      const kind = clean(data.get("kind")) || "member";
+      if (!businessRef || !accountId || !contactId) return;
+      const button = form.querySelector("button[type='submit']");
+      if (button) button.disabled = true;
+      try {
+        await postJson(`/api/businesses/${encodeURIComponent(businessRef)}/associations`, {
+          fromType: "contact",
+          fromId: contactId,
+          toType: "account",
+          toId: accountId,
+          kind,
+          isPrimary: kind === "decision_maker" || kind === "owner"
+        });
+        await loadAccounts(businessRef);
+        showNotice("Persona vinculada a la cuenta.", "info");
+        render();
+      } catch (error) {
+        showNotice(error.message || "No se pudo crear la relacion.", "error");
+        if (button) button.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-association-archive]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const associationId = button.dataset.associationId || "";
+      if (!businessRef || !associationId) return;
+      button.disabled = true;
+      try {
+        await deleteJson(`/api/businesses/${encodeURIComponent(businessRef)}/associations/${encodeURIComponent(associationId)}`);
+        await Promise.all([loadAccounts(businessRef), loadDeals(businessRef, { pipelineId: state.dealPipelineId })]);
+        showNotice("Relacion retirada; el registro de auditoria se conserva.", "info");
+        render();
+      } catch (error) {
+        showNotice("No se pudo retirar la relacion.", "error");
+        button.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-account-merge]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const group = model.accountDuplicateGroups.find((item) => item.id === button.dataset.groupId);
+      const survivorId = button.closest("[data-account-duplicate-group]")?.querySelector("[data-account-merge-survivor]")?.value || "";
+      const duplicateIds = (group?.accounts || []).map((account) => account.id).filter((id) => id && id !== survivorId);
+      if (!businessRef || !survivorId || !duplicateIds.length) return;
+      button.disabled = true;
+      try {
+        await postJson(`/api/businesses/${encodeURIComponent(businessRef)}/accounts/merge`, { survivorId, duplicateIds });
+        await Promise.all([loadAccounts(businessRef), loadDeals(businessRef, { pipelineId: state.dealPipelineId })]);
+        showNotice("Cuentas fusionadas sin perder relaciones.", "info");
+        render();
+      } catch (error) {
+        showNotice(error.message || "No se pudieron fusionar las cuentas.", "error");
+        button.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-account-archive]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const businessRef = state.business?.id || state.business?.slug || "";
+      const accountId = button.dataset.accountId || "";
+      const account = model.accounts.find((item) => item.id === accountId);
+      if (!businessRef || !account || !window.confirm(`Archivar la cuenta "${account.name}"?`)) return;
+      button.disabled = true;
+      try {
+        await deleteJson(`/api/businesses/${encodeURIComponent(businessRef)}/accounts/${encodeURIComponent(accountId)}`);
+        await loadAccounts(businessRef);
+        showNotice("Cuenta archivada; sus datos siguen disponibles en auditoria.", "info");
+        render();
+      } catch (error) {
+        showNotice(error.message || "No se pudo archivar la cuenta.", "error");
+        button.disabled = false;
+      }
+    });
+  });
+}
+
+function bindDealPipelineControls(model) {
+  const board = model?.dealPipeline || state.dealPipeline;
+  if (!board?.pipeline) return;
+
+  document.querySelectorAll("[data-deal-card]").forEach((card) => {
+    card.addEventListener("dragstart", (event) => {
+      const dealId = card.dataset.dealId || "";
+      if (!dealId || event.target.closest("button, input, select, textarea, label, form")) {
+        event.preventDefault();
+        return;
+      }
+      card.classList.add("is-dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", `deal:${dealId}`);
+    });
+    card.addEventListener("dragend", () => {
+      document.querySelectorAll(".is-dragging, .is-drag-over").forEach((node) => node.classList.remove("is-dragging", "is-drag-over"));
+    });
+  });
+
+  document.querySelectorAll("[data-deal-dropzone]").forEach((zone) => {
+    zone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      zone.classList.add("is-drag-over");
+    });
+    zone.addEventListener("dragleave", (event) => {
+      if (!zone.contains(event.relatedTarget)) zone.classList.remove("is-drag-over");
+    });
+    zone.addEventListener("drop", async (event) => {
+      event.preventDefault();
+      zone.classList.remove("is-drag-over");
+      const transfer = event.dataTransfer.getData("text/plain");
+      const dealId = transfer.startsWith("deal:") ? transfer.slice(5) : "";
+      const stageId = zone.dataset.stageId || "";
+      if (!dealId || !stageId) return;
+      const order = calculateDealOrder(board, dealId, stageId, zone, event.clientY);
+      await moveDealInPipeline(dealId, stageId, order);
+    });
+  });
+}
+
+function calculateDealOrder(board, dealId, stageId, zone, clientY) {
+  const column = (board.columns.find((item) => item.stageId === stageId)?.deals || [])
+    .filter((deal) => deal.id !== dealId)
+    .sort(compareDealCards);
+  const afterCard = Array.from(zone.querySelectorAll("[data-deal-card]:not(.is-dragging)"))
+    .find((card) => {
+      const box = card.getBoundingClientRect();
+      return clientY < box.top + (box.height / 2);
+    }) || null;
+  if (afterCard) {
+    const index = column.findIndex((deal) => deal.id === afterCard.dataset.dealId);
+    return midpointOrder(index > 0 ? column[index - 1]?.order : undefined, column[index]?.order);
+  }
+  return midpointOrder(column.at(-1)?.order, null);
+}
+
+async function moveDealInPipeline(dealId, stageId, order) {
+  const businessRef = state.business?.id || state.business?.slug || "";
+  const deal = state.deals.find((item) => item.id === dealId);
+  const pipeline = state.dealPipeline?.pipeline;
+  const stage = pipeline?.stages?.find((item) => item.id === stageId);
+  if (!businessRef || !deal || !pipeline || !stage) return false;
+
+  let lostReason = "";
+  if (stage.type === "lost") {
+    lostReason = deal.status === "lost" && deal.lostReason
+      ? deal.lostReason
+      : await showLostReasonDialog({ name: deal.title });
+    if (!lostReason) return false;
+  }
+
+  try {
+    await patchJson(`/api/businesses/${encodeURIComponent(businessRef)}/deals/${encodeURIComponent(dealId)}/pipeline`, {
+      pipelineId: pipeline.id,
+      stageId,
+      order,
+      ...(lostReason ? { lostReason } : {})
+    });
+    await loadDeals(businessRef, { pipelineId: pipeline.id });
+    showNotice(deal.stageId === stageId ? "Orden de oportunidades actualizado." : `Oportunidad movida a ${stage.name}.`, "info");
+    render();
+    return true;
+  } catch (error) {
+    showNotice(error.message || "No se pudo mover la oportunidad.", "error");
+    return false;
+  }
 }
 
 function bindProposalControls(model) {
@@ -5388,6 +6427,12 @@ function addDays(date, days) {
   return copy;
 }
 
+function addHours(date, hours) {
+  const copy = new Date(date);
+  copy.setHours(copy.getHours() + hours);
+  return copy;
+}
+
 function preferredReminderChannel(booking) {
   if (cleanPhone(booking.phone).length >= 6) {
     return "whatsapp";
@@ -5676,6 +6721,29 @@ function emptyNextActions() {
   };
 }
 
+function emptyTaskQueues() {
+  return {
+    today: [],
+    overdue: [],
+    unassigned: [],
+    mine: [],
+    team: [],
+    unownedDeals: []
+  };
+}
+
+function normalizeTaskQueues(value) {
+  const source = value && typeof value === "object" ? value : {};
+  return {
+    today: Array.isArray(source.today) ? source.today : [],
+    overdue: Array.isArray(source.overdue) ? source.overdue : [],
+    unassigned: Array.isArray(source.unassigned) ? source.unassigned : [],
+    mine: Array.isArray(source.mine) ? source.mine : [],
+    team: Array.isArray(source.team) ? source.team : [],
+    unownedDeals: Array.isArray(source.unownedDeals) ? source.unownedDeals : []
+  };
+}
+
 function normalizeNextActionsModel(value) {
   const source = value && typeof value === "object" ? value : {};
 
@@ -5715,6 +6783,56 @@ function normalizePipelinePayload(payload) {
     total: columns.reduce((sum, column) => sum + column.contacts.length, 0),
     totalValueEstimate: columns.reduce((sum, column) => sum + Number(column.totalValueEstimate || 0), 0)
   };
+}
+
+function normalizeDealPipelinePayload(payload) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  const pipeline = source.pipeline && typeof source.pipeline === "object" ? source.pipeline : null;
+  const sourceColumns = Array.isArray(source.columns) ? source.columns : [];
+  const stages = Array.isArray(pipeline?.stages) ? pipeline.stages : sourceColumns.map((column) => column.stage).filter(Boolean);
+  const byStage = new Map(sourceColumns.map((column) => [clean(column.stageId || column.stage?.id), column]));
+  const columns = stages
+    .slice()
+    .sort((left, right) => Number(left.order || 0) - Number(right.order || 0))
+    .map((stage) => {
+      const column = byStage.get(stage.id) || {};
+      const deals = Array.isArray(column.deals)
+        ? column.deals.map(normalizeDeal).sort(compareDealCards)
+        : [];
+      return {
+        stage: { ...stage },
+        stageId: stage.id,
+        count: Number.isFinite(Number(column.count)) ? Number(column.count) : deals.length,
+        totalValue: Number.isFinite(Number(column.totalValue))
+          ? Number(column.totalValue)
+          : deals.reduce((sum, deal) => sum + Number(deal.value || 0), 0),
+        deals
+      };
+    });
+
+  return {
+    pipeline,
+    columns,
+    total: columns.reduce((sum, column) => sum + column.deals.length, 0),
+    totalValue: columns.reduce((sum, column) => sum + Number(column.totalValue || 0), 0)
+  };
+}
+
+function normalizeDeal(value) {
+  const deal = value && typeof value === "object" ? value : {};
+  return {
+    ...deal,
+    value: Number.isFinite(Number(deal.value)) ? Number(deal.value) : 0,
+    probability: Number.isFinite(Number(deal.probability)) ? Number(deal.probability) : 0,
+    order: Number.isFinite(Number(deal.order)) ? Number(deal.order) : Date.parse(deal.createdAt || "") || Date.now(),
+    priority: normalizeLeadPriority(deal.priority),
+    status: ["open", "won", "lost"].includes(clean(deal.status)) ? clean(deal.status) : "open"
+  };
+}
+
+function compareDealCards(left, right) {
+  return Number(left.order || 0) - Number(right.order || 0)
+    || String(left.title || "").localeCompare(String(right.title || ""), "es");
 }
 
 function buildPipelineModel(contacts = []) {
@@ -5887,6 +7005,19 @@ function dateInputValue(value) {
   }
 
   return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+}
+
+function dateTimeLocalValue(value) {
+  const parsed = value instanceof Date ? value : parseDate(value);
+  if (!parsed) return "";
+  return `${dateInputValue(parsed)}T${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+}
+
+function dateTimeLocalToIso(value) {
+  const text = clean(value);
+  if (!text) return "";
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
 }
 
 function dateInputToIso(value) {
@@ -6160,6 +7291,66 @@ function planLabel(value) {
   };
 
   return labels[value] || clean(value || "Sin plan");
+}
+
+function accountTypeLabel(value) {
+  return ({ company: "Empresa", household: "Hogar", group: "Grupo" })[clean(value)] || "Cuenta";
+}
+
+function associationTypeLabel(value) {
+  return ({
+    contact: "Persona",
+    account: "Cuenta",
+    deal: "Oportunidad",
+    task: "Tarea",
+    proposal: "Propuesta",
+    booking: "Reserva",
+    invoice: "Factura",
+    hospitalityInvoice: "Factura operativa",
+    project: "Proyecto",
+    conversation: "Conversacion"
+  })[clean(value)] || "Registro";
+}
+
+function entityTypeLabel(value) {
+  return associationTypeLabel(value);
+}
+
+function taskTypeLabel(value) {
+  return ({ call: "Llamada", whatsapp: "WhatsApp", email: "Email", meeting: "Reunion", proposal: "Propuesta", booking: "Reserva", follow_up: "Seguimiento", admin: "Administrativa", other: "Otra" })[clean(value)] || "Tarea";
+}
+
+function taskPriorityLabel(value) {
+  return ({ low: "Baja", normal: "Normal", high: "Alta", urgent: "Urgente" })[clean(value)] || "Normal";
+}
+
+function taskRecurrenceLabel(value) {
+  return ({ daily: "Se repite a diario", weekly: "Se repite cada semana", monthly: "Se repite cada mes", yearly: "Se repite cada año" })[clean(value)] || "";
+}
+
+function consentActionLabel(value) {
+  return ({ acknowledged: "Aviso aceptado", granted: "Permiso concedido", withdrawn: "Permiso retirado", suppressed: "Supresion activada", unsuppressed: "Supresion retirada" })[clean(value)] || "Evento";
+}
+
+function consentScopeLabel(channel, purpose) {
+  const channels = { any: "Todos los canales", email: "Email", whatsapp: "WhatsApp", sms: "SMS", phone: "Telefono" };
+  const purposes = { any: "todos los propositos", service: "servicio", marketing: "marketing", reviews: "reseñas", profiling: "perfilado" };
+  return `${channels[clean(channel)] || channel} · ${purposes[clean(purpose)] || purpose}`;
+}
+
+function associationKindLabel(value) {
+  return ({
+    related: "Relacionada",
+    primary: "Principal",
+    member: "Miembro",
+    decision_maker: "Decisor",
+    billing: "Facturacion",
+    owner: "Propietario",
+    guest: "Invitado",
+    customer: "Cliente",
+    supplier: "Proveedor",
+    participant: "Participante"
+  })[clean(value)] || clean(value || "Relacionada");
 }
 
 function statusLabel(value) {

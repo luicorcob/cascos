@@ -71,6 +71,9 @@ async function main() {
     expectedStatus: 201
   });
   assert(lead.contact?.privacyAccepted === true, "Lead consent must be stored");
+  const leadConsent = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${lead.contact.id}/consents`);
+  assert(leadConsent.events?.some((event) => event.action === "acknowledged" && event.purpose === "service"), "Lead privacy acceptance must enter the immutable consent ledger");
+  assert(leadConsent.preferences?.email?.marketing?.allowed === false, "Privacy acceptance must not opt the lead into marketing");
   assert(lead.automation?.applied === true, "A new lead must schedule its first response automatically");
   assert(lead.contact?.nextAction?.note === "Responder hoy", "Automatic first response must be visible on the contact");
 
@@ -122,6 +125,10 @@ async function main() {
     expectedStatus: 201
   });
   assert(booking.booking?.privacyAccepted === true, "Booking consent must be stored");
+  const bookingConsent = await adminRequest(baseUrl, `/api/businesses/${businessId}/contacts/${booking.contact.id}/consents`);
+  assert(bookingConsent.events?.some((event) => event.evidence?.recordType === "booking"), "Booking privacy acceptance must enter the consent ledger with evidence");
+  const bookingAssociations = await adminRequest(baseUrl, `/api/businesses/${businessId}/associations?entityType=booking&entityId=${encodeURIComponent(booking.booking.id)}`);
+  assert(bookingAssociations.associations?.some((item) => item.related?.id === booking.contact.id && item.kind === "customer"), "Booking must be associated with its CRM contact");
 
   const bookingReminder = await adminRequest(baseUrl, `/api/businesses/${businessId}/bookings/${booking.booking.id}/reminders`, {
     method: "POST",

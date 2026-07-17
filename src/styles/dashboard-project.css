@@ -1,0 +1,307 @@
+.business-body .client-project-hub {
+  --text: var(--suite-text, #202b42);
+  --muted: var(--suite-muted, #69758b);
+  --cyan: var(--suite-accent, #4d52da);
+  --green: #16765d;
+  --amber: #956100;
+  --coral: #c94a64;
+  display: grid;
+  gap: 18px;
+  color: var(--text);
+}
+
+.business-body .client-project-hub [hidden] {
+  display: none !important;
+}
+
+.business-body.is-project-view :is(.metric-grid, .command-strip) {
+  display: none;
+}
+
+.business-body .project-hub-header {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  overflow: hidden;
+  padding: clamp(22px, 3.2vw, 38px);
+  border: 1px solid rgba(77, 82, 218, 0.16);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(183, 51, 165, 0.13), transparent 20rem),
+    linear-gradient(135deg, rgba(77, 82, 218, 0.1), rgba(255, 255, 255, 0.94) 56%),
+    #ffffff;
+  box-shadow: 0 22px 56px rgba(35, 47, 72, 0.08);
+}
+
+.business-body .project-hub-header::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, #5965e8, #bd3cad, #12a5a7);
+  content: "";
+}
+
+.business-body .project-hub-header > * {
+  position: relative;
+}
+
+.business-body .project-hub-header h2 {
+  margin: 7px 0 9px;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  font-weight: 780;
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.business-body .project-hub-header p:not(.client-eyebrow) {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.business-body .client-eyebrow {
+  margin: 0;
+  color: var(--suite-accent-2, #9d268f);
+}
+
+.business-body .project-hub-refresh {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 17px;
+  border: 1px solid #26344d;
+  border-radius: 11px;
+  background: #26344d;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(38, 52, 77, 0.16);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.business-body .client-project-hub .client-notice {
+  margin: 0;
+  border-color: rgba(77, 82, 218, 0.2);
+  border-radius: 13px;
+  background: rgba(77, 82, 218, 0.07);
+  color: #48536a;
+}
+
+.business-body .client-project-hub .client-notice[data-type="error"] {
+  border-color: rgba(201, 74, 100, 0.28);
+  background: rgba(201, 74, 100, 0.08);
+  color: #932d45;
+}
+
+.business-body .client-project-hub .client-notice[data-type="success"] {
+  border-color: rgba(22, 118, 93, 0.25);
+  background: rgba(22, 118, 93, 0.08);
+  color: #11644f;
+}
+
+.business-body .client-project-hub .client-auth-state {
+  margin: 20px auto;
+  border-color: var(--suite-border);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 18px 46px rgba(35, 47, 72, 0.07);
+}
+
+.business-body .client-project-hub .client-metrics {
+  gap: 14px;
+}
+
+.business-body .client-project-hub .client-metrics article {
+  position: relative;
+  overflow: hidden;
+  min-height: 136px;
+  padding: 19px;
+  border-color: var(--suite-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 42px rgba(42, 52, 73, 0.055);
+}
+
+.business-body .client-project-hub .client-metrics article::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #5965e8, #bd3cad);
+  content: "";
+}
+
+.business-body .client-project-hub .client-metrics article:nth-child(2)::before {
+  background: linear-gradient(90deg, #0aa3ad, #48b98a);
+}
+
+.business-body .client-project-hub .client-metrics article:nth-child(3)::before {
+  background: linear-gradient(90deg, #df8c24, #e4546f);
+}
+
+.business-body .client-project-hub .client-metrics article:nth-child(4)::before {
+  background: linear-gradient(90deg, #3b74dc, #7655db);
+}
+
+.business-body .client-project-hub .client-metrics span {
+  color: #59657a;
+  letter-spacing: 0.07em;
+}
+
+.business-body .client-project-hub .client-metrics strong {
+  color: var(--text);
+  letter-spacing: -0.045em;
+}
+
+.business-body .client-project-hub .client-tabs {
+  position: sticky;
+  top: 74px;
+  z-index: 15;
+  gap: 5px;
+  margin: 2px 0 0;
+  overflow-x: auto;
+  padding: 7px;
+  border-color: rgba(30, 43, 67, 0.1);
+  border-radius: 14px;
+  background: rgba(248, 250, 253, 0.92);
+  box-shadow: 0 14px 34px rgba(35, 47, 72, 0.08);
+  backdrop-filter: blur(20px) saturate(130%);
+}
+
+.business-body .client-project-hub .client-tabs button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 13px;
+  border-color: transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #667187;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 780;
+}
+
+.business-body .client-project-hub .client-tabs button:hover {
+  background: rgba(38, 52, 77, 0.06);
+  color: var(--text);
+}
+
+.business-body .client-project-hub .client-tabs button.is-active {
+  border-color: #26344d;
+  background: #26344d;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(38, 52, 77, 0.16);
+}
+
+.business-body .client-project-hub .client-panel {
+  padding: clamp(18px, 3vw, 28px);
+  border-color: var(--suite-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 48px rgba(42, 52, 73, 0.06);
+}
+
+.business-body .client-project-hub .client-panel > header h2 {
+  color: var(--text);
+  letter-spacing: -0.04em;
+}
+
+.business-body .client-project-hub :is(.client-project-card, .client-list-card, .client-document-grid article) {
+  border-color: var(--suite-border);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(42, 52, 73, 0.045);
+}
+
+.business-body .client-project-hub :is(.client-project-card dl div, .client-list-card dl div, .client-approval-box, .client-comments) {
+  border-color: var(--suite-border);
+  background: rgba(246, 248, 252, 0.78);
+}
+
+.business-body .client-project-hub :is(.client-approval-box textarea, .client-comments input, .client-upload-form input, .client-upload-form select, .client-chat-form input, .client-chat-form textarea, .client-profile-form input, .client-profile-form select, .client-room-form input) {
+  border-color: var(--suite-border-strong);
+  background: #ffffff;
+  color: var(--text);
+}
+
+.business-body .client-project-hub :is(.client-upload-form, .client-profile-form) {
+  border-color: rgba(77, 82, 218, 0.18);
+  background: rgba(77, 82, 218, 0.045);
+}
+
+.business-body .client-project-hub :is(.client-chat-card, .client-team-chat, .client-team-sidebar) {
+  border-color: var(--suite-border);
+  background: #ffffff;
+}
+
+.business-body .client-project-hub .client-chat-form {
+  background: #f7f9fc;
+}
+
+.business-body .client-project-hub .client-chat-message {
+  border-color: var(--suite-border);
+  background: #f2f5fa;
+}
+
+.business-body .client-project-hub .client-chat-message.is-own {
+  border-color: rgba(77, 82, 218, 0.2);
+  background: rgba(77, 82, 218, 0.08);
+}
+
+.business-body .client-project-hub .client-empty {
+  border-color: var(--suite-border-strong);
+  background: rgba(247, 249, 252, 0.72);
+}
+
+.business-body .client-project-hub .client-panel button:not(:disabled),
+.business-body .client-project-hub .client-auth-state a,
+.business-body .client-project-hub .client-document-grid a {
+  border-color: var(--suite-border-strong);
+  background: #ffffff;
+  color: var(--text);
+}
+
+.business-body .client-project-hub :is(.client-chat-form, .client-upload-form, .client-profile-form, .client-comments, .client-approval-box) button[type="submit"]:not(:disabled) {
+  border-color: #26344d;
+  background: #26344d;
+  color: #ffffff;
+}
+
+.business-body .tab-button-project {
+  color: var(--suite-accent, #4d52da);
+}
+
+.business-body .tab-button-project::before {
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+}
+
+.business-body .tab-button-project.is-active {
+  color: #ffffff;
+}
+
+@media (max-width: 760px) {
+  .business-body .project-hub-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .business-body .project-hub-refresh {
+    width: 100%;
+  }
+
+  .business-body .client-project-hub .client-tabs {
+    top: 8px;
+  }
+}
+
+@media (min-width: 901px) {
+  .business-body .tab-list {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}

@@ -2,22 +2,29 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { handleAccountApi, isAccountApiRequest } from "./api/account-api.mjs";
 import { handleBookingApi, isBookingApiRequest } from "./api/booking-api.mjs";
 import { handleBusinessApi, isBusinessApiRequest } from "./api/business-api.mjs";
 import { handleClientAuthApi, isClientAuthApiRequest } from "./lib/client-auth.mjs";
 import { handleContactApi, isContactApiRequest } from "./api/contact-api.mjs";
+import { handleCommunicationsApi, isCommunicationsApiRequest } from "./api/communications-api.mjs";
+import { handleConsentApi, isConsentApiRequest } from "./api/consent-api.mjs";
+import { handleDealApi, isDealApiRequest } from "./api/deal-api.mjs";
 import { handleDemoPublishApi, isDemoPublishApiRequest } from "./api/demo-publish-api.mjs";
 import { handleDiscoveryApi, isDiscoveryApiRequest } from "./api/discovery-api.mjs";
 import { handleEventApi, isEventApiRequest } from "./api/event-api.mjs";
 import { handleHealthApi, isHealthApiRequest } from "./api/health-api.mjs";
 import { handleGoogleApi, isGoogleApiRequest } from "./api/google-api.mjs";
+import { handleHospitalityApi, isHospitalityApiRequest } from "./api/hospitality-api.mjs";
 import { handleInboxApi, isInboxApiRequest } from "./api/inbox-api.mjs";
 import { handleMessageTemplateApi, isMessageTemplateApiRequest } from "./api/message-template-api.mjs";
+import { handleOperationsApi, isOperationsApiRequest } from "./api/operations-api.mjs";
 import { handleProposalApi, isProposalApiRequest } from "./api/proposal-api.mjs";
 import { handleReportApi, isReportApiRequest } from "./api/report-api.mjs";
 import { handleQaVisualApi, isQaVisualApiRequest } from "./api/qa-visual-api.mjs";
 import { handleSiteImageApi, isSiteImageApiRequest } from "./api/site-image-api.mjs";
 import { handleStockImageApi, isStockImageApiRequest } from "./api/stock-image-api.mjs";
+import { handleTaskApi, isTaskApiRequest } from "./api/task-api.mjs";
 import { isAdminApiRequest, requireAdminApiAuth } from "./lib/admin-auth.mjs";
 import { loadLocalEnv } from "./lib/load-env.mjs";
 import { requirePublicApiRateLimit } from "./lib/public-rate-limit.mjs";
@@ -97,6 +104,16 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (isAccountApiRequest(requestUrl.pathname)) {
+      await handleAccountApi(request, response, apiContext);
+      return;
+    }
+
+    if (isConsentApiRequest(requestUrl.pathname)) {
+      await handleConsentApi(request, response, apiContext);
+      return;
+    }
+
     if (isGoogleApiRequest(requestUrl.pathname)) {
       await handleGoogleApi(request, response, apiContext);
       return;
@@ -109,6 +126,31 @@ const server = createServer(async (request, response) => {
 
     if (isProposalApiRequest(requestUrl.pathname)) {
       await handleProposalApi(request, response, apiContext);
+      return;
+    }
+
+    if (isDealApiRequest(requestUrl.pathname)) {
+      await handleDealApi(request, response, apiContext);
+      return;
+    }
+
+    if (isTaskApiRequest(requestUrl.pathname)) {
+      await handleTaskApi(request, response, apiContext);
+      return;
+    }
+
+    if (isCommunicationsApiRequest(requestUrl.pathname)) {
+      await handleCommunicationsApi(request, response, apiContext);
+      return;
+    }
+
+    if (isOperationsApiRequest(requestUrl.pathname)) {
+      await handleOperationsApi(request, response, apiContext);
+      return;
+    }
+
+    if (isHospitalityApiRequest(requestUrl.pathname)) {
+      await handleHospitalityApi(request, response, apiContext);
       return;
     }
 
