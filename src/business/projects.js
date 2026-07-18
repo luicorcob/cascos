@@ -20,6 +20,7 @@ const PROJECT_PRIORITY_LABELS = { low: "Baja", medium: "Media", high: "Alta", ur
 const TASK_STATUS_LABELS = { pending: "Pendiente", "in-progress": "En curso", done: "Completada" };
 const SUBSCRIPTION_STATUS_LABELS = { active: "Activa", paused: "Pausada", cancelled: "Cancelada", expired: "Vencida" };
 const INVOICE_STATUS_LABELS = { draft: "Borrador", sent: "Enviada", paid: "Pagada", overdue: "Vencida", cancelled: "Cancelada" };
+const PROPOSAL_STATUS_LABELS = { borrador: "Borrador", enviada: "Enviada", vista: "Vista", aceptada: "Aceptada", rechazada: "Rechazada", caducada: "Caducada" };
 const DOCUMENT_CATEGORY_LABELS = { contract: "Contrato", quote: "Presupuesto", invoice: "Factura", "client-file": "Archivo del cliente", deliverable: "Entregable", other: "Otro" };
 const SUPPORT_STATUS_LABELS = { open: "Abierta", closed: "Cerrada" };
 const FREQUENCY_LABELS = { monthly: "Mensual", quarterly: "Trimestral", yearly: "Anual", custom: "Personalizada" };
@@ -32,6 +33,7 @@ const state = {
   projects: [],
   subscriptions: [],
   invoices: [],
+  proposals: [],
   documents: [],
   supportThreads: [],
   operationsSummary: null,
@@ -214,17 +216,19 @@ async function loadOperations() {
   renderOperations();
 
   try {
-    const [projectPayload, subscriptionPayload, invoicePayload, documentPayload, summary, communicationsPayload] = await Promise.all([
+    const [projectPayload, subscriptionPayload, invoicePayload, documentPayload, summary, communicationsPayload, proposals] = await Promise.all([
       getJson("/api/enterprise/projects"),
       getJson("/api/enterprise/subscriptions"),
       getJson("/api/enterprise/invoices"),
       getJson("/api/enterprise/documents"),
       getJson("/api/enterprise/summary"),
-      getJson("/api/enterprise/communications/threads?type=support")
+      getJson("/api/enterprise/communications/threads?type=support"),
+      loadEnterpriseProposals()
     ]);
     state.projects = Array.isArray(projectPayload.projects) ? projectPayload.projects : [];
     state.subscriptions = Array.isArray(subscriptionPayload.subscriptions) ? subscriptionPayload.subscriptions : [];
     state.invoices = Array.isArray(invoicePayload.invoices) ? invoicePayload.invoices : [];
+    state.proposals = proposals;
     state.documents = Array.isArray(documentPayload.documents) ? documentPayload.documents : [];
     state.supportThreads = Array.isArray(communicationsPayload.threads) ? communicationsPayload.threads : [];
     state.operationsSummary = summary;
@@ -234,6 +238,7 @@ async function loadOperations() {
     state.projects = [];
     state.subscriptions = [];
     state.invoices = [];
+    state.proposals = [];
     state.documents = [];
     state.supportThreads = [];
     state.operationsSummary = null;
@@ -241,7 +246,20 @@ async function loadOperations() {
   } finally {
     state.operationsLoading = false;
     renderOperations();
+    renderProjects();
   }
+}
+
+async function loadEnterpriseProposals() {
+  const payloads = await Promise.all(state.businesses.map(async (business) => {
+    try {
+      const payload = await getJson(`/api/businesses/${encodeURIComponent(business.id || business.slug)}/proposals`);
+      return Array.isArray(payload.proposals) ? payload.proposals : [];
+    } catch {
+      return [];
+    }
+  }));
+  return payloads.flat();
 }
 
 function populateBusinessSelectors() {
@@ -277,7 +295,7 @@ function populateOneProjectSelector(select, businessId, emptyLabel) {
 }
 
 function setOperationView(view) {
-  state.operationView = ["projects", "subscriptions", "invoices", "documents", "messages"].includes(view) ? view : "projects";
+  state.operationView = ["projects", "proposals", "subscriptions", "invoices", "documents", "messages"].includes(view) ? view : "projects";
   state.operationStatus = "";
   refs.operationTabs.forEach((button) => {
     const active = button.dataset.operationTab === state.operationView;
@@ -297,6 +315,8 @@ function renderOperationStatusOptions() {
   if (!refs.operationStatus) return;
   const labels = state.operationView === "projects"
     ? PROJECT_STATUS_LABELS
+    : state.operationView === "proposals"
+      ? PROPOSAL_STATUS_LABELS
     : state.operationView === "subscriptions"
       ? SUBSCRIPTION_STATUS_LABELS
       : state.operationView === "invoices"
@@ -326,13 +346,14 @@ function renderOperations() {
 
   const items = getFilteredOperations();
   if (!items.length) {
-    const label = ({ projects: "proyectos", subscriptions: "suscripciones", invoices: "facturas", documents: "documentos", messages: "consultas de soporte" })[state.operationView];
+    const label = ({ projects: "proyectos", proposals: "ofertas", subscriptions: "suscripciones", invoices: "facturas", documents: "documentos", messages: "consultas de soporte" })[state.operationView];
     refs.operationGrid.innerHTML = renderEmptyState(`No hay ${label} para este filtro.`, state.operationView === "messages" ? "Los mensajes enviados desde los portales aparecerán aquí." : "Crea el primero o cambia los filtros de cliente y estado.");
     return;
   }
 
   refs.operationGrid.innerHTML = items.map((item) => {
     if (state.operationView === "projects") return renderOperationProjectCard(item);
+    if (state.operationView === "proposals") return renderProposalCard(item);
     if (state.operationView === "subscriptions") return renderSubscriptionCard(item);
     if (state.operationView === "invoices") return renderInvoiceCard(item);
     if (state.operationView === "messages") return renderSupportThreadCard(item);
@@ -345,6 +366,9 @@ function renderOperationMetrics() {
   const summary = state.operationsSummary || {};
   setOperationMetric("projects", summary.projects || 0, `${state.businesses.filter((item) => item.status !== "archived").length} clientes disponibles`);
   setOperationMetric("overdue", summary.overdueProjects || 0);
+  const openProposals = state.proposals.filter((proposal) => ["borrador", "enviada", "vista"].includes(proposal.status));
+  const openProposalValue = openProposals.reduce((sum, proposal) => sum + Number(proposal.setupPrice || 0), 0);
+  setOperationMetric("proposals", openProposals.length, openProposals.length ? `${formatMoney(openProposalValue)} de alta propuestos` : "Sin ofertas pendientes");
   setOperationMetric("mrr", formatMoney(summary.monthlyRecurringRevenue || 0, "EUR"));
   setOperationMetric("renewals", summary.renewalsNext30Days || 0);
   setOperationMetric("invoiced", formatMoney(summary.monthlyInvoiced || 0, "EUR"));
@@ -361,15 +385,46 @@ function setOperationMetric(name, value, note = "") {
 }
 
 function getFilteredOperations() {
-  const items = ({ projects: state.projects, subscriptions: state.subscriptions, invoices: state.invoices, documents: state.documents, messages: state.supportThreads })[state.operationView] || [];
+  const items = ({ projects: state.projects, proposals: state.proposals, subscriptions: state.subscriptions, invoices: state.invoices, documents: state.documents, messages: state.supportThreads })[state.operationView] || [];
   return items.filter((item) => {
     if (state.operationBusiness && item.businessId !== state.operationBusiness) return false;
     if (state.operationStatus && (state.operationView === "documents" ? item.category : item.status) !== state.operationStatus) return false;
     if (!state.operationSearch) return true;
     const business = getBusiness(item.businessId);
-    return [item.name, item.title, item.description, item.responsible, item.status, item.category, item.concept, item.number, item.business?.name, business?.name, business?.city, ...(item.messages || []).flatMap((message) => [message.senderName, message.body])]
+    return [item.name, item.title, item.description, item.responsible, item.status, item.category, item.concept, item.number, item.package, item.contactName, item.business?.name, business?.name, business?.city, ...(item.messages || []).flatMap((message) => [message.senderName, message.body])]
       .filter(Boolean).some((value) => String(value).toLowerCase().includes(state.operationSearch));
   });
+}
+
+function renderProposalCard(proposal) {
+  const business = getBusiness(proposal.businessId);
+  const setupPrice = Number(proposal.setupPrice || 0);
+  const monthlyPrice = Number(proposal.monthlyPrice || 0);
+  const businessRef = business?.slug || business?.id || proposal.businessId;
+  return `
+    <article class="operation-card proposal-operation-card">
+      <header>
+        <div>
+          <span class="project-status is-${escapeAttr(proposal.status)}">${escapeHtml(PROPOSAL_STATUS_LABELS[proposal.status] || proposal.status)}</span>
+          <span class="project-plan">${escapeHtml(String(proposal.package || "A medida").replaceAll("_", " "))}</span>
+        </div>
+        <strong class="operation-alert">${escapeHtml(formatMoney(setupPrice))} alta</strong>
+      </header>
+      <p class="operation-client">${escapeHtml(business?.name || "Cliente no disponible")}</p>
+      <h3>${escapeHtml(proposal.title || proposal.contactName || "Oferta comercial DLS")}</h3>
+      <p>${escapeHtml(proposal.conditions || proposal.description || "Oferta vinculada al negocio.")}</p>
+      <dl class="operation-facts">
+        <div><dt>Alta</dt><dd>${escapeHtml(formatMoney(setupPrice))}</dd></div>
+        <div><dt>Cuota mensual</dt><dd>${escapeHtml(formatMoney(monthlyPrice))}</dd></div>
+        <div><dt>Estado</dt><dd>${escapeHtml(PROPOSAL_STATUS_LABELS[proposal.status] || proposal.status)}</dd></div>
+        <div><dt>Caducidad</dt><dd>${escapeHtml(formatDate(proposal.validUntil || proposal.expiresAt))}</dd></div>
+      </dl>
+      <footer>
+        <span>${proposal.projectId ? "Convertida en proyecto" : "Seguimiento comercial"}</span>
+        <a class="operation-open-link" href="client-dashboard.html?business=${encodeURIComponent(businessRef)}&businessName=${encodeURIComponent(business?.name || "")}&tab=proposals&preview=developer">Abrir ficha comercial</a>
+      </footer>
+    </article>
+  `;
 }
 
 function renderOperationProjectCard(project) {
@@ -844,7 +899,7 @@ function getLoadErrorMessage(error) {
   if (!error.status) {
     return {
       title: "No se pudo conectar con la API local.",
-      hint: "Arranca el backend con npm.cmd start y abre Proyectos desde http://127.0.0.1:5173/pages/projects.html. Si estabas usando otra API guardada, pulsa Limpiar en el campo API.",
+      hint: "Arranca el backend con npm.cmd start y abre Control DLS desde http://127.0.0.1:5173/pages/admin-dashboard.html. Si estabas usando otra API guardada, pulsa Limpiar en el campo API.",
       notice: "No se pudo conectar con la API."
     };
   }
@@ -902,6 +957,10 @@ function renderProjectCard(business) {
   const portalClass = portalAccess.passwordSet ? "ok" : "warn";
   const owner = business.ownerName || business.ownerEmail || business.ownerPhone || "Sin responsable";
   const demoState = getDemoState(business);
+  const proposals = state.proposals.filter((proposal) => proposal.businessId === business.id);
+  const accepted = proposals.filter((proposal) => proposal.status === "aceptada");
+  const contractedSetup = accepted.reduce((sum, proposal) => sum + Number(proposal.setupPrice || 0), 0);
+  const contractedMonthly = accepted.reduce((sum, proposal) => sum + Number(proposal.monthlyPrice || 0), 0);
 
   return `
     <article class="project-card" data-project-card="${escapeHtml(ref)}">
@@ -924,10 +983,14 @@ function renderProjectCard(business) {
           <dt>Portal</dt>
           <dd><span class="project-mini-status is-${portalClass}">${escapeHtml(portalLabel)}</span></dd>
         </div>
+        <div>
+          <dt>Relación comercial DLS</dt>
+          <dd>${proposals.length} oferta(s) · ${escapeHtml(formatMoney(contractedSetup))} alta · ${escapeHtml(formatMoney(contractedMonthly))}/mes aceptados</dd>
+        </div>
       </dl>
       ${renderDemoPanel(demoState)}
       <div class="project-links">
-        <a href="business-dashboard.html?business=${encodeURIComponent(ref)}">Portal</a>
+        <a href="client-dashboard.html?business=${encodeURIComponent(ref)}&businessName=${encodeURIComponent(business.name || "")}&preview=developer">Vista portal cliente</a>
         <a href="client-site.html?business=${encodeURIComponent(ref)}&preview=developer">Web</a>
         <a href="../index.html?skipIntro=1&business=${encodeURIComponent(ref)}">Studio</a>
       </div>

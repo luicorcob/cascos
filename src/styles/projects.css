@@ -141,6 +141,12 @@ a {
   color: #ffffff;
 }
 
+.projects-nav a.is-current {
+  border-color: rgba(40, 215, 255, 0.42);
+  background: rgba(40, 215, 255, 0.12);
+  color: #ffffff;
+}
+
 .projects-main {
   width: min(1440px, 100%);
   margin: 0 auto;
@@ -166,6 +172,14 @@ a {
   margin: 0;
   color: var(--muted);
   font-size: 1rem;
+}
+
+.projects-hero .projects-hero-intro {
+  max-width: 720px;
+  margin: 0 0 8px;
+  color: #d8dee8;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.5;
 }
 
 .projects-actions {
@@ -302,6 +316,25 @@ a {
   min-height: 22px;
   margin: 0;
   color: var(--muted);
+}
+
+.operation-open-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(40, 215, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(40, 215, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.proposal-operation-card .operation-alert {
+  color: var(--green);
 }
 
 .project-status,

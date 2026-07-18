@@ -1,3 +1,9 @@
+const pageParams = new URLSearchParams(window.location.search);
+const isDedicatedClientWorkspace = document.body?.dataset.dashboardScope === "client";
+const isDeveloperPreview = isDedicatedClientWorkspace
+  && (pageParams.get("preview") === "developer" || pageParams.get("adminPreview") === "1");
+const requestedBusinessName = String(pageParams.get("businessName") || "").trim();
+
 const state = {
   activeTab: "inbox",
   calendarWeekOffset: 0,
@@ -138,8 +144,8 @@ const state = {
   intelligenceFeedback: "",
   intelligenceQueryResult: null,
   apiBase: window.LocalLiftApi?.getBase?.() || "",
-  adminToken: localStorage.getItem("locallift_admin_token") || "",
-  businessUserToken: localStorage.getItem("locallift_business_user_token") || "",
+  adminToken: isDedicatedClientWorkspace && !isDeveloperPreview ? "" : (localStorage.getItem("locallift_admin_token") || ""),
+  businessUserToken: isDedicatedClientWorkspace && !isDeveloperPreview ? "" : (localStorage.getItem("locallift_business_user_token") || ""),
   businessUserSession: null,
   clientSession: window.LocalLiftApi?.getClientSession?.() || null,
   timelineRequestSequence: 0,
@@ -218,6 +224,10 @@ function init() {
   refs.businessUserLogout = document.querySelector("[data-business-user-logout]");
   refs.businessUserSession = document.querySelector("[data-business-user-session]");
   refs.clientLogout = document.querySelector("[data-client-logout]");
+  refs.clientAccessGate = document.querySelector("[data-client-access-gate]");
+  refs.portalContext = document.querySelector("[data-portal-context]");
+  refs.workspaceLabel = document.querySelector("[data-workspace-label]");
+  refs.sideBrandBusiness = document.querySelector("[data-side-brand-business]");
   refs.notice = document.querySelector("[data-notice]");
   refs.sideBusiness = document.querySelector("[data-side-business]");
   refs.sideMeta = document.querySelector("[data-side-meta]");
@@ -226,6 +236,7 @@ function init() {
   refs.pageSubtitle = document.querySelector("[data-page-subtitle]");
   refs.refresh = document.querySelector("[data-refresh]");
   refs.webLink = document.querySelector("[data-web-link]");
+  refs.quickCreate = document.querySelector("[data-quick-create]");
   refs.todayList = document.querySelector("[data-today-list]");
   refs.healthList = document.querySelector("[data-health-list]");
   refs.contactTimelineDialog = document.querySelector("[data-contact-timeline-dialog]");
@@ -236,7 +247,12 @@ function init() {
   refs.contactProposal = document.querySelector("[data-contact-proposal]");
   refs.contactMessage = document.querySelector("[data-contact-message]");
 
+  arrangeClientNavigation();
   applyPortalMode();
+  if (isDedicatedClientWorkspace && !state.clientSession && !isDeveloperPreview) {
+    showClientAccessGate();
+    return;
+  }
   bindUi();
   const requestedTab = new URLSearchParams(window.location.search).get("tab") || "";
   const validRequestedTab = Array.from(document.querySelectorAll("[data-tab]"))
@@ -392,11 +408,57 @@ function updateBusinessUserSessionLabel() {
     : "Sin sesión de equipo";
 }
 
+function arrangeClientNavigation() {
+  if (!isDedicatedClientWorkspace) {
+    return;
+  }
+  const navigation = document.querySelector("[data-side-navigation]");
+  const dlsNavigation = navigation?.querySelector("[data-dls-navigation]");
+  const firstGroup = navigation?.querySelector(".nav-group");
+  if (dlsNavigation && firstGroup && dlsNavigation !== firstGroup) {
+    firstGroup.after(dlsNavigation);
+  }
+}
+
 function applyPortalMode() {
-  document.body.classList.toggle("is-client-portal", Boolean(state.clientSession));
+  document.body.classList.toggle("is-client-portal", Boolean(state.clientSession) || isDedicatedClientWorkspace);
+  document.body.classList.toggle("is-developer-preview", isDeveloperPreview);
+  const initialBusinessName = state.clientSession?.businessName || requestedBusinessName;
 
   if (refs.clientLogout) {
     refs.clientLogout.hidden = !state.clientSession;
+  }
+  if (refs.portalContext) {
+    refs.portalContext.textContent = isDeveloperPreview ? "DLS · Vista previa del cliente" : "DLS · Portal del cliente";
+  }
+  if (refs.workspaceLabel) {
+    refs.workspaceLabel.textContent = isDeveloperPreview
+      ? (initialBusinessName ? `Vista previa · ${initialBusinessName}` : "Vista del local desde Control DLS")
+      : (initialBusinessName || "Área privada del negocio");
+  }
+  if (initialBusinessName && refs.sideBrandBusiness) {
+    refs.sideBrandBusiness.textContent = initialBusinessName;
+  }
+  if (initialBusinessName && refs.sideBusiness) {
+    refs.sideBusiness.textContent = initialBusinessName;
+  }
+  if (initialBusinessName && refs.sideMeta) {
+    refs.sideMeta.textContent = isDeveloperPreview
+      ? "Vista previa abierta desde Control DLS"
+      : "Negocio de tu sesión";
+  }
+}
+
+function showClientAccessGate() {
+  document.body.classList.add("is-access-locked");
+  if (refs.clientAccessGate) {
+    refs.clientAccessGate.hidden = false;
+  }
+  if (refs.pageTitle) {
+    refs.pageTitle.textContent = "Portal del cliente";
+  }
+  if (refs.pageSubtitle) {
+    refs.pageSubtitle.textContent = "Acceso privado para gestionar un único negocio.";
   }
 }
 
@@ -489,7 +551,7 @@ async function loadBusinesses(options = {}) {
 
       showNotice(error.status === 401
         ? (state.clientSession ? "La sesion de cliente ha caducado. Entra de nuevo desde Start > Cliente." : "La API pide token admin. Pegalo en la barra lateral y guarda.")
-        : "No se pudo conectar con la API. Ejecuta npm.cmd start y abre esta pagina desde http://127.0.0.1:5173/pages/business-dashboard.html.", "error");
+        : "No se pudo conectar con la API. Ejecuta npm.cmd start y abre esta pagina desde http://127.0.0.1:5173/pages/client-dashboard.html.", "error");
   } finally {
     setLoading(false);
   }
@@ -1830,6 +1892,15 @@ function setActiveTab(tab) {
     panel.classList.toggle("is-active", active);
     panel.hidden = !active;
   });
+  if (tab !== "project") {
+    document.querySelectorAll("[data-client-section]").forEach((button) => {
+      button.classList.remove("is-active");
+      button.setAttribute("aria-current", "false");
+    });
+  }
+  if (refs.quickCreate) {
+    refs.quickCreate.hidden = tab === "project";
+  }
 
   const url = new URL(window.location.href);
   url.searchParams.set("tab", tab);
@@ -1933,6 +2004,14 @@ function renderEmptyShell() {
 
 function renderHeader(business, model) {
   refs.sideBusiness.textContent = business.name;
+  if (refs.sideBrandBusiness) {
+    refs.sideBrandBusiness.textContent = business.name;
+  }
+  if (refs.workspaceLabel) {
+    refs.workspaceLabel.textContent = isDeveloperPreview
+      ? `Vista previa · ${business.name}`
+      : business.name;
+  }
   refs.sideMeta.textContent = [business.category, business.city, planLabel(business.plan)]
     .filter(Boolean)
     .join(" - ");

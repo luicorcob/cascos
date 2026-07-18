@@ -69,10 +69,10 @@
 
     if (dashboardLink) {
       const businessRef = currentBusinessRecord?.slug || currentBusinessRecord?.id || "";
-      dashboardLink.textContent = options.session ? "Portal" : "Proyectos";
+      dashboardLink.textContent = options.session ? "Portal del cliente" : "Control DLS";
       dashboardLink.href = options.session
-        ? `business-dashboard.html?business=${encodeURIComponent(businessRef)}`
-        : "projects.html";
+        ? `client-dashboard.html?business=${encodeURIComponent(businessRef)}`
+        : "admin-dashboard.html";
     }
 
     root.innerHTML = renderer.renderSite(business);

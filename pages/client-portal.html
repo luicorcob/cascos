@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#090b10">
     <script>
       (() => {
-        const target = new URL("business-dashboard.html", window.location.href);
+        const target = new URL("client-dashboard.html", window.location.href);
         const params = new URLSearchParams(window.location.search);
         params.set("tab", "project");
         target.search = params.toString();
@@ -29,7 +29,7 @@
         <span><small>DLS</small><strong>Portal de cliente</strong></span>
       </a>
       <nav aria-label="Portal">
-        <a href="business-dashboard.html">Mi negocio</a>
+        <a href="client-dashboard.html">Mi negocio</a>
         <a href="client-site.html" data-client-web>Mi web</a>
         <button type="button" data-client-logout>Salir</button>
       </nav>

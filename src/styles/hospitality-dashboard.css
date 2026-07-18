@@ -57,6 +57,88 @@
   min-height: 100dvh;
 }
 
+.business-body.is-client-workspace [data-developer-preview-only],
+.business-body.is-client-workspace .quick-nav,
+.business-body.is-client-workspace .business-advanced {
+  display: none !important;
+}
+
+.business-body.is-developer-preview .business-side {
+  border-right-color: rgba(82, 98, 217, 0.3);
+}
+
+.business-body.is-developer-preview .brand-lockup .eyebrow,
+.business-body.is-developer-preview .business-topbar .eyebrow {
+  color: #8b3bc1;
+}
+
+.portal-access-gate {
+  width: min(620px, 100%);
+  margin: clamp(36px, 9vh, 110px) auto 0;
+  padding: clamp(28px, 5vw, 54px);
+  border: 1px solid var(--hospitality-border);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(82, 98, 217, 0.15), transparent 18rem),
+    #ffffff;
+  box-shadow: 0 24px 70px rgba(23, 36, 60, 0.11);
+  text-align: center;
+}
+
+.portal-access-gate[hidden] {
+  display: none;
+}
+
+.portal-access-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 20px;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--hospitality-navy);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.portal-access-gate h1 {
+  margin: 6px 0 12px;
+  color: var(--hospitality-navy);
+}
+
+.portal-access-gate > p:not(.eyebrow) {
+  max-width: 480px;
+  margin: 0 auto 24px;
+  color: var(--hospitality-muted);
+  line-height: 1.65;
+}
+
+.portal-access-gate a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 11px;
+  background: var(--hospitality-primary);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.business-body.is-access-locked .business-navigation,
+.business-body.is-access-locked .select-label,
+.business-body.is-access-locked .side-business-status,
+.business-body.is-access-locked .client-logout,
+.business-body.is-access-locked .topbar-actions,
+.business-body.is-access-locked .command-strip,
+.business-body.is-access-locked .tab-panel {
+  display: none !important;
+}
+
 .business-body .business-side {
   position: sticky;
   top: 0;
@@ -1256,4 +1338,124 @@
   .business-body *,
   .business-body *::before,
   .business-body *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
+.business-body.is-client-workspace .brand-lockup .eyebrow,
+.business-body.is-client-workspace .business-topbar .eyebrow,
+.business-body.is-client-workspace .portal-access-gate .eyebrow {
+  color: #52617b;
+  font-size: 0.75rem;
+}
+
+.business-body.is-client-workspace .business-topbar p:not(.eyebrow) {
+  color: #59677d;
+}
+
+.business-body.is-client-workspace .business-side .side-brand-row {
+  order: 0;
+}
+
+.business-body.is-client-workspace .side-business-status {
+  display: grid;
+  order: 1;
+  gap: 4px;
+  margin: 0 4px;
+  padding: 11px 12px;
+  border-color: #dfe4ec;
+  border-radius: 11px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(31, 46, 75, 0.05);
+}
+
+.business-body.is-client-workspace .side-business-status .eyebrow {
+  margin: 0;
+  color: #536078;
+  font-size: 0.75rem;
+}
+
+.business-body.is-client-workspace .side-business-status h2 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--hospitality-navy);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.business-body.is-client-workspace .side-business-status > p:not(.eyebrow) {
+  overflow: hidden;
+  margin: 0;
+  color: #536078;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.business-body.is-client-workspace .side-business-status .status-stack {
+  display: none;
+}
+
+.business-body.is-client-workspace .business-navigation {
+  order: 2;
+  flex: 1 1 auto;
+}
+
+.business-body.is-client-workspace .client-logout {
+  order: 3;
+}
+
+.business-body.is-client-workspace .client-project-hub .client-tabs {
+  display: none !important;
+}
+
+.business-body.is-client-workspace .client-project-hub .project-hub-header {
+  display: none;
+}
+
+.business-body.is-project-view [data-quick-create] {
+  display: none !important;
+}
+
+.business-body.is-client-workspace .business-navigation {
+  gap: 12px;
+}
+
+.business-body.is-client-workspace .nav-group > p {
+  margin-bottom: 5px;
+  color: #536078;
+  font-size: 0.75rem;
+  letter-spacing: 0.09em;
+}
+
+.business-body.is-client-workspace .nav-item,
+.business-body.is-client-workspace .tab-button.nav-item {
+  min-height: 37px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.business-body.is-client-workspace .brand-lockup strong {
+  display: block;
+  max-width: 176px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.business-body .nav-count[hidden] {
+  display: none;
+}
+
+.business-body.is-client-workspace .client-auth-state a {
+  min-height: 44px;
+}
+
+@media (max-width: 900px) {
+  .business-body.is-client-workspace .side-business-status {
+    display: none !important;
+  }
+
+  .business-body.is-client-workspace .brand-lockup strong {
+    max-width: min(62vw, 300px);
+  }
 }

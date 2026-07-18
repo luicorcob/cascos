@@ -30,6 +30,8 @@ const ICONS = Object.freeze({
   leads: '<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>',
   proposal: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
   messages: '<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/>',
+  document: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/>',
+  support: '<path d="M4 13a8 8 0 0 1 16 0"/><path d="M4 13v5h3v-6H4M20 13v5h-3v-6h3M17 19c-1 2-3 2-5 2"/>',
   finance: '<rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18M7 15h3"/>',
   expense: '<path d="M12 2v20M17 6.5h-7.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
   team: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M17 11a4 4 0 0 0 0-8M23 21v-2a4 4 0 0 0-3-3.7"/>',
@@ -66,6 +68,9 @@ const DAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 document.addEventListener("DOMContentLoaded", init);
 
 function init() {
+  if (document.body.classList.contains("is-access-locked")) {
+    return;
+  }
   collectRefs();
   installIcons();
   bindNavigation();
@@ -534,8 +539,13 @@ function updateHomeOverview() {
 function updateNavigation(tab) {
   const button = document.querySelector(`[data-tab="${cssEscape(tab || "home")}"]`);
   if (!button) return;
-  if (refs.title) refs.title.textContent = button.dataset.navTitle || button.textContent.trim();
-  if (refs.subtitle) refs.subtitle.textContent = button.dataset.navSubtitle || "Gestión clara para tu negocio.";
+  const projectSection = new URLSearchParams(window.location.search).get("projectSection") || "projects";
+  const contextualButton = tab === "project"
+    ? document.querySelector(`[data-client-section="${cssEscape(projectSection)}"]`)
+    : null;
+  const navigationButton = contextualButton || button;
+  if (refs.title) refs.title.textContent = navigationButton.dataset.navTitle || navigationButton.textContent.trim();
+  if (refs.subtitle) refs.subtitle.textContent = navigationButton.dataset.navSubtitle || "Gestión clara para tu negocio.";
   const primaryActions = {
     bookings: { label: "Nueva reserva", action: "booking" },
     finance: { label: "Nueva factura", action: "invoice" },
@@ -544,6 +554,7 @@ function updateNavigation(tab) {
   };
   const primary = primaryActions[tab] || { label: "Crear", action: "" };
   if (refs.quickCreate) {
+    refs.quickCreate.hidden = tab === "project";
     refs.quickCreate.dataset.contextAction = primary.action;
     refs.quickCreate.innerHTML = `<span aria-hidden="true">+</span> ${escapeHtml(primary.label)}`;
   }

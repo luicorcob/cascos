@@ -2,6 +2,28 @@ const PROJECT_STATUSES = { pending: "Pendiente", "in-design": "En diseño", revi
 const INVOICE_STATUSES = { draft: "Borrador", sent: "Enviada", paid: "Pagada", overdue: "Vencida", cancelled: "Cancelada" };
 const PROPOSAL_STATUSES = { borrador: "Borrador", enviada: "Enviada", vista: "Vista", aceptada: "Aceptada", rechazada: "Rechazada", caducada: "Caducada" };
 const SUBSCRIPTION_STATUSES = { active: "Activa", paused: "Pausada", cancelled: "Cancelada", expired: "Vencida" };
+const PROJECT_SECTION_META = Object.freeze({
+  projects: {
+    title: "Estado del proyecto",
+    subtitle: "Avance, tareas y aprobaciones del trabajo contratado a DLS."
+  },
+  billing: {
+    title: "Facturas y pagos DLS",
+    subtitle: "Presupuestos aceptados, facturas, pagos y servicios recurrentes."
+  },
+  documents: {
+    title: "Documentos compartidos",
+    subtitle: "Contratos, entregables y archivos intercambiados con DLS."
+  },
+  support: {
+    title: "Soporte DLS",
+    subtitle: "Conversación directa con el equipo que gestiona tu proyecto."
+  },
+  team: {
+    title: "Chat del equipo",
+    subtitle: "Canales privados para coordinar a las personas de tu negocio."
+  }
+});
 const refs = {};
 const state = {
   session: window.LocalLiftApi?.getClientSession?.() || null,
@@ -17,7 +39,7 @@ const state = {
   communicationsError: "",
   communicationsLoading: false,
   pollTimer: null,
-  activeTab: "projects",
+  activeTab: new URLSearchParams(window.location.search).get("projectSection") || "projects",
   loading: false,
   queuedReload: false
 };
@@ -41,7 +63,7 @@ function init() {
   refs.documentProject = document.querySelector("[data-client-document-project]");
   refs.supportMessages = document.querySelector("[data-client-support-messages]");
   refs.supportForm = document.querySelector("[data-client-support-form]");
-  refs.supportUnread = document.querySelector("[data-client-support-unread]");
+  refs.supportUnread = Array.from(document.querySelectorAll("[data-client-support-unread]"));
   refs.profileForm = document.querySelector("[data-client-profile-form]");
   refs.teamMembers = document.querySelector("[data-client-team-members]");
   refs.roomForm = document.querySelector("[data-client-room-form]");
@@ -53,6 +75,9 @@ function init() {
   document.addEventListener("dls:business-changed", syncDashboardBusiness);
 
   document.querySelectorAll("[data-client-tab]").forEach((button) => button.addEventListener("click", () => setTab(button.dataset.clientTab)));
+  document.querySelectorAll("[data-client-section]").forEach((button) => {
+    button.addEventListener("click", () => openDashboardSection(button.dataset.clientSection, button));
+  });
   refs.refresh?.addEventListener("click", loadPortal);
   refs.logout?.addEventListener("click", () => {
     window.LocalLiftApi?.clearClientSession?.();
@@ -241,10 +266,10 @@ async function loadCommunications({ markRead = false, silent = false } = {}) {
 function renderCommunications() {
   const supportThread = state.communicationThreads.find((thread) => thread.type === "support");
   const unread = Number(supportThread?.unreadCount || 0);
-  if (refs.supportUnread) {
-    refs.supportUnread.hidden = unread === 0;
-    refs.supportUnread.textContent = unread > 99 ? "99+" : String(unread);
-  }
+  refs.supportUnread.forEach((node) => {
+    node.hidden = unread === 0;
+    node.textContent = unread > 99 ? "99+" : String(unread);
+  });
   if (refs.supportMessages) {
     refs.supportMessages.innerHTML = supportThread?.messages?.length
       ? supportThread.messages.map((message) => renderChatMessage(message, message.senderRole === "client")).join("")
@@ -480,13 +505,53 @@ function setTab(tab) {
     panel.hidden = !active;
     panel.classList.toggle("is-active", active);
   });
+  const metrics = document.querySelector(".client-project-hub .client-metrics");
+  if (metrics) metrics.hidden = state.activeTab !== "projects";
+  syncDashboardSectionNavigation();
+  const url = new URL(window.location.href);
+  url.searchParams.set("projectSection", state.activeTab);
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   if (state.activeTab === "support") loadCommunications({ markRead: true, silent: true });
+}
+
+function openDashboardSection(section, sourceButton) {
+  const projectButton = document.querySelector('[data-tab="project"]');
+  if (projectButton && sourceButton !== projectButton) {
+    projectButton.click();
+  }
+  setTab(section);
+  window.queueMicrotask(syncDashboardSectionNavigation);
+  document.body.classList.remove("is-side-menu-open");
+  document.querySelector("[data-side-menu-toggle]")?.setAttribute("aria-expanded", "false");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function syncDashboardSectionNavigation() {
+  const projectPanel = document.querySelector('[data-panel="project"]');
+  const projectAreaActive = Boolean(projectPanel && !projectPanel.hidden);
+  const quickCreate = document.querySelector("[data-quick-create]");
+  if (quickCreate) quickCreate.hidden = projectAreaActive;
+  document.querySelectorAll("[data-client-section]").forEach((button) => {
+    const active = projectAreaActive && button.dataset.clientSection === state.activeTab;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-current", active ? "page" : "false");
+  });
+  if (!projectAreaActive) return;
+  const meta = PROJECT_SECTION_META[state.activeTab] || PROJECT_SECTION_META.projects;
+  const pageTitle = document.querySelector("[data-page-title]");
+  const pageSubtitle = document.querySelector("[data-page-subtitle]");
+  if (pageTitle) pageTitle.textContent = meta.title;
+  if (pageSubtitle) pageSubtitle.textContent = meta.subtitle;
 }
 
 function showAuthState(message = "") {
   if (refs.authState) refs.authState.hidden = false;
   if (refs.refresh) refs.refresh.hidden = true;
   document.querySelectorAll(".client-metrics, .client-tabs, .client-panel").forEach((node) => { node.hidden = true; });
+  if (!document.body.classList.contains("is-access-locked")) {
+    syncDashboardSectionNavigation();
+    window.queueMicrotask(syncDashboardSectionNavigation);
+  }
   if (message) showNotice(message, "error");
 }
 

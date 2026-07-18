@@ -24,8 +24,11 @@ async function init() {
     if (apiBase) {
       params.set("apiBase", apiBase);
     }
+    if (!window.LocalLiftApi?.getClientSession?.()) {
+      params.set("preview", "developer");
+    }
 
-    refs.dashboardLink.href = `business-dashboard.html?${params.toString()}`;
+    refs.dashboardLink.href = `client-dashboard.html?${params.toString()}`;
   }
 
   try {

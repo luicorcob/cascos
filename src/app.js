@@ -2716,7 +2716,7 @@ function bindIntroGate() {
 
       window.LocalLiftApi?.setClientSession?.(payload.session);
       setClientLoginNotice("Acceso correcto. Abriendo portal...", "ok");
-      window.location.href = `pages/business-dashboard.html?business=${encodeURIComponent(payload.business?.slug || payload.business?.id || payload.session.businessSlug || payload.session.businessId)}`;
+      window.location.href = `pages/client-dashboard.html?business=${encodeURIComponent(payload.business?.slug || payload.business?.id || payload.session.businessSlug || payload.session.businessId)}&businessName=${encodeURIComponent(payload.business?.name || payload.session.businessName || business)}`;
     } catch (error) {
       setClientLoginNotice(getClientLoginErrorMessage(error), "error");
     } finally {
@@ -2740,6 +2740,10 @@ function bindIntroGate() {
     button.addEventListener("click", () => setIntroMode(button.dataset.introMode || "developer"));
   });
   clientLoginForm?.addEventListener("submit", handleClientLogin);
+  const requestedIntroMode = new URLSearchParams(window.location.search).get("mode");
+  if (requestedIntroMode === "client" || requestedIntroMode === "developer") {
+    setIntroMode(requestedIntroMode);
+  }
   studioDestination?.addEventListener("click", (event) => {
     event.preventDefault();
     enterStudio({ updateHistory: true });

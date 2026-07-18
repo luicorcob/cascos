@@ -31,6 +31,17 @@ Resultados que definen el exito:
 
 **CRM 2.0 y suite operativa vertical completados y verificados.**
 
+La interfaz queda separada en dos superficies con responsabilidades distintas:
+
+- `pages/admin-dashboard.html` es Control DLS: CRM multi-cliente, ofertas,
+  producción, servicios, facturación, cobros, accesos y soporte del propio DLS.
+- `pages/client-dashboard.html` es el portal privado de cada local: clientes del
+  negocio, reservas, empleados, turnos, inventario, cuentas e informes.
+
+Las rutas históricas redirigen a estas entradas para conservar enlaces y
+automatizaciones existentes. El portal de cliente exige sesión salvo cuando se
+abre de forma explícita como vista previa desde Control DLS.
+
 El plan `CRM_2_EJECUCION.md` queda sin tareas pendientes. Incluye cimientos
 relacionales, seis roles con autorizacion backend, dinero normalizado,
 omnicanal, automatizaciones, campañas, quote-to-cash, Cliente 360, reputacion,

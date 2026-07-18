@@ -26,7 +26,7 @@ Para que el Radar funcione sin arrancarlo desde tu portátil, despliega este rep
 14. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
 15. Usa `Exportar paquete` para descargar un ZIP con HTML, `business.json`, ficha de entrega y cambios.
 16. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
-17. Con el servidor activo, abre `pages/business-dashboard.html` para revisar el primer portal operativo del negocio.
+17. Con el servidor activo, abre `pages/admin-dashboard.html` para el CRM interno de DLS o `pages/client-dashboard.html` para el portal privado de un negocio.
 
 Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
 `index.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
@@ -282,7 +282,7 @@ PATCH http://127.0.0.1:5173/api/businesses/{id-o-slug}/contacts/{contactId}/next
 POST  http://127.0.0.1:5173/api/businesses/{id-o-slug}/contacts/{contactId}/activities
 ```
 
-El portal `pages/business-dashboard.html` usa estos endpoints para mostrar pipeline Kanban de leads, cambiar estado, persistir el orden manual por columna, gestionar la proxima actividad y guardar notas/tareas en el historial.
+El portal `pages/client-dashboard.html` usa estos endpoints para mostrar el pipeline Kanban del propio local, cambiar estado, persistir el orden manual por columna, gestionar la proxima actividad y guardar notas/tareas en el historial.
 
 ## API y widget de reservas
 
@@ -342,12 +342,21 @@ pages/store-admin.html
 
 Incluye resumen, productos, pedidos, cambios de estado, cupones, metodos de envio, IVA, URLs de exito/cancelacion, terminos y paises permitidos.
 
-## Portal del negocio
+## Dashboards separados por responsabilidad
+
+La aplicación tiene dos espacios deliberadamente independientes:
+
+- `pages/admin-dashboard.html`: **Control DLS**, exclusivo para el desarrollador/vendedor. Reúne negocios clientes, estado de desarrollo y publicación, ofertas, proyectos, suscripciones, facturación, cobros, documentos, accesos y soporte.
+- `pages/client-dashboard.html`: **Portal del cliente**, limitado a un negocio autenticado. Reúne clientes del local, reservas, empleados, turnos, inventario, pedidos, cuentas, informes y el proyecto contratado a DLS.
+
+`pages/projects.html` y `pages/business-dashboard.html` se mantienen como rutas heredadas y redirigen a los espacios anteriores. Una entrada directa al portal del cliente sin sesión muestra el bloqueo de acceso; la vista desde Control DLS se abre explícitamente con `preview=developer`.
+
+### Portal del negocio
 
 El primer panel operativo vive en:
 
 ```text
-pages/business-dashboard.html
+pages/client-dashboard.html
 ```
 
 Carga negocios desde la API local, permite cambiar de negocio y muestra Inicio, Leads, Clientes, Reservas, Pedidos, Productos, Reportes y Ajustes. En Reservas ya se pueden crear citas manuales, confirmar, completar o cancelar reservas. En Reportes hay acceso directo al informe mensual imprimible.
