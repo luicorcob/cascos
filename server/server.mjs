@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { brotliCompressSync, constants as zlibConstants, gzipSync } from "node:zlib";
 import { handleAccountApi, isAccountApiRequest } from "./api/account-api.mjs";
 import { handleAutomationApi, isAutomationApiRequest } from "./api/automation-api.mjs";
 import { handleBookingApi, isBookingApiRequest } from "./api/booking-api.mjs";
@@ -14,6 +15,7 @@ import { handleCrmConfigApi, isCrmConfigApiRequest } from "./api/crm-config-api.
 import { handleClientAuthApi, isClientAuthApiRequest } from "./lib/client-auth.mjs";
 import { handleContactApi, isContactApiRequest } from "./api/contact-api.mjs";
 import { handleCommunicationsApi, isCommunicationsApiRequest } from "./api/communications-api.mjs";
+import { handleCommerceApi, isCommerceApiRequest } from "./api/commerce-api.mjs";
 import { handleConsentApi, isConsentApiRequest } from "./api/consent-api.mjs";
 import { handleCustomer360Api, isCustomer360ApiRequest } from "./api/customer-360-api.mjs";
 import { handleDealApi, isDealApiRequest } from "./api/deal-api.mjs";
@@ -67,6 +69,7 @@ const contentTypes = {
   ".webp": "image/webp",
   ".ico": "image/x-icon"
 };
+const compressibleStaticExtensions = new Set([".css", ".html", ".js", ".json", ".md", ".mjs", ".svg"]);
 
 const baseHeaders = securityHeaders();
 
@@ -150,6 +153,11 @@ const server = createServer(async (request, response) => {
 
     if (isCampaignApiRequest(requestUrl.pathname)) {
       await handleCampaignApi(request, response, apiContext);
+      return;
+    }
+
+    if (isCommerceApiRequest(requestUrl.pathname)) {
+      await handleCommerceApi(request, response, apiContext);
       return;
     }
 
@@ -330,11 +338,21 @@ const server = createServer(async (request, response) => {
       file = await readFile(resolvedPath);
     }
 
+    const extension = path.extname(resolvedPath);
+    const staticPayload = encodeStaticPayload(file, extension, request.headers["accept-encoding"]);
     response.writeHead(200, {
       ...baseHeaders,
-      "Content-Type": contentTypes[path.extname(resolvedPath)] || "application/octet-stream"
+      "Cache-Control": staticCacheControl(resolvedPath),
+      "Content-Type": contentTypes[extension] || "application/octet-stream",
+      "Content-Length": staticPayload.payload.byteLength,
+      ...(staticPayload.encoding
+        ? {
+            "Content-Encoding": staticPayload.encoding,
+            Vary: "Accept-Encoding"
+          }
+        : {})
     });
-    response.end(request.method === "HEAD" ? undefined : file);
+    response.end(request.method === "HEAD" ? undefined : staticPayload.payload);
   } catch (error) {
     if (error.code === "ENOENT") {
       logWarn("not_found", { request: requestLog });
@@ -374,3 +392,51 @@ server.on("error", (error) => {
   logError(error, { component: "server", port });
   throw error;
 });
+
+function staticCacheControl(filePath) {
+  const relativePath = path.relative(root, filePath).split(path.sep).join("/");
+
+  if (relativePath.endsWith(".html")) {
+    return "no-cache";
+  }
+
+  if (
+    /^assets\/landing\/sequence\/frame-\d{3}\.webp$/i.test(relativePath)
+    || relativePath.startsWith("assets/vendor/")
+  ) {
+    return "public, max-age=31536000, immutable";
+  }
+
+  if (/\.(?:css|ico|jpe?g|js|mjs|png|svg|webp)$/i.test(relativePath)) {
+    return "public, max-age=86400, stale-while-revalidate=604800";
+  }
+
+  return "no-cache";
+}
+
+function encodeStaticPayload(file, extension, acceptEncoding = "") {
+  if (!compressibleStaticExtensions.has(extension) || file.byteLength < 1024) {
+    return { encoding: "", payload: file };
+  }
+
+  const accepted = String(acceptEncoding || "").toLowerCase();
+  if (accepted.includes("br")) {
+    return {
+      encoding: "br",
+      payload: brotliCompressSync(file, {
+        params: {
+          [zlibConstants.BROTLI_PARAM_QUALITY]: 5
+        }
+      })
+    };
+  }
+
+  if (accepted.includes("gzip")) {
+    return {
+      encoding: "gzip",
+      payload: gzipSync(file, { level: 6 })
+    };
+  }
+
+  return { encoding: "", payload: file };
+}

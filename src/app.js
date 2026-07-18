@@ -287,7 +287,7 @@ init();
 
 function init() {
   if (!form || !sitePreview || !previewTitle || !previewMetrics || !statusLine || !deviceFrame) {
-    document.body.innerHTML = '<main class="boot-error"><h1>No se pudo iniciar DLS Studio</h1><p>Faltan elementos esenciales de la interfaz. Revisa index.html.</p></main>';
+    document.body.innerHTML = '<main class="boot-error"><h1>No se pudo iniciar DLS Studio</h1><p>Faltan elementos esenciales de la interfaz. Revisa workspace.html.</p></main>';
     return;
   }
 
@@ -2471,6 +2471,8 @@ function bindIntroGate() {
   const params = new URLSearchParams(window.location.search);
   const skipIntro = ["1", "true", "yes"].includes(String(params.get("skipIntro") || "").toLowerCase());
   const forceIntro = ["1", "true", "yes"].includes(String(params.get("intro") || "").toLowerCase());
+  const hubLaunch = params.has("hub")
+    && !["0", "false", "no"].includes(String(params.get("hub") || "").toLowerCase());
   const presentationLaunch = ["1", "true", "yes"].includes(String(params.get("presentation") || "").toLowerCase());
   const automatedLaunch = navigator.webdriver === true;
   const logoIntroContent = introGate.querySelector(".intro-gate-content");
@@ -2779,6 +2781,13 @@ function bindIntroGate() {
 
   window.addEventListener("popstate", syncIntroWithLocation);
   window.addEventListener("hashchange", syncIntroWithLocation);
+
+  if (hubLaunch) {
+    setIntroCompleted(true);
+    showDestinationHub({ focus: false, markComplete: false });
+    setIntroHistoryState("hub");
+    return;
+  }
 
   if (!forceIntro && (skipIntro || presentationLaunch || automatedLaunch || window.location.hash === "#studioWorkspace")) {
     openStudioWithoutGate({ markComplete: true });
@@ -3167,12 +3176,31 @@ function bindActions() {
 }
 
 function bindCursor() {
+  if (
+    !cursorGlow
+    || window.getComputedStyle(cursorGlow).display === "none"
+    || window.matchMedia("(pointer: coarse), (prefers-reduced-motion: reduce)").matches
+  ) {
+    return;
+  }
+
+  let cursorFrame = 0;
+  let cursorX = window.innerWidth / 2;
+  let cursorY = window.innerHeight * 0.2;
+
+  const paintCursor = () => {
+    cursorFrame = 0;
+    cursorGlow.style.setProperty("--cursor-x", `${Math.round((cursorX / window.innerWidth) * 100)}%`);
+    cursorGlow.style.setProperty("--cursor-y", `${Math.round((cursorY / window.innerHeight) * 100)}%`);
+  };
+
   window.addEventListener("pointermove", (event) => {
-    const x = `${Math.round((event.clientX / window.innerWidth) * 100)}%`;
-    const y = `${Math.round((event.clientY / window.innerHeight) * 100)}%`;
-    cursorGlow.style.setProperty("--cursor-x", x);
-    cursorGlow.style.setProperty("--cursor-y", y);
-  });
+    cursorX = event.clientX;
+    cursorY = event.clientY;
+    if (!cursorFrame) {
+      cursorFrame = window.requestAnimationFrame(paintCursor);
+    }
+  }, { passive: true });
 }
 
 function fillForm(business) {
@@ -6851,7 +6879,11 @@ function deriveStoreEndpoint(endpoint, pathname) {
 
   try {
     const parsed = new URL(url);
-    parsed.pathname = pathname;
+    const resource = pathname.match(/\/api\/store\/(.+)$/)?.[1] || "";
+    const marker = parsed.pathname.lastIndexOf("/store/");
+    parsed.pathname = resource && marker >= 0
+      ? `${parsed.pathname.slice(0, marker + 7)}${resource}`
+      : pathname;
     parsed.search = "";
     return parsed.toString();
   } catch (error) {

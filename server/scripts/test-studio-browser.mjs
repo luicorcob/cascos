@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const port = 5199 + Math.floor(Math.random() * 600);
 const debugPort = 9229 + Math.floor(Math.random() * 600);
-const url = `http://127.0.0.1:${port}/index.html`;
+const url = `http://127.0.0.1:${port}/workspace.html`;
 const chrome = await findChrome();
 const profile = await mkdtemp(path.join(os.tmpdir(), "locallift-browser-"));
 const downloads = path.join(profile, "downloads");
@@ -372,7 +372,7 @@ async function waitForPage(portNumber, timeout = 12_000) {
   while (Date.now() - started < timeout) {
     try {
       const pages = await fetch(`http://127.0.0.1:${portNumber}/json`).then((response) => response.json());
-      const page = pages.find((item) => item.type === "page" && item.url.includes("index.html"));
+      const page = pages.find((item) => item.type === "page" && item.url.includes("workspace.html"));
       if (page) return page;
     } catch (error) {
       // Browser is still starting.

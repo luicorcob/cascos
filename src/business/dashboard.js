@@ -254,6 +254,14 @@ function init() {
     return;
   }
   bindUi();
+  document.addEventListener("dls:commerce-updated", (event) => {
+    if (!state.business || event.detail?.businessId !== state.business.id || !event.detail?.commerce) return;
+    state.business.content = state.business.content && typeof state.business.content === "object"
+      ? state.business.content
+      : {};
+    state.business.content.commerce = event.detail.commerce;
+    render();
+  });
   const requestedTab = new URLSearchParams(window.location.search).get("tab") || "";
   const validRequestedTab = Array.from(document.querySelectorAll("[data-tab]"))
     .some((button) => button.dataset.tab === requestedTab);
@@ -632,7 +640,8 @@ async function loadBusiness(id, options = {}) {
     document.dispatchEvent(new CustomEvent("dls:business-changed", {
       detail: {
         businessId: state.business?.id || id,
-        businessName: state.business?.name || ""
+        businessName: state.business?.name || "",
+        publishedUrl: state.business?.publishedUrl || ""
       }
     }));
 
@@ -2021,8 +2030,10 @@ function renderHeader(business, model) {
     statusPill(`${model.healthScore}% listo`, model.healthScore >= 70 ? "ok" : "warn")
   ].join("");
 
-  refs.pageTitle.textContent = business.name;
-  refs.pageSubtitle.textContent = [business.category, business.city, business.ownerName]
+  const activeNavigation = Array.from(document.querySelectorAll("[data-tab]"))
+    .find((button) => button.dataset.tab === (state.activeTab || "home"));
+  refs.pageTitle.textContent = activeNavigation?.dataset.navTitle || business.name;
+  refs.pageSubtitle.textContent = activeNavigation?.dataset.navSubtitle || [business.category, business.city, business.ownerName]
     .filter(Boolean)
     .join(" - ") || "Operacion diaria";
 
@@ -2030,7 +2041,7 @@ function renderHeader(business, model) {
     const businessRef = business.slug || business.id || "";
     const url = `client-site.html?business=${encodeURIComponent(businessRef)}`;
     refs.webLink.textContent = state.clientSession ? "Mi web" : "Editar web";
-    refs.webLink.href = state.clientSession ? url : "../index.html";
+    refs.webLink.href = state.clientSession ? url : "../workspace.html?hub=1&mode=developer";
     refs.webLink.toggleAttribute("aria-disabled", state.clientSession && !businessRef);
   }
 }
@@ -2855,7 +2866,7 @@ function renderHome(model) {
   }
 
   if (model.pendingOrders.length) {
-    tasks.push(taskItem("Preparar pedidos pendientes", `${model.pendingOrders.length} pedido(s) abiertos.`, "orders"));
+    tasks.push(taskItem("Preparar pedidos pendientes", `${model.pendingOrders.length} pedido(s) abiertos.`, "commerce"));
   }
 
   if (!tasks.length) {
@@ -4280,6 +4291,7 @@ function renderExportToolbar(type, count, label) {
 
 function renderOrders(model) {
   const container = document.querySelector('[data-list="orders"]');
+  if (!container) return;
 
   if (!model.orders.length) {
     container.innerHTML = emptyState("Sin pedidos", "La tienda ya tiene panel propio; aqui apareceran pedidos cuando la API los unifique por negocio.");
@@ -4299,6 +4311,7 @@ function renderOrders(model) {
 
 function renderProducts(model) {
   const container = document.querySelector('[data-list="products"]');
+  if (!container) return;
 
   if (!model.products.length) {
     container.innerHTML = emptyState("Sin productos", "El negocio no tiene catalogo activo en los datos cargados.");

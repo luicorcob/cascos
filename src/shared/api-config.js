@@ -2,6 +2,7 @@
   const API_BASE_KEY = "locallift_api_base";
   const ADMIN_TOKEN_KEY = "locallift_admin_token";
   const CLIENT_SESSION_KEY = "locallift_client_session";
+  const BUSINESS_USER_TOKEN_KEY = "locallift_business_user_token";
 
   syncApiBaseFromQuery();
 
@@ -49,6 +50,12 @@
     const clientSession = getClientSession();
     if (clientSession?.token) {
       result["X-LocalLift-Client-Token"] = clientSession.token;
+      return result;
+    }
+
+    const businessUserToken = String(localStorage.getItem(BUSINESS_USER_TOKEN_KEY) || "").trim();
+    if (businessUserToken) {
+      result["X-LocalLift-User-Token"] = businessUserToken;
     }
 
     return result;
@@ -108,6 +115,7 @@
     if (session?.token) {
       localStorage.setItem(CLIENT_SESSION_KEY, JSON.stringify(session));
       localStorage.removeItem(ADMIN_TOKEN_KEY);
+      localStorage.removeItem(BUSINESS_USER_TOKEN_KEY);
       return session;
     }
 

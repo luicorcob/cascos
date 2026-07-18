@@ -238,6 +238,7 @@ function accessTarget(segments, method) {
     if (["invoices", "expenses", "suppliers", "summary"].includes(detail)) return { resource: "finance", action };
     return { resource: "operations", action };
   }
+  if (area === "commerce") return { resource: "operations", action };
   if (["invoices", "payments", "subscriptions", "money"].includes(area)) return { resource: "finance", action };
   if (["services", "bookings", "availability", "blocks", "reminders", "resources", "resource-availability", "booking-resource-summary", "waitlist", "operations"].includes(area)) return { resource: "operations", action };
   if (["contacts", "customers", "accounts", "associations", "pipelines", "deals", "tasks", "proposals", "next-actions"].includes(area)) return { resource: "crm", action };

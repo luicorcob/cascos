@@ -56,6 +56,14 @@ const ROUTE_LIMITS = {
     limit: readPositiveInteger("PUBLIC_QUOTE_RATE_LIMIT", 60),
     windowMs: readPositiveInteger("PUBLIC_QUOTE_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
   },
+  commerceCart: {
+    limit: readPositiveInteger("PUBLIC_COMMERCE_CART_RATE_LIMIT", 60),
+    windowMs: readPositiveInteger("PUBLIC_COMMERCE_CART_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
+  },
+  commerceCheckout: {
+    limit: readPositiveInteger("PUBLIC_COMMERCE_CHECKOUT_RATE_LIMIT", 10),
+    windowMs: readPositiveInteger("PUBLIC_COMMERCE_CHECKOUT_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
+  },
   radarWrite: {
     limit: readPositiveInteger("RADAR_WRITE_RATE_LIMIT", 30),
     windowMs: readPositiveInteger("RADAR_WRITE_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
@@ -158,6 +166,18 @@ function getPublicRoute(pathname) {
 
   if (pathname === "/api/webhooks/stripe/bookings") {
     return "webhooks";
+  }
+
+  if (pathname === "/api/webhooks/stripe/commerce") {
+    return "webhooks";
+  }
+
+  if (/^\/api\/public\/[^/]+\/store\/cart\/validate$/.test(String(pathname || ""))) {
+    return "commerceCart";
+  }
+
+  if (/^\/api\/public\/[^/]+\/store\/checkout$/.test(String(pathname || ""))) {
+    return "commerceCheckout";
   }
 
   if (/^\/api\/public\/waitlist-offers\/[^/]+\/accept$/.test(String(pathname || ""))) {

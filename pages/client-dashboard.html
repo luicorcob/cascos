@@ -12,10 +12,12 @@
     <link rel="stylesheet" href="../src/suite-precision.css?v=20260715-1">
     <link rel="stylesheet" href="../src/styles/dashboard-project.css?v=20260717-1">
     <link rel="stylesheet" href="../src/styles/hospitality-dashboard.css?v=20260717-2">
+    <link rel="stylesheet" href="../src/styles/commerce-dashboard.css?v=20260718-1">
     <script src="../src/shared/api-config.js"></script>
     <script type="module" src="../src/business/dashboard.js"></script>
     <script type="module" src="../src/business/client-portal.js"></script>
     <script type="module" src="../src/business/hospitality-dashboard.js?v=20260717-2"></script>
+    <script type="module" src="../src/business/commerce-dashboard.js?v=20260718-1"></script>
   </head>
   <body class="business-body is-client-workspace" data-dashboard-scope="client">
     <div class="business-shell">
@@ -88,8 +90,8 @@
             <button class="tab-button nav-item" type="button" role="tab" aria-selected="false" data-tab="inventory" data-nav-title="Carta e inventario" data-nav-subtitle="Controla existencias y detecta lo que hay que reponer.">
               <span class="nav-icon" data-icon="inventory" aria-hidden="true"></span><span>Carta e inventario</span><span class="nav-dot" data-stock-alert hidden></span>
             </button>
-            <button class="tab-button nav-item" type="button" role="tab" aria-selected="false" data-tab="orders" data-nav-title="Pedidos" data-nav-subtitle="Pedidos recibidos y estado de preparación.">
-              <span class="nav-icon" data-icon="orders" aria-hidden="true"></span><span>Pedidos</span>
+            <button class="tab-button nav-item" type="button" role="tab" aria-selected="false" data-tab="commerce" data-nav-title="Tienda online" data-nav-subtitle="Productos, pedidos, promociones y configuración de venta.">
+              <span class="nav-icon" data-icon="orders" aria-hidden="true"></span><span>Tienda online</span><span class="nav-dot" data-commerce-alert hidden></span>
             </button>
           </div>
 
@@ -119,9 +121,6 @@
             </button>
             <button class="tab-button nav-item" type="button" role="tab" aria-selected="false" data-tab="settings" data-nav-title="Configuración" data-nav-subtitle="Datos del negocio, conexiones y preferencias.">
               <span class="nav-icon" data-icon="settings" aria-hidden="true"></span><span>Configuración</span>
-            </button>
-            <button class="tab-button nav-item nav-item-legacy" type="button" role="tab" aria-selected="false" data-tab="products" data-nav-title="Productos conectados" data-nav-subtitle="Catálogo sincronizado desde tu tienda.">
-              <span class="nav-icon" data-icon="inventory" aria-hidden="true"></span><span>Productos conectados</span>
             </button>
           </div>
         </nav>
@@ -187,7 +186,6 @@
 
         <nav class="quick-nav" aria-label="Herramientas avanzadas" data-developer-preview-only>
           <a href="admin-dashboard.html" data-action-link="projects">Control DLS</a>
-          <a href="store-admin.html" data-action-link="store">Tienda</a>
           <a href="onboarding.html" data-action-link="onboarding">Datos iniciales</a>
         </nav>
       </aside>
@@ -201,7 +199,7 @@
           </div>
           <div class="topbar-actions">
             <button class="icon-action" type="button" data-help-open aria-label="Abrir ayuda" title="Ayuda">?</button>
-            <a class="ghost-action" href="../index.html" data-web-link>Editar web</a>
+            <a class="ghost-action" href="../workspace.html?hub=1&amp;mode=developer" data-web-link>Editar web</a>
             <button class="primary-action" type="button" data-quick-create><span aria-hidden="true">+</span> Crear</button>
             <button class="refresh-action" type="button" data-refresh aria-label="Actualizar datos" title="Actualizar datos"><span aria-hidden="true">↻</span></button>
           </div>
@@ -212,7 +210,7 @@
           <p class="eyebrow">Acceso de cliente</p>
           <h1>Entra para gestionar tu local</h1>
           <p>Este espacio contiene datos privados del negocio, empleados, horarios y cuentas. Inicia sesión desde la pantalla de acceso de DLS.</p>
-          <a href="../index.html?mode=client">Ir al acceso de clientes</a>
+          <a href="../workspace.html?hub=1&amp;mode=client">Ir al acceso de clientes</a>
         </section>
 
         <section class="notice" data-notice hidden></section>
@@ -326,7 +324,7 @@
               <p class="client-eyebrow">Acceso requerido</p>
               <h2>Entra primero en tu portal privado</h2>
               <p>Usa el acceso Cliente de la pantalla inicial con el nombre de tu negocio y tu contraseña.</p>
-              <a href="../index.html">Ir al acceso de cliente</a>
+              <a href="../workspace.html?hub=1&amp;mode=client">Ir al acceso de cliente</a>
             </section>
 
             <section class="client-metrics" aria-label="Resumen del proyecto">
@@ -476,20 +474,174 @@
           <div data-list="bookings"></div>
         </section>
 
-        <section class="tab-panel" data-panel="orders">
-          <div class="panel-heading">
-            <p class="eyebrow">Comercio</p>
-            <h2>Pedidos</h2>
-          </div>
-          <div data-list="orders"></div>
-        </section>
+        <section class="tab-panel commerce-module" data-panel="commerce">
+          <header class="module-header commerce-header">
+            <div>
+              <p class="eyebrow">Tu canal de venta digital</p>
+              <h2>Tienda online</h2>
+              <p>Gestiona el catálogo, prepara pedidos y configura cómo vendes desde la web.</p>
+            </div>
+            <div class="module-actions">
+              <a class="secondary-action" href="#" target="_blank" rel="noreferrer" data-commerce-public-link>Ver tienda</a>
+              <button class="primary-action" type="button" data-commerce-add-product><span aria-hidden="true">+</span> Añadir producto</button>
+            </div>
+          </header>
 
-        <section class="tab-panel" data-panel="products">
-          <div class="panel-heading">
-            <p class="eyebrow">Catalogo</p>
-            <h2>Productos</h2>
-          </div>
-          <div data-list="products"></div>
+          <div class="module-notice" data-commerce-notice hidden></div>
+
+          <section class="commerce-kpi-grid" aria-label="Resumen de la tienda">
+            <article><span>Ventas cobradas</span><strong data-commerce-kpi="revenue">0,00 €</strong><small data-commerce-kpi-note="revenue">Sin pedidos pagados</small></article>
+            <article><span>Pedidos en curso</span><strong data-commerce-kpi="pending">0</strong><small>Por preparar o entregar</small></article>
+            <article><span>Productos publicados</span><strong data-commerce-kpi="products">0</strong><small>Visibles en la web</small></article>
+            <article class="is-warning"><span>Stock bajo</span><strong data-commerce-kpi="lowStock">0</strong><small>Con cinco unidades o menos</small></article>
+          </section>
+
+          <nav class="commerce-view-tabs" aria-label="Áreas de la tienda">
+            <button class="is-active" type="button" data-commerce-tab="overview">Resumen</button>
+            <button type="button" data-commerce-tab="products">Productos</button>
+            <button type="button" data-commerce-tab="orders">Pedidos</button>
+            <button type="button" data-commerce-tab="coupons">Promociones</button>
+            <button type="button" data-commerce-tab="settings">Configuración</button>
+          </nav>
+
+          <section class="commerce-view is-active" data-commerce-view="overview">
+            <div class="commerce-overview-grid">
+              <section class="module-card">
+                <header class="commerce-section-heading">
+                  <div><span class="section-kicker">ACTIVIDAD RECIENTE</span><h3>Últimos pedidos</h3></div>
+                  <button class="secondary-action compact" type="button" data-commerce-go="orders">Ver todos</button>
+                </header>
+                <div data-commerce-latest-orders></div>
+              </section>
+              <aside class="module-card commerce-readiness">
+                <span class="section-kicker">ESTADO DEL CANAL</span>
+                <div class="commerce-status-mark" data-commerce-status-mark aria-hidden="true"></div>
+                <h3 data-commerce-status-title>Preparando la tienda</h3>
+                <p data-commerce-status-copy>Completa la configuración para empezar a vender.</p>
+                <button class="secondary-action" type="button" data-commerce-go="settings">Revisar configuración</button>
+              </aside>
+            </div>
+          </section>
+
+          <section class="commerce-view" data-commerce-view="products" hidden>
+            <section class="module-card">
+              <header class="records-toolbar">
+                <div><span class="section-kicker">CATÁLOGO ONLINE</span><h3>Productos</h3></div>
+                <div class="table-tools">
+                  <label class="search-field"><span class="sr-only">Buscar productos</span><input type="search" placeholder="Buscar producto…" data-commerce-product-search></label>
+                  <button class="primary-action compact" type="button" data-commerce-add-product><span aria-hidden="true">+</span> Nuevo producto</button>
+                </div>
+              </header>
+              <div data-commerce-products></div>
+            </section>
+          </section>
+
+          <section class="commerce-view" data-commerce-view="orders" hidden>
+            <section class="module-card">
+              <header class="records-toolbar">
+                <div><span class="section-kicker">VENTAS RECIBIDAS</span><h3>Pedidos</h3></div>
+                <div class="table-tools">
+                  <label class="select-field"><span class="sr-only">Filtrar por estado</span>
+                    <select data-commerce-order-filter>
+                      <option value="">Todos los estados</option>
+                      <option value="pending">Pendientes</option>
+                      <option value="paid">Pagados</option>
+                      <option value="preparing">Preparando</option>
+                      <option value="ready">Listos</option>
+                      <option value="fulfilled">Completados</option>
+                      <option value="canceled">Cancelados</option>
+                      <option value="refunded">Reembolsados</option>
+                    </select>
+                  </label>
+                  <label class="search-field"><span class="sr-only">Buscar pedidos</span><input type="search" placeholder="Pedido o cliente…" data-commerce-order-search></label>
+                </div>
+              </header>
+              <div class="commerce-order-list" data-commerce-orders></div>
+            </section>
+          </section>
+
+          <section class="commerce-view" data-commerce-view="coupons" hidden>
+            <section class="module-card">
+              <header class="records-toolbar">
+                <div><span class="section-kicker">PROMOCIONES</span><h3>Cupones y descuentos</h3></div>
+                <button class="primary-action compact" type="button" data-commerce-add-coupon><span aria-hidden="true">+</span> Nuevo cupón</button>
+              </header>
+              <div data-commerce-coupons></div>
+            </section>
+          </section>
+
+          <section class="commerce-view" data-commerce-view="settings" hidden>
+            <form class="module-card commerce-settings-form" data-commerce-settings-form>
+              <header class="commerce-section-heading">
+                <div><span class="section-kicker">CONFIGURACIÓN DE VENTA</span><h3>Cómo funciona tu tienda</h3></div>
+                <button class="primary-action" type="submit">Guardar configuración</button>
+              </header>
+
+              <label class="commerce-toggle">
+                <input type="checkbox" name="enabled">
+                <span><strong>Tienda activa</strong><small>Publica el catálogo y permite iniciar compras desde la web.</small></span>
+              </label>
+
+              <div class="commerce-form-grid">
+                <label><span>Email para pedidos</span><input type="email" name="orderEmail" placeholder="pedidos@negocio.es"></label>
+                <label><span>Moneda</span><input type="text" name="currency" maxlength="3" value="EUR"></label>
+                <label><span>IVA (%)</span><input type="number" name="taxRatePercent" min="0" max="100" step="0.01"></label>
+                <label class="commerce-check"><input type="checkbox" name="taxIncluded"><span>IVA incluido en los precios</span></label>
+                <label><span>URL tras pago correcto</span><input type="url" name="successUrl" placeholder="https://tuweb.es/?pedido=ok"></label>
+                <label><span>URL al cancelar</span><input type="url" name="cancelUrl" placeholder="https://tuweb.es/#tienda"></label>
+                <label><span>Términos de compra</span><input type="url" name="termsUrl"></label>
+                <label><span>Política de privacidad</span><input type="url" name="privacyUrl"></label>
+                <label class="is-wide"><span>Países permitidos</span><input type="text" name="allowedCountries" placeholder="ES, PT, FR"></label>
+                <label class="is-wide"><span>Métodos de entrega</span><textarea name="shippingMethods" rows="5" placeholder="recogida | Recogida en tienda | 0 | Te avisamos cuando esté listo"></textarea><small>Una opción por línea: identificador | nombre | precio | descripción.</small></label>
+              </div>
+
+              <section class="commerce-endpoints">
+                <div><strong>Catálogo público</strong><code data-commerce-endpoint="products">—</code></div>
+                <div><strong>Checkout</strong><code data-commerce-endpoint="checkout">—</code></div>
+                <div><strong>Webhook de Stripe</strong><code data-commerce-endpoint="webhook">—</code></div>
+              </section>
+            </form>
+          </section>
+
+          <dialog class="entity-dialog commerce-dialog" data-commerce-product-dialog>
+            <form method="dialog" class="entity-dialog-card" data-commerce-product-form>
+              <header><div><p class="eyebrow">Catálogo online</p><h2 data-commerce-product-dialog-title>Añadir producto</h2><p>Define qué verá el cliente y cuántas unidades están disponibles.</p></div><button class="dialog-close" type="button" data-commerce-dialog-close aria-label="Cerrar">×</button></header>
+              <input type="hidden" name="id">
+              <div class="entity-form-grid">
+                <label class="form-field is-wide"><span>Nombre</span><input type="text" name="name" required></label>
+                <label class="form-field"><span>SKU</span><input type="text" name="sku" placeholder="camiseta-negra-m"></label>
+                <label class="form-field"><span>Categoría</span><input type="text" name="category" value="General"></label>
+                <label class="form-field"><span>Precio</span><input type="number" name="price" min="0" step="0.01" required></label>
+                <label class="form-field"><span>Precio anterior</span><input type="number" name="compareAtPrice" min="0" step="0.01"></label>
+                <label class="form-field"><span>Stock disponible</span><input type="number" name="stock" min="0" step="1" value="0" required></label>
+                <label class="form-field is-wide"><span>Imagen (URL)</span><input type="url" name="image"></label>
+                <label class="form-field is-wide"><span>Descripción</span><textarea name="description" rows="4"></textarea></label>
+                <label class="form-field is-wide"><span>Etiquetas</span><input type="text" name="tags" placeholder="regalo, premium, temporada"></label>
+                <label class="form-field-checkbox is-wide"><input type="checkbox" name="active" checked><span>Producto visible en la web</span></label>
+              </div>
+              <p class="form-error" data-commerce-product-error hidden></p>
+              <footer><button class="secondary-action" type="button" data-commerce-dialog-close>Cancelar</button><button class="primary-action" type="submit">Guardar producto</button></footer>
+            </form>
+          </dialog>
+
+          <dialog class="entity-dialog commerce-dialog" data-commerce-coupon-dialog>
+            <form method="dialog" class="entity-dialog-card" data-commerce-coupon-form>
+              <header><div><p class="eyebrow">Promoción</p><h2 data-commerce-coupon-dialog-title>Nuevo cupón</h2><p>Crea una ventaja sencilla y controla hasta cuándo puede utilizarse.</p></div><button class="dialog-close" type="button" data-commerce-dialog-close aria-label="Cerrar">×</button></header>
+              <input type="hidden" name="id">
+              <div class="entity-form-grid">
+                <label class="form-field"><span>Código</span><input type="text" name="code" required placeholder="BIENVENIDA10"></label>
+                <label class="form-field"><span>Tipo</span><select name="type"><option value="percent">Porcentaje</option><option value="fixed">Importe fijo</option></select></label>
+                <label class="form-field"><span>Valor</span><input type="number" name="value" min="0" step="0.01" required></label>
+                <label class="form-field"><span>Compra mínima</span><input type="number" name="minSubtotal" min="0" step="0.01"></label>
+                <label class="form-field"><span>Descuento máximo</span><input type="number" name="maxDiscount" min="0" step="0.01"></label>
+                <label class="form-field"><span>Límite de usos</span><input type="number" name="usageLimit" min="0" step="1"></label>
+                <label class="form-field is-wide"><span>Caducidad</span><input type="datetime-local" name="expiresAt"></label>
+                <label class="form-field-checkbox is-wide"><input type="checkbox" name="active" checked><span>Cupón activo</span></label>
+              </div>
+              <p class="form-error" data-commerce-coupon-error hidden></p>
+              <footer><button class="secondary-action" type="button" data-commerce-dialog-close>Cancelar</button><button class="primary-action" type="submit">Guardar cupón</button></footer>
+            </form>
+          </dialog>
         </section>
 
         <section class="tab-panel hospitality-module" data-panel="finance">

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const defaultRoute = "/index.html?presentation=true";
+const defaultRoute = "/workspace.html?presentation=true";
 const defaultViewports = [
   { name: "desktop", width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false, touch: false },
   { name: "tablet", width: 768, height: 1024, deviceScaleFactor: 1, mobile: true, touch: true },
@@ -1838,7 +1838,7 @@ function printHelp() {
 
 Uso:
   npm.cmd run qa:visual
-  npm.cmd run qa:visual -- --url=http://127.0.0.1:5173/index.html?presentation=true
+  npm.cmd run qa:visual -- --url=http://127.0.0.1:5173/workspace.html?presentation=true
   npm.cmd run qa:visual -- --path=/pages/business-dashboard.html --viewports=desktop,tablet,mobile
 
 Opciones:

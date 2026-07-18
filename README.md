@@ -10,26 +10,27 @@ Para que el Radar funcione sin arrancarlo desde tu portátil, despliega este rep
 
 ## Como usarlo
 
-1. Ejecuta `npm.cmd start` o abre `index.html` en el navegador.
-2. Edita los datos del negocio desde el panel izquierdo.
-3. Cambia fotos, servicios, testimonios, enlaces y estilo.
-4. Activa `Editar preview` y cambia textos, imagenes, encuadres, botones y enlaces directamente sobre la web.
-5. Mueve u oculta secciones desde sus controles sobre la preview.
-6. Anade, duplica, reordena o borra servicios, diferenciales, resenas, FAQ y fotos desde el lienzo.
-7. Elige bloques o aplica y guarda composiciones reutilizables sin perder contenidos.
-8. Reutiliza imagenes subidas o URLs desde `Fotos > Biblioteca de medios`.
-9. Genera un set de imagenes por negocio desde `POST /api/site-images` si tienes claves de Unsplash, Pexels o Pixabay.
-10. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
-11. Pulsa `Entrega Pro` para generar un preflight con bloqueos, avisos y siguientes pasos.
-12. Revisa el score de entrega; los errores criticos bloquean la exportacion.
-13. Con el servidor publicado en un dominio publico, pulsa `Publicar demo` para obtener una URL temporal lista para enviar al cliente. Si estas en local, puedes configurar el publicador gratis de Cloudflare Workers + KV para que el enlace sea publico y caduque solo.
-14. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
-15. Usa `Exportar paquete` para descargar un ZIP con HTML, `business.json`, ficha de entrega y cambios.
-16. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
-17. Con el servidor activo, abre `pages/admin-dashboard.html` para el CRM interno de DLS o `pages/client-dashboard.html` para el portal privado de un negocio.
+1. Ejecuta `npm.cmd start` y abre `http://127.0.0.1:5173/` para ver la landing pública.
+2. Entra como desarrollador desde la landing o abre `workspace.html?hub=1&mode=developer` para ir directamente al workspace.
+3. Edita los datos del negocio desde el panel izquierdo.
+4. Cambia fotos, servicios, testimonios, enlaces y estilo.
+5. Activa `Editar preview` y cambia textos, imagenes, encuadres, botones y enlaces directamente sobre la web.
+6. Mueve u oculta secciones desde sus controles sobre la preview.
+7. Anade, duplica, reordena o borra servicios, diferenciales, resenas, FAQ y fotos desde el lienzo.
+8. Elige bloques o aplica y guarda composiciones reutilizables sin perder contenidos.
+9. Reutiliza imagenes subidas o URLs desde `Fotos > Biblioteca de medios`.
+10. Genera un set de imagenes por negocio desde `POST /api/site-images` si tienes claves de Unsplash, Pexels o Pixabay.
+11. Prueba Desktop, Tablet y Movil desde la barra de vista previa.
+12. Pulsa `Entrega Pro` para generar un preflight con bloqueos, avisos y siguientes pasos.
+13. Revisa el score de entrega; los errores criticos bloquean la exportacion.
+14. Con el servidor publicado en un dominio publico, pulsa `Publicar demo` para obtener una URL temporal lista para enviar al cliente. Si estas en local, puedes configurar el publicador gratis de Cloudflare Workers + KV para que el enlace sea publico y caduque solo.
+15. Pulsa `Exportar web` para descargar un HTML listo para subir a hosting.
+16. Usa `Exportar paquete` para descargar un ZIP con HTML, `business.json`, ficha de entrega y cambios.
+17. Usa `Exportar datos` para guardar el negocio como JSON y reutilizarlo despues con `Importar datos`.
+18. Con el servidor activo, abre `pages/admin-dashboard.html` para el CRM interno de DLS o `pages/client-dashboard.html` para el portal privado de un negocio.
 
 Para enseñar directamente la demo Luma Studio sin mostrar el editor, abre
-`index.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
+`workspace.html?presentation=true&view=mobile`. Tambien admite `view=tablet` y
 `view=desktop`.
 
 Para simular produccion o subir el backend, usa `npm run start:prod` con las variables de `.env.example`. En Render ese comando queda configurado como Start Command del Web Service. Este comando valida `NODE_ENV=production`, `HOST=0.0.0.0`, token admin, CORS HTTPS y ruta de base persistente antes de arrancar.
@@ -101,7 +102,8 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 
 ```text
 .
-├── index.html              # Entrada principal del studio
+├── index.html              # Landing pública corporativa
+├── workspace.html          # Entrada del Studio y selector developer/cliente
 ├── src/                    # Frontend del editor y estilos principales
 ├── pages/                  # Vistas auxiliares: investor, onboarding, Google Ops y admin tienda
 ├── server/                 # Servidor local estatico
@@ -114,6 +116,8 @@ Si el frontend esta en otro dominio, abre el Studio o el portal con `?apiBase=ht
 ## Recursos descargados
 
 - `assets/vendor/lenis.min.js`: scroll suave cinematografico.
+- `assets/vendor/gsap.min.js`, `ScrollTrigger.min.js` y `SplitText.min.js`: animación y narrativa de la landing.
+- `assets/vendor/three.module.min.js`: shader WebGL del hero con fallback automático.
 - `assets/vendor/splitting.min.js`: titulares animados por palabras y caracteres.
 - `assets/vendor/vanilla-tilt.min.js`: tarjetas con tilt 3D y brillo.
 - `assets/vendor/open-props-animations.min.css`: curvas y animaciones CSS reutilizables.
@@ -332,22 +336,24 @@ La pestana `Tienda` permite activar compras online en la web generada:
 - Validacion de carrito antes de pagar: stock, envio, cupones, impuestos y total final.
 - Endpoint de checkout para redirigir a Stripe Checkout.
 - Pedidos con estados: `pending`, `paid`, `preparing`, `ready`, `fulfilled`, `canceled`, `expired`, `failed`, `refunded`.
-- Emails de pedido para el negocio y confirmacion para el comprador cuando Stripe confirme el pago.
+- Stripe puede enviar el recibo al comprador y el negocio consulta el pedido confirmado desde su portal.
 
-Panel del dueno de tienda:
+Panel del dueño de la tienda:
 
 ```text
-pages/store-admin.html
+pages/client-dashboard.html?tab=commerce
 ```
 
-Incluye resumen, productos, pedidos, cambios de estado, cupones, metodos de envio, IVA, URLs de exito/cancelacion, terminos y paises permitidos.
+El módulo `Tienda online` vive dentro del portal autenticado del negocio. Incluye resumen, productos, pedidos, cambios de estado, cupones, métodos de envío, IVA, URLs de éxito/cancelación, términos y países permitidos. `pages/store-admin.html` se conserva únicamente como redirección heredada.
+
+Studio mantiene la responsabilidad de diseño: activar la sección, ordenar su contenido y previsualizarla. La operación diaria pertenece al portal del negocio.
 
 ## Dashboards separados por responsabilidad
 
 La aplicación tiene dos espacios deliberadamente independientes:
 
 - `pages/admin-dashboard.html`: **Control DLS**, exclusivo para el desarrollador/vendedor. Reúne negocios clientes, estado de desarrollo y publicación, ofertas, proyectos, suscripciones, facturación, cobros, documentos, accesos y soporte.
-- `pages/client-dashboard.html`: **Portal del cliente**, limitado a un negocio autenticado. Reúne clientes del local, reservas, empleados, turnos, inventario, pedidos, cuentas, informes y el proyecto contratado a DLS.
+- `pages/client-dashboard.html`: **Portal del cliente**, limitado a un negocio autenticado. Reúne clientes del local, reservas, empleados, turnos, inventario, tienda online, cuentas, informes y el proyecto contratado a DLS.
 
 `pages/projects.html` y `pages/business-dashboard.html` se mantienen como rutas heredadas y redirigen a los espacios anteriores. Una entrada directa al portal del cliente sin sesión muestra el bloqueo de acceso; la vista desde Control DLS se abre explícitamente con `preview=developer`.
 
@@ -359,67 +365,62 @@ El primer panel operativo vive en:
 pages/client-dashboard.html
 ```
 
-Carga negocios desde la API local, permite cambiar de negocio y muestra Inicio, Leads, Clientes, Reservas, Pedidos, Productos, Reportes y Ajustes. En Reservas ya se pueden crear citas manuales, confirmar, completar o cancelar reservas. En Reportes hay acceso directo al informe mensual imprimible.
+Carga negocios desde la API local, permite cambiar de negocio y muestra Inicio, Leads, Clientes, Reservas, Tienda online, Reportes y Ajustes. En Reservas ya se pueden crear citas manuales, confirmar, completar o cancelar reservas. En Tienda online se gestiona el catálogo y el ciclo operativo de los pedidos. En Reportes hay acceso directo al informe mensual imprimible.
 
 Las tabs de Leads, Clientes y Reservas incluyen exportacion CSV para entregar datos al cliente o usarlos en hojas de calculo.
 
-Backend de ejemplo con la libreria oficial de Stripe:
+El comercio multi-negocio forma parte del backend principal. Cada catálogo, pedido, cupón y configuración se guarda dentro de la ficha del negocio y queda protegido por la sesión del portal, los roles del equipo o el token administrador de DLS.
+
+Configuración de Stripe:
 
 ```powershell
 npm install
-$env:STORE_ADMIN_TOKEN="usa-un-token-largo-aleatorio-de-32-caracteres-minimo"
 $env:CORS_ORIGIN="https://tutienda.com,https://www.tutienda.com"
-$env:CHECKOUT_ALLOWED_ORIGINS="https://tutienda.com,https://www.tutienda.com"
 $env:STRIPE_SECRET_KEY="sk_test_..."
-$env:STRIPE_WEBHOOK_SECRET="whsec_..."
-$env:ORDER_EMAIL_TO="pedidos@tunegocio.com"
-$env:RESEND_API_KEY="re_..." # opcional para email propio de pedido
-node examples/commerce-api.example.mjs
+$env:STRIPE_COMMERCE_WEBHOOK_SECRET="whsec_..."
+npm start
 ```
 
-Endpoints:
+Endpoints privados por negocio:
 
 ```text
-GET    http://127.0.0.1:8795/api/store/config
-GET    http://127.0.0.1:8795/api/store/products
-POST   http://127.0.0.1:8795/api/store/cart/validate
-POST   http://127.0.0.1:8795/api/store/products
-PUT    http://127.0.0.1:8795/api/store/products/{id}
-DELETE http://127.0.0.1:8795/api/store/products/{id}
-POST   http://127.0.0.1:8795/api/store/checkout
-POST   http://127.0.0.1:8795/api/store/webhook
-GET    http://127.0.0.1:8795/api/store/orders
-GET    http://127.0.0.1:8795/api/store/admin/summary
-GET    http://127.0.0.1:8795/api/store/admin/products
-GET    http://127.0.0.1:8795/api/store/admin/orders
-PATCH  http://127.0.0.1:8795/api/store/admin/orders/{id}
-GET    http://127.0.0.1:8795/api/store/admin/coupons
-POST   http://127.0.0.1:8795/api/store/admin/coupons
-PUT    http://127.0.0.1:8795/api/store/admin/settings
+GET    /api/businesses/{id-o-slug}/commerce/summary
+GET    /api/businesses/{id-o-slug}/commerce/products
+POST   /api/businesses/{id-o-slug}/commerce/products
+PATCH  /api/businesses/{id-o-slug}/commerce/products/{id}
+DELETE /api/businesses/{id-o-slug}/commerce/products/{id}
+GET    /api/businesses/{id-o-slug}/commerce/orders
+PATCH  /api/businesses/{id-o-slug}/commerce/orders/{id}
+GET    /api/businesses/{id-o-slug}/commerce/coupons
+POST   /api/businesses/{id-o-slug}/commerce/coupons
+PATCH  /api/businesses/{id-o-slug}/commerce/coupons/{id}
+DELETE /api/businesses/{id-o-slug}/commerce/coupons/{id}
+GET    /api/businesses/{id-o-slug}/commerce/settings
+PUT    /api/businesses/{id-o-slug}/commerce/settings
 ```
 
-Flujo de produccion:
+Endpoints públicos de la web:
+
+```text
+GET  /api/public/{slug}/store/config
+GET  /api/public/{slug}/store/products
+POST /api/public/{slug}/store/cart/validate
+POST /api/public/{slug}/store/checkout
+GET  /api/public/{slug}/store/orders/{id}?token={token}
+POST /api/webhooks/stripe/commerce
+```
+
+Flujo de producción:
 
 1. Crear cuenta en Stripe y copiar `STRIPE_SECRET_KEY`.
-2. En Stripe, crear un webhook hacia `https://tu-api.com/api/store/webhook` y copiar `STRIPE_WEBHOOK_SECRET`.
-3. Publicar `examples/commerce-api.example.mjs` en un servidor Node con HTTPS.
-4. Abrir `pages/store-admin.html`, poner URL de API y token admin, y cargar productos.
-5. En la pestana `Tienda`, poner los endpoints publicos de productos y checkout.
-6. Exportar la web y subirla al hosting.
+2. En Stripe, crear un webhook hacia `https://tu-api.com/api/webhooks/stripe/commerce` y copiar el secreto en `STRIPE_COMMERCE_WEBHOOK_SECRET`.
+3. Entrar en `Portal del cliente > Tienda online`, completar la configuración y guardar. El portal conecta automáticamente los endpoints públicos del negocio.
+4. Añadir productos y activar la tienda.
+5. En Studio, revisar el diseño de la sección y publicar la web.
 
-Stripe envia recibos al comprador si lo tienes activo en el dashboard. El backend marca pedidos como pagados, descuenta stock y puede enviar el email interno del pedido con Resend; si no configuras Resend, el pedido queda guardado en `data/store-db.json` y aparece por API en `/api/store/orders`.
+La API reserva stock al crear el checkout, aplica cupones e impuestos en servidor y asocia el pedido al `businessId` autenticado. Stripe confirma el pago mediante firma `Stripe-Signature`; en desarrollo sin claves se utiliza un checkout local simulado.
 
-La API reserva stock mientras el checkout esta pendiente y libera esa reserva si Stripe marca la sesion como expirada o fallida. Los cupones se aplican en servidor, se limitan por uso/minimo/caducidad, y solo incrementan uso cuando el pago queda confirmado.
-
-Blindaje incluido:
-
-- Libreria oficial `stripe` para crear Checkout Sessions y verificar webhooks con `Stripe-Signature`.
-- `STORE_ADMIN_TOKEN` obligatorio, de 32+ caracteres, comparado en tiempo constante.
-- CORS cerrado por defecto a `http://127.0.0.1:5173` y `http://localhost:5173`; en produccion hay que poner los dominios reales en `CORS_ORIGIN`.
-- Redirecciones de checkout limitadas a `CHECKOUT_ALLOWED_ORIGINS` para evitar redirecciones manipuladas.
-- Rate limit separado para carrito, checkout y panel admin.
-- Cabeceras de seguridad para API: `Content-Security-Policy`, `X-Frame-Options`, `nosniff`, `Permissions-Policy`, HSTS y `Cache-Control: no-store`.
-- JSON estricto, tamano maximo de body por `MAX_BODY_BYTES` y escritura atomica de `data/store-db.json`.
+`examples/commerce-api.example.mjs` y `data/store-db.json` permanecen como ejemplo autónomo heredado, pero ya no son el origen de datos del portal multi-negocio.
 
 ## Mapa y Google
 

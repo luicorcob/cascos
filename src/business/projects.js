@@ -992,7 +992,7 @@ function renderProjectCard(business) {
       <div class="project-links">
         <a href="client-dashboard.html?business=${encodeURIComponent(ref)}&businessName=${encodeURIComponent(business.name || "")}&preview=developer">Vista portal cliente</a>
         <a href="client-site.html?business=${encodeURIComponent(ref)}&preview=developer">Web</a>
-        <a href="../index.html?skipIntro=1&business=${encodeURIComponent(ref)}">Studio</a>
+        <a href="../workspace.html?skipIntro=1&business=${encodeURIComponent(ref)}">Studio</a>
       </div>
       <form class="project-password-form" data-portal-password-form data-business-id="${escapeHtml(ref)}">
         <label>

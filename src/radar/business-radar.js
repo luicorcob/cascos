@@ -669,7 +669,7 @@
       if (previousDraft) localStorage.setItem("dls-radar-previous-studio-draft", previousDraft);
       localStorage.setItem(BRIEF_KEY, JSON.stringify(brief));
       localStorage.setItem(STUDIO_DRAFT_KEY, JSON.stringify(studioBusiness));
-      location.href = `../index.html?source=radar&opportunity=${encodeURIComponent(business.id)}`;
+      location.href = `../workspace.html?source=radar&opportunity=${encodeURIComponent(business.id)}`;
     } catch (error) {
       button.disabled = false;
       button.textContent = originalLabel;

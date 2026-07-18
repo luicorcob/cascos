@@ -3,1462 +3,572 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DLS Studio — Digital Local Sites</title>
+    <title>DLS Studio — Web, hosting y CRM para negocios locales</title>
     <meta
       name="description"
-      content="DLS Studio crea y opera sitios digitales profesionales para negocios locales."
+      content="DLS Studio crea, publica y opera la presencia digital de negocios locales desde una sola plataforma."
     >
-    <meta name="theme-color" content="#050509">
-    <link rel="icon" type="image/png" href="Logo.png">
-    <link rel="stylesheet" href="src/styles.css?v=20260629-4">
-    <link rel="stylesheet" href="src/studio-redesign.css?v=20260709-1">
-    <link rel="stylesheet" href="assets/vendor/atropos.min.css">
-    <link rel="stylesheet" href="assets/vendor/open-props-animations.min.css">
-    <link rel="stylesheet" href="src/generated-responsive.css?v=20260629-4">
-    <link rel="stylesheet" href="src/hero-layouts-responsive.css?v=20260626-1">
-    <link rel="stylesheet" href="src/product-polish.css?v=20260715-1">
-    <link rel="stylesheet" href="src/studio-precision.css?v=20260715-1">
+    <meta name="theme-color" content="#07090d">
+    <meta property="og:title" content="DLS Studio — Digital Local Sites">
+    <meta
+      property="og:description"
+      content="Web, hosting, captación y CRM en un único sistema para negocios locales."
+    >
+    <link rel="icon" type="image/webp" href="assets/landing/dls-logo.webp">
+    <link rel="preload" href="src/landing.css?v=20260718-1" as="style">
+    <link rel="stylesheet" href="src/landing.css?v=20260718-1">
   </head>
-  <body>
-    <div class="cursor-glow" aria-hidden="true"></div>
+  <body class="dls-public-body">
+    <a class="dls-skip-link" href="#contenido">Saltar al contenido</a>
 
-    <section class="intro-gate" id="introGate" aria-label="Entrada DLS Studio">
-      <div class="intro-gate-lines" aria-hidden="true"></div>
-      <button
-        class="intro-help-button"
-        id="introHelpButton"
-        type="button"
-        aria-haspopup="dialog"
-        aria-controls="introHelpModal"
-        aria-label="Ver comandos para ejecutar DLS en local"
-        title="Comandos para local"
-      >
-        <span aria-hidden="true">i</span>
-      </button>
-      <div class="intro-gate-content">
-        <div class="intro-launch-copy">
-          <p class="intro-launch-status"><span aria-hidden="true"></span> DLS Product Suite <strong>Online</strong></p>
-          <p class="intro-launch-kicker">El sistema operativo para negocios locales</p>
-          <h1>Diseña una marca. Lanza una web. Haz crecer el negocio.</h1>
-          <p class="intro-launch-summary">
-            Del primer lead a una presencia digital lista para vender: estrategia, producción,
-            operaciones y entrega en un único espacio de trabajo.
-          </p>
-          <div class="intro-launch-points" aria-label="Capacidades de DLS">
-            <span><b>01</b> Descubrir</span>
-            <span><b>02</b> Diseñar</span>
-            <span><b>03</b> Publicar</span>
-          </div>
-        </div>
-        <div class="intro-logo-stage">
-          <svg class="intro-logo-svg" viewBox="0 0 1180 900" role="img" aria-label="DLS Digital Local Sites">
-            <defs>
-              <linearGradient id="introFrameGradient" x1="118" y1="126" x2="1050" y2="612" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#18d9ff"></stop>
-                <stop offset="0.32" stop-color="#654dff"></stop>
-                <stop offset="0.68" stop-color="#ff2fcf"></stop>
-                <stop offset="1" stop-color="#ff8a18"></stop>
-              </linearGradient>
-              <linearGradient id="introDGradient" x1="78" y1="484" x2="540" y2="484" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#18efff"></stop>
-                <stop offset="0.58" stop-color="#1e7dff"></stop>
-                <stop offset="1" stop-color="#8b58ff"></stop>
-              </linearGradient>
-              <linearGradient id="introLGradient" x1="442" y1="492" x2="784" y2="492" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#e12eff"></stop>
-                <stop offset="0.42" stop-color="#ff2fcf"></stop>
-                <stop offset="1" stop-color="#ff3a88"></stop>
-              </linearGradient>
-              <linearGradient id="introSGradient" x1="708" y1="508" x2="1084" y2="508" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#ff315f"></stop>
-                <stop offset="0.52" stop-color="#ff6a00"></stop>
-                <stop offset="1" stop-color="#ffe24a"></stop>
-              </linearGradient>
-              <linearGradient id="introCursorGradient" x1="896" y1="584" x2="1086" y2="746" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#ff42d3"></stop>
-                <stop offset="0.44" stop-color="#ffffff"></stop>
-                <stop offset="1" stop-color="#18d9ff"></stop>
-              </linearGradient>
-            </defs>
-
-            <g class="intro-window-mark">
-              <path class="intro-tube intro-frame-tube" pathLength="1" d="M146 284V190C146 150 178 118 218 118H910L982 190H1034V586C1034 626 1002 658 962 658H218C178 658 146 626 146 586V454"></path>
-              <path class="intro-tube intro-frame-detail" pathLength="1" d="M146 196H334L368 150H902L974 224H1034"></path>
-              <path class="intro-tube intro-frame-detail intro-frame-accent" pathLength="1" d="M422 184H856"></path>
-              <path class="intro-tube intro-frame-shadow" pathLength="1" d="M390 214H888"></path>
-              <circle class="intro-dot intro-dot-red" cx="206" cy="164" r="13"></circle>
-              <circle class="intro-dot intro-dot-amber" cx="256" cy="164" r="13"></circle>
-              <circle class="intro-dot intro-dot-cyan" cx="306" cy="164" r="13"></circle>
-            </g>
-
-            <g class="intro-wordmark">
-              <g class="intro-letter intro-letter-d">
-                <path class="intro-letter-fill" d="M110 304H380C482 304 552 376 552 478C552 596 470 660 344 660H108L154 552H340C404 552 446 524 450 478C454 430 420 404 352 404H76L110 304Z"></path>
-                <path class="intro-tube intro-letter-line" pathLength="1" d="M110 304H380C482 304 552 376 552 478C552 596 470 660 344 660H108L154 552H340C404 552 446 524 450 478C454 430 420 404 352 404H76L110 304Z"></path>
-                <path class="intro-tube intro-letter-inner" pathLength="1" d="M174 464H330C366 464 388 481 386 512C383 546 350 568 306 568H142L174 464Z"></path>
-              </g>
-
-              <g class="intro-letter intro-letter-l">
-                <path class="intro-letter-fill" d="M510 304H598L558 552H760L720 660H450L510 304Z"></path>
-                <path class="intro-tube intro-letter-line" pathLength="1" d="M510 304H598L558 552H760L720 660H450L510 304Z"></path>
-                <path class="intro-tube intro-letter-inner" pathLength="1" d="M548 338L508 620H704"></path>
-              </g>
-
-              <g class="intro-letter intro-letter-s">
-                <path class="intro-letter-fill" d="M820 304H1078L1038 408H836C798 408 770 426 766 456C762 488 788 508 834 508H966C1044 508 1086 556 1072 618C1058 684 1000 714 914 714H704L748 608H946C986 608 1014 592 1018 562C1022 532 996 518 946 518H812C734 518 690 472 704 406C718 342 762 304 820 304Z"></path>
-                <path class="intro-tube intro-letter-line" pathLength="1" d="M820 304H1078L1038 408H836C798 408 770 426 766 456C762 488 788 508 834 508H966C1044 508 1086 556 1072 618C1058 684 1000 714 914 714H704L748 608H946C986 608 1014 592 1018 562C1022 532 996 518 946 518H812C734 518 690 472 704 406C718 342 762 304 820 304Z"></path>
-                <path class="intro-tube intro-letter-inner" pathLength="1" d="M842 452H1008M780 560H966"></path>
-              </g>
-            </g>
-
-            <g class="intro-cursor-mark">
-              <path class="intro-tube intro-cursor-ray" pathLength="1" d="M984 584V552M1012 594L1036 572M958 596L936 574M1032 628H1064M942 628H910"></path>
-              <path class="intro-cursor-fill" d="M960 612L1080 684L1020 706L1056 778L1010 800L976 728L928 772L960 612Z"></path>
-              <path class="intro-tube intro-cursor-line" pathLength="1" d="M960 612L1080 684L1020 706L1056 778L1010 800L976 728L928 772L960 612Z"></path>
-            </g>
-
-            <g class="intro-subline">
-              <path class="intro-tube intro-subline-left" pathLength="1" d="M202 848H262"></path>
-              <text x="330" y="860">DIGITAL LOCAL SITES</text>
-              <path class="intro-tube intro-subline-right" pathLength="1" d="M884 848H952"></path>
-            </g>
-          </svg>
-        </div>
-        <button class="intro-start-button" id="introStartButton" type="button" aria-controls="introHub">
-          <span>Abrir workspace</span>
-          <span class="intro-start-arrow" aria-hidden="true">&#8599;</span>
-        </button>
+    <div class="dls-landing" id="dlsLanding">
+      <div class="dls-page-wipe" data-page-wipe aria-hidden="true">
+        <span></span>
+      </div>
+      <div class="dls-cursor" data-landing-cursor aria-hidden="true">
+        <span></span>
       </div>
 
-      <div class="intro-hub" id="introHub" aria-label="Elegir destino DLS" hidden>
-        <div class="intro-hub-head">
-          <div class="intro-hub-brand" aria-label="DLS Digital Local Sites">
-            <span>DLS</span>
-            <strong>Command Center</strong>
-          </div>
-          <button class="intro-hub-back" id="introHubBackButton" type="button">Volver</button>
-        </div>
+      <div class="dls-landing-scroll">
+        <div class="dls-landing-content">
+          <header class="dls-header" data-landing-header>
+            <div class="dls-container flex items-center justify-between gap-6">
+              <a class="dls-brand dls-cursor-target" href="#inicio" aria-label="DLS Studio, volver al inicio">
+                <span class="dls-brand-mark" aria-hidden="true">
+                  <img src="assets/landing/dls-logo.webp" alt="">
+                </span>
+                <span>
+                  <strong>DLS Studio</strong>
+                  <small>Digital Local Sites</small>
+                </span>
+              </a>
 
-        <div class="intro-hub-copy">
-          <p class="intro-hub-kicker">Tu espacio de trabajo</p>
-          <h1>¿Qué quieres impulsar hoy?</h1>
-          <p>Accede a la suite completa de producción o entra en el portal privado de un negocio.</p>
-        </div>
+              <nav class="dls-header-nav" aria-label="Navegación principal">
+                <a href="#servicios">Servicios</a>
+                <a href="#como-funciona">Cómo funciona</a>
+                <a href="#crm">CRM</a>
+                <a href="#hosting">Hosting</a>
+                <a href="#contacto">Contacto</a>
+              </nav>
 
-        <div class="intro-mode-grid" role="tablist" aria-label="Modo de acceso">
-          <button class="intro-mode-card is-active" type="button" data-intro-mode="developer" aria-selected="true">
-            <span>Equipo DLS</span>
-            <strong>Centro de producción</strong>
-            <small>Studio, proyectos, radar comercial, brief, tienda y operaciones.</small>
-          </button>
-          <button class="intro-mode-card" type="button" data-intro-mode="client" aria-selected="false">
-            <span>Cliente</span>
-            <strong>Portal privado</strong>
-            <small>Reservas, contactos, reportes y acciones de un único negocio.</small>
-          </button>
-        </div>
-
-        <section class="intro-mode-panel is-active" data-intro-mode-panel="developer">
-        <div class="intro-destination-grid">
-          <a class="intro-destination-card is-primary is-studio" href="#studioWorkspace" data-intro-destination="studio">
-            <span class="intro-destination-index">01</span>
-            <span class="intro-destination-visual intro-visual-studio" aria-hidden="true">
-              <span class="studio-monitor">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </span>
-              <span class="studio-base"></span>
-              <span class="studio-code-beam"></span>
-            </span>
-            <span class="intro-destination-label">Produccion</span>
-            <strong>DLS Studio</strong>
-            <span>Editor visual para crear, pulir y exportar webs premium.</span>
-            <em>Entrar al Studio</em>
-          </a>
-
-          <a class="intro-destination-card is-projects" href="pages/admin-dashboard.html">
-            <span class="intro-destination-index">02</span>
-            <span class="intro-destination-visual intro-visual-projects" aria-hidden="true">
-              <span class="project-board project-board-main"></span>
-              <span class="project-board project-board-a"></span>
-              <span class="project-board project-board-b"></span>
-              <span class="project-connector project-connector-a"></span>
-              <span class="project-connector project-connector-b"></span>
-            </span>
-            <span class="intro-destination-label">CRM interno</span>
-            <strong>Control DLS</strong>
-            <span>Gestiona clientes, ofertas, proyectos, servicios, cobros y soporte.</span>
-            <em>Abrir Control DLS</em>
-          </a>
-
-          <a class="intro-destination-card is-radar" href="pages/business-radar.html">
-            <span class="intro-destination-index">03</span>
-            <span class="intro-destination-visual intro-visual-radar" aria-hidden="true">
-              <span class="radar-scope">
-                <span class="radar-sweep"></span>
-                <span class="radar-blip radar-blip-a"></span>
-                <span class="radar-blip radar-blip-b"></span>
-                <span class="radar-blip radar-blip-c"></span>
-              </span>
-            </span>
-            <span class="intro-destination-label">Prospeccion</span>
-            <strong>DLS Radar</strong>
-            <span>Detecta negocios, oportunidades y prioridades comerciales.</span>
-            <em>Abrir Radar</em>
-          </a>
-
-          <a class="intro-destination-card is-brief" href="pages/onboarding.html">
-            <span class="intro-destination-index">04</span>
-            <span class="intro-destination-visual intro-visual-brief" aria-hidden="true">
-              <span class="brief-sheet brief-sheet-a"></span>
-              <span class="brief-sheet brief-sheet-b"></span>
-              <span class="brief-node brief-node-a"></span>
-              <span class="brief-node brief-node-b"></span>
-              <span class="brief-link"></span>
-            </span>
-            <span class="intro-destination-label">Brief</span>
-            <strong>Brief + Google</strong>
-            <span>Captura datos, prepara Google Ops y ordena el arranque.</span>
-            <em>Iniciar brief</em>
-          </a>
-
-          <a class="intro-destination-card is-portal" href="pages/client-dashboard.html?preview=developer">
-            <span class="intro-destination-index">05</span>
-            <span class="intro-destination-visual intro-visual-portal" aria-hidden="true">
-              <span class="portal-panel portal-panel-main"></span>
-              <span class="portal-panel portal-panel-side"></span>
-              <span class="portal-flow portal-flow-a"></span>
-              <span class="portal-flow portal-flow-b"></span>
-            </span>
-            <span class="intro-destination-label">Vista previa</span>
-            <strong>Portal del cliente</strong>
-            <span>Comprueba cómo cada local gestiona su actividad, equipo, horarios y cuentas.</span>
-            <em>Previsualizar portal</em>
-          </a>
-
-          <a class="intro-destination-card is-store" href="pages/store-admin.html">
-            <span class="intro-destination-index">06</span>
-            <span class="intro-destination-visual intro-visual-store" aria-hidden="true">
-              <span class="store-product store-product-a"></span>
-              <span class="store-product store-product-b"></span>
-              <span class="store-product store-product-c"></span>
-              <span class="store-scan"></span>
-              <span class="store-checkout"></span>
-            </span>
-            <span class="intro-destination-label">Comercio</span>
-            <strong>Tienda</strong>
-            <span>Administra catalogo, productos, pedidos y checkout.</span>
-            <em>Gestionar tienda</em>
-          </a>
-
-          <a class="intro-destination-card is-pitch" href="pages/investor.html">
-            <span class="intro-destination-index">07</span>
-            <span class="intro-destination-visual intro-visual-pitch" aria-hidden="true">
-              <span class="pitch-bars"></span>
-              <span class="pitch-line"></span>
-              <span class="pitch-node pitch-node-a"></span>
-              <span class="pitch-node pitch-node-b"></span>
-              <span class="pitch-node pitch-node-c"></span>
-            </span>
-            <span class="intro-destination-label">Vision</span>
-            <strong>Pitch</strong>
-            <span>Abre la narrativa de producto, mercado y ejecucion.</span>
-            <em>Ver pitch</em>
-          </a>
-        </div>
-        </section>
-
-        <section class="intro-mode-panel" data-intro-mode-panel="client" hidden>
-          <form class="intro-client-login" data-client-login-form>
-            <div>
-              <span class="intro-destination-label">Acceso cliente</span>
-              <h2>Entrar al portal del negocio</h2>
-              <p>Usa el nombre exacto de tu negocio y la contrasena que te ha dado DLS.</p>
+              <div class="dls-header-actions">
+                <a
+                  class="dls-button dls-button-quiet dls-cursor-target"
+                  href="workspace.html?hub=1&amp;mode=developer"
+                  data-page-transition
+                >
+                  <span class="dls-header-label-long">Acceder como desarrollador</span>
+                  <span class="dls-header-label-short">Desarrollador</span>
+                </a>
+                <a
+                  class="dls-button dls-button-primary dls-cursor-target"
+                  href="workspace.html?hub=1&amp;mode=client"
+                  data-page-transition
+                >
+                  <span class="dls-header-label-long">Acceder como cliente</span>
+                  <span class="dls-header-label-short">Cliente</span>
+                  <svg viewBox="0 0 18 18" aria-hidden="true">
+                    <path d="M4 9h9M9.5 4.5 14 9l-4.5 4.5"></path>
+                  </svg>
+                </a>
+              </div>
             </div>
-            <label>
-              Negocio
-              <input name="business" type="text" autocomplete="organization" placeholder="Brasa Norte" required>
-            </label>
-            <label>
-              Contrasena
-              <input name="password" type="password" autocomplete="current-password" placeholder="Contrasena del portal" required>
-            </label>
-            <button type="submit">Entrar al portal</button>
-            <p class="intro-login-notice" data-client-login-notice aria-live="polite"></p>
-          </form>
-        </section>
-      </div>
-
-      <div class="intro-help-modal" id="introHelpModal" role="dialog" aria-modal="true" aria-labelledby="introHelpTitle" hidden>
-        <div class="intro-help-backdrop" data-intro-help-close></div>
-        <section class="intro-help-dialog" tabindex="-1">
-          <header>
-            <div>
-              <span>Ayuda local</span>
-              <h2 id="introHelpTitle">Comandos para arrancar DLS</h2>
-            </div>
-            <button class="intro-help-close" type="button" data-intro-help-close aria-label="Cerrar">x</button>
           </header>
 
-          <div class="intro-help-body">
-            <p>Si estas en Render o en la web desplegada, no tienes que escribir nada: Render instala dependencias y ejecuta el servidor automaticamente.</p>
+          <main id="contenido">
+            <section class="dls-hero" id="inicio" aria-labelledby="hero-title">
+              <canvas class="dls-hero-canvas" id="dlsHeroCanvas" aria-hidden="true"></canvas>
+              <div class="dls-hero-fallback" aria-hidden="true"></div>
+              <div class="dls-hero-grid" aria-hidden="true"></div>
 
-            <div class="intro-help-command-group">
-              <h3>Local imprescindible</h3>
-              <p>Desde la carpeta del proyecto, esto levanta Studio, Radar, Proyectos, Portal, reportes y la API local.</p>
-              <pre><code>npm install
-npm.cmd start</code></pre>
-              <p>Despues abre <strong>http://127.0.0.1:5173/</strong>. Evita abrir solo el HTML si vas a usar Radar, Proyectos, Portal o guardado en API.</p>
-            </div>
+              <div class="dls-container dls-hero-layout">
+                <div class="dls-hero-copy">
+                  <p class="dls-eyebrow" data-reveal>
+                    <span aria-hidden="true"></span>
+                    El sistema operativo digital para negocios locales
+                  </p>
+                  <!-- TODO: revisar copy final con DLS. -->
+                  <h1 id="hero-title" data-hero-title>
+                    Creamos, <span class="dls-title-accent-cyan">alojamos</span> y hacemos
+                    <span class="dls-title-accent-gradient">crecer</span> tu negocio local
+                  </h1>
+                  <p class="dls-hero-lead" data-reveal>
+                    De la primera idea al primer cliente: web premium, hosting,
+                    captación y CRM trabajando como un solo sistema.
+                  </p>
+                  <div class="dls-hero-actions" data-reveal>
+                    <a
+                      class="dls-button dls-button-primary dls-button-large dls-magnetic dls-cursor-target"
+                      href="workspace.html?hub=1&amp;mode=developer"
+                      data-page-transition
+                    >
+                      Empieza ahora
+                      <svg viewBox="0 0 18 18" aria-hidden="true">
+                        <path d="M4 9h9M9.5 4.5 14 9l-4.5 4.5"></path>
+                      </svg>
+                    </a>
+                    <a
+                      class="dls-button dls-button-quiet dls-button-large dls-magnetic dls-cursor-target"
+                      href="#como-funciona"
+                    >
+                      Ver cómo funciona
+                      <svg viewBox="0 0 18 18" aria-hidden="true">
+                        <path d="M9 3v11M4.5 9.5 9 14l4.5-4.5"></path>
+                      </svg>
+                    </a>
+                  </div>
+                  <div class="dls-hero-proof" data-reveal>
+                    <div class="dls-avatar-stack" aria-hidden="true">
+                      <span>RE</span>
+                      <span>BN</span>
+                      <span>LS</span>
+                    </div>
+                    <p>
+                      <strong>Diseñado para operar, no solo para impresionar.</strong>
+                      Todo queda conectado desde el primer día.
+                    </p>
+                  </div>
+                </div>
 
-            <div class="intro-help-command-group">
-              <h3>Opcional local</h3>
-              <p>Solo hace falta si quieres editar variables propias antes de arrancar.</p>
-              <pre><code>Copy-Item .env.example .env
-npm.cmd start</code></pre>
-            </div>
-
-            <div class="intro-help-command-grid">
-              <div>
-                <h3>Radar con Google Places</h3>
-                <pre><code>$env:DLS_DISCOVERY_PROVIDER="places"
-$env:GOOGLE_PLACES_API_KEY="tu_clave"
-npm.cmd start</code></pre>
-              </div>
-              <div>
-                <h3>Demos publicas desde local</h3>
-                <pre><code>npx wrangler login
-npm.cmd run setup:demo-online
-npm.cmd start</code></pre>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </section>
-    <noscript><style>.intro-gate{display:none!important}</style></noscript>
-
-    <header class="studio-topbar">
-      <a class="topbar-brand" href="index.html" aria-label="DLS Studio — Digital Local Sites">
-        <img class="topbar-brand-mark" src="Logo.png" alt="" aria-hidden="true">
-        <span>
-          <strong>DLS</strong>
-          <small>Digital Local Sites</small>
-        </span>
-      </a>
-
-      <div class="project-context" aria-label="Proyecto activo">
-        <span class="live-dot" aria-hidden="true"></span>
-        <span class="project-context-label">Proyecto activo</span>
-        <strong id="topbarProjectName">Luma Studio</strong>
-        <span class="project-context-state" id="autoSaveState">Cambios en vivo</span>
-      </div>
-
-      <nav class="topbar-links" aria-label="Herramientas del negocio">
-        <a href="pages/admin-dashboard.html">Control DLS</a>
-        <a href="pages/business-radar.html">DLS Radar</a>
-        <a href="pages/onboarding.html">Brief + Google</a>
-        <a href="pages/client-dashboard.html?preview=developer">Vista cliente</a>
-        <a href="pages/store-admin.html">Tienda</a>
-      </nav>
-
-      <div class="panel-actions" aria-label="Acciones principales">
-        <button class="icon-button" id="saveButton" type="button" title="Guardar datos">
-          <span aria-hidden="true">Guardar</span>
-          <span class="sr-only">Guardar datos</span>
-        </button>
-        <button class="icon-button" id="loadButton" type="button" title="Cargar datos guardados">
-          <span aria-hidden="true">Cargar</span>
-          <span class="sr-only">Cargar datos guardados</span>
-        </button>
-        <button class="icon-button" id="resetButton" type="button" title="Restaurar demo">
-          <span aria-hidden="true">Demo</span>
-          <span class="sr-only">Restaurar demo</span>
-        </button>
-        <button class="icon-button" id="prepareDeliveryButton" type="button" title="Preparar entrega">
-          <span aria-hidden="true">Entrega Pro</span>
-          <span class="sr-only">Preparar entrega profesional</span>
-        </button>
-        <button class="primary-action publish-action" id="publishDemoButton" type="button">Publicar demo online</button>
-        <button class="primary-action" id="exportButton" type="button">Exportar web</button>
-      </div>
-    </header>
-
-    <main class="studio-shell" id="studioWorkspace" tabindex="-1">
-      <aside class="control-panel" aria-label="Panel de configuracion">
-        <div class="brand-lockup">
-          <img class="brand-mark" src="Logo.png" alt="" aria-hidden="true">
-          <div>
-            <p class="eyebrow">Mesa de produccion</p>
-            <h1>Convierte un negocio en una marca digital</h1>
-          </div>
-        </div>
-
-        <div class="status-line" id="statusLine" role="status">Demo lista para editar.</div>
-
-        <div class="data-actions" aria-label="Gestion de datos">
-          <button class="secondary-action" id="exportPackageButton" type="button">Exportar paquete</button>
-          <button class="secondary-action" id="exportDataButton" type="button">Exportar datos</button>
-          <button class="secondary-action" id="importDataButton" type="button">Importar datos</button>
-          <input id="importDataInput" type="file" accept="application/json,.json" hidden>
-        </div>
-
-        <div class="workspace-links" aria-label="Material de presentacion">
-          <a href="pages/admin-dashboard.html">Control DLS</a>
-          <a href="pages/business-radar.html">Radar de negocios</a>
-          <a href="pages/investor.html">Pitch inversores</a>
-          <a href="pages/onboarding.html">Brief + Google Ops</a>
-          <a href="pages/store-admin.html">Admin tienda</a>
-        </div>
-
-        <section class="quality-panel" aria-label="Checklist de calidad">
-          <div class="quality-panel-head">
-            <div>
-              <p class="eyebrow">Control de entrega</p>
-              <div class="quality-score-line">
-                <strong id="qualityScore">0%</strong>
-                <span id="qualityState">Analizando</span>
-              </div>
-            </div>
-            <span class="quality-help" title="El porcentaje combina requisitos de contenido y comprobaciones tecnicas.">?</span>
-          </div>
-          <div
-            class="quality-progress"
-            id="qualityProgress"
-            role="progressbar"
-            aria-label="Preparacion de la entrega"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow="0"
-          ><span></span></div>
-          <p class="quality-explainer" id="qualityExplainer">Completa los requisitos para poder entregar.</p>
-          <div class="quality-checklist" id="qualityChecklist"></div>
-          <div class="visual-qa-panel" aria-label="QA visual y accesibilidad automatica">
-            <div class="visual-qa-head">
-              <div>
-                <span>QA visual</span>
-                <strong id="visualQaStatus">Sin analizar</strong>
-              </div>
-              <span class="visual-qa-chip">Desktop + tablet + movil x2</span>
-            </div>
-            <div class="visual-qa-actions">
-              <button class="secondary-action" id="visualQaRunButton" type="button">Analizar QA visual</button>
-              <button class="secondary-action" id="visualQaFixButton" type="button">Corregir automatico</button>
-            </div>
-            <div class="visual-qa-result" id="visualQaResult" aria-live="polite">
-              Pendiente de analisis profundo.
-            </div>
-          </div>
-        </section>
-
-        <section class="delivery-panel" aria-label="Modo Entrega Pro">
-          <div class="delivery-panel-head">
-            <div>
-              <p class="eyebrow">Entrega Pro</p>
-              <strong id="deliveryStatus">Sin preparar</strong>
-            </div>
-            <span id="deliveryReadiness">Pendiente</span>
-          </div>
-          <div class="delivery-report" id="deliveryReport">
-            Pulsa `Entrega Pro` para generar un preflight con bloqueos, avisos y pasos de entrega.
-          </div>
-        </section>
-
-        <section class="quick-panel" aria-label="Cambios rapidos para demo">
-          <div class="quick-panel-head">
-            <div>
-              <p class="eyebrow">Director creativo</p>
-              <h2>Describe el resultado</h2>
-            </div>
-            <div class="quick-history">
-              <button class="mini-action" type="button" id="quickUndoButton">Deshacer</button>
-              <button class="mini-action" type="button" id="quickRedoButton">Rehacer</button>
-            </div>
-          </div>
-
-          <div class="quick-command">
-            <input id="quickCommandInput" type="text" placeholder="Ej: refina la marca, prioriza reservas...">
-            <button class="mini-action is-strong" id="quickCommandButton" type="button">Aplicar</button>
-          </div>
-
-          <div class="quick-group" aria-label="Variantes instantaneas">
-            <button class="quick-action quick-action-featured" type="button" data-quick-action="surprise">Nueva direccion</button>
-            <button class="quick-action" type="button" data-quick-action="premium">Refinar marca</button>
-            <button class="quick-action" type="button" data-quick-action="minimal">Simplificar</button>
-            <button class="quick-action" type="button" data-quick-action="urgent">Acelerar decision</button>
-            <button class="quick-action" type="button" data-quick-action="trust">Reforzar confianza</button>
-            <button class="quick-action" type="button" data-quick-action="booking">Priorizar reservas</button>
-            <button class="quick-action" type="button" data-quick-action="food">Facilitar pedidos</button>
-            <button class="quick-action" type="button" data-quick-action="store">Activar tienda</button>
-            <button class="quick-action" type="button" data-quick-action="local">Enfatizar cercania</button>
-            <button class="quick-action" type="button" data-quick-action="mobile">Optimizar movil</button>
-            <button class="quick-action" type="button" data-quick-action="showcase">Dar peso a las fotos</button>
-            <button class="quick-action" type="button" data-quick-action="biggerType">Mejorar lectura</button>
-            <button class="quick-action" type="button" data-quick-action="moreSpace">Dar mas aire</button>
-            <button class="quick-action" type="button" data-quick-action="wideImages">Formato panoramico</button>
-          </div>
-
-          <div class="quick-toggle-grid" aria-label="Activar secciones">
-            <input class="quick-state-input" form="businessForm" name="showAnnouncement" type="checkbox" checked hidden>
-            <input class="quick-state-input" form="businessForm" name="showResourceMarquee" type="checkbox" checked hidden>
-            <input class="quick-state-input" form="businessForm" name="showTrustRail" type="checkbox" checked hidden>
-            <input class="quick-state-input" form="businessForm" name="showGallery" type="checkbox" checked hidden>
-            <input class="quick-state-input" form="businessForm" name="showTestimonials" type="checkbox" checked hidden>
-            <input class="quick-state-input" form="businessForm" name="showFaq" type="checkbox" checked hidden>
-            <input class="quick-state-input" form="businessForm" name="showMap" type="checkbox" checked hidden>
-            <input class="quick-state-input" form="businessForm" name="showConversionDock" type="checkbox" checked hidden>
-            <button class="quick-toggle" type="button" data-toggle-field="showAnnouncement">Anuncio</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showResourceMarquee">Beneficios</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showTrustRail">Confianza</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showGallery">Galeria</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showTestimonials">Resenas</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showFaq">FAQ</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showMap">Mapa</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showLeadForm">Lead</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showMenu">Carta</button>
-            <button class="quick-toggle" type="button" data-toggle-field="chatbotEnabled">Bot</button>
-            <button class="quick-toggle" type="button" data-toggle-field="commerceEnabled">Tienda</button>
-            <button class="quick-toggle" type="button" data-toggle-field="showConversionDock">Dock</button>
-          </div>
-
-          <div class="section-manager" aria-label="Orden de secciones">
-            <div class="section-manager-head">
-              <strong>Orden de la web</strong>
-              <span>Sube, baja u oculta bloques</span>
-            </div>
-            <div class="section-order-list" id="sectionOrderList"></div>
-          </div>
-
-          <div class="block-library-panel" aria-label="Biblioteca de bloques">
-            <div class="section-manager-head">
-              <strong>Biblioteca de bloques</strong>
-              <span>Cambia la composicion</span>
-            </div>
-            <div class="block-library" id="blockLibrary"></div>
-            <div class="layout-template-actions">
-              <input id="layoutTemplateName" type="text" placeholder="Nombre de esta composicion">
-              <button id="layoutTemplateSave" type="button">Guardar composicion</button>
-            </div>
-            <div class="layout-template-list" id="layoutTemplateList"></div>
-          </div>
-        </section>
-
-        <section class="preset-panel" aria-label="Demos por sector">
-          <p class="eyebrow">Demos por sector</p>
-          <div class="preset-grid">
-            <button class="preset-button" type="button" data-preset="restaurant">Restaurante</button>
-            <button class="preset-button" type="button" data-preset="clinic">Clinica</button>
-            <button class="preset-button is-active" type="button" data-preset="beauty">Belleza</button>
-            <button class="preset-button" type="button" data-preset="gym">Gimnasio</button>
-            <button class="preset-button" type="button" data-preset="bar">Bar</button>
-            <button class="preset-button" type="button" data-preset="stationery">Papeleria</button>
-            <button class="preset-button" type="button" data-preset="kebab">Kebab</button>
-            <button class="preset-button" type="button" data-preset="bazaar">Bazar</button>
-          </div>
-        </section>
-
-        <nav class="editor-tabs" aria-label="Secciones del editor">
-          <button class="tab-button is-active" type="button" data-tab="identity">Marca</button>
-          <button class="tab-button" type="button" data-tab="content">Contenido</button>
-          <button class="tab-button" type="button" data-tab="media">Fotos</button>
-          <button class="tab-button" type="button" data-tab="style">Estilo</button>
-          <button class="tab-button" type="button" data-tab="google">Google</button>
-          <button class="tab-button" type="button" data-tab="chatbot">Chatbot</button>
-          <button class="tab-button" type="button" data-tab="menu">Carta</button>
-          <button class="tab-button" type="button" data-tab="commerce">Tienda</button>
-        </nav>
-
-        <form id="businessForm" class="editor-form">
-          <input name="sectionOrder" type="hidden">
-          <input name="blockVariants" type="hidden">
-          <input name="mediaMetadata" type="hidden">
-          <input name="textStyles" type="hidden">
-          <input name="buttonStyles" type="hidden">
-          <section class="tab-panel is-active" data-panel="identity">
-            <label>
-              Nombre del negocio
-              <input name="name" type="text" autocomplete="organization">
-            </label>
-            <label>
-              Categoria
-              <input name="category" type="text" placeholder="Restaurante, peluqueria, clinica...">
-            </label>
-            <label>
-              Ciudad o zona
-              <input name="location" type="text" autocomplete="address-level2">
-            </label>
-            <label>
-              Frase potente
-              <input name="tagline" type="text">
-            </label>
-            <label>
-              Descripcion principal
-              <textarea name="description" rows="5"></textarea>
-            </label>
-            <label>
-              Objetivo de conversion
-              <input name="conversionGoal" type="text" placeholder="Reservas, WhatsApp, llamadas, pedidos...">
-            </label>
-            <label>
-              Mensaje destacado / promocion
-              <input name="announcement" type="text" placeholder="Ej: Reserva hoy y recibe confirmacion por WhatsApp">
-            </label>
-            <div class="two-columns">
-              <label>
-                Telefono
-                <input name="phone" type="tel">
-              </label>
-              <label>
-                Email
-                <input name="email" type="email">
-              </label>
-            </div>
-            <label>
-              Direccion
-              <input name="address" type="text" autocomplete="street-address">
-            </label>
-          </section>
-
-          <section class="tab-panel" data-panel="content">
-            <label>
-              Servicios estrella (uno por linea)
-              <textarea name="services" rows="6"></textarea>
-            </label>
-            <label>
-              Diferenciales (uno por linea)
-              <textarea name="features" rows="5"></textarea>
-            </label>
-            <label>
-              Horario
-              <textarea name="hours" rows="4"></textarea>
-            </label>
-            <label>
-              Resenas/testimonios (nombre | texto)
-              <textarea name="testimonials" rows="5"></textarea>
-            </label>
-            <label>
-              Preguntas frecuentes (pregunta | respuesta)
-              <textarea name="faqs" rows="5"></textarea>
-            </label>
-            <label>
-              Pruebas de confianza (una por linea)
-              <textarea name="trustBadges" rows="4" placeholder="Ej: 4.8 en Google&#10;Respuesta por WhatsApp&#10;Entrega en 7 dias"></textarea>
-            </label>
-            <fieldset>
-              <legend>Textos de secciones</legend>
-              <label>
-                Titular de servicios
-                <input name="servicesHeading" type="text">
-              </label>
-              <label>
-                Intro de servicios
-                <textarea name="servicesIntro" rows="3"></textarea>
-              </label>
-              <label>
-                Titular de confianza
-                <input name="trustHeading" type="text">
-              </label>
-              <label>
-                Intro de confianza
-                <textarea name="trustIntro" rows="3"></textarea>
-              </label>
-              <label>
-                Titular de contacto
-                <input name="contactHeading" type="text">
-              </label>
-            </fieldset>
-            <fieldset>
-              <legend>Bloque de captacion</legend>
-              <label class="toggle-row">
-                <input name="showLeadForm" type="checkbox">
-                Mostrar formulario de lead
-              </label>
-              <label>
-                Titular del formulario
-                <input name="leadFormTitle" type="text">
-              </label>
-              <label>
-                Texto del formulario
-                <textarea name="leadFormIntro" rows="3"></textarea>
-              </label>
-              <label>
-                Texto del boton del formulario
-                <input name="leadFormCta" type="text">
-              </label>
-              <label>
-                URL de privacidad
-                <input name="privacyUrl" type="url" inputmode="url" placeholder="https://tuweb.com/privacidad">
-              </label>
-              <div class="media-note">
-                Obligatoria antes de publicar formularios que recojan datos personales. El texto legal debe revisarse para cada cliente.
-              </div>
-            </fieldset>
-          </section>
-
-          <section class="tab-panel" data-panel="media">
-            <fieldset class="hero-layout-panel">
-              <legend>Disposicion de la portada</legend>
-              <p>Elige exactamente como se veran las imagenes al abrir la pagina. Esta eleccion no cambia aunque cambies la direccion artistica.</p>
-              <div class="hero-layout-picker" id="heroLayoutPicker" aria-label="Disposicion de imagenes en portada"></div>
-            </fieldset>
-            <fieldset class="media-library-panel">
-              <legend>Biblioteca de medios</legend>
-              <div class="media-library-actions">
-                <button class="site-image-generate-button" id="siteImageGenerateButton" type="button">Generar pack visual</button>
-                <span class="site-image-generate-status" id="siteImageGenerateStatus"></span>
-                <label class="media-upload-button">
-                  Subir imagenes
-                  <input id="mediaUploadInput" type="file" accept="image/*" multiple hidden>
-                </label>
-                <div class="media-url-row">
-                  <input id="mediaUrlInput" type="url" inputmode="url" placeholder="https://.../imagen.jpg">
-                  <button id="mediaUrlAddButton" type="button">Anadir URL</button>
+                <div class="dls-hero-product" data-reveal aria-label="Vista conceptual de la plataforma DLS">
+                  <div class="dls-product-orbit dls-product-orbit-a" aria-hidden="true"></div>
+                  <div class="dls-product-orbit dls-product-orbit-b" aria-hidden="true"></div>
+                  <div class="dls-product-window">
+                    <div class="dls-window-topbar">
+                      <span class="dls-window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                      <span class="dls-window-address">
+                        <i aria-hidden="true"></i>
+                        digitallocalsites.com/nuevo-proyecto
+                      </span>
+                      <span class="dls-live-pill"><i aria-hidden="true"></i> Live</span>
+                    </div>
+                    <div class="dls-product-body">
+                      <aside class="dls-product-sidebar" aria-hidden="true">
+                        <span class="is-active"></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </aside>
+                      <div class="dls-product-preview">
+                        <div class="dls-preview-nav"><i></i><span></span><span></span><span></span></div>
+                        <div class="dls-preview-kicker"></div>
+                        <div class="dls-preview-title"><span></span><span></span></div>
+                        <div class="dls-preview-copy"></div>
+                        <div class="dls-preview-actions"><span></span><span></span></div>
+                        <div class="dls-preview-cards"><span></span><span></span><span></span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dls-floating-card dls-floating-card-score">
+                    <span>Oportunidad detectada</span>
+                    <strong>92<small>/100</small></strong>
+                    <div><i></i><i></i><i></i><i></i><i></i></div>
+                  </div>
+                  <div class="dls-floating-card dls-floating-card-publish">
+                    <span class="dls-publish-icon" aria-hidden="true">
+                      <svg viewBox="0 0 22 22"><path d="M6 11.5 9.3 15 16 7.5"></path></svg>
+                    </span>
+                    <span><strong>Web publicada</strong><small>SSL + hosting activo</small></span>
+                  </div>
                 </div>
               </div>
-              <div class="media-library-grid" id="mediaLibrary"></div>
-            </fieldset>
-            <label>
-              Imagen principal de portada
-              <input name="heroImage" type="url" inputmode="url">
-            </label>
-            <label>
-              Galeria (una URL por linea)
-              <textarea name="gallery" rows="7"></textarea>
-            </label>
-            <label>
-              Enlaces sociales (nombre | URL)
-              <textarea name="links" rows="5"></textarea>
-            </label>
-            <div class="media-note">
-              Tambien puedes pegar URLs de imagenes alojadas en Drive, Canva, Unsplash, Instagram CDN o tu propio servidor.
-            </div>
-          </section>
 
-          <section class="tab-panel" data-panel="style">
-            <input name="designPack" type="hidden" value="custom">
-            <fieldset class="style-pack-panel">
-              <legend>Packs de diseno en un clic</legend>
-              <div class="design-pack-grid">
-                <button class="design-pack-button" type="button" data-design-pack="boutique">Boutique</button>
-                <button class="design-pack-button" type="button" data-design-pack="impact">Impacto</button>
-                <button class="design-pack-button" type="button" data-design-pack="clear">Claro</button>
-                <button class="design-pack-button" type="button" data-design-pack="commerce">Comercial</button>
-                <button class="design-pack-button" type="button" data-design-pack="mobileFirst">Mobile first</button>
-                <button class="design-pack-button" type="button" data-design-pack="localWarm">Local cercano</button>
+              <div class="dls-hero-bottom dls-container" data-reveal>
+                <span>Descubre el recorrido</span>
+                <span class="dls-scroll-line" aria-hidden="true"><i></i></span>
+                <span>01 — 06</span>
               </div>
-            </fieldset>
-            <fieldset>
-              <legend>Direccion artistica</legend>
-              <div class="segmented-control art-direction-control">
-                <label>
-                  <input type="radio" name="artDirection" value="auto">
-                  Auto unica
-                </label>
-                <label>
-                  <input type="radio" name="artDirection" value="cinematic">
-                  Cine
-                </label>
-                <label>
-                  <input type="radio" name="artDirection" value="editorial">
-                  Revista
-                </label>
-                <label>
-                  <input type="radio" name="artDirection" value="poster">
-                  Cartel
-                </label>
-                <label>
-                  <input type="radio" name="artDirection" value="mosaic">
-                  Mosaico
-                </label>
-                <label>
-                  <input type="radio" name="artDirection" value="atelier">
-                  Atelier
-                </label>
-                <label>
-                  <input type="radio" name="artDirection" value="kinetic">
-                  Kinetica
-                </label>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Carga de contenido</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="contentMode" value="visual">
-                  Muy visual
-                </label>
-                <label>
-                  <input type="radio" name="contentMode" value="balanced">
-                  Equilibrada
-                </label>
-                <label>
-                  <input type="radio" name="contentMode" value="detailed">
-                  Completa
-                </label>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Plantilla visual</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="theme" value="aurora">
-                  Aurora
-                </label>
-                <label>
-                  <input type="radio" name="theme" value="carbon">
-                  Carbon
-                </label>
-                <label>
-                  <input type="radio" name="theme" value="editorial">
-                  Editorial
-                </label>
-                <label>
-                  <input type="radio" name="theme" value="neon">
-                  Neon
-                </label>
-                <label>
-                  <input type="radio" name="theme" value="luxe">
-                  Luxe
-                </label>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Ritmo de animacion</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="motion" value="soft">
-                  Suave
-                </label>
-                <label>
-                  <input type="radio" name="motion" value="cinematic">
-                  Cine
-                </label>
-                <label>
-                  <input type="radio" name="motion" value="bold">
-                  Impacto
-                </label>
-              </div>
-            </fieldset>
-            <label>
-              Color principal
-              <input name="accent" type="color">
-            </label>
-            <div class="two-columns">
-              <label class="range-label">
-                Escala de letras
-                <input name="fontScale" type="range" min="85" max="120" step="5">
-              </label>
-              <label class="range-label">
-                Escala de dimensiones
-                <input name="layoutScale" type="range" min="85" max="120" step="5">
-              </label>
-            </div>
-            <fieldset>
-              <legend>Tipografia</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="typography" value="modern">
-                  Moderna
-                </label>
-                <label>
-                  <input type="radio" name="typography" value="editorial">
-                  Editorial
-                </label>
-                <label>
-                  <input type="radio" name="typography" value="compact">
-                  Compacta
-                </label>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Densidad</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="contentDensity" value="compact">
-                  Compacta
-                </label>
-                <label>
-                  <input type="radio" name="contentDensity" value="balanced">
-                  Media
-                </label>
-                <label>
-                  <input type="radio" name="contentDensity" value="spacious">
-                  Amplia
-                </label>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Forma visual</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="visualShape" value="sharp">
-                  Recta
-                </label>
-                <label>
-                  <input type="radio" name="visualShape" value="clean">
-                  Limpia
-                </label>
-                <label>
-                  <input type="radio" name="visualShape" value="rounded">
-                  Redonda
-                </label>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Altura hero</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="heroSize" value="compact">
-                  Baja
-                </label>
-                <label>
-                  <input type="radio" name="heroSize" value="balanced">
-                  Media
-                </label>
-                <label>
-                  <input type="radio" name="heroSize" value="immersive">
-                  Inmersiva
-                </label>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Ancho del contenido</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="contentWidth" value="focused">
-                  Enfocado
-                </label>
-                <label>
-                  <input type="radio" name="contentWidth" value="standard">
-                  Normal
-                </label>
-                <label>
-                  <input type="radio" name="contentWidth" value="wide">
-                  Amplio
-                </label>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Formato de fotos</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="imageRatio" value="portrait">
-                  Vertical
-                </label>
-                <label>
-                  <input type="radio" name="imageRatio" value="square">
-                  Cuadrado
-                </label>
-                <label>
-                  <input type="radio" name="imageRatio" value="wide">
-                  Panoramico
-                </label>
-              </div>
-            </fieldset>
-            <label class="range-label">
-              Intensidad visual
-              <input name="intensity" type="range" min="30" max="100" step="5">
-            </label>
-            <label class="toggle-row">
-              <input name="premiumEffects" type="checkbox">
-              Efectos de raton, tilt y parallax
-            </label>
-            <label class="toggle-row">
-              <input name="showBooking" type="checkbox">
-              Mostrar boton de reserva
-            </label>
-            <label>
-              URL de reservas / WhatsApp / contacto
-              <input name="bookingUrl" type="url" inputmode="url">
-            </label>
-            <label>
-              Texto del boton principal
-              <input name="bookingLabel" type="text" placeholder="Reservar ahora">
-            </label>
-          </section>
+            </section>
 
-          <section class="tab-panel" data-panel="google">
-            <fieldset>
-              <legend>Servicio gestionado Google</legend>
-              <label>
-                Email profesional a crear/gestionar
-                <input name="googleWorkspaceEmail" type="email" placeholder="info@tunegocio.com">
-              </label>
-              <label>
-                Dominio Workspace
-                <input name="googleWorkspaceDomain" type="text" placeholder="tunegocio.com">
-              </label>
-              <label>
-                Email gestor DLS autorizado
-                <input name="googleManagerEmail" type="email" placeholder="gestor@digitallocalsites.com">
-              </label>
-            </fieldset>
-            <label class="toggle-row">
-              <input name="googleEnabled" type="checkbox">
-              Activar capa Google
-            </label>
-            <label>
-              Google Place ID
-              <input name="googlePlaceId" type="text" placeholder="ChIJ...">
-            </label>
-            <label>
-              Google Maps URL
-              <input name="googleMapsUrl" type="url" inputmode="url">
-            </label>
-            <label>
-              URL embed de mapa
-              <input name="mapEmbedUrl" type="url" inputmode="url" placeholder="Opcional: iframe/embed de Google Maps">
-            </label>
-            <label>
-              URL para dejar resena
-              <input name="googleReviewUrl" type="url" inputmode="url">
-            </label>
-            <label>
-              Mensaje para pedir resenas
-              <textarea name="googleReviewRequestTemplate" rows="3" placeholder="Gracias por venir. Nos ayudas dejando una resena aqui: {reviewUrl}"></textarea>
-            </label>
-            <label>
-              Indicaciones / parking / zona
-              <textarea name="directionsNote" rows="3" placeholder="Ej: A 2 minutos de la plaza, parking cercano, entrada accesible..."></textarea>
-            </label>
-            <label>
-              URL de reserva/cita en Google o proveedor
-              <input name="googleAppointmentUrl" type="url" inputmode="url">
-            </label>
-            <label>
-              Reglas de reserva
-              <textarea name="googleBookingRules" rows="3" placeholder="Duracion, margen, servicios, horarios bloqueados, confirmacion..."></textarea>
-            </label>
-            <div class="two-columns">
-              <label>
-                Rating Google
-                <input name="googleRating" type="number" min="0" max="5" step="0.1">
-              </label>
-              <label>
-                Numero de resenas
-                <input name="googleReviewCount" type="number" min="0" step="1">
-              </label>
-            </div>
-            <label>
-              Google Calendar ID
-              <input name="googleCalendarId" type="text" placeholder="primary o calendario@group.calendar.google.com">
-            </label>
-            <div class="two-columns">
-              <label>
-                GBP Account ID
-                <input name="googleBusinessProfileAccountId" type="text">
-              </label>
-              <label>
-                GBP Location ID
-                <input name="googleBusinessProfileLocationId" type="text">
-              </label>
-            </div>
-            <div class="media-note">
-              Empieza con URLs manuales. Para sincronizar datos reales de Google Maps, Calendar o Business Profile se usa backend con API keys/OAuth, nunca claves dentro del HTML exportado.
-            </div>
-          </section>
-
-          <section class="tab-panel" data-panel="chatbot">
-            <label class="toggle-row">
-              <input name="chatbotEnabled" type="checkbox">
-              Activar asistente virtual
-            </label>
-            <div class="two-columns">
-              <label>
-                Nombre del bot
-                <input name="chatbotName" type="text" placeholder="Ej: AnaBot">
-              </label>
-              <label>
-                Texto de traspaso
-                <input name="chatbotHandoffLabel" type="text" placeholder="Hablar por WhatsApp">
-              </label>
-            </div>
-            <fieldset>
-              <legend>Tono del asistente</legend>
-              <div class="segmented-control">
-                <label>
-                  <input type="radio" name="chatbotTone" value="directo">
-                  Directo
-                </label>
-                <label>
-                  <input type="radio" name="chatbotTone" value="cercano">
-                  Cercano
-                </label>
-                <label>
-                  <input type="radio" name="chatbotTone" value="premium">
-                  Premium
-                </label>
+            <section class="dls-story dls-dark-section" id="demostracion" aria-labelledby="story-title">
+              <div class="dls-noise" aria-hidden="true"></div>
+              <div class="dls-container dls-section-heading dls-section-heading-center">
+                <p class="dls-eyebrow" data-reveal>Una plataforma. Todo el recorrido.</p>
+                <h2 id="story-title" data-reveal>De cero a negocio digital, sin piezas sueltas.</h2>
+                <p data-reveal>
+                  Sigue el flujo completo: DLS construye, publica, encuentra oportunidades
+                  y ordena cada relación comercial.
+                </p>
               </div>
-            </fieldset>
-            <label>
-              Saludo inicial
-              <textarea name="chatbotGreeting" rows="4"></textarea>
-            </label>
-            <label>
-              Preguntas rapidas (una por linea)
-              <textarea name="chatbotQuickPrompts" rows="5"></textarea>
-            </label>
-            <label>
-              Endpoint IA opcional
-              <input name="chatbotEndpoint" type="url" inputmode="url" placeholder="https://tu-servidor.com/api/chat">
-            </label>
-            <div class="media-note">
-              Sin endpoint, el bot responde localmente con los datos del negocio. Para IA real usa un backend: nunca pongas claves API en el HTML exportado.
-            </div>
-          </section>
 
-          <section class="tab-panel" data-panel="menu">
-            <label class="toggle-row">
-              <input name="showMenu" type="checkbox">
-              Mostrar carta en la web
-            </label>
-            <label>
-              Titulo de la carta
-              <input name="menuTitle" type="text" placeholder="Carta de temporada">
-            </label>
-            <label>
-              Introduccion
-              <textarea name="menuIntro" rows="3" placeholder="Producto local, fuego lento y platos pensados para compartir."></textarea>
-            </label>
-            <label>
-              Moneda
-              <input name="menuCurrency" type="text" maxlength="3" placeholder="EUR">
-            </label>
-            <input name="menuItems" type="hidden">
-            <section class="menu-admin-panel" aria-label="Editor de productos de la carta">
-              <div class="menu-admin-head">
+              <div class="dls-story-desktop">
+                <div class="dls-story-stage">
+                  <div class="dls-story-visual">
+                    <img
+                      class="dls-story-poster"
+                      src="assets/landing/storyboard-backdrop.webp"
+                      onerror="this.onerror=null;this.src='assets/landing/storyboard-backdrop.png'"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    >
+                    <canvas id="dlsStoryCanvas" width="1280" height="720" aria-label="Demostración animada del flujo DLS"></canvas>
+                    <div class="dls-story-vignette" aria-hidden="true"></div>
+                    <div class="dls-story-loader" data-story-progress aria-live="polite">
+                      <div>
+                        <span>Preparando demostración</span>
+                        <strong data-story-progress-value>0%</strong>
+                      </div>
+                      <i><b></b></i>
+                    </div>
+                    <div class="dls-story-status">
+                      <span><i aria-hidden="true"></i> DLS Live System</span>
+                      <span data-story-frame>Frame 001 / 090</span>
+                    </div>
+                  </div>
+
+                  <div class="dls-story-copy" aria-live="polite">
+                    <article class="dls-story-step is-active" data-story-step data-start="0" data-end="14">
+                      <span>01 / Brief inteligente</span>
+                      <h3>Empieza con el negocio, no con una plantilla.</h3>
+                      <p>Nombre, sector y objetivos se convierten en una dirección digital concreta.</p>
+                    </article>
+                    <article class="dls-story-step" data-story-step data-start="15" data-end="29">
+                      <span>02 / Generación web</span>
+                      <h3>La primera versión aparece en minutos.</h3>
+                      <p>Estructura, diseño y contenido nacen juntos, listos para revisar.</p>
+                    </article>
+                    <article class="dls-story-step" id="hosting" data-story-step data-start="30" data-end="43">
+                      <span>03 / Hosting gestionado</span>
+                      <h3>Publicar deja de ser otro proyecto.</h3>
+                      <p>Dominio, SSL, rendimiento y despliegue quedan dentro del mismo flujo.</p>
+                    </article>
+                    <article class="dls-story-step" data-story-step data-start="44" data-end="58">
+                      <span>04 / Radar comercial</span>
+                      <h3>El mapa se convierte en oportunidades.</h3>
+                      <p>OpenStreetMap y Google Places ayudan a detectar, ordenar y priorizar negocios.</p>
+                    </article>
+                    <article class="dls-story-step" id="crm" data-story-step data-start="59" data-end="74">
+                      <span>05 / CRM operativo</span>
+                      <h3>Cada conversación avanza con contexto.</h3>
+                      <p>Leads, ofertas, tareas y pipeline comparten una única fuente de verdad.</p>
+                    </article>
+                    <article class="dls-story-step" data-story-step data-start="75" data-end="89">
+                      <span>06 / Contenido IA</span>
+                      <h3>La comunicación sigue al ritmo del negocio.</h3>
+                      <p>Mensajes y contenido se preparan con la voz correcta y revisión humana.</p>
+                    </article>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dls-story-mobile dls-container" data-story-mobile>
+                <article>
+                  <img src="assets/landing/sequence/frame-008.webp" alt="Datos iniciales de un nuevo negocio" loading="lazy">
+                  <span>01</span>
+                  <div><h3>Entendemos el negocio.</h3><p>Un brief útil se convierte en dirección de producto.</p></div>
+                </article>
+                <article>
+                  <img src="assets/landing/sequence/frame-024.webp" alt="Web generándose dentro de DLS Studio" loading="lazy">
+                  <span>02</span>
+                  <div><h3>Construimos la presencia.</h3><p>Diseño, contenido y conversión nacen conectados.</p></div>
+                </article>
+                <article>
+                  <img src="assets/landing/sequence/frame-039.webp" alt="Publicación y hosting de una web" loading="lazy">
+                  <span>03</span>
+                  <div><h3>Publicamos y alojamos.</h3><p>La parte técnica deja de frenar la entrega.</p></div>
+                </article>
+                <article>
+                  <img src="assets/landing/sequence/frame-055.webp" alt="Radar de oportunidades comerciales sobre un mapa" loading="lazy">
+                  <span>04</span>
+                  <div><h3>Encontramos oportunidades.</h3><p>El radar organiza señales reales del mercado local.</p></div>
+                </article>
+                <article>
+                  <img src="assets/landing/sequence/frame-072.webp" alt="Pipeline CRM con oportunidades ordenadas" loading="lazy">
+                  <span>05</span>
+                  <div><h3>Gestionamos el crecimiento.</h3><p>CRM y automatización mantienen el trabajo en movimiento.</p></div>
+                </article>
+                <article>
+                  <img src="assets/landing/sequence/frame-086.webp" alt="Asistente de contenido preparando una campaña" loading="lazy">
+                  <span>06</span>
+                  <div><h3>Activamos la comunicación.</h3><p>La IA prepara contenido con contexto y revisión humana.</p></div>
+                </article>
+              </div>
+            </section>
+
+            <section class="dls-services" id="servicios" aria-labelledby="services-title">
+              <div class="dls-container dls-section-heading dls-section-heading-split">
                 <div>
-                  <strong>Productos de la carta</strong>
-                  <span>Las categorias se crean desde los platos.</span>
+                  <p class="dls-eyebrow" data-reveal>Capacidades conectadas</p>
+                  <h2 id="services-title" data-reveal>Una suite completa. Una sola forma de trabajar.</h2>
                 </div>
-                <button class="secondary-action" id="addMenuProductButton" type="button">Anadir plato</button>
+                <p data-reveal>
+                  Cada módulo resuelve una parte concreta y comparte contexto con el resto.
+                  Menos herramientas, más continuidad.
+                </p>
               </div>
-              <div class="menu-product-list" id="menuProductList" role="list" aria-label="Platos editables"></div>
+
+              <div class="dls-services-viewport">
+                <div class="dls-services-track" data-services-track>
+                  <article class="dls-service-card dls-cursor-target">
+                    <div class="dls-service-icon">
+                      <svg viewBox="0 0 28 28" aria-hidden="true">
+                        <rect x="3.5" y="5" width="21" height="17" rx="3"></rect>
+                        <path d="M3.5 10h21M8 7.5h.1M11 7.5h.1M8 14h7M8 17h11"></path>
+                      </svg>
+                    </div>
+                    <span>01</span>
+                    <h3>Generación web</h3>
+                    <p>Sitios profesionales construidos alrededor de objetivos reales, no de bloques genéricos.</p>
+                    <strong>Diseñar <i aria-hidden="true">↗</i></strong>
+                  </article>
+
+                  <article class="dls-service-card dls-cursor-target">
+                    <div class="dls-service-icon">
+                      <svg viewBox="0 0 28 28" aria-hidden="true">
+                        <path d="M8 21.5h12a5 5 0 0 0 .8-9.9A7 7 0 0 0 7.3 10 5.8 5.8 0 0 0 8 21.5Z"></path>
+                        <path d="m11 16 3-3 3 3M14 13v7"></path>
+                      </svg>
+                    </div>
+                    <span>02</span>
+                    <h3>Hosting gestionado</h3>
+                    <p>Publicación, SSL y continuidad técnica integrados en la entrega.</p>
+                    <strong>Publicar <i aria-hidden="true">↗</i></strong>
+                  </article>
+
+                  <article class="dls-service-card dls-cursor-target">
+                    <div class="dls-service-icon">
+                      <svg viewBox="0 0 28 28" aria-hidden="true">
+                        <rect x="3.5" y="5" width="6" height="18" rx="2"></rect>
+                        <rect x="11" y="5" width="6" height="18" rx="2"></rect>
+                        <rect x="18.5" y="5" width="6" height="18" rx="2"></rect>
+                        <path d="M5.5 9h2M13 13h2M20.5 9h2M20.5 17h2"></path>
+                      </svg>
+                    </div>
+                    <span>03</span>
+                    <h3>CRM y leads</h3>
+                    <p>Pipeline, contactos, tareas y seguimiento comercial en una vista operativa.</p>
+                    <strong>Gestionar <i aria-hidden="true">↗</i></strong>
+                  </article>
+
+                  <article class="dls-service-card dls-cursor-target">
+                    <div class="dls-service-icon">
+                      <svg viewBox="0 0 28 28" aria-hidden="true">
+                        <circle cx="14" cy="14" r="10"></circle>
+                        <circle cx="14" cy="14" r="5.5"></circle>
+                        <path d="M14 4v10l7-5M22.8 18.7l-4.4-2.2"></path>
+                      </svg>
+                    </div>
+                    <span>04</span>
+                    <h3>Radar de negocios</h3>
+                    <p>Señales locales transformadas en una lista priorizada de oportunidades.</p>
+                    <strong>Descubrir <i aria-hidden="true">↗</i></strong>
+                  </article>
+
+                  <article class="dls-service-card dls-cursor-target">
+                    <div class="dls-service-icon">
+                      <svg viewBox="0 0 28 28" aria-hidden="true">
+                        <path d="m14 3 1.8 6.2L22 11l-6.2 1.8L14 19l-1.8-6.2L6 11l6.2-1.8L14 3Z"></path>
+                        <path d="m22 17 .9 3.1L26 21l-3.1.9L22 25l-.9-3.1L18 21l3.1-.9L22 17Z"></path>
+                      </svg>
+                    </div>
+                    <span>05</span>
+                    <h3>Contenido con IA</h3>
+                    <p>Borradores alineados con la voz de DLS y siempre listos para revisión humana.</p>
+                    <strong>Crear <i aria-hidden="true">↗</i></strong>
+                  </article>
+
+                  <article class="dls-service-card dls-cursor-target">
+                    <div class="dls-service-icon">
+                      <svg viewBox="0 0 28 28" aria-hidden="true">
+                        <path d="M6 4.5h12l4 4v15H6z"></path>
+                        <path d="M18 4.5v5h4M10 14l-2 2 2 2M18 14l2 2-2 2M15.5 12.5l-3 7"></path>
+                      </svg>
+                    </div>
+                    <span>06</span>
+                    <h3>Exportación HTML</h3>
+                    <p>Entregables portables y preparados para seguir viviendo fuera de la plataforma.</p>
+                    <strong>Entregar <i aria-hidden="true">↗</i></strong>
+                  </article>
+                </div>
+              </div>
+              <div class="dls-services-progress dls-container" aria-hidden="true"><span><i></i></span><b>Desliza para explorar</b></div>
             </section>
 
-            <section class="menu-product-modal" id="menuProductModal" role="dialog" aria-modal="true" aria-labelledby="menuProductModalTitle" hidden>
-              <div class="menu-product-form" role="group" aria-label="Formulario de plato">
-                <div class="menu-product-modal-head">
-                  <h3 id="menuProductModalTitle">Anadir plato</h3>
-                  <button class="menu-icon-button" id="closeMenuProductModalButton" type="button" aria-label="Cerrar formulario">×</button>
+            <section class="dls-process" id="como-funciona" aria-labelledby="process-title">
+              <div class="dls-container">
+                <div class="dls-section-heading dls-section-heading-split">
+                  <div>
+                    <p class="dls-eyebrow" data-reveal>Cómo funciona</p>
+                    <h2 id="process-title" data-reveal>Un proceso claro, de principio a crecimiento.</h2>
+                  </div>
+                  <p data-reveal>
+                    Cuatro momentos, una misma relación de trabajo. Sin saltos entre estrategia,
+                    producción y operación.
+                  </p>
                 </div>
-                <input id="menuProductId" type="hidden" data-menu-product-field disabled>
-                <div class="menu-product-form-grid">
-                  <label>
-                    Nombre
-                    <input id="menuProductName" type="text" autocomplete="off" required data-menu-product-field disabled>
-                  </label>
-                  <label>
-                    Precio
-                    <input id="menuProductPrice" type="number" min="0" step="0.10" inputmode="decimal" required data-menu-product-field disabled>
-                  </label>
-                  <label>
-                    Categoria
-                    <input id="menuProductCategory" type="text" list="menuCategoryOptions" autocomplete="off" required data-menu-product-field disabled>
-                    <datalist id="menuCategoryOptions"></datalist>
-                  </label>
-                  <label>
-                    Emoji / icono
-                    <input id="menuProductEmoji" type="text" maxlength="4" autocomplete="off" required data-menu-product-field disabled>
-                  </label>
-                  <label class="menu-product-desc">
-                    Descripcion breve
-                    <textarea id="menuProductDesc" rows="3" required data-menu-product-field disabled></textarea>
-                  </label>
-                  <fieldset class="menu-product-allergens">
-                    <legend>Alergenos</legend>
-                    <div class="menu-allergen-grid" id="menuProductAllergens" aria-label="Alergenos del plato"></div>
-                  </fieldset>
-                  <label class="toggle-row menu-product-featured">
-                    <input id="menuProductFeatured" type="checkbox" data-menu-product-field disabled>
-                    Plato destacado
-                  </label>
-                </div>
-                <div class="menu-product-actions">
-                  <button class="secondary-action" id="cancelMenuProductButton" type="button">Cancelar</button>
-                  <button class="secondary-action menu-save-button" id="saveMenuProductButton" type="button">Guardar plato</button>
+
+                <div class="dls-process-timeline">
+                  <svg class="dls-process-line" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="dls-process-line-base" d="M20 60C170 60 190 28 340 28S500 92 650 92s170-64 320-64 150 32 210 32"></path>
+                    <path
+                      class="dls-process-line-active"
+                      data-timeline-path
+                      pathLength="1"
+                      d="M20 60C170 60 190 28 340 28S500 92 650 92s170-64 320-64 150 32 210 32"
+                    ></path>
+                  </svg>
+
+                  <ol>
+                    <li data-reveal>
+                      <span>01</span>
+                      <div><small>Descubrir</small><h3>Entendemos el negocio</h3><p>Objetivos, propuesta, clientes y contexto local.</p></div>
+                    </li>
+                    <li data-reveal>
+                      <span>02</span>
+                      <div><small>Construir</small><h3>Diseñamos el sistema</h3><p>Web, mensajes, captación y operación alineados.</p></div>
+                    </li>
+                    <li data-reveal>
+                      <span>03</span>
+                      <div><small>Publicar</small><h3>Lanzamos con control</h3><p>Revisión, entrega, hosting y accesos listos.</p></div>
+                    </li>
+                    <li data-reveal>
+                      <span>04</span>
+                      <div><small>Crecer</small><h3>Medimos y mejoramos</h3><p>El CRM convierte actividad en próximas acciones.</p></div>
+                    </li>
+                  </ol>
                 </div>
               </div>
             </section>
-            <div class="media-note">
-              La carta se actualiza en la preview al guardar cada plato. Usa Tienda solo cuando el cliente deba anadir productos al carrito y pagar.
-            </div>
-          </section>
 
-          <section class="tab-panel" data-panel="commerce">
-            <label class="toggle-row">
-              <input name="commerceEnabled" type="checkbox">
-              Activar compras online
-            </label>
-            <label>
-              Titular de tienda
-              <input name="commerceTitle" type="text" placeholder="Compra online">
-            </label>
-            <label>
-              Intro de tienda
-              <textarea name="commerceIntro" rows="3" placeholder="Elige productos, revisa tu carrito y paga de forma segura."></textarea>
-            </label>
-            <div class="two-columns">
-              <label>
-                Moneda
-                <input name="commerceCurrency" type="text" maxlength="3" placeholder="EUR">
-              </label>
-              <label>
-                Email de pedidos
-                <input name="commerceOrderEmail" type="email" placeholder="pedidos@tunegocio.com">
-              </label>
-            </div>
-            <label>
-              Endpoint checkout Stripe
-              <input name="commerceCheckoutEndpoint" type="url" inputmode="url" placeholder="https://tu-api.com/api/store/checkout">
-            </label>
-            <label>
-              Endpoint productos/base de datos
-              <input name="commerceProductsEndpoint" type="url" inputmode="url" placeholder="https://tu-api.com/api/store/products">
-            </label>
-            <div class="two-columns">
-              <label>
-                URL exito de pago
-                <input name="commerceSuccessUrl" type="url" inputmode="url" placeholder="https://tuweb.com/pedido-ok.html">
-              </label>
-              <label>
-                URL cancelar pago
-                <input name="commerceCancelUrl" type="url" inputmode="url" placeholder="https://tuweb.com/#tienda">
-              </label>
-            </div>
-            <div class="two-columns">
-              <label>
-                URL terminos venta
-                <input name="commerceTermsUrl" type="url" inputmode="url" placeholder="https://tuweb.com/terminos">
-              </label>
-              <label>
-                URL privacidad
-                <input name="commercePrivacyUrl" type="url" inputmode="url" placeholder="https://tuweb.com/privacidad">
-              </label>
-            </div>
-            <label>
-              Entrega / recogida
-              <input name="commerceDeliveryMode" type="text" placeholder="Recogida en tienda y reparto local">
-            </label>
-            <label>
-              Productos (nombre | precio | imagen | descripcion | SKU | stock)
-              <textarea name="commerceProducts" rows="8" placeholder="Caja regalo | 29.90 | https://.../foto.jpg | Lista para recoger | caja-regalo | 20"></textarea>
-            </label>
-            <div class="media-note">
-              Para produccion usa `examples/commerce-api.example.mjs`: el dueno gestiona productos desde `pages/store-admin.html`, se guardan en una base JSON, Stripe cobra y el webhook registra el pedido.
-            </div>
-          </section>
-        </form>
-      </aside>
+            <section class="dls-numbers dls-dark-section" id="impacto" aria-labelledby="numbers-title">
+              <div class="dls-noise" aria-hidden="true"></div>
+              <div class="dls-container">
+                <div class="dls-section-heading dls-section-heading-split">
+                  <div>
+                    <p class="dls-eyebrow" data-reveal>Una base preparada para escalar</p>
+                    <h2 id="numbers-title" data-reveal>Menos fricción. Más trabajo que avanza.</h2>
+                  </div>
+                  <p data-reveal>
+                    Cifras provisionales para validar la jerarquía visual.
+                    Se sustituirán por métricas verificadas antes de publicar.
+                  </p>
+                </div>
+                <!-- TODO: sustituir todas las cifras por datos reales y verificables. -->
+                <div class="dls-number-grid">
+                  <article data-reveal>
+                    <strong><span data-counter data-value="120">120</span><sup>+</sup></strong>
+                    <p>webs preparadas para lanzar</p>
+                    <small>TODO: dato real</small>
+                  </article>
+                  <article data-reveal>
+                    <strong><span data-counter data-value="7">7</span><sup>d</sup></strong>
+                    <p>de puesta en marcha media</p>
+                    <small>TODO: dato real</small>
+                  </article>
+                  <article data-reveal>
+                    <strong><span data-counter data-value="24">24</span><sup>/7</sup></strong>
+                    <p>infraestructura supervisada</p>
+                    <small>TODO: dato real</small>
+                  </article>
+                  <article data-reveal>
+                    <strong><span data-counter data-value="1">1</span><sup>×</sup></strong>
+                    <p>fuente de verdad operativa</p>
+                    <small>TODO: dato real</small>
+                  </article>
+                </div>
+              </div>
+            </section>
 
-      <section class="preview-stage" aria-label="Vista previa generada">
-        <div class="preview-toolbar">
-          <div class="preview-heading">
-            <p class="eyebrow">Lienzo en vivo</p>
-            <h2 id="previewTitle">Negocio demo</h2>
-          </div>
-          <div class="preview-metrics" id="previewMetrics" aria-label="Metricas del producto"></div>
-          <div class="viewport-switcher" aria-label="Cambiar tamano de vista">
-            <button class="viewport-button" type="button" data-size="desktop">Desktop</button>
-            <button class="viewport-button" type="button" data-size="tablet">Tablet</button>
-            <button class="viewport-button is-active" type="button" data-size="mobile">Movil</button>
-          </div>
-          <div class="preview-toolbar-actions">
-            <button class="direct-edit-button" id="directEditButton" type="button" aria-pressed="false">Editar preview</button>
-            <button class="present-button" id="presentationModeButton" type="button" aria-pressed="false">Presentar</button>
-          </div>
+            <section class="dls-final-cta" id="contacto" aria-labelledby="cta-title">
+              <div class="dls-final-orb dls-final-orb-a" aria-hidden="true"></div>
+              <div class="dls-final-orb dls-final-orb-b" aria-hidden="true"></div>
+              <div class="dls-container dls-final-inner">
+                <p class="dls-eyebrow" data-reveal>Tu siguiente espacio está listo</p>
+                <h2 id="cta-title" data-reveal>Entra por el lado que te corresponde.</h2>
+                <p data-reveal>
+                  Producción para el equipo DLS. Operación y resultados para cada cliente.
+                </p>
+                <div class="dls-access-grid">
+                  <a
+                    class="dls-access-card dls-magnetic dls-cursor-target"
+                    href="workspace.html?hub=1&amp;mode=developer"
+                    data-page-transition
+                    data-reveal
+                  >
+                    <span class="dls-access-number">01</span>
+                    <div class="dls-access-icon">
+                      <svg viewBox="0 0 32 32" aria-hidden="true">
+                        <rect x="3.5" y="5" width="25" height="18" rx="3"></rect>
+                        <path d="M10 28h12M16 23v5M10 14l3-3 3 3 6-6"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <small>Equipo DLS</small>
+                      <h3>Acceder como desarrollador</h3>
+                      <p>Studio, control, radar, brief y herramientas de producción.</p>
+                    </div>
+                    <strong>Entrar al workspace <i aria-hidden="true">↗</i></strong>
+                  </a>
+
+                  <a
+                    class="dls-access-card dls-access-card-client dls-magnetic dls-cursor-target"
+                    href="workspace.html?hub=1&amp;mode=client"
+                    data-page-transition
+                    data-reveal
+                  >
+                    <span class="dls-access-number">02</span>
+                    <div class="dls-access-icon">
+                      <svg viewBox="0 0 32 32" aria-hidden="true">
+                        <circle cx="16" cy="11" r="6"></circle>
+                        <path d="M5.5 28c.8-6.2 4.3-9.3 10.5-9.3S25.7 21.8 26.5 28"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <small>Negocio cliente</small>
+                      <h3>Acceder como cliente</h3>
+                      <p>Actividad, clientes, reservas, tienda, proyectos y reportes.</p>
+                    </div>
+                    <strong>Entrar al portal <i aria-hidden="true">↗</i></strong>
+                  </a>
+                </div>
+              </div>
+            </section>
+          </main>
+
+          <footer class="dls-footer">
+            <div class="dls-container">
+              <div class="dls-footer-main">
+                <a class="dls-brand" href="#inicio" aria-label="DLS Studio">
+                  <span class="dls-brand-mark" aria-hidden="true">
+                    <img src="assets/landing/dls-logo.webp" alt="" loading="lazy">
+                  </span>
+                  <span><strong>DLS Studio</strong><small>Digital Local Sites</small></span>
+                </a>
+                <p>Infraestructura digital para negocios locales que quieren operar mejor.</p>
+                <nav aria-label="Navegación del pie">
+                  <a href="#servicios">Servicios</a>
+                  <a href="#como-funciona">Proceso</a>
+                  <a href="#demostracion">Plataforma</a>
+                  <a href="#contacto">Accesos</a>
+                </nav>
+              </div>
+              <div class="dls-footer-bottom">
+                <span>© 2026 DLS Studio</span>
+                <span>Diseñado y operado en España</span>
+                <span><i aria-hidden="true"></i> Sistemas operativos</span>
+              </div>
+            </div>
+          </footer>
         </div>
-
-        <aside class="preview-inspector" id="previewInspector" hidden aria-live="polite">
-          <header>
-            <div>
-              <span>Edicion directa</span>
-              <strong id="previewInspectorTitle">Editar elemento</strong>
-            </div>
-            <button id="previewInspectorClose" type="button" aria-label="Cerrar inspector">Cerrar</button>
-          </header>
-          <section data-inspector-panel="image" hidden>
-            <img id="previewInspectorImage" alt="" src="">
-            <label>
-              URL de imagen
-              <input id="previewInspectorImageUrl" type="url" inputmode="url">
-            </label>
-            <label>
-              Texto alternativo
-              <input id="previewInspectorImageAlt" type="text" placeholder="Describe la imagen para SEO y accesibilidad">
-            </label>
-            <label>
-              Encuadre
-              <select id="previewInspectorImagePosition">
-                <option value="center center">Centro</option>
-                <option value="center top">Arriba</option>
-                <option value="center bottom">Abajo</option>
-                <option value="left center">Izquierda</option>
-                <option value="right center">Derecha</option>
-              </select>
-            </label>
-            <div class="stock-image-panel">
-              <div class="stock-image-header">
-                <strong>Galeria libre 200+</strong>
-                <span id="stockImageStatus">Seleccion profesional y licencias libres</span>
-              </div>
-              <button class="stock-site-image-button" id="stockSiteImageButton" type="button">Pack del negocio</button>
-              <div class="stock-category-list" id="stockCategoryList" aria-label="Categorias de imagenes libres"></div>
-              <div class="stock-search-row">
-                <input id="stockSearchInput" type="search" placeholder="Buscar entre miles de fotos libres">
-                <button id="stockSearchButton" type="button">Buscar</button>
-              </div>
-              <div class="stock-image-results" id="stockImageResults" aria-live="polite"></div>
-              <button class="stock-load-more" id="stockLoadMoreButton" type="button" hidden>Mas imagenes</button>
-            </div>
-            <div class="preview-inspector-media" id="previewInspectorMedia"></div>
-            <button class="preview-inspector-apply" id="previewInspectorImageApply" type="button">Aplicar imagen</button>
-          </section>
-          <section data-inspector-panel="link" hidden>
-            <div class="preview-inspector-link-fields" id="previewInspectorLinkFields">
-              <label>
-                Texto visible
-                <input id="previewInspectorLinkLabel" type="text">
-              </label>
-              <label>
-                Destino
-                <input id="previewInspectorLinkUrl" type="text" inputmode="url">
-              </label>
-            </div>
-            <div class="preview-inspector-button-options" id="previewInspectorButtonOptions" hidden>
-              <div class="preview-inspector-subheading">
-                <strong>Aspecto del boton principal</strong>
-                <span>Se aplica a reservas y acciones principales.</span>
-              </div>
-              <button class="preview-inspector-button-sample" id="previewInspectorButtonSample" type="button" tabindex="-1">Reservar ahora</button>
-              <div class="two-columns">
-                <label>
-                  Fondo
-                  <input id="previewInspectorButtonBackground" type="color">
-                </label>
-                <label>
-                  Texto
-                  <input id="previewInspectorButtonTextColor" type="color">
-                </label>
-              </div>
-              <label class="preview-inspector-switch">
-                <input id="previewInspectorButtonNeon" type="checkbox">
-                <span>Activar resplandor neon</span>
-              </label>
-              <label id="previewInspectorButtonGlowLabel">
-                Intensidad del neon <output id="previewInspectorButtonGlowValue">60%</output>
-                <input id="previewInspectorButtonGlow" type="range" min="0" max="100" step="5">
-              </label>
-            </div>
-            <div class="preview-inspector-actions">
-              <button class="preview-inspector-apply" id="previewInspectorLinkApply" type="button">Aplicar cambios</button>
-              <button class="preview-inspector-reset" id="previewInspectorButtonReset" type="button" hidden>Restablecer estilo</button>
-            </div>
-          </section>
-          <section data-inspector-panel="text" hidden>
-            <div class="preview-inspector-text-sample" id="previewInspectorTextSample">Texto seleccionado</div>
-            <div class="two-columns">
-              <label>
-                Color
-                <input id="previewInspectorTextColor" type="color">
-              </label>
-              <label>
-                Opacidad
-                <input id="previewInspectorTextOpacity" type="range" min="35" max="100" step="5">
-              </label>
-            </div>
-            <div class="two-columns">
-              <label>
-                Tamano
-                <input id="previewInspectorTextSize" type="range" min="80" max="145" step="5">
-              </label>
-              <label>
-                Peso
-                <select id="previewInspectorTextWeight">
-                  <option value="default">Original</option>
-                  <option value="400">Normal</option>
-                  <option value="700">Negrita</option>
-                  <option value="900">Impacto</option>
-                </select>
-              </label>
-            </div>
-            <div class="two-columns">
-              <label>
-                Estilo
-                <select id="previewInspectorTextItalic">
-                  <option value="normal">Normal</option>
-                  <option value="italic">Cursiva</option>
-                </select>
-              </label>
-              <label>
-                Espaciado
-                <input id="previewInspectorTextLetterSpacing" type="range" min="-2" max="8" step="1">
-              </label>
-            </div>
-            <div class="preview-inspector-actions">
-              <button class="preview-inspector-apply" id="previewInspectorTextApply" type="button">Aplicar estilo</button>
-              <button class="preview-inspector-reset" id="previewInspectorTextReset" type="button">Restablecer</button>
-            </div>
-          </section>
-        </aside>
-
-        <div class="device-frame" data-size="mobile">
-          <div class="frame-browserbar" aria-hidden="true">
-            <span class="frame-dots"><i></i><i></i><i></i></span>
-            <span class="frame-address" id="frameAddress">digitallocalsites.com/luma-studio</span>
-            <span class="frame-secure">Live</span>
-          </div>
-          <div id="sitePreview" class="site-preview" aria-live="polite"></div>
-        </div>
-      </section>
-    </main>
-
-    <div class="publish-demo-modal" id="publishDemoModal" role="dialog" aria-modal="true" aria-labelledby="publishDemoTitle" hidden>
-      <div class="publish-demo-backdrop" data-publish-demo-close></div>
-      <section class="publish-demo-dialog">
-        <header>
-          <span class="publish-demo-kicker">Demo online</span>
-          <button class="publish-demo-close" type="button" data-publish-demo-close aria-label="Cerrar">x</button>
-        </header>
-        <div class="publish-demo-body">
-          <p class="publish-demo-badge">Publicada correctamente</p>
-          <h2 id="publishDemoTitle">Demo lista para enviar</h2>
-          <p id="publishDemoExpiry">Enlace temporal activo.</p>
-          <label>
-            <span id="publishDemoUrlLabel">Enlace de cliente</span>
-            <input id="publishDemoUrl" type="url" readonly>
-          </label>
-        </div>
-        <footer>
-          <button class="publish-demo-copy" id="publishDemoCopyButton" type="button">Copiar enlace</button>
-          <a class="publish-demo-open" id="publishDemoOpenLink" href="#" target="_blank" rel="noopener">Abrir demo</a>
-        </footer>
-      </section>
+      </div>
     </div>
 
-    <template id="exportTemplate"></template>
+    <noscript>
+      <style>
+        .dls-hero-canvas,
+        .dls-story-desktop,
+        .dls-cursor,
+        .dls-page-wipe { display: none !important; }
+        .dls-story-mobile { display: grid !important; }
+      </style>
+    </noscript>
+
     <script src="assets/vendor/lenis.min.js"></script>
-    <script src="assets/vendor/splitting.min.js"></script>
-    <script src="assets/vendor/vanilla-tilt.min.js"></script>
-    <script src="assets/vendor/atropos.min.js"></script>
-    <script src="src/shared/api-config.js?v=20260708-1"></script>
-    <script src="src/studio/core-utils.js?v=20260612-1"></script>
-    <script src="src/studio/button-style-editor.js?v=20260622-1"></script>
-    <script src="src/studio/catalog.js?v=20260622-2"></script>
-    <script src="src/studio/state-controller.js?v=20260612-1"></script>
-    <script src="src/studio/layout-library.js?v=20260612-1"></script>
-    <script src="src/studio/media-library.js?v=20260612-1"></script>
-    <script src="src/studio/curated-stock-images.js?v=20260620-2"></script>
-    <script src="src/studio/stock-images.js?v=20260708-2"></script>
-    <script src="src/studio/data-client.js?v=20260612-1"></script>
-    <script src="src/studio/validation.js?v=20260612-1"></script>
-    <script src="src/studio/quality-control.js?v=20260622-1"></script>
-    <script src="src/studio/renderer.js?v=20260622-2"></script>
-    <script src="src/studio/exporter.js?v=20260622-1"></script>
-    <script src="src/app.js?v=20260709-1"></script>
-    <script src="src/studio-experience.js?v=20260715-1"></script>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/vendor/ScrollTrigger.min.js"></script>
+    <script src="assets/vendor/SplitText.min.js"></script>
+    <script type="module" src="src/landing-experience.js?v=20260718-1"></script>
   </body>
 </html>

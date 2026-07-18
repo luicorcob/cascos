@@ -550,7 +550,8 @@ function updateNavigation(tab) {
     bookings: { label: "Nueva reserva", action: "booking" },
     finance: { label: "Nueva factura", action: "invoice" },
     team: { label: "Añadir persona", action: "employee" },
-    inventory: { label: "Añadir producto", action: "inventory" }
+    inventory: { label: "Añadir producto", action: "inventory" },
+    commerce: { label: "Añadir producto", action: "commerce-product" }
   };
   const primary = primaryActions[tab] || { label: "Crear", action: "" };
   if (refs.quickCreate) {
@@ -570,6 +571,10 @@ function handleQuickAction(action) {
       form?.scrollIntoView({ behavior: "smooth", block: "center" });
       form?.querySelector("input, select")?.focus();
     }, 80);
+    return;
+  }
+  if (action === "commerce-product") {
+    document.dispatchEvent(new CustomEvent("dls:commerce-add-product"));
     return;
   }
   openEntityForm(action);

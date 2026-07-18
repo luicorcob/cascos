@@ -1100,7 +1100,11 @@
         if (!url || !pathname) return "";
         try {
           const parsed = new URL(url);
-          parsed.pathname = pathname;
+          const resource = pathname.match(/\\/api\\/store\\/(.+)$/)?.[1] || "";
+          const marker = parsed.pathname.lastIndexOf("/store/");
+          parsed.pathname = resource && marker >= 0
+            ? parsed.pathname.slice(0, marker + 7) + resource
+            : pathname;
           parsed.search = "";
           return parsed.toString();
         } catch (error) {
