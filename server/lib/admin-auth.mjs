@@ -1,4 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
+import {
+  authorizeBusinessUserRequest,
+  getBusinessUserSessionForRequest,
+  getProvidedBusinessUserToken
+} from "./business-access.mjs";
 import { getClientSessionForRequest, isClientApiAccessPath } from "./client-auth.mjs";
 import { corsHeaders } from "./cors.mjs";
 import { clearAuthFailures, recordAuthFailure } from "./structured-logger.mjs";
@@ -20,7 +25,9 @@ export function isAdminApiRequest(pathname) {
 export async function requireAdminApiAuth(request, response, context, pathname = "") {
   const expectedToken = getAdminToken();
   const providedClientToken = getProvidedClientToken(request);
+  const providedBusinessUserToken = getProvidedBusinessUserToken(request);
   const clientSession = await getClientSessionForRequest(request);
+  const businessUserSession = await getBusinessUserSessionForRequest(request, context);
 
   if (clientSession && isClientApiAccessPath(pathname, clientSession)) {
     request.localLiftClientSession = clientSession;
@@ -43,6 +50,31 @@ export async function requireAdminApiAuth(request, response, context, pathname =
     response.end(JSON.stringify({
       error: clientSession ? "Client session cannot access this route" : "Client session invalid or expired",
       code: clientSession ? "client_forbidden" : "client_auth_required"
+    }, null, 2));
+    return false;
+  }
+
+  if (businessUserSession && authorizeBusinessUserRequest(pathname, request.method || "GET", businessUserSession)) {
+    request.localLiftBusinessUserSession = businessUserSession;
+    clearAuthFailures(request, context, { route: pathname });
+    return true;
+  }
+
+  if (providedBusinessUserToken) {
+    recordAuthFailure(request, businessUserSession ? "business_user_forbidden" : "business_user_session_invalid", context, {
+      route: pathname,
+      hasProvidedToken: true,
+      businessUserRole: businessUserSession?.userRole || "",
+      statusCode: businessUserSession ? 403 : 401
+    });
+    response.writeHead(businessUserSession ? 403 : 401, {
+      ...context.baseHeaders,
+      ...corsHeaders(context),
+      "Content-Type": "application/json; charset=utf-8"
+    });
+    response.end(JSON.stringify({
+      error: businessUserSession ? "Business user cannot perform this action" : "Business user session invalid or expired",
+      code: businessUserSession ? "business_user_forbidden" : "business_user_auth_required"
     }, null, 2));
     return false;
   }

@@ -141,6 +141,26 @@
                 <button type="button" data-admin-token-clear>Limpiar</button>
               </div>
             </form>
+
+            <form class="admin-token-form" data-business-user-login-form>
+              <label for="businessUserBusiness">
+                Negocio
+                <input id="businessUserBusiness" name="business" type="text" autocomplete="organization" placeholder="ID o slug del negocio" required>
+              </label>
+              <label for="businessUserEmail">
+                Usuario del equipo
+                <input id="businessUserEmail" name="email" type="email" autocomplete="username" placeholder="nombre@negocio.es" required>
+              </label>
+              <label for="businessUserPassword">
+                Contraseña
+                <input id="businessUserPassword" name="password" type="password" autocomplete="current-password" minlength="10" required>
+              </label>
+              <div>
+                <button type="submit">Entrar</button>
+                <button type="button" data-business-user-logout>Salir</button>
+              </div>
+              <small data-business-user-session>Sin sesión de equipo</small>
+            </form>
           </div>
         </details>
 
@@ -422,10 +442,10 @@
 
         <section class="tab-panel" data-panel="customers">
           <div class="panel-heading">
-            <p class="eyebrow">Relaciones</p>
-            <h2>Clientes</h2>
+            <p class="eyebrow">Relaciones, valor y retencion</p>
+            <h2>Cliente 360</h2>
           </div>
-          <div data-list="customers"></div>
+          <div data-list="customers" aria-live="polite"></div>
         </section>
 
         <section class="tab-panel" data-panel="bookings">

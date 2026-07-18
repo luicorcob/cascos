@@ -48,6 +48,14 @@ const ROUTE_LIMITS = {
     limit: readPositiveInteger("GOOGLE_API_RATE_LIMIT", 60),
     windowMs: readPositiveInteger("GOOGLE_API_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
   },
+  webhooks: {
+    limit: readPositiveInteger("CHANNEL_WEBHOOK_RATE_LIMIT", 600),
+    windowMs: readPositiveInteger("CHANNEL_WEBHOOK_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
+  },
+  publicQuotes: {
+    limit: readPositiveInteger("PUBLIC_QUOTE_RATE_LIMIT", 60),
+    windowMs: readPositiveInteger("PUBLIC_QUOTE_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
+  },
   radarWrite: {
     limit: readPositiveInteger("RADAR_WRITE_RATE_LIMIT", 30),
     windowMs: readPositiveInteger("RADAR_WRITE_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
@@ -104,7 +112,7 @@ function getPublicRoute(pathname) {
     return "discovery";
   }
 
-  if (pathname === "/api/client/login") {
+  if (pathname === "/api/client/login" || pathname === "/api/business-users/login") {
     return "clientLogin";
   }
 
@@ -134,6 +142,34 @@ function getPublicRoute(pathname) {
 
   if (String(pathname || "").startsWith("/api/google/") && pathname !== "/api/google/oauth/callback") {
     return "googleApi";
+  }
+
+  if (/^\/api\/webhooks\/[^/]+\/(?:email|whatsapp)$/.test(String(pathname || ""))) {
+    return "webhooks";
+  }
+
+  if (/^\/api\/public\/quotes\/[^/]+(?:\/(?:comments|decision|checkout))?$/.test(String(pathname || ""))) {
+    return "publicQuotes";
+  }
+
+  if (pathname === "/api/webhooks/stripe/quotes") {
+    return "webhooks";
+  }
+
+  if (pathname === "/api/webhooks/stripe/bookings") {
+    return "webhooks";
+  }
+
+  if (/^\/api\/public\/waitlist-offers\/[^/]+\/accept$/.test(String(pathname || ""))) {
+    return "bookings";
+  }
+
+  if (/^\/api\/public\/[^/]+\/waitlist$/.test(String(pathname || ""))) {
+    return "bookings";
+  }
+
+  if (/^\/api\/public\/review-requests\/[^/]+$/.test(String(pathname || ""))) {
+    return "publicQuotes";
   }
 
   const match = String(pathname || "").match(/^\/api\/public\/[^/]+\/(leads|bookings|events)$/);

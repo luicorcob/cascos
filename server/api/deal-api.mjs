@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { corsHeaders } from "../lib/cors.mjs";
+import { getRequestBusinessUserSession } from "../lib/business-access.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { archiveDealAccountAssociations, archiveEntityAssociations, upsertAssociation } from "../lib/association-model.mjs";
+import { validateCustomFieldValues } from "../lib/crm-config-model.mjs";
 import {
   DEAL_PRIORITIES,
   DEAL_STAGE_TYPES,
@@ -24,7 +26,7 @@ const PIPELINE_UPDATE_FIELDS = new Set(["name", "isDefault", "stages"]);
 const STAGE_FIELDS = new Set(["id", "name", "type", "order", "probability"]);
 const DEAL_CREATE_FIELDS = new Set([
   "contactId", "accountId", "pipelineId", "stageId", "title", "value", "currency", "probability",
-  "priority", "order", "ownerId", "expectedCloseAt", "lostReason", "tags", "notes", "source"
+  "priority", "order", "ownerId", "expectedCloseAt", "lostReason", "tags", "notes", "source", "customFields"
 ]);
 const DEAL_UPDATE_FIELDS = new Set(DEAL_CREATE_FIELDS);
 const DEAL_MOVE_FIELDS = new Set(["pipelineId", "stageId", "order", "lostReason"]);
@@ -270,6 +272,7 @@ async function createDeal(businessRef, request, response, context) {
     tags: normalizeTags(source.tags),
     notes: optionalText(source.notes, "notes", 10000),
     source: optionalText(source.source, "source", 120) || clean(contact.source) || "dashboard",
+    customFields: normalizeDealCustomFields(db, business.id, source.customFields, {}, getRequestBusinessUserSession(request)?.userRole || "owner"),
     createdAt: now,
     updatedAt: now,
     closedAt: stage.type === "open" ? "" : now,
@@ -320,6 +323,7 @@ async function updateDeal(businessRef, dealId, request, response, context) {
   if (Object.prototype.hasOwnProperty.call(source, "tags")) deal.tags = normalizeTags(source.tags);
   if (Object.prototype.hasOwnProperty.call(source, "notes")) deal.notes = optionalText(source.notes, "notes", 10000);
   if (Object.prototype.hasOwnProperty.call(source, "source")) deal.source = optionalText(source.source, "source", 120);
+  if (Object.prototype.hasOwnProperty.call(source, "customFields")) deal.customFields = normalizeDealCustomFields(db, business.id, source.customFields, deal.customFields, getRequestBusinessUserSession(request)?.userRole || "owner");
 
   const pipeline = Object.prototype.hasOwnProperty.call(source, "pipelineId")
     ? materializePipeline(db, business.id, requiredId(source.pipelineId, "pipelineId"))
@@ -604,6 +608,7 @@ function copyDeal(deal, contact, account, owner) {
     tags: Array.isArray(deal.tags) ? [...deal.tags] : [],
     notes: deal.notes || "",
     source: deal.source || "",
+    customFields: deal.customFields && typeof deal.customFields === "object" && !Array.isArray(deal.customFields) ? { ...deal.customFields } : {},
     legacyContactId: deal.legacyContactId || "",
     createdAt: deal.createdAt || "",
     updatedAt: deal.updatedAt || "",
@@ -764,6 +769,17 @@ function normalizeTags(value) {
   if (!Array.isArray(value) || value.length > 24) throw httpError(400, "tags must be an array with at most 24 values");
   const tags = value.map((tag) => requiredText(tag, "tag", 60));
   return [...new Set(tags)];
+}
+
+function normalizeDealCustomFields(db, businessId, value, existing, actorRole) {
+  const values = {
+    ...(existing && typeof existing === "object" && !Array.isArray(existing) ? existing : {}),
+    ...(value && typeof value === "object" && !Array.isArray(value) ? value : {})
+  };
+  if (value === undefined) return values;
+  const validation = validateCustomFieldValues(db, businessId, "deal", values, actorRole);
+  if (!validation.valid) throw httpError(422, validation.errors.map((item) => `${item.key}: ${item.message}`).join("; "));
+  return validation.values;
 }
 
 function appendAudit(db, type, businessId, now, metadata = {}) {

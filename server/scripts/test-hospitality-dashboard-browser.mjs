@@ -64,8 +64,8 @@ try {
     {
       tab: "today",
       title: "Tareas de hoy",
-      contentPattern: /class="next-actions-grid"/,
-      contentLabel: /Sin proxima accion|Sin prÃ³xima acciÃ³n/
+      contentPattern: /data-task-workspace=""/,
+      contentLabel: /Tareas y responsables/
     }
   ];
 

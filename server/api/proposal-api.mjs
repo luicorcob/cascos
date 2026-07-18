@@ -5,14 +5,19 @@ import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs"
 import { applyAcceptedProposalAutomation } from "../lib/crm-automation.mjs";
 import { recalculateContactScore } from "../lib/lead-score.mjs";
 import { ensureProjectForAcceptedProposal } from "../lib/project-automation.mjs";
+import { applySequenceSignal } from "../lib/automation-engine.mjs";
+import { dispatchAutomationEvent } from "./automation-api.mjs";
+import { recordCampaignConversion } from "../lib/campaign-model.mjs";
 import { renderProposalHtml, renderProposalPdf } from "../lib/proposal-export.mjs";
+import { createProposalVersion, decorateQuoteProposal, ensureAcceptedQuoteOutputs, ensureQuoteCollections, initializeProposalQuote, updateProposalQuote } from "../lib/quote-to-cash.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.PROPOSAL_API_MAX_BODY_BYTES || 128 * 1024);
 const PROPOSAL_PACKAGES = new Set(["presencia_local", "conversion_pro", "growth_local", "custom"]);
 const PROPOSAL_STATUSES = new Set(["borrador", "enviada", "vista", "aceptada", "rechazada", "caducada"]);
 const EXPIRABLE_STATUSES = new Set(["enviada", "vista"]);
-const CREATE_FIELDS = new Set(["contactId", "package", "setupPrice", "monthlyPrice", "conditions", "expiresAt", "status"]);
-const UPDATE_FIELDS = new Set(["package", "setupPrice", "monthlyPrice", "conditions", "expiresAt", "status"]);
+const QUOTE_FIELDS = ["title", "currency", "lineItems", "signatureRequired", "deposit", "paymentTerms", "approval"];
+const CREATE_FIELDS = new Set(["contactId", "package", "setupPrice", "monthlyPrice", "conditions", "expiresAt", "status", ...QUOTE_FIELDS]);
+const UPDATE_FIELDS = new Set(["package", "setupPrice", "monthlyPrice", "conditions", "expiresAt", "status", ...QUOTE_FIELDS]);
 const DEFAULT_DB = {
   version: 1,
   updatedAt: null,
@@ -21,6 +26,13 @@ const DEFAULT_DB = {
   activities: [],
   associations: [],
   proposals: [],
+  proposalVersions: [],
+  proposalShares: [],
+  proposalViews: [],
+  proposalComments: [],
+  proposalDecisions: [],
+  proposalPaymentSchedules: [],
+  quoteCheckouts: [],
   projects: [],
   projectTasks: [],
   projectFiles: [],
@@ -102,7 +114,7 @@ async function listProposals(businessRef, requestUrl, response, context) {
     .filter((proposal) => !requestedStatus || proposal.status === requestedStatus)
     .filter((proposal) => !requestedContactId || proposal.contactId === requestedContactId)
     .sort(compareProposals)
-    .map(copyProposal);
+    .map((proposal) => copyProposal(proposal, db));
 
   sendJson(response, 200, { proposals, total: proposals.length }, context);
 }
@@ -132,17 +144,23 @@ async function createProposal(businessRef, request, response, context) {
   };
 
   applyAutomaticExpiration(proposal, now);
+  initializeProposalQuote(proposal, source, now);
   db.proposals.push(proposal);
+  createProposalVersion(db, proposal, { label: "Version inicial" }, now);
   const activities = [recordProposalActivity(db, proposal, "proposal.created", now, {
     title: "Propuesta creada",
     previousStatus: ""
   })];
   activities.push(...convertAcceptedProposalContact(db, business.id, proposal, now));
+  if (proposal.status === "aceptada") applySequenceSignal(db, business.id, proposal.contactId, "proposal_accepted", now);
+  if (proposal.status === "aceptada") recordCampaignConversion(db, business.id, proposal.contactId, { type: "proposal_accepted", revenue: proposal.total || proposal.setupPrice + proposal.monthlyPrice }, now);
+  const configurableAutomations = await dispatchAutomationEvent(db, business, { id: `proposal:${proposal.id}:${now}`, type: "record.created", entity: "proposal", entityId: proposal.id, contactId: proposal.contactId, payload: { ...proposal }, occurredAt: now }, context);
   const projectResult = createAcceptedProposalProject(db, business, contact, proposal, now);
+  const quoteOutputs = proposal.status === "aceptada" ? ensureAcceptedQuoteOutputs(db, business, contact, proposal, now) : { invoice: null, subscription: null, paymentSchedule: [] };
   syncProposalAssociations(db, proposal, projectResult.project, now);
   appendAudit(db, "proposal.created", proposal, now);
   await saveDb(db, context, "proposal-create");
-  sendJson(response, 201, { proposal: copyProposal(proposal), activities, project: projectResult.project }, context);
+  sendJson(response, 201, { proposal: copyProposal(proposal, db), activities, project: projectResult.project, quoteOutputs, configurableAutomations }, context);
 }
 
 async function getProposal(businessRef, proposalId, response, context) {
@@ -155,7 +173,7 @@ async function getProposal(businessRef, proposalId, response, context) {
   }
 
   const proposal = requireProposal(db, business.id, proposalId);
-  sendJson(response, 200, { proposal: copyProposal(proposal) }, context);
+  sendJson(response, 200, { proposal: copyProposal(proposal, db) }, context);
 }
 
 async function updateProposal(businessRef, proposalId, request, response, context) {
@@ -182,6 +200,7 @@ async function updateProposal(businessRef, proposalId, request, response, contex
   }
 
   const previousStatus = proposal.status;
+  initializeProposalQuote(proposal, proposal, now);
   if (Object.prototype.hasOwnProperty.call(source, "package")) {
     proposal.package = requiredEnum(source.package, PROPOSAL_PACKAGES, "package");
   }
@@ -200,6 +219,13 @@ async function updateProposal(businessRef, proposalId, request, response, contex
   if (Object.prototype.hasOwnProperty.call(source, "status")) {
     proposal.status = requiredEnum(source.status, PROPOSAL_STATUSES, "status");
   }
+  const contentChanged = Object.keys(source).some((field) => field !== "status");
+  if (contentChanged) {
+    const quotePatch = Object.fromEntries(QUOTE_FIELDS.filter((field) => Object.prototype.hasOwnProperty.call(source, field)).map((field) => [field, source[field]]));
+    if (["package", "setupPrice", "monthlyPrice"].some((field) => Object.prototype.hasOwnProperty.call(source, field)) && !Object.prototype.hasOwnProperty.call(source, "lineItems")) quotePatch.lineItems = [];
+    updateProposalQuote(proposal, quotePatch, now);
+    createProposalVersion(db, proposal, { label: `Revision ${Number(proposal.revision || 1)}` }, now);
+  }
   proposal.updatedAt = now;
   applyAutomaticExpiration(proposal, now);
 
@@ -209,12 +235,16 @@ async function updateProposal(businessRef, proposalId, request, response, contex
     previousStatus
   }));
   activities.push(...convertAcceptedProposalContact(db, business.id, proposal, now));
+  if (proposal.status === "aceptada" && previousStatus !== "aceptada") applySequenceSignal(db, business.id, proposal.contactId, "proposal_accepted", now);
+  if (proposal.status === "aceptada" && previousStatus !== "aceptada") recordCampaignConversion(db, business.id, proposal.contactId, { type: "proposal_accepted", revenue: proposal.total || proposal.setupPrice + proposal.monthlyPrice }, now);
+  const configurableAutomations = await dispatchAutomationEvent(db, business, { id: `proposal:${proposal.id}:${now}`, type: "record.updated", entity: "proposal", entityId: proposal.id, contactId: proposal.contactId, payload: { ...proposal, previousStatus }, occurredAt: now }, context);
   const contact = requireContact(db, business.id, proposal.contactId, { allowMerged: true });
   const projectResult = createAcceptedProposalProject(db, business, contact, proposal, now);
+  const quoteOutputs = proposal.status === "aceptada" ? ensureAcceptedQuoteOutputs(db, business, contact, proposal, now) : { invoice: null, subscription: null, paymentSchedule: [] };
   syncProposalAssociations(db, proposal, projectResult.project, now);
   appendAudit(db, "proposal.updated", proposal, now);
   await saveDb(db, context, "proposal-update");
-  sendJson(response, 200, { proposal: copyProposal(proposal), activities, project: projectResult.project }, context);
+  sendJson(response, 200, { proposal: copyProposal(proposal, db), activities, project: projectResult.project, quoteOutputs, configurableAutomations }, context);
 }
 
 async function deleteProposal(businessRef, proposalId, response, context) {
@@ -235,7 +265,7 @@ async function deleteProposal(businessRef, proposalId, response, context) {
   });
   appendAudit(db, "proposal.deleted", proposal, now);
   await saveDb(db, context, "proposal-delete");
-  sendJson(response, 200, { proposal: copyProposal(proposal), deleted: true, activities: [activity] }, context);
+  sendJson(response, 200, { proposal: copyProposal(proposal, db), deleted: true, activities: [activity] }, context);
 }
 
 async function exportProposal(businessRef, proposalId, requestUrl, response, context) {
@@ -255,7 +285,7 @@ async function exportProposal(businessRef, proposalId, requestUrl, response, con
     throw httpError(400, "format must be html or pdf");
   }
 
-  const input = { proposal: copyProposal(proposal), business, contact };
+  const input = { proposal: copyProposal(proposal, db), business, contact };
   if (format === "pdf") {
     const pdf = renderProposalPdf(input);
     sendDocument(response, 200, pdf, "application/pdf", `${proposal.id}.pdf`, context, "attachment");
@@ -410,7 +440,7 @@ function proposalActivityNote(proposal, previousStatus) {
 }
 
 async function loadDb(context) {
-  const db = await loadBusinessStore(context, DEFAULT_DB);
+  const db = ensureQuoteCollections(await loadBusinessStore(context, DEFAULT_DB));
   db.version = Number(db.version || 1);
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
   db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
@@ -421,6 +451,7 @@ async function loadDb(context) {
   db.projectTasks = Array.isArray(db.projectTasks) ? db.projectTasks : [];
   db.projectFiles = Array.isArray(db.projectFiles) ? db.projectFiles : [];
   db.auditLog = Array.isArray(db.auditLog) ? db.auditLog : [];
+  db.proposals.forEach((proposal) => { if (!Array.isArray(proposal.lineItems) || !proposal.lineItems.length) initializeProposalQuote(proposal, proposal, proposal.updatedAt || proposal.createdAt || new Date().toISOString()); });
   return db;
 }
 
@@ -584,21 +615,7 @@ function compareProposals(left, right) {
   return String(left.id || "").localeCompare(String(right.id || ""));
 }
 
-function copyProposal(proposal) {
-  return {
-    id: proposal.id,
-    businessId: proposal.businessId,
-    contactId: proposal.contactId,
-    package: proposal.package,
-    setupPrice: proposal.setupPrice,
-    monthlyPrice: proposal.monthlyPrice,
-    conditions: proposal.conditions,
-    expiresAt: proposal.expiresAt,
-    status: proposal.status,
-    createdAt: proposal.createdAt,
-    updatedAt: proposal.updatedAt
-  };
-}
+function copyProposal(proposal, db) { return db ? decorateQuoteProposal(db, proposal) : { ...proposal }; }
 
 function appendAudit(db, type, proposal, now, contactId = proposal.contactId) {
   db.auditLog.push({

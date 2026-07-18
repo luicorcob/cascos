@@ -1,4 +1,5 @@
 import { corsHeaders } from "../lib/cors.mjs";
+import { getRequestBusinessUserSession } from "../lib/business-access.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { getRequestClientSession, matchesBusinessSession, setBusinessClientPassword, toPortalAccessSummary } from "../lib/client-auth.mjs";
 
@@ -74,6 +75,7 @@ export async function handleBusinessApi(request, response, context) {
 async function listBusinesses(request, requestUrl, response, context) {
   const db = await loadBusinessDb(context);
   const clientSession = getRequestClientSession(request);
+  const businessUserSession = getRequestBusinessUserSession(request);
   const includeArchived = requestUrl.searchParams.get("includeArchived") === "true";
   const q = cleanText(requestUrl.searchParams.get("q") || "").toLowerCase();
   const status = cleanText(requestUrl.searchParams.get("status") || "");
@@ -82,6 +84,7 @@ async function listBusinesses(request, requestUrl, response, context) {
 
   const businesses = db.businesses
     .filter((business) => !clientSession || matchesBusinessSession(clientSession, business.id) || matchesBusinessSession(clientSession, business.slug))
+    .filter((business) => !businessUserSession || business.id === businessUserSession.businessId)
     .filter((business) => includeArchived || business.status !== "archived")
     .filter((business) => !status || business.status === status)
     .filter((business) => !category || business.category.toLowerCase().includes(category))

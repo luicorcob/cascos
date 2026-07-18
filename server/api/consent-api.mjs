@@ -10,6 +10,8 @@ import {
   evaluateConsentState
 } from "../lib/consent-model.mjs";
 import { corsHeaders } from "../lib/cors.mjs";
+import { applySequenceSignal } from "../lib/automation-engine.mjs";
+import { recordCampaignUnsubscribe } from "../lib/campaign-model.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.CONSENT_API_MAX_BODY_BYTES || 256 * 1024);
 const CHANNELS = new Set(CONSENT_CHANNELS);
@@ -65,6 +67,10 @@ async function createConsentEvent(businessRef, contactId, request, response, con
   if (["suppressed", "unsuppressed"].includes(action) && (channel === "any") !== (purpose === "any")) throw httpError(400, "Global suppression must use channel any and purpose any");
   const event = buildEventInput(business.id, contact.id, source, { action, channel, purpose });
   const result = appendConsentEvent(db, event);
+  if (["withdrawn", "suppressed"].includes(action)) {
+    applySequenceSignal(db, business.id, contact.id, "unsubscribe", event.occurredAt);
+    recordCampaignUnsubscribe(db, business.id, contact.id, { reason: action }, event.occurredAt);
+  }
   appendAudit(db, "consent.event_appended", business.id, event.occurredAt, { contactId: contact.id, consentEventId: result.event.id, action, channel, purpose });
   await saveBusinessStore(db, context, "consent-event");
   sendJson(response, 201, { event: result.event, state: consentStateForContact(db, business.id, contact.id) }, context);
@@ -97,6 +103,10 @@ async function updatePreferences(businessRef, contactId, request, response, cont
     }
   }
   const now = new Date().toISOString();
+  if (created.some((event) => ["withdrawn", "suppressed"].includes(event.action))) {
+    applySequenceSignal(db, business.id, contact.id, "unsubscribe", now);
+    recordCampaignUnsubscribe(db, business.id, contact.id, { reason: "preference_withdrawn" }, now);
+  }
   created.forEach((event) => appendAudit(db, "consent.preference_changed", business.id, event.occurredAt, { contactId: contact.id, consentEventId: event.id, action: event.action, channel: event.channel, purpose: event.purpose }));
   if (created.length) await saveBusinessStore(db, context, "consent-preferences");
   sendJson(response, 200, { changed: created.length, events: created, state: consentStateForContact(db, business.id, contact.id), updatedAt: now }, context);

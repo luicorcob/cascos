@@ -3,7 +3,20 @@ import { upsertAssociation } from "../lib/association-model.mjs";
 import { recordPrivacyAcknowledgement } from "../lib/consent-model.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { buildCompletedBookingReviewSuggestion } from "../lib/crm-automation.mjs";
+import { applySequenceSignal } from "../lib/automation-engine.mjs";
+import { dispatchAutomationEvent } from "./automation-api.mjs";
+import { recordCampaignConversion } from "../lib/campaign-model.mjs";
 import { recalculateContactScore } from "../lib/lead-score.mjs";
+import {
+  acceptWaitlistOffer,
+  allocateBookingResources,
+  applyBookingStatusPolicy,
+  autoOfferFreedSlot,
+  decorateBookingResources,
+  ensureBookingResourceCollections,
+  markWaitlistBooked,
+  syncBookingResourceAssignments
+} from "../lib/booking-resources.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.BOOKING_API_MAX_BODY_BYTES || 512 * 1024);
 const BOOKING_STATUSES = new Set(["pending", "confirmed", "canceled", "completed", "no-show"]);
@@ -24,6 +37,14 @@ const DEFAULT_DB = {
   availability: [],
   bookingBlocks: [],
   bookingReminders: [],
+  bookingResources: [],
+  bookingResourceSchedules: [],
+  bookingResourceExceptions: [],
+  bookingResourceAssignments: [],
+  bookingWaitlist: [],
+  bookingWaitlistOffers: [],
+  bookingCheckouts: [],
+  bookingPaymentEvents: [],
   associations: [],
   consentEvents: [],
   auditLog: []
@@ -226,7 +247,7 @@ async function listBookings(businessId, requestUrl, response, context) {
     .filter((booking) => !status || booking.status === normalizeBookingStatus(status))
     .filter((booking) => !from || new Date(booking.startsAt) >= from)
     .filter((booking) => !to || new Date(booking.startsAt) <= to)
-    .map((booking) => withReminderSummary(db, booking))
+    .map((booking) => decorateBookingResources(db, withReminderSummary(db, booking)))
     .sort((a, b) => String(a.startsAt || "").localeCompare(String(b.startsAt || "")));
 
   sendJson(response, 200, { bookings, total: bookings.length }, context);
@@ -240,16 +261,23 @@ async function createPublicBooking(slug, request, response, context) {
     throw httpError(404, "Business not found");
   }
 
-  const payload = await readJsonBody(request);
+  const requestPayload = await readJsonBody(request);
   const now = new Date().toISOString();
+  const waitlistAcceptance = requestPayload.waitlistOfferToken
+    ? acceptWaitlistOffer(db, requestPayload.waitlistOfferToken, now)
+    : null;
+  const payload = waitlistAcceptance ? { ...requestPayload, ...waitlistAcceptance.bookingDraft } : requestPayload;
   const booking = normalizeBooking(payload, null, business, db, now, {
     status: "pending",
     source: "public-widget"
   });
 
   ensureBookingIsAvailable(db, booking);
-  ensureNoBookingConflict(db, booking);
+  const allocation = allocateBookingResources(db, booking);
+  ensureNoBookingConflict(db, booking, "", allocation.managed);
   db.bookings.push(booking);
+  syncBookingResourceAssignments(db, booking, now);
+  markWaitlistBooked(db, booking, now);
   const contact = ensureContactForBooking(db, business.id, booking, now);
   syncBookingAssociation(db, booking, contact, now);
   recordBookingPrivacy(db, business, booking, contact, now);
@@ -261,13 +289,16 @@ async function createPublicBooking(slug, request, response, context) {
     metadata: { bookingId: booking.id }
   }));
   recalculateContactScore(db, business.id, contact, new Date(now));
+  applySequenceSignal(db, business.id, contact.id, "booking", now);
+  recordCampaignConversion(db, business.id, contact.id, { type: "booking", revenue: booking.total || booking.price || booking.deposit || 0 }, now);
+  const configurableAutomations = await dispatchAutomationEvent(db, business, { id: `booking:${booking.id}:${now}`, type: "record.created", entity: "booking", entityId: booking.id, contactId: contact.id, payload: { ...booking }, occurredAt: now }, context);
   appendAudit(db, "booking.public_created", business.id, now, booking.id);
   await saveDb(db, context, "booking");
   const reviewSuggestion = buildCompletedBookingReviewSuggestion(db, booking, {
     business,
     now
   });
-  sendJson(response, 201, { booking, contact, reviewSuggestion }, context);
+  sendJson(response, 201, { booking: decorateBookingResources(db, booking), contact, reviewSuggestion, configurableAutomations }, context);
 }
 
 async function createAdminBooking(businessId, request, response, context) {
@@ -286,8 +317,11 @@ async function createAdminBooking(businessId, request, response, context) {
   });
 
   ensureBookingIsAvailable(db, booking);
-  ensureNoBookingConflict(db, booking);
+  const allocation = allocateBookingResources(db, booking);
+  ensureNoBookingConflict(db, booking, "", allocation.managed);
   db.bookings.push(booking);
+  syncBookingResourceAssignments(db, booking, now);
+  markWaitlistBooked(db, booking, now);
   const contact = ensureContactForBooking(db, business.id, booking, now);
   syncBookingAssociation(db, booking, contact, now);
   recordBookingPrivacy(db, business, booking, contact, now);
@@ -299,13 +333,16 @@ async function createAdminBooking(businessId, request, response, context) {
     metadata: { bookingId: booking.id }
   }));
   recalculateContactScore(db, business.id, contact, new Date(now));
+  applySequenceSignal(db, business.id, contact.id, "booking", now);
+  recordCampaignConversion(db, business.id, contact.id, { type: "booking", revenue: booking.total || booking.price || booking.deposit || 0 }, now);
+  const configurableAutomations = await dispatchAutomationEvent(db, business, { id: `booking:${booking.id}:${now}`, type: "record.created", entity: "booking", entityId: booking.id, contactId: contact.id, payload: { ...booking }, occurredAt: now }, context);
   appendAudit(db, "booking.created", business.id, now, booking.id);
   await saveDb(db, context, "booking");
   const reviewSuggestion = buildCompletedBookingReviewSuggestion(db, booking, {
     business,
     now
   });
-  sendJson(response, 201, { booking, contact, reviewSuggestion }, context);
+  sendJson(response, 201, { booking: decorateBookingResources(db, booking), contact, reviewSuggestion, configurableAutomations }, context);
 }
 
 async function updateBooking(businessId, bookingId, request, response, context) {
@@ -328,18 +365,27 @@ async function updateBooking(businessId, bookingId, request, response, context) 
   const booking = normalizeBooking(payload, db.bookings[index], business, db, now, {});
 
   ensureBookingIsAvailable(db, booking);
-  ensureNoBookingConflict(db, booking, booking.id);
+  const allocation = allocateBookingResources(db, booking, { ignoredBookingId: booking.id });
+  ensureNoBookingConflict(db, booking, booking.id, allocation.managed);
+  applyBookingStatusPolicy(booking, previousStatus, now);
   db.bookings[index] = booking;
+  syncBookingResourceAssignments(db, booking, now);
+  const waitlistOffer = previousStatus !== "canceled" && booking.status === "canceled"
+    ? autoOfferFreedSlot(db, business, booking, now)
+    : null;
   const contact = booking.contactId
     ? db.contacts.find((item) => item.businessId === business.id && item.id === booking.contactId && !item.merged)
     : null;
   syncBookingAssociation(db, booking, contact, now);
+  if (contact && !["canceled", "cancelled", "no-show"].includes(booking.status)) applySequenceSignal(db, business.id, contact.id, "booking", now);
+  if (contact && !["canceled", "cancelled", "no-show"].includes(booking.status) && previousStatus !== booking.status) recordCampaignConversion(db, business.id, contact.id, { type: "booking", revenue: booking.total || booking.price || booking.deposit || 0 }, now);
+  const configurableAutomations = await dispatchAutomationEvent(db, business, { id: `booking:${booking.id}:${now}`, type: "record.updated", entity: "booking", entityId: booking.id, contactId: contact?.id || booking.contactId || "", payload: { ...booking, previousStatus }, occurredAt: now }, context);
   appendAudit(db, "booking.updated", business.id, now, booking.id);
   await saveDb(db, context, "booking-update");
   const reviewSuggestion = previousStatus !== "completed"
     ? buildCompletedBookingReviewSuggestion(db, booking, { business, now })
     : null;
-  sendJson(response, 200, { booking, reviewSuggestion }, context);
+  sendJson(response, 200, { booking: decorateBookingResources(db, booking), reviewSuggestion, configurableAutomations, waitlistOffer }, context);
 }
 
 async function createBookingReminder(businessId, bookingId, request, response, context) {
@@ -566,6 +612,13 @@ function normalizeService(payload, existing, businessId, now) {
     durationMinutes,
     price: Math.max(0, roundMoney(source.price ?? existing?.price ?? 0)),
     description: cleanText(source.description || existing?.description || "", 800),
+    requiredResourceTypes: normalizeStringArray(source.requiredResourceTypes ?? source.resourceTypes ?? existing?.requiredResourceTypes),
+    defaultPartySize: clampNumber(source.defaultPartySize ?? existing?.defaultPartySize ?? 1, 1, 10000),
+    depositMode: normalizeDepositMode(source.depositMode ?? existing?.depositMode ?? "none"),
+    depositValue: Math.max(0, roundMoney(source.depositValue ?? existing?.depositValue ?? 0)),
+    guaranteeRequired: normalizeBoolean(source.guaranteeRequired, existing?.guaranteeRequired ?? false),
+    cancellationWindowHours: clampNumber(source.cancellationWindowHours ?? existing?.cancellationWindowHours ?? 24, 0, 8760),
+    noShowFee: Math.max(0, roundMoney(source.noShowFee ?? existing?.noShowFee ?? 0)),
     active: source.active ?? existing?.active ?? true,
     createdAt: existing?.createdAt || now,
     updatedAt: now
@@ -598,6 +651,14 @@ function normalizeBooking(payload, existing, business, db, now, defaults) {
   const phone = cleanText(source.phone || (contactEmail ? "" : contactText) || existing?.phone || "", 80);
   const email = cleanText(source.email || contactEmail || existing?.email || "", 320);
   const attribution = normalizeFirstTouchAttribution(source, existing);
+  const partySize = clampNumber(source.partySize ?? existing?.partySize ?? service.defaultPartySize ?? 1, 1, 10000);
+  const price = Math.max(0, roundMoney(source.price ?? existing?.price ?? service.price ?? 0));
+  const total = Math.max(0, roundMoney(source.total ?? existing?.total ?? price));
+  const depositMode = normalizeDepositMode(source.depositMode ?? existing?.depositMode ?? service.depositMode ?? "none");
+  const depositValue = Math.max(0, roundMoney(source.depositValue ?? existing?.depositValue ?? service.depositValue ?? 0));
+  const depositAmount = calculateDepositAmount(depositMode, depositValue, total);
+  const depositRequired = depositAmount > 0;
+  const guaranteeRequired = normalizeBoolean(source.guaranteeRequired, existing?.guaranteeRequired ?? service.guaranteeRequired ?? false);
 
   return {
     id: existing?.id || cleanId(source.id) || `book_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -605,6 +666,9 @@ function normalizeBooking(payload, existing, business, db, now, defaults) {
     contactId: cleanId(existing?.contactId || ""),
     serviceId: service.id,
     serviceName: service.name,
+    requiredResourceTypes: normalizeStringArray(service.requiredResourceTypes),
+    resourceIds: normalizeIdArray(source.resourceIds ?? source.resources ?? existing?.resourceIds),
+    partySize,
     durationMinutes,
     customerName: cleanText(source.customerName || source.name || existing?.customerName || "Cliente sin nombre", 160),
     phone,
@@ -615,6 +679,21 @@ function normalizeBooking(payload, existing, business, db, now, defaults) {
     endsAt: endsAt.toISOString(),
     status: normalizeBookingStatus(source.status || existing?.status || defaults.status || "pending"),
     source: cleanText(source.source || existing?.source || defaults.source || "dashboard", 80),
+    price,
+    total,
+    currency: cleanText(source.currency || existing?.currency || business.currency || "EUR", 8).toUpperCase(),
+    depositMode,
+    depositValue,
+    depositRequired,
+    depositAmount,
+    depositStatus: cleanText(source.depositStatus || existing?.depositStatus || (depositRequired ? "pending" : "not_required"), 40),
+    depositPaidAt: cleanText(existing?.depositPaidAt || source.depositPaidAt || "", 80),
+    guaranteeRequired,
+    guaranteeStatus: cleanText(source.guaranteeStatus || existing?.guaranteeStatus || (guaranteeRequired ? "pending" : "not_required"), 40),
+    cancellationWindowHours: clampNumber(source.cancellationWindowHours ?? existing?.cancellationWindowHours ?? service.cancellationWindowHours ?? 24, 0, 8760),
+    noShowFee: Math.max(0, roundMoney(source.noShowFee ?? existing?.noShowFee ?? service.noShowFee ?? 0)),
+    waitlistEntryId: cleanId(source.waitlistEntryId || existing?.waitlistEntryId || ""),
+    waitlistOfferId: cleanId(source.waitlistOfferId || existing?.waitlistOfferId || ""),
     privacyAccepted: normalizeBoolean(source.privacyAccepted, existing?.privacyAccepted ?? false),
     privacyAcceptedAt: cleanText(source.privacyAcceptedAt || existing?.privacyAcceptedAt || "", 80),
     privacyPolicyUrl: cleanText(source.privacyPolicyUrl || existing?.privacyPolicyUrl || "", 500),
@@ -781,8 +860,12 @@ function ensureBookingDoesNotHitBlock(db, booking, start, end) {
   }
 }
 
-function ensureNoBookingConflict(db, booking, ignoredBookingId = "") {
+function ensureNoBookingConflict(db, booking, ignoredBookingId = "", resourceManaged = false) {
   if (!OPEN_BOOKING_STATUSES.has(booking.status)) {
+    return;
+  }
+
+  if (resourceManaged) {
     return;
   }
 
@@ -981,7 +1064,7 @@ function makeActivity(businessId, contactId, now, source) {
 }
 
 async function loadDb(context) {
-  const db = await loadBusinessStore(context, DEFAULT_DB);
+  const db = ensureBookingResourceCollections(await loadBusinessStore(context, DEFAULT_DB));
 
   db.version = Number(db.version || 1);
   db.businesses = Array.isArray(db.businesses) ? db.businesses : [];
@@ -1095,6 +1178,31 @@ function normalizeReminderChannel(value) {
   };
 
   return aliases[channel] || "manual";
+}
+
+function normalizeDepositMode(value) {
+  const normalized = cleanText(value || "none", 40).toLowerCase().replace(/-/g, "_");
+  if (!["none", "fixed", "percent", "full"].includes(normalized)) {
+    throw httpError(400, `Invalid deposit mode: ${normalized}`);
+  }
+  return normalized;
+}
+
+function calculateDepositAmount(mode, value, total) {
+  if (mode === "none") return 0;
+  if (mode === "full") return roundMoney(total);
+  if (mode === "percent") return roundMoney(total * Math.min(100, value) / 100);
+  return roundMoney(Math.min(total || value, value));
+}
+
+function normalizeStringArray(value) {
+  const source = Array.isArray(value) ? value : value === undefined || value === null || value === "" ? [] : [value];
+  return [...new Set(source.map((item) => cleanText(item, 180).toLowerCase()).filter(Boolean))];
+}
+
+function normalizeIdArray(value) {
+  const source = Array.isArray(value) ? value : value === undefined || value === null || value === "" ? [] : [value];
+  return [...new Set(source.map((item) => cleanId(item)).filter(Boolean))];
 }
 
 function preferredReminderChannel(booking, contact) {

@@ -1,5 +1,5 @@
 const DEFAULT_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
-const DEFAULT_HEADERS = "Content-Type, Authorization, X-LocalLift-Admin-Token, X-LocalLift-Client-Token";
+const DEFAULT_HEADERS = "Content-Type, Authorization, X-LocalLift-Admin-Token, X-LocalLift-Client-Token, X-LocalLift-User-Token";
 
 export function corsHeaders(context = {}) {
   const allowedOrigins = getAllowedOrigins();

@@ -3,12 +3,19 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleAccountApi, isAccountApiRequest } from "./api/account-api.mjs";
+import { handleAutomationApi, isAutomationApiRequest } from "./api/automation-api.mjs";
 import { handleBookingApi, isBookingApiRequest } from "./api/booking-api.mjs";
+import { handleBookingResourceApi, isBookingResourceApiRequest } from "./api/booking-resource-api.mjs";
 import { handleBusinessApi, isBusinessApiRequest } from "./api/business-api.mjs";
+import { handleBusinessUserAuthApi, isBusinessUserAuthApiRequest } from "./api/business-user-auth-api.mjs";
+import { handleChannelApi, isChannelApiRequest } from "./api/channel-api.mjs";
+import { handleCampaignApi, isCampaignApiRequest } from "./api/campaign-api.mjs";
+import { handleCrmConfigApi, isCrmConfigApiRequest } from "./api/crm-config-api.mjs";
 import { handleClientAuthApi, isClientAuthApiRequest } from "./lib/client-auth.mjs";
 import { handleContactApi, isContactApiRequest } from "./api/contact-api.mjs";
 import { handleCommunicationsApi, isCommunicationsApiRequest } from "./api/communications-api.mjs";
 import { handleConsentApi, isConsentApiRequest } from "./api/consent-api.mjs";
+import { handleCustomer360Api, isCustomer360ApiRequest } from "./api/customer-360-api.mjs";
 import { handleDealApi, isDealApiRequest } from "./api/deal-api.mjs";
 import { handleDemoPublishApi, isDemoPublishApiRequest } from "./api/demo-publish-api.mjs";
 import { handleDiscoveryApi, isDiscoveryApiRequest } from "./api/discovery-api.mjs";
@@ -17,14 +24,21 @@ import { handleHealthApi, isHealthApiRequest } from "./api/health-api.mjs";
 import { handleGoogleApi, isGoogleApiRequest } from "./api/google-api.mjs";
 import { handleHospitalityApi, isHospitalityApiRequest } from "./api/hospitality-api.mjs";
 import { handleInboxApi, isInboxApiRequest } from "./api/inbox-api.mjs";
+import { handleIntelligenceApi, isIntelligenceApiRequest } from "./api/intelligence-api.mjs";
+import { handleLoyaltyApi, isLoyaltyApiRequest } from "./api/loyalty-api.mjs";
 import { handleMessageTemplateApi, isMessageTemplateApiRequest } from "./api/message-template-api.mjs";
+import { handleMoneyApi, isMoneyApiRequest } from "./api/money-api.mjs";
 import { handleOperationsApi, isOperationsApiRequest } from "./api/operations-api.mjs";
 import { handleProposalApi, isProposalApiRequest } from "./api/proposal-api.mjs";
+import { handleQuoteApi, isQuoteApiRequest } from "./api/quote-api.mjs";
 import { handleReportApi, isReportApiRequest } from "./api/report-api.mjs";
+import { handleReputationApi, isReputationApiRequest } from "./api/reputation-api.mjs";
+import { handleSecurityApi, isSecurityApiRequest } from "./api/security-api.mjs";
 import { handleQaVisualApi, isQaVisualApiRequest } from "./api/qa-visual-api.mjs";
 import { handleSiteImageApi, isSiteImageApiRequest } from "./api/site-image-api.mjs";
 import { handleStockImageApi, isStockImageApiRequest } from "./api/stock-image-api.mjs";
 import { handleTaskApi, isTaskApiRequest } from "./api/task-api.mjs";
+import { handleVerticalOperationsApi, isVerticalOperationsApiRequest } from "./api/vertical-operations-api.mjs";
 import { isAdminApiRequest, requireAdminApiAuth } from "./lib/admin-auth.mjs";
 import { loadLocalEnv } from "./lib/load-env.mjs";
 import { requirePublicApiRateLimit } from "./lib/public-rate-limit.mjs";
@@ -95,6 +109,16 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (isBusinessUserAuthApiRequest(requestUrl.pathname)) {
+      await handleBusinessUserAuthApi(request, response, apiContext);
+      return;
+    }
+
+    if (requestUrl.pathname.startsWith("/api/public/booking-reminders/") && isVerticalOperationsApiRequest(requestUrl.pathname)) {
+      await handleVerticalOperationsApi(request, response, apiContext);
+      return;
+    }
+
     if (isAdminApiRequest(requestUrl.pathname) && !(await requireAdminApiAuth(request, response, apiContext, requestUrl.pathname))) {
       return;
     }
@@ -104,13 +128,73 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (isSecurityApiRequest(requestUrl.pathname)) {
+      await handleSecurityApi(request, response, apiContext);
+      return;
+    }
+
+    if (isBookingResourceApiRequest(requestUrl.pathname)) {
+      await handleBookingResourceApi(request, response, apiContext);
+      return;
+    }
+
     if (isAccountApiRequest(requestUrl.pathname)) {
       await handleAccountApi(request, response, apiContext);
       return;
     }
 
+    if (isAutomationApiRequest(requestUrl.pathname)) {
+      await handleAutomationApi(request, response, apiContext);
+      return;
+    }
+
+    if (isCampaignApiRequest(requestUrl.pathname)) {
+      await handleCampaignApi(request, response, apiContext);
+      return;
+    }
+
+    if (isCrmConfigApiRequest(requestUrl.pathname)) {
+      await handleCrmConfigApi(request, response, apiContext);
+      return;
+    }
+
+    if (isMoneyApiRequest(requestUrl.pathname)) {
+      await handleMoneyApi(request, response, apiContext);
+      return;
+    }
+
+    if (isLoyaltyApiRequest(requestUrl.pathname)) {
+      await handleLoyaltyApi(request, response, apiContext);
+      return;
+    }
+
+    if (isIntelligenceApiRequest(requestUrl.pathname)) {
+      await handleIntelligenceApi(request, response, apiContext);
+      return;
+    }
+
+    if (isVerticalOperationsApiRequest(requestUrl.pathname)) {
+      await handleVerticalOperationsApi(request, response, apiContext);
+      return;
+    }
+
+    if (isQuoteApiRequest(requestUrl.pathname)) {
+      await handleQuoteApi(request, response, apiContext);
+      return;
+    }
+
     if (isConsentApiRequest(requestUrl.pathname)) {
       await handleConsentApi(request, response, apiContext);
+      return;
+    }
+
+    if (isChannelApiRequest(requestUrl.pathname)) {
+      await handleChannelApi(request, response, apiContext);
+      return;
+    }
+
+    if (isCustomer360ApiRequest(requestUrl.pathname)) {
+      await handleCustomer360Api(request, response, apiContext);
       return;
     }
 
@@ -161,6 +245,11 @@ const server = createServer(async (request, response) => {
 
     if (isReportApiRequest(requestUrl.pathname)) {
       await handleReportApi(request, response, apiContext);
+      return;
+    }
+
+    if (isReputationApiRequest(requestUrl.pathname)) {
+      await handleReputationApi(request, response, apiContext);
       return;
     }
 

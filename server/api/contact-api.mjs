@@ -1,12 +1,15 @@
 import { corsHeaders } from "../lib/cors.mjs";
+import { getRequestBusinessUserSession } from "../lib/business-access.mjs";
 import { moveAssociationEntity } from "../lib/association-model.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { loadCommerceOrdersForBusiness, mergeTimelineOrders } from "../lib/commerce-order-source.mjs";
 import { buildContactTimeline, isRecordAssociatedWithContact } from "../lib/contact-timeline.mjs";
 import { applyNewLeadAutomation } from "../lib/crm-automation.mjs";
+import { dispatchAutomationEvent } from "./automation-api.mjs";
 import { normalizeStoredScoreLabel, recalculateContactScore, withComputedLeadScore } from "../lib/lead-score.mjs";
 import { completeLegacyNextActionTask, syncLegacyNextActionTask } from "../lib/task-model.mjs";
 import { recordPrivacyAcknowledgement } from "../lib/consent-model.mjs";
+import { validateCustomFieldValues } from "../lib/crm-config-model.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.CONTACT_API_MAX_BODY_BYTES || 512 * 1024);
 const CONTACT_TYPES = new Set(["lead", "customer"]);
@@ -286,6 +289,7 @@ async function createPublicLead(slug, request, response, context) {
     status: "new",
     source: "web"
   });
+  applyContactCustomFields(db, business.id, contact, payload, existing, "sales");
   contact.lastInteractionAt = now;
   const activity = makeActivity(business.id, contact.id, payload, now, {
     type: existing ? "lead.updated" : "lead.created",
@@ -315,6 +319,7 @@ async function createPublicLead(slug, request, response, context) {
   const automation = existing
     ? null
     : applyNewLeadAutomation(db, contact, { now });
+  const configurableAutomations = await dispatchAutomationEvent(db, business, { id: `contact:${contact.id}:${now}`, type: existing ? "record.updated" : "record.created", entity: "contact", entityId: contact.id, contactId: contact.id, payload: { status: contact.status, source: contact.source }, occurredAt: now }, context);
   recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, existing ? "contact.public_lead_updated" : "contact.public_lead_created", business.id, now, contact.id);
   await saveDb(db, context, "lead");
@@ -322,6 +327,7 @@ async function createPublicLead(slug, request, response, context) {
     contact,
     activity,
     automation,
+    configurableAutomations,
     mergedWithExisting: Boolean(existing)
   }, context);
 }
@@ -343,6 +349,7 @@ async function createAdminContact(businessId, request, response, context) {
     status: "new",
     source: "manual"
   });
+  applyContactCustomFields(db, business.id, contact, payload, existing, getRequestBusinessUserSession(request)?.userRole || "owner");
   contact.lastInteractionAt = now;
   const activity = makeActivity(business.id, contact.id, payload, now, {
     type: existing ? "contact.updated" : "contact.created",
@@ -360,6 +367,7 @@ async function createAdminContact(businessId, request, response, context) {
   const automation = existing
     ? null
     : applyNewLeadAutomation(db, contact, { now });
+  const configurableAutomations = await dispatchAutomationEvent(db, business, { id: `contact:${contact.id}:${now}`, type: existing ? "record.updated" : "record.created", entity: "contact", entityId: contact.id, contactId: contact.id, payload: { status: contact.status, source: contact.source }, occurredAt: now }, context);
   recalculateContactScore(db, business.id, contact, new Date(now));
   appendAudit(db, existing ? "contact.updated_from_duplicate_create" : "contact.created", business.id, now, contact.id);
   await saveDb(db, context, "contact");
@@ -367,6 +375,7 @@ async function createAdminContact(businessId, request, response, context) {
     contact,
     activity,
     automation,
+    configurableAutomations,
     mergedWithExisting: Boolean(existing)
   }, context);
 }
@@ -468,6 +477,7 @@ async function updateContact(businessId, contactId, request, response, context) 
   const now = new Date().toISOString();
   const previous = db.contacts[index];
   const contact = normalizeContact(payload, previous, business.id, now, {});
+  applyContactCustomFields(db, business.id, contact, payload, previous, getRequestBusinessUserSession(request)?.userRole || "owner");
 
   db.contacts[index] = contact;
 
@@ -770,6 +780,7 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     privacyAccepted: normalizeBoolean(source.privacyAccepted, existing?.privacyAccepted ?? false),
     privacyAcceptedAt: cleanText(source.privacyAcceptedAt || existing?.privacyAcceptedAt || "", 80),
     privacyPolicyUrl: cleanText(source.privacyPolicyUrl || existing?.privacyPolicyUrl || "", 500),
+    customFields: existing?.customFields && typeof existing.customFields === "object" && !Array.isArray(existing.customFields) ? { ...existing.customFields } : {},
     nextAction,
     score: normalizeScore(existing?.score),
     scoreLabel: normalizeStoredScoreLabel(existing?.scoreLabel, existing?.status === "lost" ? "perdido" : "frio"),
@@ -777,6 +788,18 @@ function normalizeContact(payload, existing, businessId, now, defaults) {
     createdAt: existing?.createdAt || now,
     updatedAt: now
   };
+}
+
+function applyContactCustomFields(db, businessId, contact, payload, existing, actorRole) {
+  const source = extractPayload(payload);
+  if (!Object.prototype.hasOwnProperty.call(source, "customFields")) return;
+  const values = {
+    ...(existing?.customFields && typeof existing.customFields === "object" && !Array.isArray(existing.customFields) ? existing.customFields : {}),
+    ...(source.customFields && typeof source.customFields === "object" && !Array.isArray(source.customFields) ? source.customFields : {})
+  };
+  const validation = validateCustomFieldValues(db, businessId, "contact", values, actorRole);
+  if (!validation.valid) throw httpError(422, validation.errors.map((item) => `${item.key}: ${item.message}`).join("; "));
+  contact.customFields = validation.values;
 }
 
 function normalizeStoredContact(contact, db = null, businessId = "", now = new Date()) {

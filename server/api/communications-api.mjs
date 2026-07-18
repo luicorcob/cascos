@@ -5,7 +5,7 @@ import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs"
 import { getRequestClientSession } from "../lib/client-auth.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.COMMUNICATIONS_API_MAX_BODY_BYTES || 96 * 1024);
-const THREAD_TYPES = new Set(["support", "team"]);
+const THREAD_TYPES = new Set(["support", "team", "customer"]);
 const THREAD_STATUSES = new Set(["open", "closed"]);
 const MEMBER_ROLES = new Set(["owner", "manager", "employee"]);
 const THREAD_FIELDS = new Set(["type", "title", "contactId", "accountId", "dealId"]);

@@ -1,8 +1,13 @@
 # CRM 2.0 y suite operativa vertical
 
-Estado: **activo**  
-Inicio: **17 de julio de 2026**  
-Ultima actualizacion: **17 de julio de 2026**  
+Estado: **completado**
+
+Inicio: **17 de julio de 2026**
+
+Ultima actualizacion: **18 de julio de 2026**
+
+Cierre funcional y tecnico: **18 de julio de 2026**
+
 Responsable de ejecucion: **DLS**
 
 Este es el documento canonico para evolucionar el dashboard de DLS desde el
@@ -286,141 +291,392 @@ Entrega verificable:
 - `npm.cmd run test:crm-consent`, `check`, `test:backend-security` y
   `smoke:pilot` superados.
 
-#### 0.5 Usuarios, roles y permisos efectivos — REQUISITO TRANSVERSAL PENDIENTE
+#### 0.5 Usuarios, roles y permisos efectivos — COMPLETADA 2026-07-18
 
-- [ ] Crear usuarios de negocio independientes de los empleados operativos.
-- [ ] Definir roles iniciales: propietario, responsable, comercial, operaciones,
+- [x] Crear usuarios de negocio independientes de los empleados operativos.
+- [x] Definir roles iniciales: propietario, responsable, comercial, operaciones,
   finanzas y solo lectura.
-- [ ] Autorizar por recurso y accion en backend, no solo ocultar botones.
-- [ ] Registrar cambios sensibles, exportaciones y suplantaciones.
+- [x] Autorizar por recurso y accion en backend, no solo ocultar botones.
+- [x] Registrar cambios sensibles, exportaciones y suplantaciones.
 
 Criterio de cierre: un usuario de operaciones no puede leer margenes ni cambiar
 permisos aunque invoque directamente la API.
 
-#### 0.6 Dinero normalizado
+Entrega verificable:
 
-- [ ] Unificar clientes y asociaciones entre facturas generales y hospitality.
-- [ ] Normalizar moneda, impuestos, estados, vencimientos y lineas.
-- [ ] Enlazar pagos, suscripciones, propuestas y proyectos.
-- [ ] Preservar registros que solo tengan `customerName`.
+- Sesiones firmadas de usuarios de negocio, contraseñas con `scrypt`, caducidad
+  y aislamiento estricto por negocio.
+- Seis roles efectivos: `owner`, `manager`, `sales`, `operations`, `finance` y
+  `readonly`, con permisos evaluados para cada ruta y metodo en backend.
+- Proteccion de ultimo propietario, desactivacion segura, suplantacion limitada
+  y log de exportaciones y cambios sensibles.
+- `POST /api/business-users/login` y `GET /api/business-users/session`.
+- Centro `GET /api/businesses/:id/security` y API de roles, usuarios, auditoria
+  y suplantaciones bajo `/security/*`.
+- `npm.cmd run test:crm-foundation` cubre matriz de roles, acceso directo a API,
+  finanzas, solo lectura, auditoria, suplantacion y aislamiento.
+
+#### 0.6 Dinero normalizado — COMPLETADA 2026-07-18
+
+- [x] Unificar clientes y asociaciones entre facturas generales y hospitality.
+- [x] Normalizar moneda, impuestos, estados, vencimientos y lineas.
+- [x] Enlazar pagos, suscripciones, propuestas y proyectos.
+- [x] Preservar registros que solo tengan `customerName`.
+
+Entrega verificable:
+
+- Proyeccion canonica `moneyRecords` y pagos idempotentes sobre facturas
+  generales y hospitality, con moneda, impuestos, lineas, vencimiento y estado.
+- Asociaciones a contacto/cuenta, propuesta, proyecto y suscripcion sin exigir
+  IDs nuevos a los registros historicos con `customerName`.
+- `GET /api/businesses/:id/money`, `POST /money/reconcile`,
+  `GET|PATCH /money/:recordId` y `POST /money/:recordId/payments`.
+- Migracion repetible: `npm.cmd run crm:migrate-money`; `-- --apply` persiste.
+- Confirmacion explicita en dashboard para registrar cobros.
 
 ### Fase 1 - Accion comercial y automatizacion
 
-#### 1.1 Bandeja omnicanal real
+#### 1.1 Bandeja omnicanal real — ENTREGA FUNCIONAL COMPLETADA 2026-07-17
 
-- [ ] Consolidar email y WhatsApp como primeros canales; preparar adaptadores
+- [x] Consolidar email y WhatsApp como primeros canales; preparar adaptadores
   para webchat, SMS e Instagram sin prometerlos en v1.
-- [ ] Sincronizar entrada/salida, estados de entrega, adjuntos y errores.
-- [ ] Resolver identidad, asignar conversaciones y medir primera respuesta.
-- [ ] Incorporar notas internas, menciones, colision de agentes y cierre.
-- [ ] Aplicar permisos, consentimiento, supresion y auditoria.
+- [x] Sincronizar entrada/salida, estados de entrega, adjuntos y errores.
+- [x] Resolver identidad, asignar conversaciones y medir primera respuesta.
+- [x] Incorporar notas internas, menciones, colision de agentes y cierre.
+- [x] Aplicar consentimiento, supresion, aislamiento multiempresa y auditoria.
+- [x] Sustituir la separacion admin/cliente por autorizacion granular por accion,
+  integrada con el cierre transversal 0.5.
 
-#### 1.2 Secuencias comerciales
+Entrega verificable:
 
-- [ ] Crear pasos de email/tarea/WhatsApp con esperas y horarios permitidos.
-- [ ] Inscribir de forma individual o masiva con previsualizacion.
-- [ ] Detener al responder, reservar, aceptar o darse de baja.
-- [ ] Medir entregas, respuestas, reuniones y conversion.
+- Adaptadores `development`, Resend y WhatsApp Cloud con IDs de proveedor e
+  idempotencia de salida.
+- Webhooks firmados, deduplicacion de entrada, recuperacion de email recibido,
+  estados de entrega y verificacion de WhatsApp.
+- `GET /api/businesses/:id/channels/connections`
+- `PUT /api/businesses/:id/channels/connections/:channel`
+- `GET /api/businesses/:id/channels/inbox`
+- `PATCH /api/businesses/:id/channels/conversations/:threadId`
+- `POST /messages`, `/notes`, `/read` y `POST|DELETE /lock` por conversacion.
+- Workspace responsive con filtros, KPIs, historial, adjuntos, entrega, SLA,
+  responsable, notas, menciones, cierre y control de colisiones.
+- `npm.cmd run test:crm-omnichannel`, `check`, `smoke:pilot`,
+  `test:backend-security`, `test:communications`, `test:crm-consent` y
+  `test:crm-customer360` superados.
 
-#### 1.3 Constructor de automatizaciones
+#### 1.2 Secuencias comerciales — ENTREGA FUNCIONAL COMPLETADA 2026-07-17
 
-- [ ] Disparadores de registro, evento, fecha, mensaje y webhook.
-- [ ] Condiciones, ramas, esperas, acciones, objetivos y salida.
-- [ ] Borrador/publicacion, versiones, prueba con registro, limites y apagado.
-- [ ] Ejecuciones con log por nodo, idempotencia y reintentos controlados.
-- [ ] Importar las reglas fijas actuales como recetas iniciales.
+- [x] Crear pasos de email/tarea/WhatsApp con esperas y horarios permitidos.
+- [x] Inscribir de forma individual o masiva con previsualizacion.
+- [x] Detener al responder, reservar, aceptar o darse de baja.
+- [x] Medir envios, entregas, respuestas, reuniones y conversion.
 
-#### 1.4 Campos, vistas y pipelines configurables
+Entrega verificable:
 
-- [ ] Campos personalizados tipados con validacion y permisos.
-- [ ] Vistas guardadas, filtros compuestos, columnas y acciones masivas.
-- [ ] Varios pipelines con reglas de entrada/salida y probabilidad por etapa.
+- Secuencias versionadas sobre el mismo motor seguro de automatizacion.
+- Previsualizacion de hasta 500 contactos con elegibles, bloqueados, pasos,
+  quiet hours y condiciones de salida.
+- Inscripcion individual/masiva, pausa, reanudacion y parada manual.
+- Paradas automaticas conectadas a mensaje entrante, reserva, propuesta
+  aceptada y retirada/supresion de consentimiento.
+- Metricas por inscripcion: envios, entregas, respuestas, reuniones y
+  conversiones.
+- Vista responsive de inscripciones, resultados y ejecuciones.
+
+#### 1.3 Constructor de automatizaciones — ENTREGA FUNCIONAL COMPLETADA 2026-07-17
+
+- [x] Disparadores de registro, evento, fecha, mensaje y webhook.
+- [x] Condiciones, ramas, esperas, acciones, objetivos y salida.
+- [x] Borrador/publicacion, versiones, prueba con registro, limites y apagado.
+- [x] Ejecuciones con log por nodo, idempotencia y reintentos controlados.
+- [x] Importar las reglas fijas actuales como recetas iniciales.
+
+Entrega verificable:
+
+- Colecciones JSON/PostgreSQL `automations`, `automationVersions`,
+  `automationRuns`, `automationRunLogs` y `sequenceEnrollments`.
+- API de CRUD, publicacion, prueba, ejecucion, eventos, runs, reintentos,
+  cancelacion, previsualizacion e inscripciones.
+- Version publicada inmutable y siguiente borrador editable.
+- Worker `npm.cmd run crm:automation-worker` para reanudar esperas vencidas.
+- Acciones iniciales: tarea, etiqueta, actualizacion de contacto, mensaje real
+  email/WhatsApp y nota interna.
+- Eventos configurables conectados a contactos, reservas, propuestas y mensajes.
+- Recetas iniciales para lead nuevo, demo publicada, inactividad y reseña tras
+  reserva.
+- Estudio visual responsive con diagrama, editor validado, modo prueba,
+  versiones, limites, estados, logs y metricas.
+- `npm.cmd run test:crm-automation` cubre reglas heredadas, motor, API y Chrome
+  desktop/movil; regresiones de omnicanal, consentimiento y propuestas superadas.
+
+#### 1.4 Campos, vistas y pipelines configurables — COMPLETADA 2026-07-18
+
+- [x] Campos personalizados tipados con validacion y permisos.
+- [x] Vistas guardadas, filtros compuestos, columnas y acciones masivas.
+- [x] Varios pipelines con reglas de entrada/salida y probabilidad por etapa.
+
+Entrega verificable:
+
+- Definiciones tipadas con permisos por rol y validacion integrada en contactos
+  y oportunidades.
+- Vistas guardadas con filtros compuestos, columnas y acciones masivas
+  declarativas.
+- Reglas de entrada/salida y probabilidad por etapa para multiples pipelines.
+- Centro y CRUD bajo `/api/businesses/:id/crm-config`, secciones `fields`,
+  `views`, `pipeline-rules` y endpoint `/validate`.
+- UI responsive en Ajustes y cobertura de modelo, API y navegador en
+  `npm.cmd run test:crm-foundation`.
 
 ### Fase 2 - Conversion, retencion y reputacion
 
-#### 2.1 Cliente 360 y segmentacion — EN CURSO (PRIORIDAD ACTUAL)
+#### 2.1 Cliente 360 y segmentacion — COMPLETADA
 
-- [ ] Perfil con timeline, oportunidades, conversaciones, reservas, pedidos,
+- [x] Perfil con timeline, oportunidades, conversaciones, reservas, pedidos,
   ingresos, incidencias, preferencias y consentimientos.
-- [ ] Calcular LTV, frecuencia, ultima visita, ticket medio, RFM y riesgo.
-- [ ] Segmentos dinamicos/estaticos con recuento y muestra antes de usar.
+- [x] Calcular LTV, frecuencia, ultima visita, ticket medio, RFM y riesgo.
+- [x] Segmentos dinamicos/estaticos con recuento y muestra antes de usar.
 
-#### 2.2 Campañas y ciclo de vida
+Entrega verificable:
 
-- [ ] Campañas segmentadas, programacion, zona horaria y quiet hours.
-- [ ] Experimentacion limitada, exclusiones, frecuencia maxima y bajas.
-- [ ] Resultados por ingreso y reserva, no solo aperturas o clics.
+- `GET /api/businesses/:id/customers/360` con busqueda, segmento, recuentos y
+  muestra por segmento.
+- `GET /api/businesses/:id/customers/:contactId/360` para la ficha detallada.
+- Agregacion multiempresa de reservas, pedidos embebidos, oportunidades,
+  propuestas, proyectos, facturas, pagos, conversaciones, tareas y ledger de
+  consentimiento.
+- RFM, LTV explicable, recurrencia, no-show, riesgo y siguiente mejor accion
+  con confirmacion obligatoria.
+- Segmentos dinamicos y segmentos manuales mediante etiquetas `segment:*`.
+- Workspace responsive Cliente 360 en dashboard.
+- `npm.cmd run test:crm-customer360`, `check`, `smoke:pilot`,
+  `test:backend-security` y `test:crm-consent` superados.
 
-#### 2.3 Quote-to-cash
+#### 2.2 Campañas y ciclo de vida — COMPLETADA 2026-07-17
 
-- [ ] Versionar propuestas y añadir enlace publico seguro y registro de vistas.
-- [ ] Aceptacion verificable, firma opcional, deposito y calendario de pagos.
-- [ ] Crear cliente/proyecto/factura/suscripcion de forma idempotente.
-- [ ] Mostrar estado unico desde borrador hasta cobrado.
+- [x] Campañas segmentadas, programacion, zona horaria y quiet hours.
+- [x] Experimentacion A/B limitada, exclusiones, frecuencia maxima y bajas.
+- [x] Resultados por ingreso y reserva, no solo aperturas o clics.
+- [x] Recetas lifecycle de bienvenida, reactivacion, postvisita y win-back.
+- [x] Snapshot inmutable de audiencia/contenido, lotes idempotentes, pausa,
+  reanudacion, cancelacion y worker de ejecucion.
 
-#### 2.4 Centro de reputacion
+Entrega verificable:
 
-- [ ] Mostrar reseñas, sentimiento operativo, urgencia y SLA de respuesta.
-- [ ] Responder desde DLS con borrador, aprobacion y registro.
-- [ ] Solicitar reseña tras una experiencia elegible sin incentivos prohibidos.
-- [ ] Medir solicitudes, reseñas obtenidas, nota y temas recurrentes.
+- `GET|POST /api/businesses/:id/campaigns`
+- `GET|PATCH|DELETE /api/businesses/:id/campaigns/:campaignId`
+- `POST /api/businesses/:id/campaigns/:campaignId/preview`
+- `POST /api/businesses/:id/campaigns/:campaignId/schedule`
+- `POST /api/businesses/:id/campaigns/:campaignId/process`
+- `PATCH /api/businesses/:id/campaigns/:campaignId/status`
+- Audiencias estaticas y segmentos de Cliente 360 con motivo individual de
+  bloqueo por consentimiento, canal, exclusion y limite de frecuencia.
+- Email/WhatsApp mediante los adaptadores omnicanal reales, quiet hours por
+  zona horaria y `npm.cmd run crm:campaign-worker` para colas programadas.
+- Atribucion automatica de entrega, respuesta, reserva, propuesta aceptada,
+  ingreso y baja; desglose de resultados por variante A/B.
+- Centro responsive en Cliente 360 con recetas, editor, preview, controles de
+  ejecucion, destinatarios y resultados; portal cliente en solo lectura.
+- `npm.cmd run test:crm-campaigns`, `check`, `smoke:pilot`,
+  `test:crm-consent`, `test:crm-omnichannel` y `test:crm-proposals` superados.
 
-#### 2.5 Fidelizacion y referidos
+#### 2.3 Quote-to-cash — COMPLETADA 2026-07-17
 
-- [ ] Puntos/saldo/niveles o bonos configurables por negocio.
-- [ ] Movimientos inmutables, caducidad, recompensas y correcciones auditadas.
-- [ ] Referidos con codigo, atribucion, limites y prevencion de abuso.
+- [x] Versionar propuestas y añadir enlace publico seguro y registro de vistas.
+- [x] Aceptacion verificable, firma opcional, deposito y calendario de pagos.
+- [x] Crear cliente/proyecto/factura/suscripcion de forma idempotente.
+- [x] Mostrar estado unico desde borrador hasta cobrado.
+- [x] Añadir lineas, cantidades, descuentos, impuestos y aprobacion interna.
+- [x] Integrar Checkout y webhook de pago con modo de desarrollo verificable.
+
+Entrega verificable:
+
+- Propuestas con lineas de pago unico/recurrente, impuestos, descuento,
+  totales, señal, firma requerida/opcional y aprobacion de margen.
+- Revisiones inmutables con hash de contenido y enlace publico aleatorio,
+  revocable, caducable y ligado a una version exacta.
+- `GET /api/public/quotes/:token` registra primera/ultima apertura y vistas.
+- Comentarios, solicitud de cambios, rechazo y aceptacion firmada con evidencia.
+- `POST /api/public/quotes/:token/checkout` crea Checkout; el webhook
+  `/api/webhooks/stripe/quotes` concilia el pago idempotentemente.
+- Aceptar crea o reconcilia contacto cliente, proyecto, factura, calendario y
+  suscripcion sin duplicados; estado unico `draft` a `paid`.
+- Pagina publica profesional y dashboard responsive con versiones, apertura,
+  decision, comentarios, factura, pagos y reconciliacion.
+- `npm.cmd run test:crm-quote-to-cash`, `check`, `test:operations`,
+  `test:backend-security`, `smoke:pilot` y `test:crm-customer360` superados.
+
+#### 2.4 Centro de reputacion — COMPLETADA 2026-07-18
+
+- [x] Mostrar reseñas, sentimiento operativo, urgencia y SLA de respuesta.
+- [x] Responder desde DLS con borrador, aprobacion y registro.
+- [x] Solicitar reseña tras una experiencia elegible sin incentivos prohibidos.
+- [x] Medir solicitudes, reseñas obtenidas, nota y temas recurrentes.
+
+Entrega verificable:
+
+- Adaptador Google Business Profile y modo de desarrollo verificable, con
+  sincronizacion idempotente, sentimiento, urgencia, SLA y temas.
+- Respuesta en tres pasos: borrador, aprobacion y publicacion confirmada.
+- Solicitudes solo para experiencias elegibles y con consentimiento efectivo;
+  se rechazan incentivos y lenguaje prohibido.
+- Tracking seguro de solicitud, clic y atribucion de reseña; KPI de nota,
+  respuesta, solicitudes, conversion y temas recurrentes.
+- Centro responsive y API bajo `/api/businesses/:id/reputation`, mas redireccion
+  publica `/api/public/review-requests/:token`.
+- `npm.cmd run test:crm-reputation` cubre modelo, API, proveedor, permisos,
+  aislamiento y navegador.
+
+#### 2.5 Fidelizacion y referidos — COMPLETADA 2026-07-18
+
+- [x] Puntos/saldo/niveles o bonos configurables por negocio.
+- [x] Movimientos inmutables, caducidad, recompensas y correcciones auditadas.
+- [x] Referidos con codigo, atribucion, limites y prevencion de abuso.
+
+Entrega verificable:
+
+- Programa configurable por negocio con puntos o saldo, niveles, bonos y reglas
+  de caducidad.
+- Ledger inmutable e idempotente, recompensas, canjes y correcciones con actor y
+  motivo auditados.
+- Codigos y atribucion de referidos con rechazo de autorreferido, duplicados,
+  huellas repetidas y exceso de limites.
+- Centro y API bajo `/api/businesses/:id/loyalty` para programa, cuentas,
+  movimientos, recompensas, canjes y referidos.
+- `npm.cmd run test:crm-growth-operations` cubre modelo, API, RBAC, aislamiento
+  y navegador responsive.
 
 ### Fase 3 - Reservas y operacion vertical
 
-#### 3.1 Motor de recursos y capacidad
+#### 3.1 Motor de recursos y capacidad — COMPLETADA 2026-07-17
 
-- [ ] Recursos por tipo: profesional, mesa, sala, cabina, equipo o capacidad.
-- [ ] Horarios, excepciones, duracion, buffers, aforo y reglas de asignacion.
-- [ ] Disponibilidad que evite conflictos por recurso, no por negocio completo.
+- [x] Recursos por tipo: profesional, mesa, sala, cabina, equipo o capacidad.
+- [x] Horarios, excepciones, duracion, buffers, aforo y reglas de asignacion.
+- [x] Disponibilidad que evite conflictos por recurso, no por negocio completo.
 
-#### 3.2 Restauracion y experiencias
+Entrega verificable:
 
-- [ ] Comensales, zonas, combinacion de mesas, turnos y duracion prevista.
-- [ ] Lista de espera con preferencias, prioridad, oferta y caducidad.
-- [ ] Experiencias/menus/eventos con inventario y reglas propias.
+- Colecciones JSON/PostgreSQL para recursos, horarios, excepciones y
+  asignaciones, sin migracion destructiva de las reservas existentes.
+- Asignacion explicita o automatica por servicio y tipo, simultaneidad,
+  capacidad, buffers y liberacion al cancelar/completar/no-show.
+- Compatibilidad: el bloqueo global anterior solo se conserva cuando el negocio
+  aun no ha configurado recursos aplicables.
+- API de CRUD, horarios, excepciones, disponibilidad por recurso y resumen.
+- Centro responsive de recursos con profesional, mesa, sala, cabina, equipo y
+  aforo compartido; edicion de horarios y excepciones desde la agenda.
 
-#### 3.3 Depositos, cancelacion y no-show
+#### 3.2 Restauracion y experiencias — COMPLETADA 2026-07-18
 
-- [ ] Deposito o garantia configurable por servicio, fecha y segmento.
-- [ ] Politica visible, consentimiento, devolucion y disputa auditada.
-- [ ] Recordatorios confirmables y recuperacion de huecos liberados.
-- [ ] Riesgo de no-show explicable, nunca bloqueo opaco automatico.
+- [x] Comensales/aforo por reserva y capacidad simultanea por recurso.
+- [x] Lista de espera con preferencias, prioridad, oferta y caducidad.
+- [x] Zonas, combinacion explicita de mesas, turnos y duracion prevista.
+- [x] Experiencias/menus/eventos con inventario y reglas propias.
 
-#### 3.4 Planificacion operativa
+Entrega verificable:
 
-- [ ] Ocupacion, demanda prevista, rotacion, carga de personal y stock critico.
-- [ ] Alertas accionables enlazadas al dato que las origina.
+- Zonas, combinaciones explicitas de recursos/mesas, turnos con duracion y
+  rotacion, y asignacion a reservas.
+- Experiencias, menus y eventos con capacidad, inventario, servicios, ventanas
+  de venta y reglas de deposito por fecha y segmento.
+- CRUD bajo `/api/businesses/:id/vertical/{zones,combinations,shifts,experiences}`
+  y asignacion `POST /vertical/bookings/:bookingId/combination`.
+- Pruebas integradas en `npm.cmd run test:crm-growth-operations`.
+
+#### 3.3 Depositos, cancelacion y no-show — COMPLETADA 2026-07-18
+
+- [x] Deposito o garantia configurable por servicio, fecha y segmento.
+- [x] Politica visible, consentimiento, devolucion y disputa auditada.
+- [x] Recordatorios confirmables y recuperacion de huecos liberados.
+- [x] Riesgo de no-show explicable, nunca bloqueo opaco automatico.
+
+Entrega verificable:
+
+- Lista de espera publica/admin con flexibilidad, prioridad, oferta de 30
+  minutos, token seguro, aceptacion y conversion a reserva.
+- Checkout de señal con Stripe o adaptador de desarrollo, webhook firmado e
+  idempotente, estado pagado y garantia asegurada.
+- Politicas visibles y versionadas, aceptacion con evidencia inmutable y eventos
+  auditados de devolucion y disputa.
+- Confirmacion publica de recordatorio mediante token seguro en
+  `GET|POST /api/public/booking-reminders/:token`.
+- Al marcar no-show se explican factores de riesgo y se actualiza la señal/
+  garantia sin decisiones opacas automaticas.
+- Dashboard responsive con aforo, recurso asignado, riesgo, señal y acciones.
+- `npm.cmd run test:crm-booking-resources`, `check`, `smoke:pilot`,
+  `test:backend-security`, `test:crm-customer360` y
+  `test:crm-growth-operations` superados.
+
+#### 3.4 Planificacion operativa — COMPLETADA 2026-07-18
+
+- [x] Ocupacion, demanda prevista, rotacion, carga de personal y stock critico.
+- [x] Alertas accionables enlazadas al dato que las origina.
+
+Entrega verificable:
+
+- Plan diario por intervalo con ocupacion, demanda prevista, rotacion,
+  capacidad/carga de personal y stock critico.
+- Cada alerta incluye severidad, accion propuesta, entidad origen y URL al dato
+  que la explica.
+- `GET /api/businesses/:id/vertical/planning` y panel responsive en Reservas.
+- Cobertura determinista de calculos y fuentes en
+  `npm.cmd run test:crm-growth-operations`.
 
 ### Fase 4 - Analitica e IA segura
 
-#### 4.1 Analitica de ciclo completo
+#### 4.1 Analitica de ciclo completo — COMPLETADA 2026-07-18
 
-- [ ] Embudos configurables y tiempos de conversion por etapa.
-- [ ] Cohortes de primera visita, repeticion, retencion y churn.
-- [ ] Ingresos por canal, campaña, servicio, oportunidad y cliente.
-- [ ] Objetivos por negocio/equipo/persona con progreso y alertas.
-- [ ] Diccionario de metricas y enlace desde cada KPI a sus registros.
+- [x] Embudos configurables y tiempos de conversion por etapa.
+- [x] Cohortes de primera visita, repeticion, retencion y churn.
+- [x] Ingresos por canal, campaña, servicio, oportunidad y cliente.
+- [x] Objetivos por negocio/equipo/persona con progreso y alertas.
+- [x] Diccionario de metricas y enlace desde cada KPI a sus registros.
 
-#### 4.2 Prediccion explicable
+Entrega verificable:
 
-- [ ] Calibrar probabilidad de cierre con historico y tamaño de muestra.
-- [ ] Riesgo de abandono, no-show y stock con factores visibles.
-- [ ] Comparar modelo con regla simple y permitir desactivarlo.
+- Embudos con contactos unicos, conversion y mediana de transicion; cohortes de
+  primera visita, repeticion, retencion y churn.
+- Ingreso desglosado por canal, campaña, servicio, oportunidad y cliente.
+- Objetivos por negocio, equipo o usuario y diccionario que enlaza cada KPI a
+  su coleccion y registros fuente.
+- Centro `GET /api/businesses/:id/intelligence`, CRUD de `funnels` y `goals`,
+  y UI responsive en Analitica.
 
-#### 4.3 Copiloto operativo
+#### 4.2 Prediccion explicable — COMPLETADA 2026-07-18
 
-- [ ] Brief diario con prioridades, motivo y enlaces a evidencia.
-- [ ] Resumen de conversaciones y timeline con citas al registro fuente.
-- [ ] Borradores de respuesta y siguiente mejor accion revisables.
-- [ ] Consultas en lenguaje natural sobre metricas autorizadas.
-- [ ] Confirmacion explicita para enviar, borrar, cobrar, publicar o modificar
+- [x] Calibrar probabilidad de cierre con historico y tamaño de muestra.
+- [x] Riesgo de abandono, no-show y stock con factores visibles.
+- [x] Comparar modelo con regla simple y permitir desactivarlo.
+
+Entrega verificable:
+
+- Probabilidad calibrada solo con muestra suficiente y fallback visible a regla
+  base; comparacion modelo/baseline en cada resultado.
+- Riesgos de abandono, no-show y stock con factores y enlaces de evidencia.
+- Configuracion reversible en
+  `PUT|PATCH /api/businesses/:id/intelligence/predictions/settings`.
+
+#### 4.3 Copiloto operativo — COMPLETADA 2026-07-18
+
+- [x] Brief diario con prioridades, motivo y enlaces a evidencia.
+- [x] Resumen de conversaciones y timeline con citas al registro fuente.
+- [x] Borradores de respuesta y siguiente mejor accion revisables.
+- [x] Consultas en lenguaje natural sobre metricas autorizadas.
+- [x] Confirmacion explicita para enviar, borrar, cobrar, publicar o modificar
   permisos; registro completo de la accion humana y automatizada.
+
+Entrega verificable:
+
+- Brief priorizado y resumen de conversaciones/timeline con IDs y URLs de las
+  fuentes que justifican cada recomendacion.
+- Borradores revisables; nunca se presentan como enviados o ejecutados.
+- Consultas limitadas al diccionario de metricas autorizado mediante
+  `POST /api/businesses/:id/intelligence/query`.
+- Creacion de borrador y confirmacion humana idempotente en
+  `/intelligence/copilot/drafts` y `/intelligence/copilot/actions/confirm`.
+- Enviar, borrar, cobrar, publicar y cambiar permisos exigen confirmacion
+  explicita y dejan actor, objetivo, accion y resultado en auditoria.
+- `npm.cmd run test:crm-intelligence` cubre modelo, API, RBAC, aislamiento,
+  evidencia, navegador y seguridad de las acciones.
 
 ## 7. Orden de entrega y gates
 
@@ -525,5 +781,17 @@ Enlaces primarios para futuras decisiones tecnicas:
 | 2026-07-17 | 0.3 Responsables, tareas y colas | Completada | `test:crm-tasks`, `test:crm-deals`, `test:crm-accounts`, `check`, seguridad y smoke |
 | 2026-07-17 | 0.4 Consentimientos y preferencias | Completada | `test:crm-consent`, `check`, seguridad y smoke con ledger de leads/reservas |
 | 2026-07-17 | Reordenacion por analisis de huecos CRM | Completada | Cliente 360, bandeja real, automatizacion, campañas y quote-to-cash pasan delante; permisos queda como requisito transversal |
-| 2026-07-17 | 0.5 Usuarios, roles y permisos efectivos | Pendiente transversal | Debe incorporarse a cada modulo sensible y cerrarse antes de automatizaciones autonomas |
-| 2026-07-17 | 2.1 Cliente 360 y segmentacion | En curso | Agregacion de actividad, ingresos, RFM, riesgo, segmentos y siguiente mejor accion |
+| 2026-07-18 | 0.5 Usuarios, roles y permisos efectivos | Completada | Seis roles, sesiones firmadas, RBAC backend, aislamiento, auditoria, exportaciones y suplantacion; `test:crm-foundation` |
+| 2026-07-17 | 2.1 Cliente 360 y segmentacion | Completada | `test:crm-customer360`, `check`, seguridad, smoke y regresion de consentimiento |
+| 2026-07-18 | 0.6 Dinero normalizado | Completada | Facturas generales/hospitality, impuestos, lineas, pagos y enlaces normalizados; migracion idempotente y `test:crm-foundation` |
+| 2026-07-18 | 1.1 Bandeja omnicanal real | Completada | Email/WhatsApp, webhooks, identidad, entregas, adjuntos, asignacion, SLA, notas, colision, consentimiento, RBAC y UI responsive |
+| 2026-07-17 | 1.2 Secuencias comerciales | Entrega funcional completada | Email/tarea/WhatsApp, esperas, quiet hours, previsualizacion masiva, paradas por eventos y metricas de ciclo |
+| 2026-07-17 | 1.3 Constructor de automatizaciones | Entrega funcional completada | Motor versionado, ramas, worker, acciones, eventos reales, recetas, estudio responsive y pruebas |
+| 2026-07-18 | 1.4 Campos, vistas y pipelines configurables | Completada | Tipos, permisos, filtros compuestos, acciones masivas y reglas por etapa; `test:crm-foundation` |
+| 2026-07-17 | 2.2 Campañas y ciclo de vida | Completada | Segmentos, consentimiento, A/B limitado, snapshots, quiet hours, lotes, worker, atribucion, lifecycle, UI responsive y `test:crm-campaigns` |
+| 2026-07-17 | 2.3 Quote-to-cash | Completada | Lineas, impuestos, versiones, enlace seguro, vistas, comentarios, firma, aprobacion, proyecto/factura/suscripcion idempotentes, Checkout, pagos y UI responsive |
+| 2026-07-18 | 2.4 Centro de reputacion | Completada | Sincronizacion, sentimiento, urgencia, SLA, respuesta aprobada, solicitudes elegibles, tracking, KPI y `test:crm-reputation` |
+| 2026-07-18 | 2.5 Fidelizacion y referidos | Completada | Programa, ledger, caducidad, recompensas, canjes y referidos antiabuso; `test:crm-growth-operations` |
+| 2026-07-18 | 3.2-3.4 Operacion vertical | Completada | Zonas, combinaciones, turnos, experiencias, politicas, confirmaciones y planificacion; `test:crm-growth-operations` |
+| 2026-07-18 | 4.1-4.3 Analitica e IA segura | Completada | Embudos, cohortes, ingresos, objetivos, prediccion explicable y copiloto confirmado; `test:crm-intelligence` |
+| 2026-07-18 | Cierre integral CRM 2.0 | Completada | Sin casillas pendientes; gates globales, 27 suites CRM/operativas y escaneo de secretos superados. Detalle en `CRM_2_ENTREGA_FINAL.md` |

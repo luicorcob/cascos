@@ -1,12 +1,12 @@
 # Ahora
 
-Ultima actualizacion: 17 de julio de 2026.
+Ultima actualizacion: 18 de julio de 2026.
 
 Este es el panel de mando canonico de DLS. El objetivo anterior de arquitectura
 frontend del Studio esta completado y documentado en
 [`activo/ARQUITECTURA_FRONTEND_V2.md`](activo/ARQUITECTURA_FRONTEND_V2.md).
 
-## Objetivo activo
+## Objetivo completado
 
 Convertir el dashboard actual en un **CRM 2.0 y suite operativa vertical** para
 negocios locales, preservando lo ya construido y cerrando el ciclo completo:
@@ -27,28 +27,30 @@ Resultados que definen el exito:
 - Reservas modelan recursos, capacidad, espera, depositos y no-show.
 - Reputacion, cohortes, objetivos e IA producen acciones explicables.
 
-## Fase actual
+## Estado actual
 
-**Prioridad de producto — Cliente 360 y segmentacion accionable.**
+**CRM 2.0 y suite operativa vertical completados y verificados.**
 
-Los cimientos 0.1 a 0.4 estan completados y verificados. El analisis de huecos
-aportado el 17 de julio reordena la ejecucion: la tarea activa es **2.1,
-Cliente 360**, porque es el mayor hueco visible y vendible que puede construirse
-ya sobre contactos, relaciones, tareas y consentimientos. Roles y permisos 0.5
-se mantienen como requisito transversal de los modulos sensibles.
+El plan `CRM_2_EJECUCION.md` queda sin tareas pendientes. Incluye cimientos
+relacionales, seis roles con autorizacion backend, dinero normalizado,
+omnicanal, automatizaciones, campañas, quote-to-cash, Cliente 360, reputacion,
+fidelizacion, reservas y operacion vertical, analitica completa, prediccion
+explicable y copiloto con fuentes y confirmacion humana.
 
-## Siguientes acciones, en orden
+El contrato tecnico, los endpoints, las decisiones de seguridad y la evidencia
+de regresion estan resumidos en
+[`activo/CRM_2_ENTREGA_FINAL.md`](activo/CRM_2_ENTREGA_FINAL.md).
 
-1. Unificar en una ficha Cliente 360 contactos, actividad, reservas,
-   oportunidades, conversaciones, propuestas, proyectos, facturas y pagos.
-2. Calcular gasto, ticket medio, frecuencia, ultima y proxima visita, LTV,
-   RFM, no-show y riesgo con explicaciones visibles.
-3. Crear segmentos dinamicos con recuento y muestra: VIP, recurrentes,
-   nuevos, en riesgo, inactivos y con saldo pendiente.
-4. Proponer una siguiente mejor accion explicable y compatible con los
-   consentimientos efectivos del contacto.
-5. Publicar el workspace responsive en la pestaña Clientes.
-6. Verificar modelo, API multiempresa, navegador y regresiones obligatorias.
+## Siguientes acciones operativas
+
+1. Configurar credenciales reales de Google, email, WhatsApp y Stripe en el
+   entorno de despliegue que corresponda.
+2. Ejecutar migraciones en modo simulacion, revisar el resumen y aplicar sobre
+   una copia de seguridad verificada.
+3. Crear el primer usuario propietario de cada negocio y revisar su matriz de
+   roles.
+4. Hacer una aceptacion de usuario con datos reales antes de activar envios,
+   publicaciones o cobros de produccion.
 
 ## Verificacion obligatoria
 
@@ -75,9 +77,9 @@ Google conservan `npm.cmd run test:google`; los del Studio conservan
   controles definidos en el plan.
 - Una tarea solo se cierra con modelo, API, UI, compatibilidad y pruebas.
 
-## Pospuesto hasta que lo desbloquee su fase
+## Fuera del contrato cerrado
 
-- IA autonoma o prediccion antes de normalizar datos y permisos.
-- Canales adicionales antes de estabilizar email y WhatsApp.
-- Marketplace de integraciones antes de tener adaptadores internos solidos.
-- Personalizacion ilimitada que complique los flujos verticales principales.
+- Canales adicionales a email y WhatsApp.
+- Marketplace publico de integraciones.
+- Personalizacion ilimitada fuera de los flujos verticales entregados.
+- Acciones autonomas sensibles sin confirmacion humana.
