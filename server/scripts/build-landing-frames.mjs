@@ -12,6 +12,7 @@ const WEBP_QUALITY = 0.68;
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(SCRIPT_DIR, "..", "..");
 const OUTPUT_DIR = path.join(PROJECT_ROOT, "assets", "landing", "sequence");
+const SITE_HERO_SOURCE = path.join(PROJECT_ROOT, "assets", "landing", "lumen-premium-hero.png");
 const STAGING_DIR = path.join(OUTPUT_DIR, ".landing-frames-build");
 const FRAME_NAME = /^frame-(\d{3})\.webp$/;
 const VERIFY_ONLY = process.argv.includes("--verify-only");
@@ -61,12 +62,15 @@ async function buildFrames() {
   const page = await waitForPage(debugPort);
   cdp = await createCdpClient(page.webSocketDebuggerUrl);
   await cdp.send("Runtime.enable");
+  const siteHeroSource = await readFile(SITE_HERO_SOURCE);
+  const siteHeroDataUrl = `data:image/png;base64,${siteHeroSource.toString("base64")}`;
 
   const setup = await evaluate(
     `(${installLandingFrameRenderer.toString()})(${JSON.stringify({
       width: WIDTH,
       height: HEIGHT,
-      quality: WEBP_QUALITY
+      quality: WEBP_QUALITY,
+      siteHeroDataUrl
     })})`
   );
   if (!setup?.ready || setup.width !== WIDTH || setup.height !== HEIGHT) {
@@ -382,7 +386,7 @@ function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function installLandingFrameRenderer({ width, height, quality }) {
+async function installLandingFrameRenderer({ width, height, quality, siteHeroDataUrl }) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -419,6 +423,9 @@ function installLandingFrameRenderer({ width, height, quality }) {
     { label: "CRM", start: 58 },
     { label: "IA", start: 74 }
   ];
+  const siteHeroImage = new Image();
+  siteHeroImage.src = siteHeroDataUrl;
+  await siteHeroImage.decode();
 
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
@@ -699,50 +706,59 @@ function installLandingFrameRenderer({ width, height, quality }) {
     ctx.save();
     roundedPath(421, 214, 704, 369, 14);
     ctx.clip();
-    ctx.fillStyle = "#f0ede6";
+    ctx.fillStyle = "#070b0f";
     ctx.fillRect(421, 214, 704, 369);
     reveal(t, 0.04, () => {
-      ctx.fillStyle = "#171611";
+      ctx.fillStyle = "#070a0d";
       ctx.fillRect(421, 214, 704, 46);
-      drawText("LUMEN", 447, 243, 11, 700, "#faf7ee");
-      drawText("Carta", 1010, 242, 8, 700, "#d8d1c2");
-      drawText("Visítanos", 1067, 242, 8, 700, "#d8d1c2");
+      ctx.fillStyle = "#ff715b";
+      ctx.fillRect(447, 229, 12, 12);
+      drawText("LUMEN", 469, 243, 11, 700, "#f7f8f4");
+      drawText("EL CAFÉ", 914, 242, 8, 700, "#c9ced2");
+      drawText("EL ESPACIO", 975, 242, 8, 700, "#c9ced2");
+      fillRound(1050, 224, 54, 26, 13, "#f2f4ee");
+      drawText("VISITAR", 1077, 241, 7, 700, "#090d10", "center");
     });
     reveal(t, 0.18, () => {
-      const hero = ctx.createLinearGradient(421, 260, 806, 515);
-      hero.addColorStop(0, "#c79969");
-      hero.addColorStop(1, "#5f3d2c");
-      ctx.fillStyle = hero;
-      ctx.fillRect(421, 260, 385, 255);
-      ctx.fillStyle = "rgba(255,245,223,0.18)";
-      ctx.beginPath();
-      ctx.arc(585, 367, 86, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "rgba(34,21,12,0.42)";
-      ctx.beginPath();
-      ctx.ellipse(610, 410, 83, 31, -0.13, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#ead2ac";
-      ctx.beginPath();
-      ctx.ellipse(610, 397, 55, 22, -0.13, 0, Math.PI * 2);
-      ctx.fill();
+      drawImageCover(siteHeroImage, 421, 260, 704, 255);
+      const shade = ctx.createLinearGradient(421, 260, 955, 260);
+      shade.addColorStop(0, "rgba(4,8,11,0.96)");
+      shade.addColorStop(0.5, "rgba(4,8,11,0.58)");
+      shade.addColorStop(0.78, "rgba(4,8,11,0.10)");
+      shade.addColorStop(1, "rgba(4,8,11,0)");
+      ctx.fillStyle = shade;
+      ctx.fillRect(421, 260, 704, 255);
+      const floorShade = ctx.createLinearGradient(0, 390, 0, 515);
+      floorShade.addColorStop(0, "rgba(3,7,10,0)");
+      floorShade.addColorStop(1, "rgba(3,7,10,0.68)");
+      ctx.fillStyle = floorShade;
+      ctx.fillRect(421, 390, 704, 125);
     });
     reveal(t, 0.34, () => {
-      ctx.fillStyle = "#f6f1e7";
-      ctx.fillRect(806, 260, 319, 255);
-      drawText("CAFÉ DE ORIGEN", 840, 307, 9, 700, "#9a6e43");
-      drawText("Una pausa con", 840, 353, 25, 700, "#242018");
-      drawText("luz propia.", 840, 383, 25, 700, "#242018");
-      drawText("Tostado cerca. Servido despacio.", 840, 416, 10, 500, "#776f63");
-      fillRound(840, 441, 119, 34, 17, "#29251e");
-      drawText("VER LA CARTA", 899, 462, 8, 700, "#f8f4ea", "center");
+      drawText("CAFÉ DE ESPECIALIDAD  ·  MADRID", 453, 298, 8, 700, "#8ef0db");
+      drawText("CAFÉ, DISEÑO", 452, 351, 31, 700, "#f7f8f4");
+      drawText("Y CULTURA.", 452, 385, 31, 700, "#f7f8f4");
+      drawText("Origen consciente. Arquitectura para quedarse.", 453, 413, 9, 500, "#c8ced1");
+      fillRound(452, 438, 118, 36, 18, "#ff715b");
+      drawText("DESCUBRIR LUMEN", 511, 461, 7, 700, "#101010", "center");
+      ctx.strokeStyle = "rgba(247,248,244,0.42)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(1090, 478, 18, 0, Math.PI * 2);
+      ctx.stroke();
+      drawArrow(1096, 478, 0.65, "#f7f8f4");
     });
     reveal(t, 0.52, () => {
-      ctx.fillStyle = "#dcd3c4";
+      ctx.fillStyle = "#080c10";
       ctx.fillRect(421, 515, 704, 68);
-      ["Especialidad", "Desayunos", "Tueste local"].forEach((label, index) => {
-        drawText(label, 514 + index * 218, 553, 9, 700, "#4f493f", "center");
-      });
+      drawText("4.9", 452, 546, 18, 700, "#f7f8f4");
+      drawText("VALORACIÓN LOCAL", 452, 562, 7, 700, "#6f7c84");
+      drawText("06:30—20:00", 633, 546, 14, 700, "#f7f8f4");
+      drawText("CADA DÍA", 633, 562, 7, 700, "#6f7c84");
+      drawText("CHAMBERÍ", 840, 546, 14, 700, "#f7f8f4");
+      drawText("MADRID", 840, 562, 7, 700, "#6f7c84");
+      fillRound(1037, 533, 66, 28, 14, "rgba(142,240,219,0.12)", "rgba(142,240,219,0.28)");
+      drawText("ABIERTO", 1070, 551, 7, 700, "#8ef0db", "center");
     });
     if (t < 0.76) {
       const shimmerX = 421 + (704 + 180) * smoothstep(0.04, 0.78, t) - 180;
@@ -1139,34 +1155,69 @@ function installLandingFrameRenderer({ width, height, quality }) {
     ctx.save();
     roundedPath(innerX, innerY, innerW, innerH, 11);
     ctx.clip();
-    ctx.fillStyle = "#eee9df";
+    ctx.fillStyle = "#080c10";
     ctx.fillRect(innerX, innerY, innerW, innerH);
-    ctx.fillStyle = "#1c1a15";
-    ctx.fillRect(innerX, innerY, innerW, compact ? 35 : 43);
-    drawText("LUMEN", innerX + 18, innerY + (compact ? 23 : 28), compact ? 8 : 10, 700, "#f7f1e8");
+    const navH = compact ? 35 : 43;
+    const heroY = innerY + navH;
+    const heroH = innerH - navH;
+    drawImageCover(siteHeroImage, innerX, heroY, innerW, heroH);
+    const shade = ctx.createLinearGradient(innerX, heroY, innerX + innerW * 0.82, heroY);
+    shade.addColorStop(0, "rgba(3,7,10,0.98)");
+    shade.addColorStop(0.55, "rgba(3,7,10,0.63)");
+    shade.addColorStop(1, "rgba(3,7,10,0)");
+    ctx.fillStyle = shade;
+    ctx.fillRect(innerX, heroY, innerW, heroH);
+    const floorShade = ctx.createLinearGradient(0, heroY + heroH * 0.54, 0, heroY + heroH);
+    floorShade.addColorStop(0, "rgba(3,7,10,0)");
+    floorShade.addColorStop(1, "rgba(3,7,10,0.86)");
+    ctx.fillStyle = floorShade;
+    ctx.fillRect(innerX, heroY, innerW, heroH);
 
-    const heroY = innerY + (compact ? 35 : 43);
-    const imageW = Math.round(innerW * 0.53);
-    const imageGradient = ctx.createLinearGradient(innerX, heroY, innerX + imageW, heroY + innerH);
-    imageGradient.addColorStop(0, "#c89968");
-    imageGradient.addColorStop(1, "#674331");
-    ctx.fillStyle = imageGradient;
-    ctx.fillRect(innerX, heroY, imageW, innerH - (compact ? 35 : 43));
-    ctx.fillStyle = "rgba(252,222,174,0.28)";
-    ctx.beginPath();
-    ctx.arc(innerX + imageW * 0.47, heroY + innerH * 0.34, Math.min(54, innerW * 0.14), 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = "rgba(5,9,12,0.94)";
+    ctx.fillRect(innerX, innerY, innerW, navH);
+    ctx.fillStyle = "#ff715b";
+    ctx.fillRect(innerX + 17, innerY + (compact ? 11 : 14), compact ? 9 : 11, compact ? 9 : 11);
+    drawText("LUMEN", innerX + (compact ? 34 : 39), innerY + (compact ? 23 : 28), compact ? 8 : 10, 700, "#f7f8f4");
+    drawText(
+      "MADRID  ·  ES",
+      innerX + innerW - 17,
+      innerY + (compact ? 23 : 28),
+      compact ? 6 : 7,
+      700,
+      "#849098",
+      "right"
+    );
 
-    ctx.fillStyle = "#f7f2e9";
-    ctx.fillRect(innerX + imageW, heroY, innerW - imageW, innerH);
-    const textX = innerX + imageW + 20;
-    drawText("CAFÉ DE ORIGEN", textX, heroY + 36, compact ? 6 : 7, 700, "#9a6e43");
-    drawText("Una pausa con", textX, heroY + 69, compact ? 14 : 18, 700, "#242018");
-    drawText("luz propia.", textX, heroY + 91, compact ? 14 : 18, 700, "#242018");
-    ctx.fillStyle = "#d4cdc0";
-    ctx.fillRect(textX, heroY + 110, Math.max(55, innerW - imageW - 42), 4);
-    ctx.fillRect(textX, heroY + 121, Math.max(40, innerW - imageW - 80), 4);
-    fillRound(textX, heroY + 143, compact ? 78 : 96, compact ? 25 : 30, 14, "#29251e");
+    const textX = innerX + (compact ? 22 : 24);
+    drawText("CAFÉ DE ESPECIALIDAD", textX, heroY + (compact ? 28 : 40), compact ? 6 : 7, 700, "#8ef0db");
+    drawText("CAFÉ, DISEÑO", textX, heroY + (compact ? 57 : 79), compact ? 17 : 21, 700, "#f7f8f4");
+    drawText("Y CULTURA.", textX, heroY + (compact ? 78 : 103), compact ? 17 : 21, 700, "#f7f8f4");
+    drawText(
+      "Origen consciente. Espacios con carácter.",
+      textX,
+      heroY + (compact ? 99 : 129),
+      compact ? 6 : 7,
+      500,
+      "#c7ced1"
+    );
+    fillRound(
+      textX,
+      heroY + (compact ? 112 : 147),
+      compact ? 76 : 92,
+      compact ? 23 : 28,
+      14,
+      "#ff715b"
+    );
+    drawText(
+      "DESCUBRIR",
+      textX + (compact ? 38 : 46),
+      heroY + (compact ? 127 : 165),
+      compact ? 6 : 7,
+      700,
+      "#101010",
+      "center"
+    );
+    drawText("4.9  ·  CHAMBERÍ  ·  ABIERTO", textX, heroY + heroH - 14, compact ? 6 : 7, 700, "#f7f8f4");
     ctx.restore();
 
     if (revealProgress < 0.96 && !compact) {
@@ -1327,6 +1378,23 @@ function installLandingFrameRenderer({ width, height, quality }) {
     ctx.translate(0, (1 - amount) * 13);
     draw();
     ctx.restore();
+  }
+
+  function drawImageCover(image, x, y, w, h) {
+    const imageRatio = image.naturalWidth / image.naturalHeight;
+    const targetRatio = w / h;
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceW = image.naturalWidth;
+    let sourceH = image.naturalHeight;
+    if (imageRatio > targetRatio) {
+      sourceW = image.naturalHeight * targetRatio;
+      sourceX = (image.naturalWidth - sourceW) / 2;
+    } else {
+      sourceH = image.naturalWidth / targetRatio;
+      sourceY = (image.naturalHeight - sourceH) / 2;
+    }
+    ctx.drawImage(image, sourceX, sourceY, sourceW, sourceH, x, y, w, h);
   }
 
   function drawText(text, x, y, size, weight, color, align = "left") {
