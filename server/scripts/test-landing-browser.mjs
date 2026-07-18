@@ -71,7 +71,9 @@ try {
   });
 
   await auditDesktop();
+  await auditDesktopProcess();
   await auditMobile();
+  await auditMobileProcess();
   await auditReducedMotion();
   await auditWorkspaceEntry();
 
@@ -263,6 +265,103 @@ async function auditMobile() {
   }
 }
 
+async function auditDesktopProcess() {
+  await setViewport(1440, 1000, false);
+  await cdp.send("Emulation.setEmulatedMedia", { media: "", features: [] });
+  await navigateAndWait(`${landingUrl}?process=desktop`);
+  await waitForExpression(`
+    document.querySelector("#dlsLanding")?.classList.contains("is-motion-ready") &&
+    Boolean(window.ScrollTrigger?.getById?.("dls-landing-timeline")) &&
+    (
+      document.querySelector("#demostracion")?.classList.contains("is-story-ready") ||
+      document.querySelector("#demostracion")?.classList.contains("is-story-fallback")
+    )
+  `);
+  await evaluateObject(`document.querySelector('a[href="#como-funciona"]').click()`);
+  await waitForExpression(`window.location.hash === "#como-funciona"`);
+  await delay(2200);
+  await evaluateObject(
+    `(() => {
+      window.ScrollTrigger.getById("dls-landing-timeline").animation.progress(0.12);
+      return true;
+    })()`
+  );
+  const early = await readProcessState();
+
+  await evaluateObject(
+    `(() => {
+      window.ScrollTrigger.getById("dls-landing-timeline").animation.progress(0.9);
+      return true;
+    })()`
+  );
+  const late = await readProcessState();
+
+  assert.deepEqual(late.errors, []);
+  assert.equal(late.phaseCount, 4);
+  assert.ok(late.widthOverflow <= 1, `Desktop process overflow: ${late.widthOverflow}px`);
+  assert.ok(late.stageLeft >= 0 && late.stageRight <= 1440);
+  assert.ok(late.pathLength > 500);
+  assert.ok(early.activeIndex <= 1, `Unexpected early process phase: ${early.activeIndex}`);
+  assert.ok(late.activeIndex >= 2, `Process did not advance: ${late.activeIndex}`);
+  assert.ok(
+    late.dashOffset < early.dashOffset,
+    `Process route did not draw: ${early.dashOffset} -> ${late.dashOffset}`
+  );
+  assert.notEqual(late.signalTransform, "");
+  await captureScreenshot("desktop-process");
+}
+
+async function auditMobileProcess() {
+  await setViewport(390, 844, true);
+  await cdp.send("Emulation.setEmulatedMedia", { media: "", features: [] });
+  await navigateAndWait(`${landingUrl}?process=mobile#como-funciona`);
+  await waitForExpression(`
+    document.querySelector("#dlsLanding")?.classList.contains("is-motion-ready") &&
+    Boolean(window.ScrollTrigger?.getById?.("dls-landing-timeline"))
+  `);
+
+  const range = await evaluateObject(`(() => {
+    const trigger = window.ScrollTrigger.getById("dls-landing-timeline");
+    return { start: trigger.start, end: trigger.end };
+  })()`);
+  await evaluateObject(`(() => {
+    const scroller = document.querySelector(".dls-landing-scroll");
+    scroller.scrollTop = ${range.start} + (${range.end} - ${range.start}) * 0.74;
+    window.ScrollTrigger.update();
+    window.ScrollTrigger.getById("dls-landing-timeline").animation.progress(0.74);
+    return scroller.scrollTop;
+  })()`);
+  await delay(1000);
+  await evaluateObject(
+    `(() => {
+      window.ScrollTrigger.getById("dls-landing-timeline").animation.progress(0.74);
+      return true;
+    })()`
+  );
+
+  const state = await readProcessState();
+  const mobile = await evaluateObject(`(() => {
+    const route = document.querySelector(".dls-process-route");
+    const compact = document.querySelector(".dls-process-compact-route");
+    const module = document.querySelector(".dls-process-module").getBoundingClientRect();
+    return {
+      routeDisplay: getComputedStyle(route).display,
+      compactDisplay: getComputedStyle(compact).display,
+      moduleLeft: module.left,
+      moduleRight: module.right
+    };
+  })()`);
+
+  assert.deepEqual(state.errors, []);
+  assert.ok(state.widthOverflow <= 1, `Mobile process overflow: ${state.widthOverflow}px`);
+  assert.equal(state.phaseCount, 4);
+  assert.ok(state.activeIndex >= 1);
+  assert.equal(mobile.routeDisplay, "none");
+  assert.notEqual(mobile.compactDisplay, "none");
+  assert.ok(mobile.moduleLeft >= 0 && mobile.moduleRight <= 390);
+  await captureScreenshot("mobile-process");
+}
+
 async function auditReducedMotion() {
   await setViewport(1440, 1000, false);
   await cdp.send("Emulation.setEmulatedMedia", {
@@ -327,6 +426,27 @@ async function clickStoryAnchor(hash) {
 async function currentStoryFrame() {
   const label = await evaluateObject(`document.querySelector("[data-story-frame]").textContent`);
   return Number(String(label).match(/\d+/)?.[0] || 0);
+}
+
+async function readProcessState() {
+  return evaluateObject(`(() => {
+    const scroller = document.querySelector(".dls-landing-scroll");
+    const stage = document.querySelector("[data-process-stage]").getBoundingClientRect();
+    const path = document.querySelector("[data-timeline-path]");
+    const phases = [...document.querySelectorAll("[data-process-step]")];
+    return {
+      errors: window.__dlsLandingErrors,
+      widthOverflow: scroller.scrollWidth - scroller.clientWidth,
+      phaseCount: phases.length,
+      activeIndex: phases.findIndex((phase) => phase.classList.contains("is-active")),
+      stageLeft: stage.left,
+      stageRight: stage.right,
+      pathLength: path.getTotalLength(),
+      dashOffset: Number.parseFloat(getComputedStyle(path).strokeDashoffset),
+      signalTransform:
+        document.querySelector("[data-process-signal]").getAttribute("transform") || ""
+    };
+  })()`);
 }
 
 async function setViewport(width, height, mobile) {

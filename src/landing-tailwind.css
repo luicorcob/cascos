@@ -1739,123 +1739,1264 @@
     text-transform: uppercase;
   }
 
+  /* Premium process system */
   .dls-process {
+    --dls-process-progress: 0;
     position: relative;
+    isolation: isolate;
     overflow: clip;
-    padding: var(--spacing-dls-16) 0;
+    padding: clamp(8rem, 11vw, 11rem) 0;
     background:
-      radial-gradient(circle at 15% 72%, rgb(255 130 111 / 0.045), transparent 28rem),
-      var(--color-dls-panel);
+      radial-gradient(circle at 48% 35%, rgb(105 231 242 / 0.055), transparent 34rem),
+      linear-gradient(180deg, #0b1017, #090d13 72%, var(--color-dls-ink));
   }
 
-  .dls-process-timeline {
-    position: relative;
-    margin-top: var(--spacing-dls-10);
-    padding-top: var(--spacing-dls-3);
-  }
-
-  .dls-process-line {
+  .dls-process::before,
+  .dls-process::after {
     position: absolute;
-    z-index: 0;
-    top: 0;
+    z-index: 3;
     left: 0;
     width: 100%;
-    height: 7.5rem;
+    height: 0.0625rem;
+    pointer-events: none;
+    content: "";
+  }
+
+  .dls-process::before {
+    top: 0;
+    background: linear-gradient(90deg, transparent, rgb(105 231 242 / 0.24), transparent);
+  }
+
+  .dls-process::after {
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgb(147 135 255 / 0.2), transparent);
+  }
+
+  .dls-process-ambient,
+  .dls-process-grid,
+  .dls-process-beam {
+    position: absolute;
+    pointer-events: none;
+    inset: 0;
+  }
+
+  .dls-process-ambient {
+    z-index: -1;
+    overflow: hidden;
+  }
+
+  .dls-process-grid {
+    opacity: 0.34;
+    background-image:
+      linear-gradient(rgb(244 247 251 / 0.045) 0.0625rem, transparent 0.0625rem),
+      linear-gradient(90deg, rgb(244 247 251 / 0.045) 0.0625rem, transparent 0.0625rem);
+    background-size: 5rem 5rem;
+    mask-image: linear-gradient(to bottom, transparent, black 14% 84%, transparent);
+  }
+
+  .dls-process-glow {
+    position: absolute;
+    display: block;
+    width: clamp(28rem, 46vw, 52rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    opacity: 0.42;
+    filter: blur(2rem);
+  }
+
+  .dls-process-glow-a {
+    top: 8%;
+    left: -20%;
+    background: radial-gradient(circle, rgb(105 231 242 / 0.18), transparent 68%);
+  }
+
+  .dls-process-glow-b {
+    right: -22%;
+    bottom: -8%;
+    background: radial-gradient(circle, rgb(147 135 255 / 0.18), transparent 68%);
+  }
+
+  .dls-process-beam {
+    left: calc((var(--dls-process-progress) * 100%) - 18%);
+    width: 36%;
+    background: linear-gradient(
+      100deg,
+      transparent 18%,
+      rgb(105 231 242 / 0.025) 46%,
+      rgb(147 135 255 / 0.055) 50%,
+      transparent 78%
+    );
+    filter: blur(0.125rem);
+    transform: skewX(-12deg);
+    will-change: left;
+  }
+
+  .dls-process > .dls-container {
+    position: relative;
+    z-index: 1;
+  }
+
+  .dls-process-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(19rem, 0.8fr);
+    gap: clamp(3rem, 7vw, 7rem);
+    align-items: end;
+    margin-bottom: clamp(3.5rem, 7vw, 6rem);
+  }
+
+  .dls-process-heading-main {
+    min-width: 0;
+  }
+
+  .dls-process-heading .dls-eyebrow > span {
+    display: inline-block;
+    width: 2rem;
+    height: 0.0625rem;
+    flex: none;
+    background: currentColor;
+    box-shadow: 0 0 1.25rem currentColor;
+  }
+
+  .dls-process-heading h2 {
+    max-width: 10ch;
+    margin-top: var(--spacing-dls-3);
+    color: var(--color-dls-paper);
+    font-size: clamp(4rem, 6.6vw, 6.75rem);
+    font-weight: 600;
+    letter-spacing: -0.068em;
+    line-height: 0.94;
+    text-wrap: balance;
+  }
+
+  .dls-process-heading h2 > span {
+    background: linear-gradient(
+      112deg,
+      var(--color-dls-cyan) 5%,
+      #8dc5ff 48%,
+      var(--color-dls-violet) 96%
+    );
+    color: transparent;
+    text-shadow: 0 0 3rem rgb(105 231 242 / 0.12);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .dls-process-heading-side {
+    padding-bottom: 0.375rem;
+  }
+
+  .dls-process-heading-side > p {
+    max-width: 32rem;
+    color: rgb(244 247 251 / 0.66);
+    font-size: clamp(1rem, 1.35vw, 1.125rem);
+    line-height: 1.75;
+    text-wrap: pretty;
+  }
+
+  .dls-process-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    margin-top: var(--spacing-dls-4);
+  }
+
+  .dls-process-meta > span {
+    display: inline-flex;
+    min-height: 2.125rem;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border: 0.0625rem solid rgb(244 247 251 / 0.1);
+    border-radius: var(--radius-dls-pill);
+    background: rgb(244 247 251 / 0.035);
+    color: rgb(244 247 251 / 0.58);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .dls-process-meta strong {
+    color: var(--color-dls-paper);
+    font-size: 0.75rem;
+  }
+
+  .dls-process-meta i {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 50%;
+    background: var(--color-dls-cyan);
+    box-shadow: 0 0 0.875rem rgb(105 231 242 / 0.8);
+  }
+
+  .dls-process-stage {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 0.0625rem solid rgb(244 247 251 / 0.13);
+    border-radius: 2rem;
+    background:
+      radial-gradient(circle at 8% 0%, rgb(105 231 242 / 0.08), transparent 24rem),
+      radial-gradient(circle at 92% 100%, rgb(147 135 255 / 0.085), transparent 26rem),
+      linear-gradient(145deg, rgb(244 247 251 / 0.045), rgb(244 247 251 / 0.012)),
+      #0b1017;
+    box-shadow:
+      0 4rem 9rem rgb(0 0 0 / 0.38),
+      inset 0 0.0625rem rgb(255 255 255 / 0.07),
+      inset 0 -0.0625rem rgb(0 0 0 / 0.32);
+  }
+
+  .dls-process-stage::before {
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    left: 8%;
+    width: 38%;
+    height: 0.0625rem;
+    background: linear-gradient(90deg, transparent, rgb(105 231 242 / 0.72), transparent);
+    content: "";
+    filter: drop-shadow(0 0 0.625rem rgb(105 231 242 / 0.6));
+  }
+
+  .dls-process-stage::after {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background-image:
+      linear-gradient(rgb(244 247 251 / 0.026) 0.0625rem, transparent 0.0625rem),
+      linear-gradient(90deg, rgb(244 247 251 / 0.026) 0.0625rem, transparent 0.0625rem);
+    background-size: 2rem 2rem;
+    content: "";
+    mask-image: linear-gradient(to bottom, black, transparent 54%);
+  }
+
+  .dls-process-stage-topbar {
+    position: relative;
+    z-index: 4;
+    display: grid;
+    min-height: 4.5rem;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--spacing-dls-2);
+    padding: 0 var(--spacing-dls-3);
+    border-bottom: 0.0625rem solid rgb(244 247 251 / 0.09);
+    background: rgb(7 9 13 / 0.5);
+  }
+
+  .dls-process-stage-brand,
+  .dls-process-stage-current,
+  .dls-process-live {
+    display: flex;
+    align-items: center;
+  }
+
+  .dls-process-stage-brand {
+    gap: 0.75rem;
+    color: rgb(244 247 251 / 0.72);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+  }
+
+  .dls-process-stage-brand > span {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .dls-process-stage-brand i {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: rgb(244 247 251 / 0.17);
+  }
+
+  .dls-process-stage-brand i:first-child {
+    background: var(--color-dls-coral);
+    box-shadow: 0 0 0.625rem rgb(255 130 111 / 0.35);
+  }
+
+  .dls-process-stage-brand i:nth-child(2) {
+    background: var(--color-dls-violet);
+  }
+
+  .dls-process-stage-brand i:last-child {
+    background: var(--color-dls-cyan);
+  }
+
+  .dls-process-stage-current {
+    min-height: 2.25rem;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border: 0.0625rem solid rgb(244 247 251 / 0.09);
+    border-radius: var(--radius-dls-pill);
+    background: rgb(244 247 251 / 0.035);
+    color: rgb(244 247 251 / 0.44);
+    font-size: 0.5625rem;
+    letter-spacing: 0.1em;
+  }
+
+  .dls-process-stage-current strong {
+    min-width: 1.25rem;
+    color: var(--color-dls-cyan);
+    font-size: 0.75rem;
+    text-align: center;
+    text-shadow: 0 0 1rem rgb(105 231 242 / 0.7);
+  }
+
+  .dls-process-stage-current > i {
+    width: 0.0625rem;
+    height: 0.875rem;
+    margin-inline: 0.125rem;
+    background: rgb(244 247 251 / 0.12);
+  }
+
+  .dls-process-stage-current b {
+    min-width: 4.5rem;
+    color: rgb(244 247 251 / 0.78);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .dls-process-live {
+    justify-self: end;
+    gap: 0.5rem;
+    color: rgb(244 247 251 / 0.48);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .dls-process-live i {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--color-dls-cyan);
+    box-shadow: 0 0 0.875rem rgb(105 231 242 / 0.8);
+  }
+
+  .dls-process-route {
+    position: relative;
+    z-index: 3;
+    height: 8.75rem;
+    padding: 1.25rem 1.5rem 0;
+    border-bottom: 0.0625rem solid rgb(244 247 251 / 0.075);
+    background: linear-gradient(180deg, rgb(7 9 13 / 0.34), transparent);
+  }
+
+  .dls-process-route svg {
+    width: 100%;
+    height: 100%;
     overflow: visible;
     fill: none;
   }
 
-  .dls-process-line-base,
-  .dls-process-line-active {
+  .dls-process-route-base,
+  .dls-process-route-active {
     vector-effect: non-scaling-stroke;
     stroke-linecap: round;
     stroke-linejoin: round;
+  }
+
+  .dls-process-route-base {
+    stroke: rgb(244 247 251 / 0.105);
     stroke-width: 1.25;
   }
 
-  .dls-process-line-base {
-    stroke: rgb(244 247 251 / 0.12);
+  .dls-process-route-active {
+    stroke: url("#dlsProcessRouteGradient");
+    stroke-width: 2.25;
+    filter: url("#dlsProcessRouteGlow");
   }
 
-  .dls-process-line-active {
+  .dls-process-signal {
+    opacity: 0;
+    will-change: transform;
+  }
+
+  .has-motion .dls-process-signal {
+    opacity: 1;
+  }
+
+  .dls-process-signal circle:first-child {
+    fill: rgb(105 231 242 / 0.1);
+    stroke: rgb(105 231 242 / 0.25);
+    stroke-width: 1;
+  }
+
+  .dls-process-signal circle:last-child {
+    fill: var(--color-dls-paper);
     stroke: var(--color-dls-cyan);
-    stroke-dasharray: 1;
-    stroke-dashoffset: 0;
-    filter: drop-shadow(0 0 0.5rem rgb(105 231 242 / 0.42));
+    stroke-width: 2;
+    filter: drop-shadow(0 0 0.55rem rgb(105 231 242 / 1));
   }
 
-  .has-motion .dls-process-line-active {
-    stroke-dashoffset: 1;
+  .dls-process-route-node {
+    color: rgb(244 247 251 / 0.2);
+    transition:
+      color 360ms var(--ease-dls-out),
+      opacity 360ms var(--ease-dls-out);
   }
 
-  .dls-process-timeline ol {
+  .dls-process-node-halo {
+    fill: #0b1017;
+    stroke: currentColor;
+    stroke-width: 1;
+  }
+
+  .dls-process-node-core {
+    fill: currentColor;
+    stroke: #0b1017;
+    stroke-width: 4;
+  }
+
+  .dls-process-route-node text {
+    fill: rgb(244 247 251 / 0.34);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-anchor: middle;
+  }
+
+  .dls-process-route-node.is-complete {
+    color: rgb(105 231 242 / 0.58);
+  }
+
+  .dls-process-route-node.is-active {
+    color: var(--color-dls-cyan);
+  }
+
+  .dls-process-route-node.is-active .dls-process-node-halo {
+    fill: rgb(105 231 242 / 0.06);
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 0.65rem rgb(105 231 242 / 0.5));
+  }
+
+  .dls-process-route-node.is-active text {
+    fill: var(--color-dls-cyan);
+  }
+
+  .dls-process-compact-route {
+    display: none;
+  }
+
+  .dls-process-phases {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--spacing-dls-2);
   }
 
-  .dls-process-timeline li {
-    display: grid;
+  .dls-process-phase {
+    --dls-process-accent: 105 231 242;
+    position: relative;
     min-width: 0;
-    grid-template-rows: 5rem auto;
-    gap: var(--spacing-dls-3);
+    border-right: 0.0625rem solid rgb(244 247 251 / 0.08);
   }
 
-  .dls-process-timeline li:nth-child(even) {
-    padding-top: 2rem;
+  .dls-process-phase:nth-child(2) {
+    --dls-process-accent: 114 178 255;
   }
 
-  .dls-process-timeline li > span {
+  .dls-process-phase:nth-child(3) {
+    --dls-process-accent: 147 135 255;
+  }
+
+  .dls-process-phase:nth-child(4) {
+    --dls-process-accent: 160 130 255;
+    border-right: 0;
+  }
+
+  .dls-process-module {
+    position: relative;
+    display: flex;
+    min-height: 34rem;
+    flex-direction: column;
+    padding: 1.75rem;
+    overflow: hidden;
+    background:
+      radial-gradient(
+        circle at 50% 22%,
+        rgb(var(--dls-process-accent) / 0.035),
+        transparent 16rem
+      ),
+      rgb(7 9 13 / 0.16);
+    transition:
+      background-color 360ms var(--ease-dls-out),
+      box-shadow 360ms var(--ease-dls-out),
+      opacity 360ms var(--ease-dls-out),
+      transform 360ms var(--ease-dls-out);
+  }
+
+  .dls-process-module::before {
+    position: absolute;
+    top: 0;
+    left: 1.75rem;
+    width: calc(100% - 3.5rem);
+    height: 0.125rem;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--dls-process-accent) / 0.92),
+      transparent
+    );
+    content: "";
+    opacity: 0;
+    transform: scaleX(0.2);
+    transition:
+      opacity 360ms var(--ease-dls-out),
+      transform 520ms var(--ease-dls-out);
+    filter: drop-shadow(0 0 0.5rem rgb(var(--dls-process-accent) / 0.8));
+  }
+
+  .dls-process-module::after {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 50% 32%,
+      rgb(var(--dls-process-accent) / 0.1),
+      transparent 42%
+    );
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 360ms var(--ease-dls-out);
+  }
+
+  .dls-process-phase.is-active .dls-process-module {
+    background:
+      radial-gradient(
+        circle at 50% 25%,
+        rgb(var(--dls-process-accent) / 0.105),
+        transparent 17rem
+      ),
+      linear-gradient(180deg, rgb(244 247 251 / 0.025), transparent),
+      rgb(7 9 13 / 0.26);
+    box-shadow: inset 0 0.0625rem rgb(255 255 255 / 0.04);
+  }
+
+  .dls-process-phase.is-active .dls-process-module::before,
+  .dls-process-phase.is-active .dls-process-module::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .has-motion .dls-process-phase:not(.is-active, .is-complete) .dls-process-module {
+    opacity: 0.62;
+  }
+
+  .has-motion .dls-process-phase.is-complete .dls-process-module {
+    opacity: 0.82;
+  }
+
+  .dls-process-module-head {
+    position: relative;
+    z-index: 2;
     display: grid;
-    width: 3rem;
-    height: 3rem;
-    align-self: end;
-    place-items: center;
-    border: 0.0625rem solid rgb(105 231 242 / 0.24);
-    border-radius: var(--radius-dls-pill);
-    background: var(--color-dls-panel);
-    color: var(--color-dls-cyan);
-    box-shadow:
-      0 0 0 0.5rem rgb(11 15 21 / 0.9),
-      0 0 2rem rgb(105 231 242 / 0.08);
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
   }
 
-  .dls-process-timeline li > div {
-    min-height: 14rem;
-    padding: var(--spacing-dls-3);
-    border: 0.0625rem solid rgb(244 247 251 / 0.09);
-    border-radius: var(--radius-dls-md);
-    background: rgb(244 247 251 / 0.025);
-    box-shadow: inset 0 0.0625rem 0 rgb(255 255 255 / 0.035);
+  .dls-process-module-head > span {
+    color: rgb(var(--dls-process-accent) / 0.96);
+    font-size: 2.5rem;
+    font-weight: 500;
+    letter-spacing: -0.065em;
+    line-height: 1;
+    text-shadow: 0 0 1.5rem rgb(var(--dls-process-accent) / 0.18);
   }
 
-  .dls-process-timeline small {
-    color: var(--color-dls-cyan);
+  .dls-process-module-head small {
+    color: rgb(244 247 251 / 0.5);
     font-size: 0.625rem;
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
-  .dls-process-timeline h3 {
-    margin-top: var(--spacing-dls-1);
-    color: var(--color-dls-paper);
-    font-size: 1.25rem;
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1.2;
+  .dls-process-module-head > i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.5);
+    border-radius: 50%;
+    background: rgb(var(--dls-process-accent) / 0.12);
+    box-shadow: 0 0 0 rgb(var(--dls-process-accent) / 0);
+    transition:
+      background-color 240ms var(--ease-dls-out),
+      box-shadow 240ms var(--ease-dls-out);
   }
 
-  .dls-process-timeline p {
-    margin-top: var(--spacing-dls-2);
+  .dls-process-phase.is-active .dls-process-module-head > i {
+    background: rgb(var(--dls-process-accent));
+    box-shadow: 0 0 1rem rgb(var(--dls-process-accent) / 0.72);
+  }
+
+  .dls-process-visual {
+    position: relative;
+    z-index: 1;
+    height: 11.5rem;
+    margin: 1.5rem 0 1.75rem;
+    overflow: hidden;
+    border: 0.0625rem solid rgb(244 247 251 / 0.085);
+    border-radius: 1.125rem;
+    background:
+      linear-gradient(rgb(244 247 251 / 0.025) 0.0625rem, transparent 0.0625rem),
+      linear-gradient(90deg, rgb(244 247 251 / 0.025) 0.0625rem, transparent 0.0625rem),
+      radial-gradient(
+        circle at 50% 50%,
+        rgb(var(--dls-process-accent) / 0.07),
+        transparent 70%
+      ),
+      rgb(7 9 13 / 0.38);
+    background-size:
+      1.5rem 1.5rem,
+      1.5rem 1.5rem,
+      auto,
+      auto;
+    box-shadow:
+      inset 0 0.0625rem rgb(255 255 255 / 0.035),
+      0 1rem 2rem rgb(0 0 0 / 0.12);
+    transition:
+      border-color 360ms var(--ease-dls-out),
+      box-shadow 360ms var(--ease-dls-out);
+  }
+
+  .dls-process-module-copy {
+    position: relative;
+    z-index: 2;
+  }
+
+  .dls-process-module-copy h3 {
+    color: var(--color-dls-paper);
+    font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .dls-process-module-copy p {
+    margin-top: 0.875rem;
+    color: rgb(244 247 251 / 0.54);
+    font-size: 0.8125rem;
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  .dls-process-outcome {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-dls-1);
+    margin-top: auto;
+    padding-top: var(--spacing-dls-3);
+    border-top: 0.0625rem solid rgb(244 247 251 / 0.08);
+  }
+
+  .dls-process-outcome span {
+    color: rgb(244 247 251 / 0.32);
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .dls-process-outcome strong {
+    color: rgb(var(--dls-process-accent) / 0.84);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-align: right;
+  }
+
+  .dls-process-radar {
+    overflow: visible;
+  }
+
+  .dls-radar-ring,
+  .dls-radar-sweep,
+  .dls-radar-core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .dls-radar-ring {
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.15);
+  }
+
+  .dls-radar-ring-a {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  .dls-radar-ring-b {
+    width: 7.5rem;
+    height: 7.5rem;
+  }
+
+  .dls-radar-ring-c {
+    width: 10.5rem;
+    height: 10.5rem;
+  }
+
+  .dls-radar-ring-c::before,
+  .dls-radar-ring-c::after {
+    position: absolute;
+    background: rgb(var(--dls-process-accent) / 0.1);
+    content: "";
+  }
+
+  .dls-radar-ring-c::before {
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 0.0625rem;
+  }
+
+  .dls-radar-ring-c::after {
+    top: 0;
+    left: 50%;
+    width: 0.0625rem;
+    height: 100%;
+  }
+
+  .dls-radar-sweep {
+    width: 10.5rem;
+    height: 10.5rem;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0 80%,
+      rgb(var(--dls-process-accent) / 0.22) 96%,
+      rgb(var(--dls-process-accent) / 0.02)
+    );
+    opacity: 0.7;
+  }
+
+  .dls-radar-core {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.5);
+    background: rgb(7 9 13 / 0.92);
+    box-shadow: 0 0 1.5rem rgb(var(--dls-process-accent) / 0.24);
+  }
+
+  .dls-radar-core > i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: rgb(var(--dls-process-accent));
+    box-shadow: 0 0 0.875rem rgb(var(--dls-process-accent) / 0.9);
+  }
+
+  .dls-radar-target {
+    position: absolute;
+    width: 0.4rem;
+    height: 0.4rem;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.8);
+    border-radius: 50%;
+    background: rgb(var(--dls-process-accent) / 0.18);
+    box-shadow: 0 0 0.75rem rgb(var(--dls-process-accent) / 0.6);
+  }
+
+  .dls-radar-target-a {
+    top: 25%;
+    left: 31%;
+  }
+
+  .dls-radar-target-b {
+    top: 62%;
+    right: 23%;
+  }
+
+  .dls-radar-target-c {
+    right: 36%;
+    bottom: 14%;
+  }
+
+  .dls-radar-tag {
+    position: absolute;
+    padding: 0.25rem 0.45rem;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.17);
+    border-radius: var(--radius-dls-pill);
+    background: rgb(7 9 13 / 0.84);
+    color: rgb(244 247 251 / 0.5);
+    font-size: 0.5rem;
+    font-style: normal;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dls-radar-tag-a {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .dls-radar-tag-b {
+    bottom: 0.75rem;
+    left: 0.75rem;
+  }
+
+  .dls-process-blueprint {
+    display: grid;
+    place-items: center;
+  }
+
+  .dls-blueprint-window {
+    position: relative;
+    width: 82%;
+    height: 78%;
+    overflow: hidden;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.22);
+    border-radius: 0.625rem;
+    background: rgb(7 9 13 / 0.72);
+    box-shadow: 0 1.25rem 2rem rgb(0 0 0 / 0.24);
+    transform: rotate(-2deg);
+    transition: transform 520ms var(--ease-dls-out);
+  }
+
+  .dls-process-phase.is-active .dls-blueprint-window {
+    transform: rotate(0) scale(1.025);
+  }
+
+  .dls-blueprint-bar {
+    display: flex;
+    height: 1.25rem;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.45rem;
+    border-bottom: 0.0625rem solid rgb(244 247 251 / 0.07);
+    background: rgb(244 247 251 / 0.025);
+  }
+
+  .dls-blueprint-bar i {
+    width: 0.25rem;
+    height: 0.25rem;
+    border-radius: 50%;
+    background: rgb(244 247 251 / 0.22);
+  }
+
+  .dls-blueprint-bar i:last-of-type {
+    background: rgb(var(--dls-process-accent) / 0.8);
+  }
+
+  .dls-blueprint-bar span {
+    width: 2.25rem;
+    height: 0.2rem;
+    margin-left: auto;
+    border-radius: var(--radius-dls-pill);
+    background: rgb(244 247 251 / 0.11);
+  }
+
+  .dls-blueprint-layout {
+    position: relative;
+    height: calc(100% - 1.25rem);
+    padding: 0.75rem;
+  }
+
+  .dls-blueprint-layout > span {
+    position: absolute;
+    display: block;
+    border-radius: 0.25rem;
+  }
+
+  .dls-blueprint-nav {
+    top: 0.75rem;
+    left: 0.75rem;
+    width: 35%;
+    height: 0.25rem;
+    background: rgb(244 247 251 / 0.38);
+  }
+
+  .dls-blueprint-title {
+    top: 2.1rem;
+    left: 0.75rem;
+    width: 62%;
+    height: 0.8rem;
+    background: rgb(var(--dls-process-accent) / 0.55);
+    box-shadow: 0 0.95rem rgb(244 247 251 / 0.28);
+  }
+
+  .dls-blueprint-copy {
+    top: 4.25rem;
+    left: 0.75rem;
+    width: 48%;
+    height: 0.2rem;
+    background: rgb(244 247 251 / 0.16);
+    box-shadow: 0 0.5rem rgb(244 247 251 / 0.1);
+  }
+
+  .dls-blueprint-action {
+    top: 5.45rem;
+    left: 0.75rem;
+    width: 28%;
+    height: 0.7rem;
+    border-radius: var(--radius-dls-pill) !important;
+    background: linear-gradient(
+      90deg,
+      rgb(var(--dls-process-accent) / 0.72),
+      rgb(147 135 255 / 0.72)
+    );
+  }
+
+  .dls-blueprint-card {
+    bottom: 0.65rem;
+    width: 25%;
+    height: 1.75rem;
+    border: 0.0625rem solid rgb(244 247 251 / 0.08);
+    background: rgb(244 247 251 / 0.035);
+    transition: transform 520ms var(--ease-dls-out);
+  }
+
+  .dls-blueprint-card-a {
+    left: 0.75rem;
+  }
+
+  .dls-blueprint-card-b {
+    left: 37.5%;
+  }
+
+  .dls-blueprint-card-c {
+    right: 0.75rem;
+  }
+
+  .has-motion .dls-process-phase:not(.is-active) .dls-blueprint-card-a {
+    transform: translateY(0.75rem);
+  }
+
+  .has-motion .dls-process-phase:not(.is-active) .dls-blueprint-card-b {
+    transform: translateY(1rem);
+  }
+
+  .has-motion .dls-process-phase:not(.is-active) .dls-blueprint-card-c {
+    transform: translateY(1.25rem);
+  }
+
+  .dls-blueprint-chip {
+    position: absolute;
+    padding: 0.25rem 0.45rem;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.25);
+    border-radius: var(--radius-dls-pill);
+    background: rgb(7 9 13 / 0.88);
+    color: rgb(var(--dls-process-accent) / 0.76);
+    font-size: 0.48rem;
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    box-shadow: 0 0.75rem 1.5rem rgb(0 0 0 / 0.3);
+  }
+
+  .dls-blueprint-chip-a {
+    top: 0.75rem;
+    right: 0.5rem;
+  }
+
+  .dls-blueprint-chip-b {
+    bottom: 0.75rem;
+    left: 0.5rem;
+  }
+
+  .dls-process-deploy {
+    overflow: visible;
+  }
+
+  .dls-deploy-orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8.75rem;
+    height: 8.75rem;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.14);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .dls-deploy-orbit > i {
+    position: absolute;
+    inset: 0.75rem;
+    border: 0.0625rem dashed rgb(var(--dls-process-accent) / 0.18);
+    border-radius: 50%;
+  }
+
+  .dls-deploy-orbit > i:nth-child(2) {
+    inset: 1.75rem;
+    border-style: solid;
+  }
+
+  .dls-deploy-orbit > span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.4);
+    border-radius: 50%;
+    background: rgb(7 9 13 / 0.9);
+    color: rgb(var(--dls-process-accent) / 0.92);
+    font-size: 1.25rem;
+    font-weight: 300;
+    box-shadow: 0 0 1.5rem rgb(var(--dls-process-accent) / 0.18);
+    transform: translate(-50%, -50%);
+  }
+
+  .dls-deploy-console {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    width: 72%;
+    padding: 0.75rem;
+    border: 0.0625rem solid rgb(244 247 251 / 0.1);
+    border-radius: 0.625rem;
+    background: rgb(7 9 13 / 0.88);
+    box-shadow: 0 1rem 2rem rgb(0 0 0 / 0.3);
+  }
+
+  .dls-deploy-console > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: rgb(244 247 251 / 0.42);
+    font-size: 0.48rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+  }
+
+  .dls-deploy-console > div span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .dls-deploy-console > div i,
+  .dls-deploy-console small i {
+    width: 0.3rem;
+    height: 0.3rem;
+    border-radius: 50%;
+    background: rgb(var(--dls-process-accent));
+    box-shadow: 0 0 0.5rem rgb(var(--dls-process-accent) / 0.7);
+  }
+
+  .dls-deploy-console > div b {
+    color: rgb(var(--dls-process-accent) / 0.86);
+    font-size: inherit;
+  }
+
+  .dls-deploy-console > p {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.55rem;
+  }
+
+  .dls-deploy-console > p i {
+    height: 0.2rem;
+    border-radius: var(--radius-dls-pill);
+    background: rgb(244 247 251 / 0.12);
+  }
+
+  .dls-deploy-console > p i:first-child {
+    width: 46%;
+  }
+
+  .dls-deploy-console > p i:nth-child(2) {
+    width: 24%;
+  }
+
+  .dls-deploy-console > p i:nth-child(3) {
+    width: 13%;
+  }
+
+  .dls-deploy-progress {
+    display: block;
+    height: 0.2rem;
+    margin-top: 0.75rem;
+    overflow: hidden;
+    border-radius: var(--radius-dls-pill);
+    background: rgb(244 247 251 / 0.08);
+  }
+
+  .dls-deploy-progress > i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      rgb(var(--dls-process-accent)),
+      var(--color-dls-cyan)
+    );
+    box-shadow: 0 0 0.75rem rgb(var(--dls-process-accent) / 0.6);
+    transform: scaleX(1);
+    transform-origin: left;
+    transition: transform 700ms var(--ease-dls-out);
+  }
+
+  .has-motion .dls-process-phase:not(.is-active, .is-complete) .dls-deploy-progress > i {
+    transform: scaleX(0.12);
+  }
+
+  .dls-deploy-console small {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.65rem;
+    color: rgb(244 247 251 / 0.34);
+    font-size: 0.45rem;
+    letter-spacing: 0.04em;
+  }
+
+  .dls-process-growth {
+    padding: 0.85rem;
+  }
+
+  .dls-growth-label {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: rgb(244 247 251 / 0.34);
+    font-size: 0.45rem;
+    letter-spacing: 0.1em;
+  }
+
+  .dls-growth-label strong {
+    color: rgb(var(--dls-process-accent) / 0.74);
+    font-size: inherit;
+  }
+
+  .dls-process-growth > svg {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    width: calc(100% - 1.5rem);
+    height: 7.75rem;
+    overflow: visible;
+  }
+
+  .dls-growth-grid {
+    fill: none;
+    stroke: rgb(244 247 251 / 0.07);
+    stroke-width: 0.75;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .dls-growth-area {
+    fill: url("#dlsGrowthArea");
+  }
+
+  .dls-growth-line {
+    fill: none;
+    stroke: url("#dlsGrowthLine");
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 0 0.4rem rgb(var(--dls-process-accent) / 0.45));
+    transition: stroke-dashoffset 900ms var(--ease-dls-out);
+  }
+
+  .has-motion .dls-process-phase:not(.is-active, .is-complete) .dls-growth-line {
+    stroke-dashoffset: 1;
+  }
+
+  .dls-growth-point {
+    fill: var(--color-dls-paper);
+    stroke: rgb(var(--dls-process-accent));
+    stroke-width: 2;
+    filter: drop-shadow(0 0 0.45rem rgb(var(--dls-process-accent) / 0.8));
+  }
+
+  .dls-growth-action {
+    position: absolute;
+    right: 0.65rem;
+    bottom: 0.65rem;
+    display: inline-flex;
+    min-height: 1.5rem;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    border: 0.0625rem solid rgb(var(--dls-process-accent) / 0.22);
+    border-radius: var(--radius-dls-pill);
+    background: rgb(7 9 13 / 0.85);
     color: rgb(244 247 251 / 0.52);
-    font-size: 0.875rem;
-    line-height: 1.6;
+    font-size: 0.48rem;
+    box-shadow: 0 0.75rem 1.5rem rgb(0 0 0 / 0.22);
+  }
+
+  .dls-growth-action i {
+    width: 0.3rem;
+    height: 0.3rem;
+    border-radius: 50%;
+    background: rgb(var(--dls-process-accent));
+    box-shadow: 0 0 0.5rem rgb(var(--dls-process-accent) / 0.7);
+  }
+
+  .dls-process-stage-footer {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    min-height: 4rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 var(--spacing-dls-3);
+    border-top: 0.0625rem solid rgb(244 247 251 / 0.08);
+    background: rgb(7 9 13 / 0.48);
+    color: rgb(244 247 251 / 0.34);
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .dls-process-stage-footer i {
+    color: rgb(105 231 242 / 0.5);
+    font-size: 0.75rem;
+    font-style: normal;
+  }
+
+  .dls-process-stage-footer b {
+    margin-left: auto;
+    color: rgb(244 247 251 / 0.56);
+    font-size: inherit;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .dls-process-phase:hover .dls-process-module {
+      background:
+        radial-gradient(
+          circle at 50% 25%,
+          rgb(var(--dls-process-accent) / 0.12),
+          transparent 17rem
+        ),
+        linear-gradient(180deg, rgb(244 247 251 / 0.03), transparent),
+        rgb(7 9 13 / 0.28);
+    }
+
+    .dls-process-phase:hover .dls-process-module::before,
+    .dls-process-phase:hover .dls-process-module::after {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+
+    .dls-process-phase:hover .dls-process-visual {
+      border-color: rgb(var(--dls-process-accent) / 0.24);
+      box-shadow:
+        inset 0 0.0625rem rgb(255 255 255 / 0.055),
+        0 1.25rem 2.5rem rgb(0 0 0 / 0.2);
+    }
   }
 
   .dls-numbers {
@@ -2407,48 +3548,128 @@
     display: none;
   }
 
-  .dls-process-line {
+  .dls-process-heading {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-dls-4);
+  }
+
+  .dls-process-heading h2 {
+    max-width: 11ch;
+  }
+
+  .dls-process-heading-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--spacing-dls-4);
+    align-items: end;
+    padding-bottom: 0;
+  }
+
+  .dls-process-meta {
+    justify-content: flex-end;
+    margin-top: 0;
+  }
+
+  .dls-process-stage {
+    border-radius: 1.5rem;
+  }
+
+  .dls-process-route {
     display: none;
   }
 
-  .dls-process-timeline {
-    padding-top: 0;
+  .dls-process-compact-route {
+    position: relative;
+    z-index: 5;
+    display: block;
+    height: 5rem;
+    padding: 1rem var(--spacing-dls-4);
+    border-bottom: 0.0625rem solid rgb(244 247 251 / 0.08);
+    background: rgb(7 9 13 / 0.58);
   }
 
-  .dls-process-timeline::before {
+  .dls-process-compact-track {
     position: absolute;
-    z-index: 0;
-    top: 1.5rem;
-    bottom: 1.5rem;
-    left: 1.5rem;
-    width: 0.0625rem;
-    background: linear-gradient(
-      var(--color-dls-cyan),
-      rgb(147 135 255 / 0.58),
-      rgb(244 247 251 / 0.08)
-    );
-    content: "";
+    top: 2.15rem;
+    right: calc(var(--spacing-dls-4) + 0.75rem);
+    left: calc(var(--spacing-dls-4) + 0.75rem);
+    display: block;
+    height: 0.0625rem;
+    overflow: hidden;
+    background: rgb(244 247 251 / 0.11);
   }
 
-  .dls-process-timeline ol {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--spacing-dls-2);
+  .dls-process-compact-track > i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-dls-cyan), var(--color-dls-violet));
+    box-shadow: 0 0 0.75rem rgb(105 231 242 / 0.55);
+    transform: scaleX(1);
+    transform-origin: left;
   }
 
-  .dls-process-timeline li,
-  .dls-process-timeline li:nth-child(even) {
-    grid-template-columns: 3rem minmax(0, 1fr);
-    grid-template-rows: auto;
-    gap: var(--spacing-dls-3);
-    padding-top: 0;
+  .has-motion .dls-process-compact-track > i {
+    transform: scaleX(calc(0.04 + (var(--dls-process-progress) * 0.96)));
   }
 
-  .dls-process-timeline li > span {
-    align-self: start;
+  .dls-process-compact-route > div {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .dls-process-timeline li > div {
-    min-height: 0;
+  .dls-process-compact-route b {
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    place-items: center;
+    border: 0.0625rem solid rgb(244 247 251 / 0.13);
+    border-radius: 50%;
+    background: #0b1017;
+    color: rgb(244 247 251 / 0.36);
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    transition:
+      border-color 300ms var(--ease-dls-out),
+      color 300ms var(--ease-dls-out),
+      box-shadow 300ms var(--ease-dls-out);
+  }
+
+  .dls-process-compact-route b.is-complete {
+    border-color: rgb(105 231 242 / 0.38);
+    color: rgb(105 231 242 / 0.68);
+  }
+
+  .dls-process-compact-route b.is-active {
+    border-color: var(--color-dls-cyan);
+    color: var(--color-dls-cyan);
+    box-shadow: 0 0 1.25rem rgb(105 231 242 / 0.25);
+  }
+
+  .dls-process-phases {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dls-process-phase:nth-child(2) {
+    border-right: 0;
+  }
+
+  .dls-process-phase:nth-child(-n + 2) {
+    border-bottom: 0.0625rem solid rgb(244 247 251 / 0.08);
+  }
+
+  .dls-process-module {
+    min-height: 31rem;
+    padding: var(--spacing-dls-4);
+  }
+
+  .dls-process-module::before {
+    left: var(--spacing-dls-4);
+    width: calc(100% - (var(--spacing-dls-4) * 2));
   }
 
   .dls-number-grid {
@@ -2662,8 +3883,115 @@
     right: var(--spacing-dls-3);
   }
 
-  .dls-process-timeline {
-    margin-top: var(--spacing-dls-6);
+  .dls-process-heading {
+    gap: var(--spacing-dls-4);
+    margin-bottom: var(--spacing-dls-8);
+  }
+
+  .dls-process-heading h2 {
+    max-width: 10ch;
+    font-size: clamp(3rem, 14vw, 4.75rem);
+  }
+
+  .dls-process-heading-side {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-dls-3);
+  }
+
+  .dls-process-heading-side > p {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .dls-process-meta {
+    justify-content: flex-start;
+  }
+
+  .dls-process-stage {
+    border-radius: 1.25rem;
+  }
+
+  .dls-process-stage-topbar {
+    min-height: 4rem;
+    grid-template-columns: 1fr auto;
+    padding-inline: var(--spacing-dls-2);
+  }
+
+  .dls-process-stage-current {
+    justify-self: end;
+  }
+
+  .dls-process-live {
+    display: none;
+  }
+
+  .dls-process-compact-route {
+    height: 4.5rem;
+    padding: 0.75rem var(--spacing-dls-2);
+  }
+
+  .dls-process-compact-track {
+    top: 1.9rem;
+    right: 1.7rem;
+    left: 1.7rem;
+  }
+
+  .dls-process-compact-route b {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .dls-process-phases {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dls-process-phase,
+  .dls-process-phase:nth-child(2),
+  .dls-process-phase:nth-child(4) {
+    border-right: 0;
+  }
+
+  .dls-process-phase,
+  .dls-process-phase:nth-child(-n + 2) {
+    border-bottom: 0.0625rem solid rgb(244 247 251 / 0.08);
+  }
+
+  .dls-process-phase:last-child {
+    border-bottom: 0;
+  }
+
+  .dls-process-module {
+    min-height: 31rem;
+    padding: var(--spacing-dls-3);
+  }
+
+  .dls-process-module::before {
+    left: var(--spacing-dls-3);
+    width: calc(100% - (var(--spacing-dls-3) * 2));
+  }
+
+  .dls-process-visual {
+    height: 12.5rem;
+  }
+
+  .dls-process-module-copy h3 {
+    font-size: 1.625rem;
+  }
+
+  .dls-process-module-copy p {
+    font-size: 0.875rem;
+  }
+
+  .dls-process-stage-footer {
+    min-height: 4.5rem;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.55rem;
+    padding: 0.75rem var(--spacing-dls-2);
+  }
+
+  .dls-process-stage-footer b {
+    width: 100%;
+    margin-left: 0;
   }
 
   .dls-number-grid {
@@ -2764,6 +4092,55 @@
     display: none;
   }
 
+  .dls-process-heading h2 {
+    font-size: clamp(2.875rem, 14.5vw, 4rem);
+  }
+
+  .dls-process-meta {
+    gap: 0.4rem;
+  }
+
+  .dls-process-meta > span {
+    padding-inline: 0.625rem;
+    letter-spacing: 0.075em;
+  }
+
+  .dls-process-stage-brand {
+    display: none;
+  }
+
+  .dls-process-stage-topbar {
+    display: flex;
+    justify-content: center;
+  }
+
+  .dls-process-stage-current {
+    justify-self: auto;
+  }
+
+  .dls-process-module {
+    min-height: 30rem;
+    padding: 1.25rem;
+  }
+
+  .dls-process-module::before {
+    left: 1.25rem;
+    width: calc(100% - 2.5rem);
+  }
+
+  .dls-process-visual {
+    height: 11.5rem;
+    margin-block: 1.25rem 1.5rem;
+  }
+
+  .dls-process-module-copy h3 {
+    font-size: 1.45rem;
+  }
+
+  .dls-process-stage-footer {
+    font-size: 0.5rem;
+  }
+
   .dls-number-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2842,6 +4219,87 @@
   }
 }
 
+@keyframes dls-process-glow-drift-a {
+  0%,
+  100% {
+    opacity: 0.32;
+    transform: translate3d(0, 0, 0) scale(0.96);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: translate3d(4rem, 2rem, 0) scale(1.05);
+  }
+}
+
+@keyframes dls-process-glow-drift-b {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    opacity: 0.48;
+    transform: translate3d(-3rem, -2rem, 0) scale(1.08);
+  }
+}
+
+@keyframes dls-process-radar-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes dls-process-target-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.72);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes dls-process-orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dls-process-node-pulse {
+  0%,
+  100% {
+    opacity: 0.38;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dls-process-chip-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -0.3rem, 0);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .dls-product-orbit-a {
     animation: dls-orbit-drift-a 14s var(--ease-dls-in-out) infinite;
@@ -2857,8 +4315,52 @@
 
   .dls-live-pill i,
   .dls-story-status i,
-  .dls-footer-bottom i {
+  .dls-footer-bottom i,
+  .dls-process-live i,
+  .dls-process-meta i,
+  .dls-growth-action i {
     animation: dls-status-pulse 2s var(--ease-dls-in-out) infinite;
+  }
+
+  .dls-process-glow-a {
+    animation: dls-process-glow-drift-a 18s var(--ease-dls-in-out) infinite;
+  }
+
+  .dls-process-glow-b {
+    animation: dls-process-glow-drift-b 22s var(--ease-dls-in-out) infinite;
+  }
+
+  .dls-process-phase.is-active .dls-radar-sweep {
+    animation: dls-process-radar-spin 4.8s linear infinite;
+  }
+
+  .dls-process-phase.is-active .dls-radar-target {
+    animation: dls-process-target-pulse 1.8s var(--ease-dls-in-out) infinite;
+  }
+
+  .dls-process-phase.is-active .dls-radar-target-b {
+    animation-delay: -0.6s;
+  }
+
+  .dls-process-phase.is-active .dls-radar-target-c {
+    animation-delay: -1.2s;
+  }
+
+  .dls-process-phase.is-active .dls-deploy-orbit > i:first-child {
+    animation: dls-process-orbit-spin 12s linear infinite;
+  }
+
+  .dls-process-route-node.is-active .dls-process-node-halo,
+  .dls-process-signal circle:first-child {
+    animation: dls-process-node-pulse 1.8s var(--ease-dls-in-out) infinite;
+  }
+
+  .dls-process-phase.is-active .dls-blueprint-chip-a {
+    animation: dls-process-chip-float 2.8s var(--ease-dls-in-out) infinite;
+  }
+
+  .dls-process-phase.is-active .dls-blueprint-chip-b {
+    animation: dls-process-chip-float 3.2s var(--ease-dls-in-out) -1.4s infinite;
   }
 }
 
@@ -2923,8 +4425,21 @@
     width: auto !important;
   }
 
-  .dls-process-line-active {
+  .dls-process-route-active {
+    stroke-dasharray: none !important;
     stroke-dashoffset: 0 !important;
+  }
+
+  .dls-process-signal {
+    display: none !important;
+  }
+
+  .dls-process-phase .dls-process-module {
+    opacity: 1 !important;
+  }
+
+  .dls-process-compact-track > i {
+    transform: scaleX(1) !important;
   }
 
   .dls-cursor,
@@ -2949,7 +4464,9 @@
   .dls-button,
   .dls-service-card,
   .dls-access-card,
-  .dls-process-timeline li > div,
+  .dls-process-stage,
+  .dls-process-module,
+  .dls-process-visual,
   .dls-story-mobile article,
   .dls-product-window {
     border: 0.125rem solid CanvasText;

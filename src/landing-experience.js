@@ -69,7 +69,7 @@ function init() {
     addCleanup(setupAnchorNavigation(root, wrapper, header, lenis.instance, false));
     addCleanup(setupHeroTitle(root, gsap, SplitText));
     addCleanup(setupReveals(root, wrapper, gsap));
-    addCleanup(setupTimeline(root, wrapper, gsap));
+    addCleanup(setupTimeline(root, wrapper, gsap, ScrollTrigger));
     addCleanup(setupCounters(root, wrapper, gsap, ScrollTrigger));
     addCleanup(setupPageWipe(root, gsap));
 
@@ -1122,10 +1122,29 @@ function resetHorizontalServices(scope, gsap) {
   return () => {};
 }
 
-function setupTimeline(scope, wrapper, gsap) {
+function setupTimeline(scope, wrapper, gsap, ScrollTrigger) {
   const section = scope.querySelector("#como-funciona");
+  const stage = section?.querySelector("[data-process-stage]");
   const path = section?.querySelector("[data-timeline-path]");
-  if (!section || !path || typeof path.getTotalLength !== "function") return () => {};
+  const signal = section?.querySelector("[data-process-signal]");
+  const steps = Array.from(section?.querySelectorAll("[data-process-step]") || []);
+  const routeNodes = Array.from(section?.querySelectorAll("[data-process-route-node]") || []);
+  const compactNodes = Array.from(
+    section?.querySelectorAll("[data-process-compact-node]") || []
+  );
+  const current = section?.querySelector("[data-process-current]");
+  const label = section?.querySelector("[data-process-label]");
+  if (
+    !section ||
+    !stage ||
+    !path ||
+    !steps.length ||
+    !ScrollTrigger ||
+    typeof path.getTotalLength !== "function" ||
+    typeof path.getPointAtLength !== "function"
+  ) {
+    return () => {};
+  }
 
   let length;
   try {
@@ -1135,20 +1154,71 @@ function setupTimeline(scope, wrapper, gsap) {
   }
   if (!Number.isFinite(length) || length <= 0) return () => {};
 
+  const initialCurrent = current?.textContent || "01";
+  const initialLabel = label?.textContent || steps[0]?.dataset.processName || "";
+  const state = { progress: 0 };
+  let activeIndex = -1;
+
   gsap.set(path, {
     strokeDasharray: length,
     strokeDashoffset: length
   });
-  const animation = gsap.to(path, {
-    strokeDashoffset: 0,
+
+  const setActiveStep = (nextIndex) => {
+    const index = clamp(nextIndex, 0, steps.length - 1);
+    if (index === activeIndex) return;
+    activeIndex = index;
+    section.dataset.processPhase = String(index + 1);
+
+    steps.forEach((step, stepIndex) => {
+      const isActive = stepIndex === index;
+      step.classList.toggle("is-active", isActive);
+      step.classList.toggle("is-complete", stepIndex < index);
+      if (isActive) {
+        step.setAttribute("aria-current", "step");
+      } else {
+        step.removeAttribute("aria-current");
+      }
+    });
+
+    [routeNodes, compactNodes].forEach((nodes) => {
+      nodes.forEach((node, nodeIndex) => {
+        node.classList.toggle("is-active", nodeIndex === index);
+        node.classList.toggle("is-complete", nodeIndex < index);
+      });
+    });
+
+    if (current) current.textContent = String(index + 1).padStart(2, "0");
+    if (label) label.textContent = steps[index]?.dataset.processName || "";
+  };
+
+  const render = (rawProgress) => {
+    const progress = clamp(rawProgress, 0, 1);
+    const routeProgress = Math.min(1, progress * 1.015);
+    section.style.setProperty("--dls-process-progress", progress.toFixed(4));
+    path.style.strokeDashoffset = String(length * (1 - routeProgress));
+
+    if (signal) {
+      const point = path.getPointAtLength(length * routeProgress);
+      signal.setAttribute("transform", `translate(${point.x} ${point.y})`);
+    }
+
+    setActiveStep(Math.min(steps.length - 1, Math.floor(progress * steps.length)));
+  };
+
+  render(0);
+
+  const animation = gsap.to(state, {
+    progress: 1,
     ease: "none",
+    onUpdate: () => render(state.progress),
     scrollTrigger: {
       id: `${LANDING_TRIGGER_PREFIX}timeline`,
-      trigger: section,
+      trigger: stage,
       scroller: wrapper,
-      start: "top 78%",
-      end: "bottom 32%",
-      scrub: 0.55,
+      start: "top 76%",
+      end: "bottom 28%",
+      scrub: 0.48,
       invalidateOnRefresh: true,
       markers: false
     }
@@ -1157,6 +1227,24 @@ function setupTimeline(scope, wrapper, gsap) {
   return () => {
     animation.kill();
     gsap.set(path, { clearProps: "strokeDasharray,strokeDashoffset" });
+    path.style.removeProperty("stroke-dashoffset");
+    signal?.removeAttribute("transform");
+    section.style.removeProperty("--dls-process-progress");
+    section.dataset.processPhase = "1";
+    steps.forEach((step, index) => {
+      step.classList.toggle("is-active", index === 0);
+      step.classList.remove("is-complete");
+      if (index === 0) step.setAttribute("aria-current", "step");
+      else step.removeAttribute("aria-current");
+    });
+    [routeNodes, compactNodes].forEach((nodes) => {
+      nodes.forEach((node, index) => {
+        node.classList.toggle("is-active", index === 0);
+        node.classList.remove("is-complete");
+      });
+    });
+    if (current) current.textContent = initialCurrent;
+    if (label) label.textContent = initialLabel;
   };
 }
 

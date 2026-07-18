@@ -15,8 +15,8 @@
       content="Web, hosting, captación y CRM en un único sistema para negocios locales."
     >
     <link rel="icon" type="image/webp" href="assets/landing/dls-logo.webp">
-    <link rel="preload" href="src/landing.css?v=20260718-1" as="style">
-    <link rel="stylesheet" href="src/landing.css?v=20260718-1">
+    <link rel="preload" href="src/landing.css?v=20260718-2" as="style">
+    <link rel="stylesheet" href="src/landing.css?v=20260718-2">
   </head>
   <body class="dls-public-body">
     <a class="dls-skip-link" href="#contenido">Saltar al contenido</a>
@@ -386,48 +386,294 @@
               <div class="dls-services-progress dls-container" aria-hidden="true"><span><i></i></span><b>Desliza para explorar</b></div>
             </section>
 
-            <section class="dls-process" id="como-funciona" aria-labelledby="process-title">
+            <section
+              class="dls-process"
+              id="como-funciona"
+              aria-labelledby="process-title"
+              data-process-phase="1"
+            >
+              <div class="dls-process-ambient" aria-hidden="true">
+                <span class="dls-process-glow dls-process-glow-a"></span>
+                <span class="dls-process-glow dls-process-glow-b"></span>
+                <span class="dls-process-grid"></span>
+                <span class="dls-process-beam"></span>
+              </div>
+
               <div class="dls-container">
-                <div class="dls-section-heading dls-section-heading-split">
-                  <div>
-                    <p class="dls-eyebrow" data-reveal>Cómo funciona</p>
-                    <h2 id="process-title" data-reveal>Un proceso claro, de principio a crecimiento.</h2>
+                <header class="dls-process-heading">
+                  <div class="dls-process-heading-main">
+                    <p class="dls-eyebrow" data-reveal>
+                      <span aria-hidden="true"></span>
+                      Cómo funciona
+                    </p>
+                    <h2 id="process-title" data-reveal>
+                      De entender el negocio a <span>hacerlo crecer.</span>
+                    </h2>
                   </div>
-                  <p data-reveal>
-                    Cuatro momentos, una misma relación de trabajo. Sin saltos entre estrategia,
-                    producción y operación.
-                  </p>
-                </div>
 
-                <div class="dls-process-timeline">
-                  <svg class="dls-process-line" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
-                    <path class="dls-process-line-base" d="M20 60C170 60 190 28 340 28S500 92 650 92s170-64 320-64 150 32 210 32"></path>
-                    <path
-                      class="dls-process-line-active"
-                      data-timeline-path
-                      pathLength="1"
-                      d="M20 60C170 60 190 28 340 28S500 92 650 92s170-64 320-64 150 32 210 32"
-                    ></path>
-                  </svg>
+                  <div class="dls-process-heading-side" data-reveal>
+                    <p>
+                      Estrategia, diseño, lanzamiento y operación conectados en un mismo flujo.
+                      Sin saltos. Sin perder contexto.
+                    </p>
+                    <div class="dls-process-meta" aria-label="Resumen del proceso">
+                      <span><strong>04</strong> fases</span>
+                      <span><strong>01</strong> equipo</span>
+                      <span><i aria-hidden="true"></i> flujo continuo</span>
+                    </div>
+                  </div>
+                </header>
 
-                  <ol>
-                    <li data-reveal>
-                      <span>01</span>
-                      <div><small>Descubrir</small><h3>Entendemos el negocio</h3><p>Objetivos, propuesta, clientes y contexto local.</p></div>
+                <div class="dls-process-stage" data-process-stage data-reveal>
+                  <div class="dls-process-stage-topbar" aria-hidden="true">
+                    <div class="dls-process-stage-brand">
+                      <span><i></i><i></i><i></i></span>
+                      <strong>DLS / WORKFLOW</strong>
+                    </div>
+                    <div class="dls-process-stage-current">
+                      <span>FASE</span>
+                      <strong data-process-current>01</strong>
+                      <span>/ 04</span>
+                      <i></i>
+                      <b data-process-label>Descubrir</b>
+                    </div>
+                    <div class="dls-process-live"><i></i> Sistema conectado</div>
+                  </div>
+
+                  <div class="dls-process-route" aria-hidden="true">
+                    <svg viewBox="0 0 1200 116" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="dlsProcessRouteGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0" stop-color="#69e7f2"></stop>
+                          <stop offset=".52" stop-color="#7fbaff"></stop>
+                          <stop offset="1" stop-color="#9387ff"></stop>
+                        </linearGradient>
+                        <filter id="dlsProcessRouteGlow" x="-20%" y="-100%" width="140%" height="300%">
+                          <feGaussianBlur stdDeviation="5" result="blur"></feGaussianBlur>
+                          <feMerge>
+                            <feMergeNode in="blur"></feMergeNode>
+                            <feMergeNode in="SourceGraphic"></feMergeNode>
+                          </feMerge>
+                        </filter>
+                      </defs>
+                      <path
+                        class="dls-process-route-base"
+                        d="M36 62C96 62 112 32 155 32C270 32 300 84 445 84C570 84 625 30 755 30C880 30 920 72 1045 72C1102 72 1128 58 1164 58"
+                      ></path>
+                      <path
+                        class="dls-process-route-active"
+                        data-timeline-path
+                        pathLength="1"
+                        d="M36 62C96 62 112 32 155 32C270 32 300 84 445 84C570 84 625 30 755 30C880 30 920 72 1045 72C1102 72 1128 58 1164 58"
+                      ></path>
+                      <g class="dls-process-signal" data-process-signal>
+                        <circle r="15"></circle>
+                        <circle r="5"></circle>
+                      </g>
+                      <g class="dls-process-route-node is-active" data-process-route-node transform="translate(155 32)">
+                        <circle class="dls-process-node-halo" r="19"></circle>
+                        <circle class="dls-process-node-core" r="7"></circle>
+                        <text y="-23">01</text>
+                      </g>
+                      <g class="dls-process-route-node" data-process-route-node transform="translate(445 84)">
+                        <circle class="dls-process-node-halo" r="19"></circle>
+                        <circle class="dls-process-node-core" r="7"></circle>
+                        <text y="-23">02</text>
+                      </g>
+                      <g class="dls-process-route-node" data-process-route-node transform="translate(755 30)">
+                        <circle class="dls-process-node-halo" r="19"></circle>
+                        <circle class="dls-process-node-core" r="7"></circle>
+                        <text y="-23">03</text>
+                      </g>
+                      <g class="dls-process-route-node" data-process-route-node transform="translate(1045 72)">
+                        <circle class="dls-process-node-halo" r="19"></circle>
+                        <circle class="dls-process-node-core" r="7"></circle>
+                        <text y="-23">04</text>
+                      </g>
+                    </svg>
+                  </div>
+
+                  <div class="dls-process-compact-route" aria-hidden="true">
+                    <span class="dls-process-compact-track"><i></i></span>
+                    <div>
+                      <b class="is-active" data-process-compact-node>01</b>
+                      <b data-process-compact-node>02</b>
+                      <b data-process-compact-node>03</b>
+                      <b data-process-compact-node>04</b>
+                    </div>
+                  </div>
+
+                  <ol class="dls-process-phases">
+                    <li
+                      class="dls-process-phase is-active"
+                      data-process-step
+                      data-process-name="Descubrir"
+                      aria-current="step"
+                    >
+                      <article class="dls-process-module dls-cursor-target">
+                        <div class="dls-process-module-head">
+                          <span>01</span>
+                          <small>Descubrir</small>
+                          <i aria-hidden="true"></i>
+                        </div>
+                        <div class="dls-process-visual dls-process-radar" aria-hidden="true">
+                          <span class="dls-radar-ring dls-radar-ring-a"></span>
+                          <span class="dls-radar-ring dls-radar-ring-b"></span>
+                          <span class="dls-radar-ring dls-radar-ring-c"></span>
+                          <i class="dls-radar-sweep"></i>
+                          <b class="dls-radar-target dls-radar-target-a"></b>
+                          <b class="dls-radar-target dls-radar-target-b"></b>
+                          <b class="dls-radar-target dls-radar-target-c"></b>
+                          <em class="dls-radar-tag dls-radar-tag-a">Objetivos</em>
+                          <em class="dls-radar-tag dls-radar-tag-b">Audiencia</em>
+                          <span class="dls-radar-core"><i></i></span>
+                        </div>
+                        <div class="dls-process-module-copy">
+                          <h3>Entendemos antes de diseñar</h3>
+                          <p>
+                            Aterrizamos objetivos, propuesta, audiencia y contexto local para que
+                            cada decisión tenga un porqué.
+                          </p>
+                        </div>
+                        <div class="dls-process-outcome">
+                          <span>Resultado</span><strong>Dirección clara</strong>
+                        </div>
+                      </article>
                     </li>
-                    <li data-reveal>
-                      <span>02</span>
-                      <div><small>Construir</small><h3>Diseñamos el sistema</h3><p>Web, mensajes, captación y operación alineados.</p></div>
+
+                    <li
+                      class="dls-process-phase"
+                      data-process-step
+                      data-process-name="Construir"
+                    >
+                      <article class="dls-process-module dls-cursor-target">
+                        <div class="dls-process-module-head">
+                          <span>02</span>
+                          <small>Construir</small>
+                          <i aria-hidden="true"></i>
+                        </div>
+                        <div class="dls-process-visual dls-process-blueprint" aria-hidden="true">
+                          <div class="dls-blueprint-window">
+                            <div class="dls-blueprint-bar"><i></i><i></i><i></i><span></span></div>
+                            <div class="dls-blueprint-layout">
+                              <span class="dls-blueprint-nav"></span>
+                              <span class="dls-blueprint-title"></span>
+                              <span class="dls-blueprint-copy"></span>
+                              <span class="dls-blueprint-action"></span>
+                              <span class="dls-blueprint-card dls-blueprint-card-a"></span>
+                              <span class="dls-blueprint-card dls-blueprint-card-b"></span>
+                              <span class="dls-blueprint-card dls-blueprint-card-c"></span>
+                            </div>
+                          </div>
+                          <em class="dls-blueprint-chip dls-blueprint-chip-a">WEB</em>
+                          <em class="dls-blueprint-chip dls-blueprint-chip-b">CRM</em>
+                        </div>
+                        <div class="dls-process-module-copy">
+                          <h3>Diseñamos un sistema conectado</h3>
+                          <p>
+                            Web, mensajes, captación y operación nacen alineados, no como piezas
+                            sueltas.
+                          </p>
+                        </div>
+                        <div class="dls-process-outcome">
+                          <span>Resultado</span><strong>Presencia coherente</strong>
+                        </div>
+                      </article>
                     </li>
-                    <li data-reveal>
-                      <span>03</span>
-                      <div><small>Publicar</small><h3>Lanzamos con control</h3><p>Revisión, entrega, hosting y accesos listos.</p></div>
+
+                    <li
+                      class="dls-process-phase"
+                      data-process-step
+                      data-process-name="Publicar"
+                    >
+                      <article class="dls-process-module dls-cursor-target">
+                        <div class="dls-process-module-head">
+                          <span>03</span>
+                          <small>Publicar</small>
+                          <i aria-hidden="true"></i>
+                        </div>
+                        <div class="dls-process-visual dls-process-deploy" aria-hidden="true">
+                          <div class="dls-deploy-orbit"><i></i><i></i><span>↑</span></div>
+                          <div class="dls-deploy-console">
+                            <div><span><i></i> DEPLOY</span><b>LIVE</b></div>
+                            <p><i></i><i></i><i></i></p>
+                            <p><i></i><i></i></p>
+                            <span class="dls-deploy-progress"><i></i></span>
+                            <small><i></i> Todos los sistemas listos</small>
+                          </div>
+                        </div>
+                        <div class="dls-process-module-copy">
+                          <h3>Lanzamos con todo bajo control</h3>
+                          <p>
+                            Revisamos, entregamos y dejamos hosting, dominios y accesos listos para
+                            operar.
+                          </p>
+                        </div>
+                        <div class="dls-process-outcome">
+                          <span>Resultado</span><strong>Salida ordenada</strong>
+                        </div>
+                      </article>
                     </li>
-                    <li data-reveal>
-                      <span>04</span>
-                      <div><small>Crecer</small><h3>Medimos y mejoramos</h3><p>El CRM convierte actividad en próximas acciones.</p></div>
+
+                    <li
+                      class="dls-process-phase"
+                      data-process-step
+                      data-process-name="Crecer"
+                    >
+                      <article class="dls-process-module dls-cursor-target">
+                        <div class="dls-process-module-head">
+                          <span>04</span>
+                          <small>Crecer</small>
+                          <i aria-hidden="true"></i>
+                        </div>
+                        <div class="dls-process-visual dls-process-growth" aria-hidden="true">
+                          <div class="dls-growth-label">
+                            <span>ACTIVIDAD</span><strong>EN MOVIMIENTO</strong>
+                          </div>
+                          <svg viewBox="0 0 240 126" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="dlsGrowthArea" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0" stop-color="#9387ff" stop-opacity=".32"></stop>
+                                <stop offset="1" stop-color="#9387ff" stop-opacity="0"></stop>
+                              </linearGradient>
+                              <linearGradient id="dlsGrowthLine" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0" stop-color="#69e7f2"></stop>
+                                <stop offset="1" stop-color="#9387ff"></stop>
+                              </linearGradient>
+                            </defs>
+                            <path class="dls-growth-grid" d="M0 25H240M0 63H240M0 101H240"></path>
+                            <path
+                              class="dls-growth-area"
+                              d="M4 106C28 104 30 82 55 86S88 96 108 70S143 72 160 49S194 54 214 25S232 18 238 10V126H4Z"
+                            ></path>
+                            <path
+                              class="dls-growth-line"
+                              pathLength="1"
+                              d="M4 106C28 104 30 82 55 86S88 96 108 70S143 72 160 49S194 54 214 25S232 18 238 10"
+                            ></path>
+                            <circle class="dls-growth-point" cx="238" cy="10" r="4"></circle>
+                          </svg>
+                          <span class="dls-growth-action"><i></i> Próxima acción</span>
+                        </div>
+                        <div class="dls-process-module-copy">
+                          <h3>Convertimos actividad en avance</h3>
+                          <p>
+                            El CRM transforma señales reales en próximas acciones para medir,
+                            aprender y mejorar.
+                          </p>
+                        </div>
+                        <div class="dls-process-outcome">
+                          <span>Resultado</span><strong>Mejora continua</strong>
+                        </div>
+                      </article>
                     </li>
                   </ol>
+
+                  <div class="dls-process-stage-footer" aria-hidden="true">
+                    <span>Estrategia</span><i>→</i><span>Producto</span><i>→</i>
+                    <span>Lanzamiento</span><i>→</i><span>Operación</span>
+                    <b>El contexto nunca se pierde</b>
+                  </div>
                 </div>
               </div>
             </section>
@@ -569,6 +815,6 @@
     <script src="assets/vendor/gsap.min.js"></script>
     <script src="assets/vendor/ScrollTrigger.min.js"></script>
     <script src="assets/vendor/SplitText.min.js"></script>
-    <script type="module" src="src/landing-experience.js?v=20260718-1"></script>
+    <script type="module" src="src/landing-experience.js?v=20260718-2"></script>
   </body>
 </html>
