@@ -98,9 +98,7 @@ const visualQaResult = document.querySelector("#visualQaResult");
 const deviceFrame = document.querySelector(".device-frame");
 const cursorGlow = document.querySelector(".cursor-glow");
 const introGate = document.querySelector("#introGate");
-const introStartButton = document.querySelector("#introStartButton");
 const introHub = document.querySelector("#introHub");
-const introHubBackButton = document.querySelector("#introHubBackButton");
 const introHelpButton = document.querySelector("#introHelpButton");
 const introHelpModal = document.querySelector("#introHelpModal");
 const introModeButtons = Array.from(document.querySelectorAll("[data-intro-mode]"));
@@ -2470,18 +2468,24 @@ function bindIntroGate() {
 
   const params = new URLSearchParams(window.location.search);
   const skipIntro = ["1", "true", "yes"].includes(String(params.get("skipIntro") || "").toLowerCase());
-  const forceIntro = ["1", "true", "yes"].includes(String(params.get("intro") || "").toLowerCase());
   const hubLaunch = params.has("hub")
     && !["0", "false", "no"].includes(String(params.get("hub") || "").toLowerCase());
   const presentationLaunch = ["1", "true", "yes"].includes(String(params.get("presentation") || "").toLowerCase());
   const automatedLaunch = navigator.webdriver === true;
-  const logoIntroContent = introGate.querySelector(".intro-gate-content");
   const studioDestination = introHub?.querySelector('[data-intro-destination="studio"]');
+  const introLogoSource = introGate.querySelector(".intro-logo-source");
+  const introLogoStage = introLogoSource?.querySelector(".intro-logo-stage");
+  const introHelpLogoHost = introHelpModal?.querySelector("[data-intro-help-logo]");
   const introBackground = [
     document.querySelector(".studio-topbar"),
     document.querySelector("#studioWorkspace")
   ].filter(Boolean);
   let introHelpPreviousFocus = null;
+
+  if (introLogoStage && introHelpLogoHost) {
+    introHelpLogoHost.append(introLogoStage);
+    introLogoSource?.remove();
+  }
 
   const setIntroBackgroundInert = (active) => {
     const elements = [...introBackground, document.querySelector("#studioExperienceSwitcher")]
@@ -2516,6 +2520,16 @@ function bindIntroGate() {
     (introHub?.querySelector(".intro-destination-card") || introHub?.querySelector("button"))?.focus({ preventScroll: true });
   };
 
+  const replayIntroHelpLogo = () => {
+    const stage = introHelpLogoHost?.querySelector(".intro-logo-stage");
+    if (!stage) {
+      return;
+    }
+
+    const replay = stage.cloneNode(true);
+    stage.replaceWith(replay);
+  };
+
   const openIntroHelp = () => {
     if (!introHelpModal) {
       return;
@@ -2525,7 +2539,12 @@ function bindIntroGate() {
       ? document.activeElement
       : introHelpButton;
     introHelpModal.hidden = false;
+    replayIntroHelpLogo();
     introHelpButton?.setAttribute("aria-expanded", "true");
+    const helpBody = introHelpModal.querySelector(".intro-help-body");
+    if (helpBody) {
+      helpBody.scrollTop = 0;
+    }
     introHelpModal.querySelector(".intro-help-dialog")?.focus({ preventScroll: true });
   };
 
@@ -2558,10 +2577,6 @@ function bindIntroGate() {
     introGate.classList.remove("is-closing");
     introHub.hidden = false;
     introGate.classList.add("is-choosing");
-    logoIntroContent?.setAttribute("aria-hidden", "true");
-    if (introHubBackButton) {
-      introHubBackButton.hidden = true;
-    }
     document.body.classList.add("is-intro-active");
     setIntroBackgroundInert(true);
 
@@ -2572,24 +2587,6 @@ function bindIntroGate() {
     if (focus) {
       focusHub();
     }
-  };
-
-  const showLogoIntro = () => {
-    if (!introHub || getIntroCompleted()) {
-      return;
-    }
-
-    introGate.classList.remove("is-choosing");
-    logoIntroContent?.removeAttribute("aria-hidden");
-    if (introHubBackButton) {
-      introHubBackButton.hidden = false;
-    }
-    window.setTimeout(() => {
-      if (!introGate.classList.contains("is-choosing")) {
-        introHub.hidden = true;
-        introStartButton?.focus({ preventScroll: true });
-      }
-    }, 260);
   };
 
   const openStudioWithoutGate = ({ focus = false, markComplete = true } = {}) => {
@@ -2736,8 +2733,6 @@ function bindIntroGate() {
       closeIntroHelp();
     }
   });
-  introStartButton?.addEventListener("click", showDestinationHub);
-  introHubBackButton?.addEventListener("click", showLogoIntro);
   introModeButtons.forEach((button) => {
     button.addEventListener("click", () => setIntroMode(button.dataset.introMode || "developer"));
   });
@@ -2759,11 +2754,6 @@ function bindIntroGate() {
     }
 
     if (event.key === "Escape" && document.body.classList.contains("is-intro-active")) {
-      if (introGate.classList.contains("is-choosing") && !getIntroCompleted()) {
-        showLogoIntro();
-        return;
-      }
-
       showDestinationHub();
     }
   });
@@ -2782,37 +2772,14 @@ function bindIntroGate() {
   window.addEventListener("popstate", syncIntroWithLocation);
   window.addEventListener("hashchange", syncIntroWithLocation);
 
-  if (hubLaunch) {
-    setIntroCompleted(true);
-    showDestinationHub({ focus: false, markComplete: false });
-    setIntroHistoryState("hub");
-    return;
-  }
-
-  if (!forceIntro && (skipIntro || presentationLaunch || automatedLaunch || window.location.hash === "#studioWorkspace")) {
+  if (!hubLaunch && (skipIntro || presentationLaunch || automatedLaunch || window.location.hash === "#studioWorkspace")) {
     openStudioWithoutGate({ markComplete: true });
     setIntroHistoryState("studio");
     return;
   }
 
-  if (!forceIntro && getIntroCompleted()) {
-    showDestinationHub({ focus: false, markComplete: false });
-    setIntroHistoryState("hub");
-    return;
-  }
-
-  introGate.hidden = false;
-  if (introHub) {
-    introHub.hidden = true;
-  }
-  if (introHubBackButton) {
-    introHubBackButton.hidden = false;
-  }
-  logoIntroContent?.removeAttribute("aria-hidden");
-  introGate.classList.remove("is-choosing", "is-closing");
-  document.body.classList.add("is-intro-active");
-  setIntroBackgroundInert(true);
-  setIntroHistoryState("intro");
+  showDestinationHub({ focus: false });
+  setIntroHistoryState("hub");
 }
 
 function getIntroCompleted() {

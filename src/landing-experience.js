@@ -81,18 +81,28 @@ function init() {
       },
       (context) => {
         const desktop = Boolean(context.conditions?.desktop);
-        const useHeavyExperience = desktop && !lowHardware;
+        const useDesktopEffects = desktop && !lowHardware;
+        const useStorySequence = desktop ? !lowHardware : true;
         const branchCleanups = [];
 
-        root.classList.toggle("uses-story-fallback", !useHeavyExperience);
-        root.classList.toggle("is-webgl-fallback", !useHeavyExperience);
+        root.classList.toggle("uses-story-fallback", !useStorySequence);
+        root.classList.toggle("is-webgl-fallback", !useDesktopEffects);
 
-        if (useHeavyExperience) {
+        if (useDesktopEffects) {
           branchCleanups.push(setupAurora(root));
-          branchCleanups.push(setupStorySequence(root, wrapper, gsap, ScrollTrigger));
-          branchCleanups.push(setupHorizontalServices(root, wrapper, gsap, ScrollTrigger));
+        }
+
+        if (useStorySequence) {
+          branchCleanups.push(
+            setupStorySequence(root, wrapper, gsap, ScrollTrigger, { compact: !desktop })
+          );
         } else {
           branchCleanups.push(setupStoryFallback(root, wrapper, gsap));
+        }
+
+        if (useDesktopEffects) {
+          branchCleanups.push(setupHorizontalServices(root, wrapper, gsap, ScrollTrigger));
+        } else {
           branchCleanups.push(resetHorizontalServices(root, gsap));
         }
 
@@ -292,6 +302,7 @@ function setupHeroTitle(scope, gsap, SplitText) {
 
   let split;
   let timeline;
+  title.classList.remove("is-title-revealed");
 
   try {
     split = new SplitText(title, {
@@ -317,7 +328,8 @@ function setupHeroTitle(scope, gsap, SplitText) {
       yPercent: 0,
       rotationX: 0,
       duration: 0.82,
-      stagger: 0.018
+      stagger: 0.018,
+      onComplete: () => title.classList.add("is-title-revealed")
     });
   } catch (error) {
     console.warn("[DLS Landing] SplitText no pudo preparar el titular.", error);
@@ -327,6 +339,7 @@ function setupHeroTitle(scope, gsap, SplitText) {
 
   return () => {
     timeline?.kill();
+    title.classList.remove("is-title-revealed");
     split?.revert();
   };
 }
@@ -633,7 +646,7 @@ function setupAuroraRenderer(scope, THREE) {
   }
 }
 
-function setupStorySequence(scope, wrapper, gsap, ScrollTrigger) {
+function setupStorySequence(scope, wrapper, gsap, ScrollTrigger, { compact = false } = {}) {
   const section = scope.querySelector("#demostracion");
   const stage = section?.querySelector(".dls-story-stage");
   const canvas = section?.querySelector("#dlsStoryCanvas");
@@ -701,11 +714,11 @@ function setupStorySequence(scope, wrapper, gsap, ScrollTrigger) {
     if (!frames[activeFrame]) drawImageCover(poster);
   });
 
-  const workers = Array.from({ length: 6 }, () => preloadWorker());
+  const workers = Array.from({ length: compact ? 4 : 6 }, () => preloadWorker());
   preloadDeadline = window.setTimeout(() => {
     preloadAborted = true;
     pendingCancels.forEach((cancel) => cancel());
-  }, 12000);
+  }, compact ? 20000 : 12000);
   Promise.all(workers).then(onPreloadComplete);
 
   if ("ResizeObserver" in window) {
@@ -807,8 +820,12 @@ function setupStorySequence(scope, wrapper, gsap, ScrollTrigger) {
       id: `${LANDING_TRIGGER_PREFIX}story`,
       trigger: stage,
       scroller: wrapper,
-      start: "top 80px",
-      end: () => `+=${Math.max(3600, Math.round(window.innerHeight * 5.25))}`,
+      start: compact ? "top 72px" : "top 80px",
+      end: () =>
+        `+=${Math.max(
+          compact ? 3200 : 3600,
+          Math.round(window.innerHeight * (compact ? 4.6 : 5.25))
+        )}`,
       pin: stage,
       pinSpacing: true,
       scrub: 0.18,

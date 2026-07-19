@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="src/hero-layouts-responsive.css?v=20260626-1">
     <link rel="stylesheet" href="src/product-polish.css?v=20260715-1">
     <link rel="stylesheet" href="src/studio-precision.css?v=20260715-1">
-    <link rel="stylesheet" href="src/suite-revival.css?v=20260718-1">
+    <link rel="stylesheet" href="src/suite-revival.css?v=20260719-1">
   </head>
   <body>
     <div class="cursor-glow" aria-hidden="true"></div>
@@ -31,26 +31,12 @@
         type="button"
         aria-haspopup="dialog"
         aria-controls="introHelpModal"
-        aria-label="Ver comandos para ejecutar DLS en local"
-        title="Comandos para local"
+        aria-label="Ver información y comandos de DLS"
+        title="Información y comandos"
       >
         <span aria-hidden="true">i</span>
       </button>
-      <div class="intro-gate-content">
-        <div class="intro-launch-copy">
-          <p class="intro-launch-status"><span aria-hidden="true"></span> DLS Product Suite <strong>Online</strong></p>
-          <p class="intro-launch-kicker">El sistema operativo para negocios locales</p>
-          <h1>Diseña una marca. Lanza una web. Haz crecer el negocio.</h1>
-          <p class="intro-launch-summary">
-            Del primer lead a una presencia digital lista para vender: estrategia, producción,
-            operaciones y entrega en un único espacio de trabajo.
-          </p>
-          <div class="intro-launch-points" aria-label="Capacidades de DLS">
-            <span><b>01</b> Descubrir</span>
-            <span><b>02</b> Diseñar</span>
-            <span><b>03</b> Publicar</span>
-          </div>
-        </div>
+      <div class="intro-logo-source" hidden aria-hidden="true">
         <div class="intro-logo-stage">
           <svg class="intro-logo-svg" viewBox="0 0 1180 900" role="img" aria-label="DLS Digital Local Sites">
             <defs>
@@ -125,10 +111,6 @@
             </g>
           </svg>
         </div>
-        <button class="intro-start-button" id="introStartButton" type="button" aria-controls="introHub">
-          <span>Abrir workspace</span>
-          <span class="intro-start-arrow" aria-hidden="true">&#8599;</span>
-        </button>
       </div>
 
       <div class="intro-hub" id="introHub" aria-label="Elegir destino DLS" hidden>
@@ -140,10 +122,6 @@
               <small><i aria-hidden="true"></i> Sistema operativo</small>
             </div>
           </div>
-          <button class="intro-hub-back" id="introHubBackButton" type="button">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12.5 4.5-5 5.5 5 5.5M8 10h8"></path></svg>
-            Volver
-          </button>
         </div>
 
         <div class="intro-hub-copy">
@@ -301,13 +279,14 @@
         <section class="intro-help-dialog" tabindex="-1">
           <header>
             <div>
-              <span>Ayuda local</span>
-              <h2 id="introHelpTitle">Comandos para arrancar DLS</h2>
+              <span>Información DLS</span>
+              <h2 id="introHelpTitle">Identidad y comandos</h2>
             </div>
             <button class="intro-help-close" type="button" data-intro-help-close aria-label="Cerrar">x</button>
           </header>
 
           <div class="intro-help-body">
+            <section class="intro-help-logo-showcase" data-intro-help-logo aria-label="Animación de identidad DLS"></section>
             <p>Si estas en Render o en la web desplegada, no tienes que escribir nada: Render instala dependencias y ejecuta el servidor automaticamente.</p>
 
             <div class="intro-help-command-group">
@@ -1460,7 +1439,7 @@ npm.cmd start</code></pre>
     <script src="src/studio/quality-control.js?v=20260622-1"></script>
     <script src="src/studio/renderer.js?v=20260622-2"></script>
     <script src="src/studio/exporter.js?v=20260622-1"></script>
-    <script src="src/app.js?v=20260709-1"></script>
+    <script src="src/app.js?v=20260719-1"></script>
     <script src="src/studio-experience.js?v=20260715-1"></script>
   </body>
 </html>

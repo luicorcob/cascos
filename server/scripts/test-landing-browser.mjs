@@ -218,23 +218,37 @@ async function auditMobile() {
   await setViewport(390, 844, true);
   await cdp.send("Emulation.setEmulatedMedia", { media: "", features: [] });
   await navigateAndWait(landingUrl);
-  await waitForExpression(`document.querySelector("#dlsLanding")?.classList.contains("is-motion-ready")`);
+  await waitForExpression(`
+    document.querySelector("#dlsLanding")?.classList.contains("is-motion-ready") &&
+    document.querySelector("[data-hero-title]")?.classList.contains("is-title-revealed") &&
+    (
+      document.querySelector("#demostracion")?.classList.contains("is-story-ready") ||
+      document.querySelector("#demostracion")?.classList.contains("is-story-fallback")
+    )
+  `, 25_000);
 
   const state = await evaluateObject(`(() => {
     const scroller = document.querySelector(".dls-landing-scroll");
     const primary = document.querySelector(".dls-hero-actions .dls-button-primary").getBoundingClientRect();
     const product = document.querySelector(".dls-hero-product").getBoundingClientRect();
+    const story = document.querySelector("#demostracion");
+    const title = document.querySelector("[data-hero-title]");
     return {
       errors: window.__dlsLandingErrors,
       widthOverflow: scroller.scrollWidth - scroller.clientWidth,
       scrollRatio: scroller.scrollHeight / scroller.clientHeight,
       desktopStory: getComputedStyle(document.querySelector(".dls-story-desktop")).display,
       mobileStory: getComputedStyle(document.querySelector(".dls-story-mobile")).display,
+      storyReady: story.classList.contains("is-story-ready"),
+      canvasHidden: document.querySelector("#dlsStoryCanvas").hidden,
       productDisplay: getComputedStyle(document.querySelector(".dls-hero-product")).display,
       productLeft: product.left,
       productRight: product.right,
       primaryHeight: primary.height,
       primaryWidth: primary.width,
+      titleRevealed: title.classList.contains("is-title-revealed"),
+      titleLineOverflow: Array.from(title.querySelectorAll(".dls-hero-line"))
+        .map((line) => getComputedStyle(line).overflow),
       heavyFramesRequested: performance.getEntriesByType("resource")
         .filter((entry) => /sequence\\/frame-\\d{3}\\.webp/.test(entry.name)).length
     };
@@ -243,26 +257,58 @@ async function auditMobile() {
   assert.deepEqual(state.errors, []);
   assert.ok(state.widthOverflow <= 1, `Mobile horizontal overflow: ${state.widthOverflow}px`);
   assert.ok(state.scrollRatio > 10);
-  assert.equal(state.desktopStory, "none");
-  assert.notEqual(state.mobileStory, "none");
+  assert.equal(state.storyReady, true);
+  assert.notEqual(state.desktopStory, "none");
+  assert.equal(state.mobileStory, "none");
+  assert.equal(state.canvasHidden, false);
   assert.notEqual(state.productDisplay, "none");
   assert.ok(state.productLeft >= 0 && state.productRight <= 390);
   assert.ok(state.primaryHeight >= 44 && state.primaryWidth >= 44);
+  assert.equal(state.titleRevealed, true);
   assert.ok(
-    state.heavyFramesRequested <= 6,
-    `Mobile loaded ${state.heavyFramesRequested} story frames instead of the static fallback`
+    state.titleLineOverflow.length > 0 &&
+      state.titleLineOverflow.every((overflow) => overflow === "visible"),
+    `Mobile title lines still clip their text: ${state.titleLineOverflow.join(", ")}`
   );
+  assert.ok(
+    state.heavyFramesRequested >= 85,
+    `Mobile loaded only ${state.heavyFramesRequested} frames from the full story sequence`
+  );
+  await captureScreenshot("mobile-hero");
 
-  if (screenshotDirectory) {
-    await evaluateObject(`(() => {
-      const scroller = document.querySelector(".dls-landing-scroll");
-      const target = document.querySelector("#demostracion");
-      scroller.scrollTop += target.getBoundingClientRect().top - 80;
-      return scroller.scrollTop;
-    })()`);
-    await delay(500);
-    await captureScreenshot("mobile-story");
-  }
+  const storyRange = await evaluateObject(`(() => {
+    const trigger = window.ScrollTrigger.getById("dls-landing-story");
+    return { start: trigger.start, end: trigger.end };
+  })()`);
+  await evaluateObject(`(() => {
+    const scroller = document.querySelector(".dls-landing-scroll");
+    scroller.scrollTop = ${storyRange.start} + (${storyRange.end} - ${storyRange.start}) * 0.56;
+    window.ScrollTrigger.update();
+    return scroller.scrollTop;
+  })()`);
+  await delay(700);
+
+  const storyProgress = await evaluateObject(`(() => {
+    const visual = document.querySelector(".dls-story-visual").getBoundingClientRect();
+    const frame = Number(document.querySelector("[data-story-frame]").textContent.match(/\\d+/)?.[0] || 0);
+    return {
+      frame,
+      visualTop: visual.top,
+      visualBottom: visual.bottom,
+      activeStep: Array.from(document.querySelectorAll("[data-story-step]"))
+        .findIndex((step) => step.classList.contains("is-active"))
+    };
+  })()`);
+  assert.ok(
+    storyProgress.frame >= 45 && storyProgress.frame <= 58,
+    `Mobile story did not scrub to the expected frame: ${storyProgress.frame}`
+  );
+  assert.ok(storyProgress.activeStep >= 2 && storyProgress.activeStep <= 3);
+  assert.ok(
+    storyProgress.visualTop < 600 && storyProgress.visualBottom > 72,
+    "The mobile story canvas must remain visible while scrubbing"
+  );
+  await captureScreenshot("mobile-story");
 }
 
 async function auditDesktopProcess() {
@@ -390,7 +436,7 @@ async function auditReducedMotion() {
 async function auditWorkspaceEntry() {
   await setViewport(1440, 1000, false);
   await cdp.send("Emulation.setEmulatedMedia", { media: "", features: [] });
-  await navigateAndWait(`${baseUrl}/workspace.html?hub=1&mode=client`);
+  await navigateAndWait(`${baseUrl}/workspace.html?hub=1&mode=developer`);
   await waitForExpression(`
     document.documentElement.dataset.studioReady === "true" ||
     Boolean(document.documentElement.dataset.studioError)
@@ -402,9 +448,13 @@ async function auditWorkspaceEntry() {
     studioError: document.documentElement.dataset.studioError || "",
     gateHidden: document.querySelector("#introGate").hidden,
     hubHidden: document.querySelector("#introHub").hidden,
-    clientSelected:
-      document.querySelector('[data-intro-mode="client"]').getAttribute("aria-selected"),
-    clientPanelHidden: document.querySelector('[data-intro-mode-panel="client"]').hidden
+    developerSelected:
+      document.querySelector('[data-intro-mode="developer"]').getAttribute("aria-selected"),
+    developerPanelHidden: document.querySelector('[data-intro-mode-panel="developer"]').hidden,
+    startButtonMissing: document.querySelector("#introStartButton") === null,
+    legacyIntroMissing: document.querySelector(".intro-gate-content") === null,
+    logoInsideHelp:
+      document.querySelector("[data-intro-help-logo] .intro-logo-stage") !== null
   }))()`);
 
   assert.deepEqual(state.errors, []);
@@ -412,8 +462,47 @@ async function auditWorkspaceEntry() {
   assert.equal(state.studioError, "");
   assert.equal(state.gateHidden, false);
   assert.equal(state.hubHidden, false);
-  assert.equal(state.clientSelected, "true");
-  assert.equal(state.clientPanelHidden, false);
+  assert.equal(state.developerSelected, "true");
+  assert.equal(state.developerPanelHidden, false);
+  assert.equal(state.startButtonMissing, true);
+  assert.equal(state.legacyIntroMissing, true);
+  assert.equal(state.logoInsideHelp, true);
+
+  await evaluateObject(`document.querySelector("#introHelpButton").click()`);
+  await waitForExpression(`document.querySelector("#introHelpModal").hidden === false`);
+  const help = await evaluateObject(`(() => {
+    const modal = document.querySelector("#introHelpModal");
+    const showcase = modal.querySelector("[data-intro-help-logo]");
+    const stage = showcase.querySelector(".intro-logo-stage");
+    const firstCommand = modal.querySelector(".intro-help-command-group");
+    const tube = stage.querySelector(".intro-tube");
+    const rect = stage.getBoundingClientRect();
+    return {
+      modalHidden: modal.hidden,
+      stageWidth: rect.width,
+      stageHeight: rect.height,
+      logoBeforeCommands: Boolean(
+        showcase.compareDocumentPosition(firstCommand) & Node.DOCUMENT_POSITION_FOLLOWING
+      ),
+      animationName: getComputedStyle(tube).animationName
+    };
+  })()`);
+  assert.equal(help.modalHidden, false);
+  assert.ok(help.stageWidth > 300 && help.stageHeight > 200);
+  assert.equal(help.logoBeforeCommands, true);
+  assert.match(help.animationName, /introTubeDraw/);
+  await captureScreenshot("workspace-info");
+
+  await evaluateObject(`
+    document.querySelector("[data-intro-help-close]").click();
+    document.querySelector('[data-intro-mode="client"]').click();
+  `);
+  const clientMode = await evaluateObject(`(() => ({
+    selected: document.querySelector('[data-intro-mode="client"]').getAttribute("aria-selected"),
+    panelHidden: document.querySelector('[data-intro-mode-panel="client"]').hidden
+  }))()`);
+  assert.equal(clientMode.selected, "true");
+  assert.equal(clientMode.panelHidden, false);
 }
 
 async function clickStoryAnchor(hash) {

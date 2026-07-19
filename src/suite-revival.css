@@ -1101,6 +1101,49 @@
   }
 }
 
+.intro-help-dialog {
+  width: min(900px, 100%);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.intro-help-body {
+  min-height: 0;
+}
+
+.intro-help-logo-showcase {
+  display: grid;
+  place-items: center;
+  min-height: 340px;
+  padding: 4px 0 10px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.intro-help-logo-showcase .intro-logo-stage {
+  grid-area: auto;
+  width: min(100%, 620px);
+  height: 330px;
+  aspect-ratio: auto;
+  justify-self: center;
+  margin: 0;
+  padding: 8px 22px 42px;
+  border-radius: 24px;
+}
+
+.intro-help-logo-showcase .intro-logo-stage::after {
+  right: 18px;
+  bottom: 14px;
+  left: 18px;
+  min-height: 34px;
+  content: "DLS  /  Digital Local Sites";
+}
+
+.intro-help-logo-showcase .intro-logo-svg {
+  width: min(100%, 540px);
+  max-height: 100%;
+  transform: translateY(-5%);
+}
+
 @media (max-width: 640px) {
   .intro-gate {
     align-items: start;
@@ -1112,6 +1155,30 @@
     width: 100%;
     max-height: none;
     padding: 0 2px 20px 0;
+  }
+
+  .intro-help-logo-showcase {
+    min-height: 250px;
+  }
+
+  .intro-help-logo-showcase .intro-logo-stage {
+    width: 100%;
+    height: 240px;
+    padding: 4px 10px 34px;
+    border-radius: 18px;
+  }
+
+  .intro-help-logo-showcase .intro-logo-stage::after {
+    right: 10px;
+    bottom: 9px;
+    left: 10px;
+    min-height: 28px;
+    font-size: 0.55rem;
+  }
+
+  .intro-help-logo-showcase .intro-logo-svg {
+    width: min(100%, 420px);
+    transform: translateY(-7%);
   }
 
   .intro-hub-head {
