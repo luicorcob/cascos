@@ -3761,6 +3761,24 @@
     font-size: 0.875rem;
     line-height: 1.55;
   }
+
+  .dls-story.is-story-compact-scroll:is(.is-story-loading, .is-story-ready)
+    .dls-story-desktop {
+    min-height: calc(100svh - 4.5rem + 3200px);
+  }
+
+  .dls-story.is-story-compact-scroll {
+    overflow: visible;
+  }
+
+  .dls-story.is-story-compact-scroll:is(.is-story-loading, .is-story-ready)
+    .dls-story-stage {
+    position: sticky;
+    top: 4.5rem;
+    z-index: 2;
+    transform: none;
+    will-change: auto;
+  }
 }
 
 @media (max-width: 47.9375rem) {

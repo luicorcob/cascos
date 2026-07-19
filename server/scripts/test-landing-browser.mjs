@@ -278,8 +278,13 @@ async function auditMobile() {
 
   const storyRange = await evaluateObject(`(() => {
     const trigger = window.ScrollTrigger.getById("dls-landing-story");
-    return { start: trigger.start, end: trigger.end };
+    return {
+      start: trigger.start,
+      end: trigger.end,
+      usesJsPin: Boolean(trigger.vars.pin)
+    };
   })()`);
+  assert.equal(storyRange.usesJsPin, false);
   await evaluateObject(`(() => {
     const scroller = document.querySelector(".dls-landing-scroll");
     scroller.scrollTop = ${storyRange.start} + (${storyRange.end} - ${storyRange.start}) * 0.56;
@@ -290,11 +295,16 @@ async function auditMobile() {
 
   const storyProgress = await evaluateObject(`(() => {
     const visual = document.querySelector(".dls-story-visual").getBoundingClientRect();
+    const stage = document.querySelector(".dls-story-stage");
+    const stageRect = stage.getBoundingClientRect();
     const frame = Number(document.querySelector("[data-story-frame]").textContent.match(/\\d+/)?.[0] || 0);
     return {
       frame,
       visualTop: visual.top,
       visualBottom: visual.bottom,
+      stageTop: stageRect.top,
+      stagePosition: getComputedStyle(stage).position,
+      stageTransform: getComputedStyle(stage).transform,
       activeStep: Array.from(document.querySelectorAll("[data-story-step]"))
         .findIndex((step) => step.classList.contains("is-active"))
     };
@@ -304,6 +314,12 @@ async function auditMobile() {
     `Mobile story did not scrub to the expected frame: ${storyProgress.frame}`
   );
   assert.ok(storyProgress.activeStep >= 2 && storyProgress.activeStep <= 3);
+  assert.equal(storyProgress.stagePosition, "sticky");
+  assert.equal(storyProgress.stageTransform, "none");
+  assert.ok(
+    storyProgress.stageTop >= 70 && storyProgress.stageTop <= 74,
+    `Mobile sticky story moved away from its stable top: ${storyProgress.stageTop}px`
+  );
   assert.ok(
     storyProgress.visualTop < 600 && storyProgress.visualBottom > 72,
     "The mobile story canvas must remain visible while scrubbing"
@@ -454,7 +470,9 @@ async function auditWorkspaceEntry() {
     startButtonMissing: document.querySelector("#introStartButton") === null,
     legacyIntroMissing: document.querySelector(".intro-gate-content") === null,
     logoInsideHelp:
-      document.querySelector("[data-intro-help-logo] .intro-logo-stage") !== null
+      document.querySelector("[data-intro-help-logo] .intro-logo-stage") !== null,
+    hubLogoSrc: document.querySelector(".intro-hub-brand-mark img")?.getAttribute("src") || "",
+    hubLogoText: document.querySelector(".intro-hub-brand-mark")?.textContent.trim() || ""
   }))()`);
 
   assert.deepEqual(state.errors, []);
@@ -467,6 +485,9 @@ async function auditWorkspaceEntry() {
   assert.equal(state.startButtonMissing, true);
   assert.equal(state.legacyIntroMissing, true);
   assert.equal(state.logoInsideHelp, true);
+  assert.equal(state.hubLogoSrc, "Logo.png");
+  assert.equal(state.hubLogoText, "");
+  await captureScreenshot("workspace-hub");
 
   await evaluateObject(`document.querySelector("#introHelpButton").click()`);
   await waitForExpression(`document.querySelector("#introHelpModal").hidden === false`);

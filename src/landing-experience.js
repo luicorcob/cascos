@@ -668,6 +668,7 @@ function setupStorySequence(scope, wrapper, gsap, ScrollTrigger, { compact = fal
 
   section.classList.add("is-story-loading");
   section.classList.remove("is-story-fallback", "is-story-ready");
+  section.classList.toggle("is-story-compact-scroll", compact);
   const context = canvas.getContext("2d", { alpha: false, desynchronized: true });
   const frames = new Array(FRAME_COUNT);
   const pendingCancels = new Set();
@@ -816,9 +817,9 @@ function setupStorySequence(scope, wrapper, gsap, ScrollTrigger, { compact = fal
     }, 260);
 
     updateStory(0);
-    storyTrigger = ScrollTrigger.create({
+    const triggerOptions = {
       id: `${LANDING_TRIGGER_PREFIX}story`,
-      trigger: stage,
+      trigger: compact ? stage.parentElement : stage,
       scroller: wrapper,
       start: compact ? "top 72px" : "top 80px",
       end: () =>
@@ -826,10 +827,6 @@ function setupStorySequence(scope, wrapper, gsap, ScrollTrigger, { compact = fal
           compact ? 3200 : 3600,
           Math.round(window.innerHeight * (compact ? 4.6 : 5.25))
         )}`,
-      pin: stage,
-      pinSpacing: true,
-      scrub: 0.18,
-      anticipatePin: 1,
       invalidateOnRefresh: true,
       markers: false,
       onUpdate: (self) => updateStory(self.progress),
@@ -837,7 +834,16 @@ function setupStorySequence(scope, wrapper, gsap, ScrollTrigger, { compact = fal
         resizeCanvas();
         updateStory(self.progress);
       }
-    });
+    };
+    if (!compact) {
+      Object.assign(triggerOptions, {
+        pin: stage,
+        pinSpacing: true,
+        scrub: 0.18,
+        anticipatePin: 1
+      });
+    }
+    storyTrigger = ScrollTrigger.create(triggerOptions);
     ScrollTrigger.refresh();
   }
 
@@ -926,7 +932,7 @@ function setupStorySequence(scope, wrapper, gsap, ScrollTrigger, { compact = fal
   function activateFallback() {
     storyTrigger?.kill();
     storyTrigger = null;
-    section.classList.remove("is-story-loading", "is-story-ready");
+    section.classList.remove("is-story-loading", "is-story-ready", "is-story-compact-scroll");
     section.classList.add("is-story-fallback");
     scope.classList.add("uses-story-fallback");
     canvas.hidden = true;
@@ -958,7 +964,12 @@ function setupStorySequence(scope, wrapper, gsap, ScrollTrigger, { compact = fal
     steps.forEach((step, index) => {
       step.classList.toggle("is-active", originalStepStates[index]);
     });
-    section.classList.remove("is-story-loading", "is-story-ready", "is-story-fallback");
+    section.classList.remove(
+      "is-story-loading",
+      "is-story-ready",
+      "is-story-fallback",
+      "is-story-compact-scroll"
+    );
     restoreVisibility(canvas, canvasState);
     mobileBlocks.forEach((block, index) => restoreVisibility(block, mobileStates[index]));
     if (progress && originalProgress) restoreProgress(progress, originalProgress);

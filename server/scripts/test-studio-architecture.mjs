@@ -35,6 +35,7 @@ assert.doesNotMatch(index, /id="introStartButton"/);
 assert.doesNotMatch(index, /class="intro-gate-content"/);
 assert.match(index, /data-intro-help-logo/);
 assert.match(index, /id="introHelpButton"/);
+assert.match(index, /class="intro-hub-brand-mark"[^>]*>[\s\S]*?<img src="Logo\.png"/);
 assert.ok(appStats.size < 180_000, `src/app.js must remain below 180 KB; current size is ${appStats.size}`);
 
 console.log(`Studio architecture checks passed. app.js: ${appStats.size} bytes.`);
