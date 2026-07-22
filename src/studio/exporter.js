@@ -32,7 +32,7 @@
       const schema = JSON.stringify(buildLocalBusinessSchema(business), null, 2).replace(/</g, "\\u003c");
       const runtimeData = JSON.stringify(buildExportRuntimeData(business), null, 2).replace(/</g, "\\u003c");
       const apiBase = window.LocalLiftApi?.getBase?.() || "";
-      const zoneAssetVersion = encodeURIComponent(`${DATA_VERSION || "6"}-zone-20260722-4`);
+      const zoneAssetVersion = encodeURIComponent(`${DATA_VERSION || "6"}-zone-20260722-5`);
       const zoneCssUrl = `${apiBase}/src/styles/zone-discovery.css?v=${zoneAssetVersion}`;
       const zoneScriptUrl = `${apiBase}/src/business/zone-discovery.js?v=${zoneAssetVersion}`;
 

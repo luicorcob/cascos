@@ -9,10 +9,19 @@ import {
   upsertBusinessConnections,
   upsertZonePois
 } from "./zone-discovery-store.mjs";
-import { enrichZonePoiDescriptions, enrichZonePoiDescriptionsAt, isEditorialImage } from "./zone-content-enrichment.mjs";
+import {
+  enrichZonePoiDescriptions,
+  enrichZonePoiDescriptionsAt,
+  isEditorialImage,
+  nameMatchScore,
+  truncateAtSentence,
+  truncateAtWord
+} from "./zone-content-enrichment.mjs";
 
 export const ZONE_CARD_LIMIT = 6;
 export const ZONE_MINIMUM_CARDS = 3;
+const ZONE_RICH_CACHE_MINIMUM = 12;
+const ZONE_RICH_CACHE_CATEGORIES = 4;
 
 const CATEGORY_AFFINITY = new Map([
   [pairKey("restaurant", "icecream"), 90],
@@ -62,12 +71,12 @@ export async function loadPoisForZone(business, radiusMeters = 1500, options = {
   const existing = (await listZonePois())
     .map((poi) => withDistance(poi, located.coordinates))
     .filter((poi) => poi.distanceMeters <= radiusMeters);
-  if (existing.length >= ZONE_MINIMUM_CARDS && options.force !== true) {
+  if (hasRichPoiCoverage(existing) && options.force !== true) {
     const content = await enrichZonePoiDescriptions(located.id, { limit: options.contentLimit || 80 });
     return { imported: 0, cached: true, totalInRadius: existing.length, pois: existing, content };
   }
 
-  const fetched = await fetchOverpassPois(located.coordinates, radiusMeters);
+  const fetched = await fetchZonePois(located.coordinates, radiusMeters);
   const stored = await upsertZonePois(fetched);
   const content = await enrichZonePoiDescriptions(located.id, { limit: options.contentLimit || 80 });
   const inRadius = (await listZonePois())
@@ -158,8 +167,8 @@ export async function buildZonePreview(input = {}) {
     .filter((poi) => poi.distanceMeters <= radiusMeters);
   let imported = 0;
 
-  if (input.force === true || nearby.length < ZONE_MINIMUM_CARDS) {
-    const fetched = await fetchOverpassPois(coordinates, radiusMeters);
+  if (input.force === true || !hasRichPoiCoverage(nearby)) {
+    const fetched = await fetchZonePois(coordinates, radiusMeters);
     imported = (await upsertZonePois(fetched)).length;
   }
 
@@ -237,21 +246,72 @@ export async function ensureBusinessZoneLocation(business) {
   return saveBusinessZoneLocation(business.id, geocoded.coordinates, geocoded.zone || business.city);
 }
 
-export async function fetchOverpassPois(center, radiusMeters = 1500) {
+export async function fetchZonePois(center, radiusMeters = 1500, options = {}) {
+  const results = await Promise.allSettled([
+    fetchOverpassPois(center, radiusMeters, options),
+    fetchWikipediaPois(center, radiusMeters, options)
+  ]);
+  const pois = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+  if (!pois.length) {
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure) throw failure.reason;
+  }
+  return mergeDiscoveredPois(pois, center, radiusMeters)
+    .slice(0, 180)
+    .map(({ distanceMeters, ...poi }) => poi);
+}
+
+export async function fetchOverpassPois(center, radiusMeters = 1500, options = {}) {
   const endpoint = clean(process.env.DLS_OVERPASS_URL) || "https://overpass-api.de/api/interpreter";
-  const query = buildZoneOverpassQuery(center, radiusMeters);
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-      "user-agent": clean(process.env.DLS_RADAR_USER_AGENT) || "DLS-Zone-Discovery/1.0"
-    },
-    body: new URLSearchParams({ data: query }).toString(),
-    signal: AbortSignal.timeout(clampNumber(process.env.ZONE_OVERPASS_TIMEOUT_MS, 5000, 60000, 30000))
-  });
-  if (!response.ok) throw zoneError(502, `Overpass returned ${response.status}`, "zone_overpass_failed");
-  const payload = await response.json();
-  return (Array.isArray(payload.elements) ? payload.elements : [])
+  const fallbackEndpoint = clean(process.env.DLS_OVERPASS_FALLBACK_URL) || "https://overpass.private.coffee/api/interpreter";
+  const fetchImpl = options.fetchImpl || fetch;
+  const queries = buildZoneOverpassQueries(center, radiusMeters);
+  const deadline = Date.now() + clampNumber(process.env.ZONE_OVERPASS_TOTAL_TIMEOUT_MS, 10000, 120000, 60000);
+  const requestQuery = async (query, target) => {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs < 1000) throw zoneError(504, "Overpass discovery time budget exhausted", "zone_overpass_timeout");
+    const response = await fetchImpl(target, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "user-agent": clean(process.env.DLS_RADAR_USER_AGENT) || "DLS-Zone-Discovery/1.0"
+      },
+      body: new URLSearchParams({ data: query }).toString(),
+      signal: AbortSignal.timeout(Math.min(
+        remainingMs,
+        clampNumber(process.env.ZONE_OVERPASS_TIMEOUT_MS, 5000, 60000, 25000)
+      ))
+    });
+    if (!response.ok) throw zoneError(502, `Overpass returned ${response.status}`, "zone_overpass_failed");
+    const payload = await response.json();
+    if (payload?.remark && !payload?.elements?.length) throw zoneError(502, `Overpass: ${payload.remark}`, "zone_overpass_failed");
+    return Array.isArray(payload.elements) ? payload.elements : [];
+  };
+  const requests = [];
+  for (const query of queries) {
+    if (Date.now() >= deadline - 1000) {
+      requests.push({ status: "rejected", reason: zoneError(504, "Overpass discovery time budget exhausted", "zone_overpass_timeout") });
+      continue;
+    }
+    let result;
+    try {
+      result = { status: "fulfilled", value: await requestQuery(query, endpoint) };
+    } catch (reason) {
+      result = { status: "rejected", reason };
+      if (fallbackEndpoint !== endpoint) {
+        try {
+          result = { status: "fulfilled", value: await requestQuery(query, fallbackEndpoint) };
+        } catch {}
+      }
+    }
+    requests.push(result);
+  }
+  const successful = requests.filter((result) => result.status === "fulfilled");
+  if (!successful.length) throw requests[0]?.reason || zoneError(502, "Overpass did not return data", "zone_overpass_failed");
+  const elements = successful
+    .flatMap((result) => result.value)
+    .filter((element, index, all) => all.findIndex((candidate) => candidate.type === element.type && candidate.id === element.id) === index);
+  return elements
     .map(normalizeOverpassPoi)
     .filter(Boolean)
     .map((poi) => ({ ...poi, distanceMeters: haversineDistance(center, { lat: poi.latitude, lng: poi.longitude }) }))
@@ -262,24 +322,47 @@ export async function fetchOverpassPois(center, radiusMeters = 1500) {
 }
 
 export function buildZoneOverpassQuery(center, radiusMeters = 1500) {
+  return overpassQuery(buildZoneOverpassFragments(center, radiusMeters).flat());
+}
+
+export function buildZoneOverpassQueries(center, radiusMeters = 1500) {
+  return buildZoneOverpassFragments(center, radiusMeters).map(overpassQuery);
+}
+
+function buildZoneOverpassFragments(center, radiusMeters = 1500) {
   const lat = Number(center?.lat).toFixed(6);
   const lng = Number(center?.lng).toFixed(6);
   const around = `(around:${clampNumber(radiusMeters, 250, 10000, 1500)},${lat},${lng})`;
-  return `[out:json][timeout:25];(
-    nwr["historic"]${around};
-    nwr["heritage"]${around};
-    nwr["tourism"~"^(attraction|museum|viewpoint|artwork|gallery|zoo|aquarium)$"]${around};
-    nwr["natural"]${around};
-    nwr["leisure"~"^(park|nature_reserve|garden)$"]${around};
-    nwr["place"="square"]${around};
-    nwr["amenity"~"^(arts_centre|theatre)$"]${around};
-    nwr["man_made"="lighthouse"]${around};
-  );out center tags;`;
+  return [
+    [
+      `nwr["natural"~"^(beach|peak|cape|cliff|cave_entrance|spring)$"]["name"]${around};`,
+      `nwr["leisure"~"^(park|nature_reserve|garden|beach_resort)$"]["name"]${around};`,
+      `nwr["place"="square"]${around};`,
+      `nwr["waterway"="waterfall"]["name"]${around};`
+    ],
+    [
+      `nwr["tourism"~"^(attraction|museum|viewpoint|artwork|gallery|zoo|aquarium)$"]${around};`,
+      `nwr["amenity"~"^(arts_centre|theatre|library|marketplace|townhall)$"]["name"]${around};`,
+      `nwr["man_made"~"^(lighthouse|tower|observatory)$"]["name"]${around};`
+    ],
+    [
+      `nwr["historic"]${around};`,
+      `nwr["heritage"]${around};`,
+      `nwr["building"]["heritage"]["name"]${around};`,
+      `nwr["building"]["wikidata"]["name"]${around};`,
+      `nwr["building"]["wikipedia"]["name"]${around};`,
+      `nwr["amenity"="place_of_worship"]["wikidata"]["name"]${around};`
+    ]
+  ];
+}
+
+function overpassQuery(fragments) {
+  return `[out:json][timeout:25];(\n    ${fragments.join("\n    ")}\n  );out center tags;`;
 }
 
 export function normalizeOverpassPoi(element = {}) {
   const tags = element.tags || {};
-  const name = clean(tags.name || tags["name:es"]);
+  const name = clean(tags["name:es"] || tags.name);
   const latitude = Number(element.lat ?? element.center?.lat);
   const longitude = Number(element.lon ?? element.center?.lon);
   if (!name || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
@@ -298,6 +381,83 @@ export function normalizeOverpassPoi(element = {}) {
     externalRef: wikidata || wikipediaTitle || `${clean(element.type)}/${clean(element.id)}`,
     verified: Boolean(wikidata || wikipediaTitle || tags.heritage || tags["ref:whc"])
   };
+}
+
+export async function fetchWikipediaPois(center, radiusMeters = 1500, options = {}) {
+  const fetchImpl = options.fetchImpl || fetch;
+  const endpoint = clean(options.wikipediaApiUrl) || "https://es.wikipedia.org/w/api.php";
+  const url = new URL(endpoint);
+  url.search = new URLSearchParams({
+    action: "query",
+    generator: "geosearch",
+    ggscoord: `${Number(center?.lat).toFixed(6)}|${Number(center?.lng).toFixed(6)}`,
+    ggsradius: String(clampNumber(radiusMeters, 100, 10000, 1500)),
+    ggslimit: "50",
+    ggsnamespace: "0",
+    prop: "coordinates|extracts|pageimages|pageprops",
+    exintro: "1",
+    explaintext: "1",
+    piprop: "original|thumbnail",
+    pithumbsize: "1400",
+    format: "json",
+    formatversion: "2",
+    origin: "*"
+  }).toString();
+  const response = await fetchImpl(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": clean(process.env.DLS_RADAR_USER_AGENT) || "DLS-Zone-Discovery/1.0"
+    },
+    signal: AbortSignal.timeout(clampNumber(options.timeoutMs || process.env.ZONE_WIKIPEDIA_TIMEOUT_MS, 3000, 60000, 15000))
+  });
+  if (!response.ok) throw zoneError(502, `Wikipedia returned ${response.status}`, "zone_wikipedia_failed");
+  const payload = await response.json();
+  const pages = Array.isArray(payload?.query?.pages)
+    ? payload.query.pages
+    : Object.values(payload?.query?.pages || {});
+  return pages
+    .map(normalizeWikipediaPoi)
+    .filter(Boolean)
+    .map((poi) => ({ ...poi, distanceMeters: haversineDistance(center, { lat: poi.latitude, lng: poi.longitude }) }))
+    .filter((poi) => poi.distanceMeters <= radiusMeters)
+    .sort((a, b) => calculatePoiRelevance(b, radiusMeters) - calculatePoiRelevance(a, radiusMeters) || a.distanceMeters - b.distanceMeters)
+    .map(({ distanceMeters, ...poi }) => poi);
+}
+
+export function normalizeWikipediaPoi(page = {}) {
+  const coordinate = Array.isArray(page.coordinates) ? page.coordinates[0] : null;
+  const name = clean(page.title);
+  const latitude = Number(coordinate?.lat);
+  const longitude = Number(coordinate?.lon ?? coordinate?.lng);
+  if (!name || !Number.isFinite(latitude) || !Number.isFinite(longitude) || page.pageprops?.disambiguation !== undefined) return null;
+  const extract = clean(page.extract);
+  return {
+    name,
+    category: classifyWikipediaPoi(name, extract),
+    descriptionShort: truncateAtWord(extract, 155),
+    descriptionLong: truncateAtSentence(extract, 90),
+    latitude: Number(latitude.toFixed(6)),
+    longitude: Number(longitude.toFixed(6)),
+    imageUrl: clean(page.original?.source || page.thumbnail?.source),
+    source: "wikipedia",
+    externalRef: name,
+    verified: true
+  };
+}
+
+export function classifyWikipediaPoi(name, extract = "") {
+  const title = normalizeText(name);
+  const summary = normalizeText(extract).slice(0, 360);
+  if (/\b(playa|arenal|beach|balneario)\b/.test(title)) return "playa";
+  if (/\b(mirador|belvedere|viewpoint)\b/.test(title)) return "mirador";
+  if (/\b(plaza|plazuela)\b/.test(title)) return "plaza";
+  if (/\b(parque|jardin|jardines|alameda)\b/.test(title)) return "parque";
+  if (/\b(museo|galeria|teatro|auditorio|biblioteca|centro cultural|sala de exposiciones)\b/.test(title)) return "cultura";
+  if (/\b(catedral|basilica|iglesia|ermita|palacio|castillo|alcazar|fortaleza|edificio|mercado|faro|torre|monumento|parlamento|ayuntamiento|convento|monasterio)\b/.test(title)) return "monumento";
+  if (/\b(reserva|cabo|isla|acantilado|monte|montana|cueva|cascada|ria|bahia|humedal)\b/.test(title)) return "naturaleza";
+  if (/\b(edificio historico|monumento|obra del arquitecto|bien de interes cultural)\b/.test(summary)) return "monumento";
+  if (/\b(museo|centro cultural|sala de exposiciones)\b/.test(summary)) return "cultura";
+  return "otro";
 }
 
 export function calculateAffinityScore({ categoryWeight = 0, distanceWeight = 0, interactionWeight = 0 } = {}) {
@@ -353,13 +513,7 @@ export function calculatePoiRelevance(poi, radiusMeters = 1500) {
 }
 
 export function selectVariedPois(pois, limit, radiusMeters = 1500) {
-  const bestByName = new Map();
-  [...pois].forEach((poi) => {
-    const key = normalizeText(poi.name);
-    const current = bestByName.get(key);
-    if (!current || calculatePoiRelevance(poi, radiusMeters) > calculatePoiRelevance(current, radiusMeters)) bestByName.set(key, poi);
-  });
-  const pool = [...bestByName.values()];
+  const pool = mergeDiscoveredPois(pois, null, radiusMeters);
   const selected = [];
   while (selected.length < limit && pool.length) {
     const usedCategories = new Map();
@@ -398,8 +552,16 @@ function toBusinessCard(connection) {
 function toPoiCard(poi) {
   const editorialImageUrl = isEditorialImage(poi.imageUrl) ? optimizeWikimediaImageUrl(poi.imageUrl) : "";
   const wikipediaAttribution = poi.source === "wikipedia" ? {
-    label: "Fuente: Wikipedia",
+    label: "Historia y foto · Wikipedia",
     url: `https://es.wikipedia.org/wiki/${encodeURIComponent(poi.externalRef.replace(/ /g, "_"))}`
+  } : null;
+  const wikidataAttribution = poi.source === "wikidata" && /^Q\d+$/i.test(poi.externalRef) ? {
+    label: "Lugar verificado · Wikidata",
+    url: `https://www.wikidata.org/wiki/${encodeURIComponent(poi.externalRef)}`
+  } : null;
+  const osmAttribution = poi.source === "osm" && /^(?:node|way|relation)\/\d+$/i.test(poi.externalRef) ? {
+    label: "Datos del lugar · OpenStreetMap",
+    url: `https://www.openstreetmap.org/${poi.externalRef}`
   } : null;
   const commonsAttribution = !wikipediaAttribution && /(?:upload\.wikimedia\.org|commons\.wikimedia\.org)/i.test(editorialImageUrl) ? {
     label: "Imagen: Wikimedia Commons",
@@ -415,7 +577,7 @@ function toPoiCard(poi) {
     descriptionShort: poi.descriptionShort,
     descriptionLong: poi.descriptionLong,
     hasLongDescription: Boolean(poi.descriptionLong),
-    attribution: wikipediaAttribution || commonsAttribution,
+    attribution: wikipediaAttribution || wikidataAttribution || osmAttribution || commonsAttribution,
     imageUrl: editorialImageUrl,
     latitude: poi.latitude,
     longitude: poi.longitude,
@@ -432,7 +594,9 @@ function toHostMarker(business) {
     name: business.name,
     latitude: business.coordinates?.lat ?? null,
     longitude: business.coordinates?.lng ?? null,
-    accent: clean(business.brand?.accent) || "#9b6238"
+    accent: clean(business.brand?.accent) || "#9b6238",
+    category: clean(business.category || business.content?.category),
+    logoUrl: clean(business.content?.logoUrl || business.brand?.logoUrl)
   };
 }
 
@@ -489,17 +653,89 @@ function normalizePreviewCoordinates(value) {
 }
 
 function classifyPoi(tags = {}) {
+  if (tags.natural === "beach" || tags.leisure === "beach_resort") return "playa";
   if (tags.historic) return "monumento";
   if (tags.man_made === "lighthouse") return "monumento";
+  if (["tower", "observatory"].includes(tags.man_made)) return "monumento";
+  if (tags.building && (tags.heritage || tags.wikidata || tags.wikipedia || tags.architect || tags.start_date)) return "monumento";
+  if (["townhall", "place_of_worship"].includes(tags.amenity)) return "monumento";
   if (tags.tourism === "viewpoint") return "mirador";
   if (["museum", "gallery", "artwork", "zoo", "aquarium"].includes(tags.tourism)) return "cultura";
-  if (["arts_centre", "theatre"].includes(tags.amenity)) return "cultura";
-  if (tags.natural === "beach") return "playa";
+  if (["arts_centre", "theatre", "library", "marketplace"].includes(tags.amenity)) return "cultura";
   if (["park", "garden"].includes(tags.leisure)) return "parque";
   if (tags.leisure === "nature_reserve") return "naturaleza";
   if (tags.place === "square") return "plaza";
+  if (tags.waterway === "waterfall") return "naturaleza";
   if (tags.natural) return "naturaleza";
   return tags.tourism ? "cultura" : "otro";
+}
+
+function hasRichPoiCoverage(pois) {
+  const items = Array.isArray(pois) ? pois : [];
+  return items.length >= ZONE_RICH_CACHE_MINIMUM
+    && new Set(items.map((poi) => clean(poi.category)).filter(Boolean)).size >= ZONE_RICH_CACHE_CATEGORIES;
+}
+
+function mergeDiscoveredPois(pois, center, radiusMeters = 1500) {
+  const prepared = (Array.isArray(pois) ? pois : [])
+    .filter((poi) => poi && clean(poi.name))
+    .map((poi) => ({
+      ...poi,
+      distanceMeters: Number.isFinite(Number(poi.distanceMeters))
+        ? Number(poi.distanceMeters)
+        : center ? haversineDistance(center, { lat: poi.latitude, lng: poi.longitude }) : 0
+    }))
+    .filter((poi) => !center || poi.distanceMeters <= radiusMeters)
+    .sort((a, b) => discoveryRichness(b) - discoveryRichness(a) || a.distanceMeters - b.distanceMeters);
+  const merged = [];
+  prepared.forEach((candidate) => {
+    const matchIndex = merged.findIndex((current) => samePlace(current, candidate));
+    if (matchIndex === -1) {
+      merged.push(candidate);
+      return;
+    }
+    merged[matchIndex] = mergePoiRecord(merged[matchIndex], candidate);
+  });
+  return merged.sort((a, b) => calculatePoiRelevance(b, radiusMeters) - calculatePoiRelevance(a, radiusMeters) || a.distanceMeters - b.distanceMeters);
+}
+
+function samePlace(left, right) {
+  const exactName = normalizeText(left.name) === normalizeText(right.name);
+  if (exactName) return true;
+  const distance = haversineDistance(
+    { lat: left.latitude, lng: left.longitude },
+    { lat: right.latitude, lng: right.longitude }
+  );
+  return distance <= 120 && nameMatchScore(left.name, right.name) >= 0.82;
+}
+
+function mergePoiRecord(preferred, fallback) {
+  const richer = discoveryRichness(fallback) > discoveryRichness(preferred) ? fallback : preferred;
+  const other = richer === preferred ? fallback : preferred;
+  return {
+    ...other,
+    ...richer,
+    category: richer.category === "otro" && other.category !== "otro" ? other.category : richer.category,
+    descriptionShort: clean(richer.descriptionShort) || clean(other.descriptionShort),
+    descriptionLong: clean(richer.descriptionLong) || clean(other.descriptionLong),
+    imageUrl: isEditorialImage(richer.imageUrl) ? richer.imageUrl : isEditorialImage(other.imageUrl) ? other.imageUrl : "",
+    verified: Boolean(richer.verified || other.verified),
+    distanceMeters: Math.min(finiteDistance(richer.distanceMeters), finiteDistance(other.distanceMeters))
+  };
+}
+
+function discoveryRichness(poi) {
+  return Number(poi.source === "wikipedia") * 48
+    + Number(poi.source === "wikidata") * 24
+    + Number(poi.verified) * 12
+    + Number(isEditorialImage(poi.imageUrl)) * 18
+    + Math.min(18, clean(poi.descriptionLong).length / 12)
+    + Number(poi.category !== "otro") * 6;
+}
+
+function finiteDistance(value) {
+  const distance = Number(value);
+  return Number.isFinite(distance) ? distance : Number.POSITIVE_INFINITY;
 }
 
 function normalizeImageUrl(value) {

@@ -50,18 +50,28 @@
 
   function renderEntry(zone, options) {
     const section = document.createElement("section");
+    const signals = zoneFeatureSignals(zone);
+    const localMix = naturalList(signals.map((signal) => shortCategoryLabel(signal.group).toLowerCase()));
     section.className = "zone-discovery-entry";
     section.style.setProperty("--zone-accent", safeColor(options.accent || zone.host?.accent));
     section.setAttribute("aria-labelledby", "zoneEntryTitle");
     section.innerHTML = `
       <div class="zone-entry-atmosphere" aria-hidden="true"></div>
       <div class="zone-entry-inner">
-        <p class="zone-entry-kicker">Una selección alrededor de ${escapeHtml(options.businessName || zone.host?.name || "este lugar")}</p>
-        <h2 id="zoneEntryTitle">Descubre ${escapeHtml(zone.zone)}</h2>
-        <p>Seis lugares elegidos para entender el barrio caminando, con contexto cultural y recomendaciones locales.</p>
+        <p class="zone-entry-kicker">Una guía local desde ${escapeHtml(options.businessName || zone.host?.name || "este lugar")}</p>
+        <h2 id="zoneEntryTitle">Lo mejor de ${escapeHtml(zone.zone)}, a un paseo.</h2>
+        <p>${escapeHtml(capitalize(localMix || "Lugares con historia"))}, contrastados en fuentes abiertas y ordenados para descubrirlos caminando.</p>
+        <div class="zone-entry-signals" aria-label="Qué encontrarás en la zona">
+          ${signals.map((signal) => `<span><i aria-hidden="true">${categorySvg(signal.group)}</i>${escapeHtml(signal.label)}</span>`).join("")}
+        </div>
+        <div class="zone-entry-proof" aria-label="Resumen de la guía">
+          <span><strong>${zone.recommendations.length}</strong> lugares</span>
+          <span><strong>${signals.length}</strong> tipos de plan</span>
+          <span><strong>4</strong> fuentes abiertas</span>
+        </div>
         <button class="zone-entry-cta" type="button" data-zone-open>
-          <span class="zone-compass" aria-hidden="true">⌖</span>
-          <span>Explorar la zona</span>
+          <span class="zone-compass" aria-hidden="true">${compassSvg()}</span>
+          <span>Abrir el mapa vivo</span>
         </button>
       </div>`;
     return section;
@@ -79,8 +89,8 @@
       <div class="zone-modal-shell">
         <header class="zone-modal-header">
           <button class="zone-modal-close" type="button" data-zone-close aria-label="Cerrar Descubre ${escapeAttr(zone.zone)}">× <span>Cerrar</span></button>
-          <div><p>Selección local documentada</p><h2 id="zoneModalTitle">Descubre ${escapeHtml(zone.zone)}</h2></div>
-          <span class="zone-modal-count">${zone.recommendations.length} imprescindibles</span>
+          <div><p><span class="zone-source-pulse" aria-hidden="true"></span>OpenStreetMap · Wikidata · Wikipedia</p><h2 id="zoneModalTitle">Descubre ${escapeHtml(zone.zone)}</h2></div>
+          <span class="zone-modal-count">${zone.recommendations.length} lugares · ${escapeHtml(formatRadius(zone.settings?.radiusMeters))}</span>
         </header>
         <div class="zone-modal-layout">
           <section class="zone-card-panel" aria-label="Recomendaciones de la zona">
@@ -122,6 +132,13 @@
           </section>
           <section class="zone-map-panel" aria-label="Mapa interactivo de ${escapeAttr(zone.zone)}">
             <div class="zone-map" data-zone-map></div>
+            <div class="zone-map-context">
+              <span><i aria-hidden="true"></i> Guía local verificada</span>
+              <strong>${escapeHtml(formatRadius(zone.settings?.radiusMeters))} alrededor de ti</strong>
+            </div>
+            <div class="zone-map-legend" aria-label="Leyenda del mapa">
+              ${renderMapLegend(zone)}
+            </div>
             <p class="zone-map-fallback" data-zone-map-fallback hidden>El mapa no está disponible ahora mismo. Las recomendaciones siguen accesibles.</p>
             <div class="zone-manual-start" data-route-manual hidden>
               <p>Toca el mapa para marcar tu punto de partida.</p>
@@ -171,7 +188,7 @@
         </figure>
         <div class="zone-card-body">
           <div class="zone-card-heading">
-            <div><p>${escapeHtml(item.category)}</p><h3>${escapeHtml(item.name)}</h3></div>
+            <div><p>${escapeHtml(categoryLabel(item.type === "business" ? "business" : item.category))}</p><h3>${escapeHtml(item.name)}</h3></div>
             <span class="zone-card-distance">a ${Number(item.walkingMinutes || 1)} min andando</span>
           </div>
           ${item.descriptionShort ? `<p class="zone-card-short">${escapeHtml(item.descriptionShort)}</p>` : ""}
@@ -249,6 +266,11 @@
           select();
         }
       });
+      card.addEventListener("mouseenter", () => mapState?.preview?.(item));
+      card.addEventListener("mouseleave", () => {
+        if (!card.classList.contains("is-selected")) mapState?.clearHighlight?.();
+      });
+      card.addEventListener("focusin", () => mapState?.preview?.(item));
       card.querySelector("[data-zone-directions]")?.addEventListener("click", () => {
         trackZoneEvent(zone, eventFor(item, "directions_clicked"));
       });
@@ -555,10 +577,20 @@
       fadeAnimation: false,
       markerZoomAnimation: false
     });
-    global.L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    const labelPane = map.createPane?.("zoneLabels");
+    if (labelPane) {
+      labelPane.style.zIndex = "450";
+      labelPane.style.pointerEvents = "none";
+    }
+    global.L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
       maxZoom: 20,
       subdomains: "abcd",
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+    global.L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
+      maxZoom: 20,
+      subdomains: "abcd",
+      pane: labelPane ? "zoneLabels" : "tilePane"
     }).addTo(map);
     const markers = new Map();
     const points = [];
@@ -569,16 +601,45 @@
     let manualCallback = null;
     let routeLayers = [];
 
-    global.L.marker(hostPoint, { icon: markerIcon("host"), zIndexOffset: 1000 })
+    global.L.circle(hostPoint, {
+      radius: Math.min(2200, Math.max(350, Number(zone.settings?.radiusMeters || 1500))),
+      color: safeColor(zone.host?.accent),
+      fillColor: safeColor(zone.host?.accent),
+      fillOpacity: 0.035,
+      opacity: 0.28,
+      weight: 1,
+      dashArray: "5 10",
+      interactive: false,
+      className: "zone-map-discovery-radius"
+    }).addTo(map);
+
+    global.L.marker(hostPoint, {
+      icon: hostMarkerIcon(zone.host),
+      zIndexOffset: 1000,
+      riseOnHover: true,
+      title: `${zone.host.name}, estás aquí`,
+      alt: `${zone.host.name}, estás aquí`
+    })
       .addTo(map)
-      .bindTooltip(escapeHtml(zone.host.name), { direction: "top", offset: [0, -17] });
+      .bindTooltip(`Estás aquí · ${escapeHtml(zone.host.name)}`, { direction: "top", offset: [0, -30] });
     points.push(hostPoint);
     zone.recommendations.forEach((item, index) => {
       const point = [Number(item.latitude), Number(item.longitude)];
       if (!point.every(Number.isFinite)) return;
-      const marker = global.L.marker(point, { icon: markerIcon(item.type === "business" ? "business" : item.category, index + 1) })
+      const marker = global.L.marker(point, {
+        icon: markerIcon(item.type === "business" ? "business" : item.category, index + 1),
+        riseOnHover: true,
+        title: `${index + 1}. ${item.name}`,
+        alt: `${index + 1}. ${item.name}`
+      })
         .addTo(map)
         .bindTooltip(escapeHtml(item.name), { direction: "top", offset: [0, -17] });
+      marker.on("click", () => selectCardFromMap(item));
+      marker.on("mouseover", () => highlightMarker(marker));
+      marker.on("mouseout", () => {
+        const card = modal.querySelector(`[data-card-id="${cssEscape(item.id)}"]`);
+        if (!card?.classList.contains("is-selected")) clearHighlight();
+      });
       markers.set(item.id, marker);
       points.push(point);
     });
@@ -691,17 +752,41 @@
       });
     }
 
+    function clearHighlight() {
+      modal.querySelectorAll(".zone-map-marker").forEach((node) => node.classList.remove("is-highlighted"));
+    }
+
+    function highlightMarker(marker) {
+      clearHighlight();
+      marker?.getElement?.()?.querySelector(".zone-map-marker")?.classList.add("is-highlighted");
+    }
+
+    function selectCardFromMap(item) {
+      const card = modal.querySelector(`[data-card-id="${cssEscape(item.id)}"]`);
+      if (!card) return;
+      modal.querySelectorAll("[data-zone-card]").forEach((node) => node.classList.toggle("is-selected", node === card));
+      highlightMarker(markers.get(item.id));
+      card.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      card.focus?.({ preventScroll: true });
+      trackZoneEvent(zone, eventFor(item, "card_clicked"));
+    }
+
+    function focusItem(item, shouldFly) {
+      if (!item) return;
+      const marker = markers.get(item.id);
+      if (!marker) return;
+      highlightMarker(marker);
+      if (shouldFly) map.flyTo([Number(item.latitude), Number(item.longitude)], 17, { duration: 0.8 });
+      marker.openTooltip();
+    }
+
     return {
       map,
       focus(item) {
-        if (!item) return;
-        const marker = markers.get(item.id);
-        if (!marker) return;
-        modal.querySelectorAll(".zone-map-marker").forEach((node) => node.classList.remove("is-highlighted"));
-        marker.getElement()?.querySelector(".zone-map-marker")?.classList.add("is-highlighted");
-        map.flyTo([Number(item.latitude), Number(item.longitude)], 17, { duration: 0.8 });
-        marker.openTooltip();
+        focusItem(item, true);
       },
+      preview(item) { focusItem(item, false); },
+      clearHighlight,
       setStart,
       enableManualStart,
       disableManualStart,
@@ -722,6 +807,22 @@
       iconSize: normalized === "start" ? [32, 32] : [46, 46],
       iconAnchor: normalized === "start" ? [16, 16] : [23, 23],
       tooltipAnchor: normalized === "start" ? [0, -18] : [0, -25]
+    });
+  }
+
+  function hostMarkerIcon(host = {}) {
+    const initials = mapInitials(host.name);
+    const accent = safeColor(host.accent);
+    return global.L.divIcon({
+      className: "zone-map-icon zone-map-host-icon",
+      html: `<span class="zone-map-marker zone-map-marker-host" style="--host-accent:${escapeAttr(accent)}">
+        <span class="zone-host-orbit" aria-hidden="true"></span>
+        <span class="zone-host-pin"><span class="zone-host-monogram">${escapeHtml(initials)}</span></span>
+        <span class="zone-host-label"><small>Estás aquí</small><strong>${escapeHtml(host.name || "Tu punto de partida")}</strong></span>
+      </span>`,
+      iconSize: [64, 64],
+      iconAnchor: [32, 32],
+      tooltipAnchor: [0, -34]
     });
   }
 
@@ -802,8 +903,12 @@
     const group = categoryGroup(category);
     const paths = {
       gastronomy: '<path d="M6 3v7M9 3v7M6 7h3M7.5 10v11M16 3v18M16 3c3 2 3 7 0 9"/>',
-      monument: '<path d="m4 8 8-5 8 5M5 9h14M7 10v7M12 10v7M17 10v7M4 18h16M3 21h18"/>',
+      landmark: '<path d="m4 8 8-5 8 5M5 9h14M7 10v7M12 10v7M17 10v7M4 18h16M3 21h18"/>',
+      culture: '<path d="M4 5h16v14H4zM8 9h8M8 13h5M8 17h8"/><path d="m6 5 2-2h8l2 2"/>',
+      beach: '<circle cx="17" cy="6" r="2.5"/><path d="M3 14c2.3-2 4.7-2 7 0s4.7 2 7 0 3.7-2 5-1M3 19c2.3-2 4.7-2 7 0s4.7 2 7 0 3.7-2 5-1"/>',
       nature: '<path d="M20 4C10 4 5 9 5 15c0 3 2 5 5 5 6 0 10-6 10-16ZM4 21c3-5 7-8 13-12"/>',
+      park: '<path d="M8 20v-5M16 20v-7M5 15h6L8 9l3 1-3-7-3 7 3-1-3 6ZM12 13h8l-4-5 3 1-3-6-3 6 3-1-4 5Z"/>',
+      square: '<path d="M5 5h14v14H5zM9 9h6v6H9z"/><path d="M2 12h3M19 12h3M12 2v3M12 19v3"/>',
       viewpoint: '<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>',
       business: '<path d="m12 3 7 4v10l-7 4-7-4V7l7-4Z"/><path d="M9 8h3a4 4 0 0 1 0 8H9V8Zm0 4h3"/>',
       host: '<path d="m12 3 7 4v10l-7 4-7-4V7l7-4Z"/><circle cx="12" cy="12" r="3"/>',
@@ -824,25 +929,99 @@
 
   function categoryGroup(value) {
     const category = clean(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    if (["start", "host", "business"].includes(category)) return category;
+    if (["start", "host", "business", "gastronomy", "landmark", "culture", "beach", "nature", "park", "square", "viewpoint", "other"].includes(category)) return category;
     if (/restaur|gastr|bar|caf|comida|food/.test(category)) return "gastronomy";
-    if (/monument|historic|cultur|muse|igles|arquitect/.test(category)) return "monument";
-    if (/natur|parque|playa|jardin|sender/.test(category)) return "nature";
-    if (/mirador|plaza|viewpoint/.test(category)) return "viewpoint";
+    if (/playa|beach|arenal/.test(category)) return "beach";
+    if (/monument|historic|igles|arquitect|edificio|patrimonio/.test(category)) return "landmark";
+    if (/cultur|muse|teatro|galeria|arte/.test(category)) return "culture";
+    if (/parque|jardin/.test(category)) return "park";
+    if (/plaza/.test(category)) return "square";
+    if (/natur|sender|reserva/.test(category)) return "nature";
+    if (/mirador|viewpoint/.test(category)) return "viewpoint";
     return "other";
   }
 
   function categoryColor(value) {
     return ({
       gastronomy: "#e07a3f",
-      monument: "#a87c3d",
-      nature: "#4a7a5e",
-      viewpoint: "#3d6b87",
+      landmark: "#a76a42",
+      culture: "#7559b8",
+      beach: "#168caf",
+      nature: "#3c805b",
+      park: "#5d8c42",
+      square: "#b77a30",
+      viewpoint: "#386f94",
       business: "var(--zone-accent, #5265d8)",
       host: "#151b25",
       start: "#151b25",
       other: "#687386"
     })[categoryGroup(value)] || "#687386";
+  }
+
+  function categoryLabel(value) {
+    return ({
+      gastronomy: "Gastronomía",
+      landmark: "Arquitectura y patrimonio",
+      culture: "Arte y cultura",
+      beach: "Playa y costa",
+      nature: "Naturaleza",
+      park: "Parques y jardines",
+      square: "Plazas con vida",
+      viewpoint: "Miradores",
+      business: "Recomendación local",
+      host: "Estás aquí",
+      other: "Lugar con historia"
+    })[categoryGroup(value)] || "Lugar con historia";
+  }
+
+  function zoneFeatureSignals(zone) {
+    const groups = [...new Set((zone.recommendations || []).map((item) => categoryGroup(item.type === "business" ? "business" : item.category)))];
+    const priority = ["beach", "landmark", "culture", "viewpoint", "park", "nature", "square", "gastronomy", "business", "other"];
+    return priority
+      .filter((group) => groups.includes(group))
+      .slice(0, 4)
+      .map((group) => ({ group, label: categoryLabel(group) }));
+  }
+
+  function renderMapLegend(zone) {
+    return zoneFeatureSignals(zone)
+      .map((signal) => `<span style="--legend-color:${categoryColor(signal.group)}"><i aria-hidden="true">${categorySvg(signal.group)}</i>${escapeHtml(shortCategoryLabel(signal.group))}</span>`)
+      .join("");
+  }
+
+  function shortCategoryLabel(value) {
+    return ({ landmark: "Arquitectura", culture: "Cultura", beach: "Playas", park: "Parques", square: "Plazas", viewpoint: "Miradores", nature: "Naturaleza", gastronomy: "Gastronomía", business: "Locales", other: "Otros" })[categoryGroup(value)] || "Otros";
+  }
+
+  function naturalList(items) {
+    const values = items.filter(Boolean);
+    if (values.length < 2) return values[0] || "";
+    return `${values.slice(0, -1).join(", ")} y ${values.at(-1)}`;
+  }
+
+  function capitalize(value) {
+    const text = clean(value);
+    return text ? text[0].toUpperCase() + text.slice(1) : "";
+  }
+
+  function formatRadius(value) {
+    const meters = Number(value || 1500);
+    if (meters >= 1000) return `${Number((meters / 1000).toFixed(meters % 1000 ? 1 : 0))} km`;
+    return `${Math.round(meters)} m`;
+  }
+
+  function mapInitials(value) {
+    const parts = clean(value).split(/\s+/).filter(Boolean);
+    return (parts.length > 1 ? `${parts[0][0]}${parts.at(-1)[0]}` : parts[0]?.slice(0, 2) || "·").toUpperCase();
+  }
+
+  function compassSvg() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z"/></svg>';
+  }
+
+  function cssEscape(value) {
+    if (global.CSS?.escape) return global.CSS.escape(String(value));
+    return String(value).replace(/["\\]/g, "\\$&");
   }
 
   async function getJson(path) {

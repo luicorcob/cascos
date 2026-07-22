@@ -6,10 +6,13 @@ import { runInNewContext } from "node:vm";
 import {
   buildZonePreview,
   buildZoneOverpassQuery,
+  buildZoneOverpassQueries,
   calculateAffinityScore,
   calculatePoiRelevance,
+  classifyWikipediaPoi,
   getConnectionType,
   normalizeOverpassPoi,
+  normalizeWikipediaPoi,
   optimizeWikimediaImageUrl,
   selectVariedPois,
   walkingMinutes
@@ -31,10 +34,17 @@ assert.equal(getConnectionType("Hotel", "Restaurante"), "complementario");
 assert.equal(walkingMinutes(320), 4);
 
 const query = buildZoneOverpassQuery({ lat: 43.462586, lng: -3.809988 }, 1500);
+const splitQueries = buildZoneOverpassQueries({ lat: 43.462586, lng: -3.809988 }, 3000);
+assert.equal(splitQueries.length, 3);
+assert.match(splitQueries[0], /beach/);
+assert.match(splitQueries[1], /tourism/);
+assert.match(splitQueries[2], /building/);
 assert.match(query, /historic/);
 assert.match(query, /tourism/);
-assert.match(query, /leisure"~"\^\(park\|nature_reserve\|garden\)\$/);
-assert.match(query, /man_made"="lighthouse/);
+assert.match(query, /natural"~"\^\(beach\|peak\|cape\|cliff/);
+assert.match(query, /leisure"~"\^\(park\|nature_reserve\|garden\|beach_resort\)\$/);
+assert.match(query, /building"\]\["wikidata/);
+assert.match(query, /man_made"~"\^\(lighthouse\|tower\|observatory\)\$/);
 
 const wikidataPoi = normalizeOverpassPoi({
   id: 44,
@@ -56,6 +66,19 @@ const wikipediaPoi = normalizeOverpassPoi({
 });
 assert.equal(wikipediaPoi.source, "wikipedia");
 assert.equal(wikipediaPoi.externalRef, "Plaza documentada");
+
+const wikipediaBeach = normalizeWikipediaPoi({
+  title: "Playa del Sardinero",
+  coordinates: [{ lat: 43.4752, lon: -3.7821 }],
+  extract: "La playa del Sardinero es un arenal urbano de Santander con interés turístico.",
+  original: { source: "https://upload.wikimedia.org/sardinero.jpg" }
+});
+assert.equal(wikipediaBeach.category, "playa");
+assert.equal(wikipediaBeach.source, "wikipedia");
+assert.match(wikipediaBeach.descriptionShort, /arenal urbano/);
+assert.equal(classifyWikipediaPoi("Palacio de la Magdalena", "Edificio histórico de Santander"), "monumento");
+assert.equal(classifyWikipediaPoi("Bahía de Santander", "La bahía contiene varias playas urbanas."), "naturaleza");
+assert.equal(classifyWikipediaPoi("Ayuntamiento de Santander", "Sede municipal de la ciudad."), "monumento");
 
 const documented = { ...wikidataPoi, id: "documented", distanceMeters: 700, imageUrl: "https://upload.wikimedia.org/place.jpg", descriptionShort: "Resumen", descriptionLong: "Historia documentada." };
 const genericNearby = { ...wikipediaPoi, id: "generic", source: "osm", verified: false, distanceMeters: 20, imageUrl: "", descriptionShort: "", descriptionLong: "" };
@@ -122,7 +145,7 @@ const executableFiles = [
 ];
 const executableText = (await Promise.all(executableFiles.map((file) => readFile(path.join(root, file), "utf8")))).join("\n");
 assert.doesNotMatch(executableText, /api\.anthropic|ANTHROPIC_API_KEY|claude-sonnet/i);
-assert.match(executableText, /Fuente: Wikipedia/);
+assert.match(executableText, /Historia y foto · Wikipedia/);
 
 const publicUi = await readFile(path.join(root, "src/business/zone-discovery.js"), "utf8");
 const publicCss = await readFile(path.join(root, "src/styles/zone-discovery.css"), "utf8");
@@ -131,7 +154,9 @@ const playgroundUi = await readFile(path.join(root, "src/developer/zone-playgrou
 const apiConfig = await readFile(path.join(root, "src/shared/api-config.js"), "utf8");
 const playgroundPage = await readFile(path.join(root, "pages/zone-playground.html"), "utf8");
 const workspace = await readFile(path.join(root, "workspace.html"), "utf8");
-assert.match(publicUi, /basemaps\.cartocdn\.com\/light_all/);
+assert.match(publicUi, /basemaps\.cartocdn\.com\/light_nolabels/);
+assert.match(publicUi, /basemaps\.cartocdn\.com\/light_only_labels/);
+assert.match(publicUi, /Estás aquí/);
 assert.match(publicUi, /data-zone-directions/);
 assert.match(publicCss, /flex:\s*0 0 40%/);
 assert.match(adminUi, /Activar Descubre tu zona/);
