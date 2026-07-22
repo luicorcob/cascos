@@ -31,6 +31,10 @@
       const [exportCss, vendor] = await Promise.all([fetchExportCss(), fetchVendorResources()]);
       const schema = JSON.stringify(buildLocalBusinessSchema(business), null, 2).replace(/</g, "\\u003c");
       const runtimeData = JSON.stringify(buildExportRuntimeData(business), null, 2).replace(/</g, "\\u003c");
+      const apiBase = window.LocalLiftApi?.getBase?.() || "";
+      const zoneAssetVersion = encodeURIComponent(`${DATA_VERSION || "6"}-zone-20260722-4`);
+      const zoneCssUrl = `${apiBase}/src/styles/zone-discovery.css?v=${zoneAssetVersion}`;
+      const zoneScriptUrl = `${apiBase}/src/business/zone-discovery.js?v=${zoneAssetVersion}`;
 
       return `<!doctype html>
     <html lang="es" class="no-js">
@@ -43,6 +47,8 @@
         <meta property="og:title" content="${escapeAttr(business.name)}">
         <meta property="og:description" content="${description}">
         <meta property="og:image" content="${escapeAttr(business.heroImage)}">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+        <link rel="stylesheet" href="${escapeAttr(zoneCssUrl)}">
         <script type="application/ld+json">
     ${schema}
         </script>
@@ -56,6 +62,8 @@
         <script id="locallift-export-data" type="application/json">
     ${runtimeData}
         </script>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="${escapeAttr(zoneScriptUrl)}"></script>
         <script>
     ${vendor.js}
     ${getExportScript()}

@@ -41,6 +41,7 @@ import { handleSiteImageApi, isSiteImageApiRequest } from "./api/site-image-api.
 import { handleStockImageApi, isStockImageApiRequest } from "./api/stock-image-api.mjs";
 import { handleTaskApi, isTaskApiRequest } from "./api/task-api.mjs";
 import { handleVerticalOperationsApi, isVerticalOperationsApiRequest } from "./api/vertical-operations-api.mjs";
+import { handleZoneDiscoveryApi, isZoneDiscoveryApiRequest } from "./api/zone-discovery-api.mjs";
 import { isAdminApiRequest, requireAdminApiAuth } from "./lib/admin-auth.mjs";
 import { loadLocalEnv } from "./lib/load-env.mjs";
 import { requirePublicApiRateLimit } from "./lib/public-rate-limit.mjs";
@@ -128,6 +129,11 @@ const server = createServer(async (request, response) => {
 
     if (isBookingApiRequest(requestUrl.pathname)) {
       await handleBookingApi(request, response, apiContext);
+      return;
+    }
+
+    if (isZoneDiscoveryApiRequest(requestUrl.pathname)) {
+      await handleZoneDiscoveryApi(request, response, apiContext);
       return;
     }
 

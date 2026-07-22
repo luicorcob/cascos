@@ -468,6 +468,7 @@
             </div>
           </section>
 
+          <div class="zone-discovery-slot" data-zone-discovery-slot></div>
           <footer class="site-footer">
             <span>${escapeHtml(business.name)} - ${escapeHtml(business.location || "Negocio local")}</span>
             <span>Web creada con DLS · Digital Local Sites</span>

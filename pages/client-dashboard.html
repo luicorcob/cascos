@@ -13,11 +13,13 @@
     <link rel="stylesheet" href="../src/styles/dashboard-project.css?v=20260717-1">
     <link rel="stylesheet" href="../src/styles/hospitality-dashboard.css?v=20260717-2">
     <link rel="stylesheet" href="../src/styles/commerce-dashboard.css?v=20260718-1">
+    <link rel="stylesheet" href="../src/styles/zone-admin.css?v=20260722-1">
     <script src="../src/shared/api-config.js"></script>
     <script type="module" src="../src/business/dashboard.js"></script>
     <script type="module" src="../src/business/client-portal.js"></script>
     <script type="module" src="../src/business/hospitality-dashboard.js?v=20260717-2"></script>
     <script type="module" src="../src/business/commerce-dashboard.js?v=20260718-1"></script>
+    <script type="module" src="../src/business/zone-admin.js?v=20260722-1"></script>
   </head>
   <body class="business-body is-client-workspace" data-dashboard-scope="client">
     <div class="business-shell">
@@ -118,6 +120,9 @@
             </button>
             <button class="nav-item" type="button" data-client-section="support" data-nav-title="Soporte DLS" data-nav-subtitle="Conversación directa con el equipo que gestiona tu proyecto.">
               <span class="nav-icon" data-icon="support" aria-hidden="true"></span><span>Soporte DLS</span><span class="nav-count" data-client-support-unread hidden>0</span>
+            </button>
+            <button class="tab-button nav-item" type="button" role="tab" aria-selected="false" data-tab="zone" data-nav-title="Tu zona" data-nav-subtitle="Recomendaciones locales, control y visitas generadas por la red DLS.">
+              <span class="nav-icon" aria-hidden="true">◎</span><span>Tu zona</span>
             </button>
             <button class="tab-button nav-item" type="button" role="tab" aria-selected="false" data-tab="settings" data-nav-title="Configuración" data-nav-subtitle="Datos del negocio, conexiones y preferencias.">
               <span class="nav-icon" data-icon="settings" aria-hidden="true"></span><span>Configuración</span>
@@ -834,6 +839,16 @@
             <h2>Ajustes</h2>
           </div>
           <div data-list="settings"></div>
+        </section>
+
+        <section class="tab-panel" data-panel="zone">
+          <div class="panel-heading">
+            <p class="eyebrow">Red local DLS</p>
+            <h2>Tu zona</h2>
+          </div>
+          <div data-zone-admin-root aria-live="polite">
+            <section class="zone-admin-state"><strong>Cargando Descubre tu zona…</strong></section>
+          </div>
         </section>
       </main>
     </div>

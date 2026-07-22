@@ -534,3 +534,52 @@ La integracion productiva vive en el servidor principal. Este ejemplo se
 conserva como referencia aislada y compatibilidad.
 
 Nota: la creacion de correo profesional debe hacerse con Google Workspace del dominio del cliente y permisos de administrador. No se crean cuentas Gmail personales para clientes.
+
+## Descubre tu zona
+
+El módulo premium de recomendaciones locales usa Supabase/PostgreSQL, Overpass, Wikidata, Wikipedia, Wikimedia Commons y Leaflet. No realiza llamadas a modelos de lenguaje. Los extractos documentales se guardan una vez y las tarjetas muestran atribución visible cuando la fuente es Wikipedia. Para POI de OSM sin foto, contrasta páginas e imágenes cercanas mediante nombre y coordenadas; las coincidencias débiles y los recursos de marca (logos, escudos o SVG) se descartan. La selección pública pondera calidad documental, imagen, interés turístico, diversidad y distancia, en ese orden de conjunto, en lugar de limitarse a los puntos más próximos.
+
+Preparación y comprobación:
+
+```powershell
+npm.cmd run migrate:zone-discovery
+npm.cmd run test:zone-discovery
+npm.cmd run test:zone-route-browser
+```
+
+La primera activación desde `Portal del cliente > Tu zona` geocodifica el negocio, carga y cachea POIs dentro del radio configurado, enriquece los que tienen entidad documental y recalcula el grafo de afinidad. El toggle parte desactivado y el CTA público solo aparece cuando existen al menos tres recomendaciones.
+
+Desde `Acceder como desarrollador > Laboratorio de zona` se puede colocar un punto haciendo clic o arrastrando el marcador, usar la geolocalización del navegador y cambiar el radio para generar una previsualización real. Este flujo usa `POST /api/zone-discovery/preview`, requiere acceso de desarrollador y no modifica la ubicación ni la configuración de ningún negocio.
+
+Endpoints principales:
+
+```text
+GET  /api/public/{business}/zone
+POST /api/public/{business}/zone/events
+GET  /api/businesses/{id}/zone
+PUT  /api/businesses/{id}/zone/settings
+POST /api/businesses/{id}/zone/refresh
+GET  /api/businesses/{id}/zone/metrics
+POST /api/zone-discovery/preview
+POST /api/zone/route
+```
+
+### Modo Ruta
+
+En la experiencia pública, cada tarjeta se puede añadir a una ruta. Con dos o
+más paradas aparece `Planear ruta`: primero explica el uso de la ubicación y
+solo entonces solicita el permiso del navegador. Si no hay permiso, el usuario
+coloca y ajusta un pin manual. La coordenada vive únicamente en memoria durante
+la sesión y no se escribe en la base de datos.
+
+`POST /api/zone/route` valida entre 2 y 6 paradas, aplica nearest-neighbor y
+2-opt, consulta el perfil OSRM correspondiente y procesa geometría, tiempos y
+alternativas. La panorámica está disponible para pie y bicicleta y puede añadir
+hasta dos puntos de paso cercanos. Si OSRM no responde, devuelve una línea
+geodésica con aviso explícito; si una parada no es alcanzable, devuelve cuáles
+se pueden excluir antes de recalcular.
+
+La infraestructura autoalojada y el preprocesado separado de coche, pie y bici
+están en [`infra/osrm/README.md`](infra/osrm/README.md). Para una aceptación
+completa de producción hay que preparar el extracto de España, arrancar los tres
+contenedores y configurar las variables `OSRM_*_URL` de `.env.example`.

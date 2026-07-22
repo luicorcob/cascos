@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Laboratorio de zona — DLS Studio</title>
+    <meta name="description" content="Prueba Descubre tu zona desde cualquier punto del mapa sin modificar un negocio real.">
+    <meta name="theme-color" content="#101620">
+    <link rel="icon" type="image/png" href="../Logo.png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="../src/styles/zone-discovery.css?v=20260722-4">
+    <link rel="stylesheet" href="../src/styles/zone-playground.css?v=20260722-2">
+  </head>
+  <body class="zone-playground-body">
+    <header class="zplay-topbar">
+      <a class="zplay-brand" href="../workspace.html?hub=1&amp;mode=developer" aria-label="Volver al centro de desarrollador">
+        <img src="../Logo.png" alt="">
+        <span><strong>DLS Studio</strong><small>Laboratorio de zona</small></span>
+      </a>
+      <nav aria-label="Navegación de desarrollador">
+        <a href="../workspace.html?hub=1&amp;mode=developer">Centro de producción</a>
+        <a href="client-dashboard.html?preview=developer&amp;tab=zone">Panel del cliente</a>
+      </nav>
+      <span class="zplay-live"><i aria-hidden="true"></i> Datos reales · OSM</span>
+    </header>
+
+    <main class="zplay-shell">
+      <aside class="zplay-controls" aria-labelledby="zplayTitle">
+        <div class="zplay-heading">
+          <p class="zplay-eyebrow">Entorno de desarrollador</p>
+          <h1 id="zplayTitle">Prueba cualquier zona.</h1>
+          <p>Coloca el punto donde estás o elige otro lugar en el mapa. La prueba no cambia la ubicación de ningún cliente.</p>
+        </div>
+
+        <button class="zplay-location-button" id="zoneUseLocation" type="button">
+          <span aria-hidden="true">⌖</span>
+          <span><strong>Usar mi ubicación</strong><small>Solicita permiso al navegador</small></span>
+        </button>
+
+        <div class="zplay-separator"><span>o marca el mapa</span></div>
+
+        <form id="zonePreviewForm" class="zplay-form">
+          <div class="zplay-coordinate-grid">
+            <label>
+              <span>Latitud</span>
+              <input id="zoneLatitude" name="latitude" type="number" min="-90" max="90" step="0.000001" required>
+            </label>
+            <label>
+              <span>Longitud</span>
+              <input id="zoneLongitude" name="longitude" type="number" min="-180" max="180" step="0.000001" required>
+            </label>
+          </div>
+          <label class="zplay-radius-field">
+            <span><b>Radio de descubrimiento</b><output id="zoneRadiusOutput" for="zoneRadius">1.500 m</output></span>
+            <input id="zoneRadius" name="radius" type="range" min="500" max="3000" step="250" value="1500">
+            <small>Los lugares se ordenan y diversifican dentro de este radio.</small>
+          </label>
+          <button class="zplay-submit" id="zonePreviewSubmit" type="submit">
+            <span>Probar esta ubicación</span><i aria-hidden="true">→</i>
+          </button>
+        </form>
+
+        <div class="zplay-status" id="zonePreviewStatus" role="status" aria-live="polite">
+          <i aria-hidden="true"></i>
+          <p><strong>Punto de prueba listo</strong><span>Pulsa el mapa, arrastra el marcador o usa tu GPS.</span></p>
+        </div>
+
+        <div class="zplay-safety">
+          <span aria-hidden="true">✓</span>
+          <p><strong>Previsualización temporal</strong> No se modifica la ficha, dirección ni activación de ningún negocio.</p>
+        </div>
+      </aside>
+
+      <section class="zplay-stage" aria-label="Mapa y resultado de Descubre tu zona">
+        <div class="zplay-map-shell">
+          <div id="zonePlaygroundMap" class="zplay-map" aria-label="Selecciona una ubicación en el mapa"></div>
+          <div class="zplay-map-hint" id="zoneMapHint">
+            <span aria-hidden="true">+</span>
+            <p><strong>Haz clic para colocar tu punto</strong><small>Después puedes arrastrarlo con precisión.</small></p>
+          </div>
+          <div class="zplay-coordinate-pill" id="zoneCoordinatePill">43.462586, −3.809988</div>
+          <div class="zplay-loading" id="zonePreviewLoading" hidden>
+            <span aria-hidden="true"></span>
+            <strong>Explorando la zona…</strong>
+            <small>Consultando lugares y fuentes documentales.</small>
+          </div>
+        </div>
+
+        <section class="zplay-results" id="zonePreviewResults" aria-labelledby="zoneResultsTitle">
+          <header>
+            <div>
+              <p class="zplay-eyebrow">Vista previa real</p>
+              <h2 id="zoneResultsTitle">Así aparecerán los lugares</h2>
+            </div>
+            <span id="zoneResultCount">Sin ejecutar</span>
+          </header>
+          <div class="zplay-empty" id="zoneResultsEmpty">
+            <span aria-hidden="true">⌁</span>
+            <h3>Elige una ubicación para empezar</h3>
+            <p>Verás hasta seis recomendaciones reales con distancia a pie, fuente y posición en el mapa.</p>
+          </div>
+          <div class="zplay-card-grid" id="zonePreviewCards"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="../src/shared/api-config.js?v=20260722-2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../src/developer/zone-playground.js?v=20260722-3"></script>
+  </body>
+</html>

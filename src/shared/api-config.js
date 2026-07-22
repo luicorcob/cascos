@@ -157,10 +157,13 @@
   function inferLocalBackendBase() {
     const { protocol, hostname, port } = window.location;
 
+    if (protocol === "file:") {
+      return "http://127.0.0.1:5173";
+    }
+
     if (
       protocol !== "http:"
       || !["127.0.0.1", "localhost"].includes(hostname)
-      || !port
       || port === "5173"
     ) {
       return "";

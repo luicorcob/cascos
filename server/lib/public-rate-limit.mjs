@@ -16,6 +16,10 @@ const ROUTE_LIMITS = {
     limit: readPositiveInteger("PUBLIC_EVENT_RATE_LIMIT", 120),
     windowMs: readPositiveInteger("PUBLIC_EVENT_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
   },
+  zone: {
+    limit: readPositiveInteger("PUBLIC_ZONE_RATE_LIMIT", 120),
+    windowMs: readPositiveInteger("PUBLIC_ZONE_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
+  },
   discovery: {
     limit: readPositiveInteger("PUBLIC_DISCOVERY_RATE_LIMIT", 40),
     windowMs: readPositiveInteger("PUBLIC_DISCOVERY_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000)
@@ -116,6 +120,12 @@ export function requirePublicApiRateLimit(request, response, context, pathname) 
 }
 
 function getPublicRoute(pathname) {
+  if (pathname === "/api/zone/route") {
+    return "zone";
+  }
+  if (/^\/api\/public\/[^/]+\/zone(?:\/events)?$/.test(String(pathname || ""))) {
+    return "zone";
+  }
   if (pathname === "/api/discovery/search") {
     return "discovery";
   }
@@ -197,6 +207,9 @@ function getPublicRoute(pathname) {
 }
 
 function isRateLimitedMethod(route, method) {
+  if (route === "zone") {
+    return method === "GET" || method === "POST";
+  }
   if (route === "discovery") {
     return method === "GET";
   }

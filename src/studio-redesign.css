@@ -2063,6 +2063,12 @@ textarea:focus-visible {
   --destination-c: #18d9ff;
 }
 
+.intro-destination-card.is-zone {
+  --destination-a: #18d9ff;
+  --destination-b: #42e5a5;
+  --destination-c: #8b78ff;
+}
+
 .intro-destination-index {
   position: absolute;
   top: 18px;
@@ -2255,6 +2261,38 @@ textarea:focus-visible {
 .intro-visual-radar {
   width: 142px;
   height: 142px;
+}
+
+.intro-visual-zone {
+  overflow: hidden;
+  border: 1px solid rgba(24, 217, 255, .34);
+  border-radius: 10px;
+  background:
+    linear-gradient(rgba(24, 217, 255, .09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 217, 255, .09) 1px, transparent 1px),
+    radial-gradient(circle at 52% 48%, rgba(66, 229, 165, .17), transparent 48%),
+    rgba(4, 13, 20, .72);
+  background-size: 18px 18px, 18px 18px, 100% 100%, 100% 100%;
+  box-shadow: inset 0 0 26px rgba(24, 217, 255, .08), 0 0 28px rgba(24, 217, 255, .12);
+  transform: rotate(2deg);
+}
+
+.zone-preview-map { inset: 0; background: linear-gradient(135deg, transparent 18%, rgba(255, 255, 255, .08) 19% 21%, transparent 22% 64%, rgba(255, 255, 255, .07) 65% 67%, transparent 68%); }
+.zone-preview-route { left: 18%; top: 26%; width: 66%; height: 52%; border: 2px dashed rgba(66, 229, 165, .62); border-color: rgba(66, 229, 165, .62) transparent transparent rgba(66, 229, 165, .62); border-radius: 50%; transform: rotate(11deg); }
+.zone-preview-radius { left: 50%; top: 50%; width: 62px; height: 62px; border: 1px solid rgba(24, 217, 255, .58); border-radius: 50%; background: rgba(24, 217, 255, .08); transform: translate(-50%, -50%); box-shadow: 0 0 20px rgba(24, 217, 255, .2); animation: introZonePulse 2.4s ease-in-out infinite; }
+.zone-preview-pin { width: 14px; height: 14px; border: 3px solid white; border-radius: 50% 50% 50% 3px; background: var(--destination-a); box-shadow: 0 5px 12px rgba(0, 0, 0, .3); transform: rotate(-45deg); }
+.zone-preview-pin-a { left: 48%; top: 43%; background: #18d9ff; }
+.zone-preview-pin-b { left: 22%; top: 62%; background: #42e5a5; animation: introZonePin 2.8s ease-in-out -.8s infinite; }
+.zone-preview-pin-c { right: 18%; top: 28%; background: #8b78ff; animation: introZonePin 2.8s ease-in-out -1.6s infinite; }
+
+@keyframes introZonePulse {
+  0%, 100% { opacity: .5; transform: translate(-50%, -50%) scale(.82); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@keyframes introZonePin {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -5px; }
 }
 
 .radar-scope {

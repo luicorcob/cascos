@@ -77,7 +77,7 @@ export function isClientApiAccessPath(pathname, session) {
   }
 
   const area = segments[3] || "";
-  const allowedAreas = new Set(["contacts", "customers", "next-actions", "inbox", "channels", "automations", "sequences", "campaigns", "consent", "accounts", "associations", "pipelines", "deals", "tasks", "proposals", "projects", "subscriptions", "invoices", "documents", "communications", "message-templates", "services", "bookings", "availability", "blocks", "reminders", "resources", "resource-availability", "booking-resource-summary", "waitlist", "reputation", "reports", "events", "hospitality", "commerce"]);
+  const allowedAreas = new Set(["contacts", "customers", "next-actions", "inbox", "channels", "automations", "sequences", "campaigns", "consent", "accounts", "associations", "pipelines", "deals", "tasks", "proposals", "projects", "subscriptions", "invoices", "documents", "communications", "message-templates", "services", "bookings", "availability", "blocks", "reminders", "resources", "resource-availability", "booking-resource-summary", "waitlist", "reputation", "reports", "events", "hospitality", "commerce", "zone"]);
   if (["next-actions", "inbox"].includes(area)) {
     return segments.length === 4;
   }

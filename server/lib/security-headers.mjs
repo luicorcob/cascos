@@ -6,7 +6,7 @@ export function securityHeaders(env = process.env) {
     "X-Frame-Options": "SAMEORIGIN",
     "Content-Security-Policy": contentSecurityPolicy(),
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(self), payment=()",
     "Cache-Control": "no-store"
   };
 
@@ -24,8 +24,8 @@ function contentSecurityPolicy() {
     "object-src 'none'",
     "frame-ancestors 'self'",
     "form-action 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' https://unpkg.com",
+    "style-src 'self' 'unsafe-inline' https://unpkg.com",
     "img-src 'self' data: blob: http: https:",
     "font-src 'self' data:",
     "connect-src 'self' http: https: ws: wss:",

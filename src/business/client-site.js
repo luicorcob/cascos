@@ -79,6 +79,12 @@
     attachGeneratedSiteInteractions(root);
     attachLeadForms(root, business);
     attachPublicBookingForms(root, business);
+    window.DlsZoneDiscovery?.mount?.({
+      container: root,
+      reference: currentBusinessRecord?.slug || currentBusinessRecord?.id || business.slug || business.id,
+      accent: business.accent,
+      businessName: business.name
+    });
   }
 
   function getLoadErrorMessage(error, session) {

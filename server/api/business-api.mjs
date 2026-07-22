@@ -2,6 +2,7 @@ import { corsHeaders } from "../lib/cors.mjs";
 import { getRequestBusinessUserSession } from "../lib/business-access.mjs";
 import { loadBusinessStore, saveBusinessStore } from "../lib/business-store.mjs";
 import { getRequestClientSession, matchesBusinessSession, setBusinessClientPassword, toPortalAccessSummary } from "../lib/client-auth.mjs";
+import { scheduleZoneConnectionRefresh } from "../lib/zone-discovery-service.mjs";
 
 const MAX_BODY_BYTES = Number(process.env.BUSINESS_API_MAX_BODY_BYTES || 1024 * 1024);
 const STATUSES = new Set(["lead", "onboarding", "in-design", "in-review", "published", "maintenance", "paused", "archived"]);
@@ -118,6 +119,7 @@ async function createBusiness(request, response, context) {
   db.businesses.push(business);
   appendAudit(db, "business.created", business.id, now);
   await saveBusinessDb(db, context, "create");
+  scheduleZoneConnectionRefresh(business.id);
   sendJson(response, 201, { business }, context);
 }
 
@@ -148,6 +150,7 @@ async function updateBusiness(id, request, response, context) {
   db.businesses[index] = business;
   appendAudit(db, "business.updated", business.id, now);
   await saveBusinessDb(db, context, "update");
+  scheduleZoneConnectionRefresh(business.id);
   sendJson(response, 200, { business }, context);
 }
 
@@ -232,12 +235,14 @@ function normalizeBusiness(payload, existing, db, now) {
   const content = normalizeContent(source, existing);
   const owner = isPlainObject(source.owner) ? source.owner : {};
 
+  const coordinates = normalizeCoordinates(source.coordinates || source.locationCoordinates || existing?.coordinates);
   return {
     id,
     slug,
     name,
     category: cleanText(source.category || source.sector || existing?.category || "General"),
     city: cleanText(source.city || source.location || existing?.city || ""),
+    zone: cleanText(source.zone || source.neighborhood || existing?.zone || source.city || source.location || existing?.city || ""),
     ownerName: cleanText(source.ownerName || owner.name || existing?.ownerName || ""),
     ownerEmail: cleanText(source.ownerEmail || owner.email || existing?.ownerEmail || ""),
     ownerPhone: cleanText(source.ownerPhone || owner.phone || source.phone || existing?.ownerPhone || ""),
@@ -248,10 +253,20 @@ function normalizeBusiness(payload, existing, db, now) {
     integrations: mergePlainObjects(existing?.integrations, source.integrations),
     settings: mergePlainObjects(existing?.settings, source.settings),
     content,
+    ...(coordinates ? { coordinates } : {}),
     createdAt: existing?.createdAt || now,
     updatedAt: now,
     archivedAt: status === "archived" ? existing?.archivedAt || now : ""
   };
+}
+
+function normalizeCoordinates(value) {
+  if (!isPlainObject(value)) return null;
+  const lat = Number(value.lat ?? value.latitude);
+  const lng = Number(value.lng ?? value.lon ?? value.longitude);
+  return Number.isFinite(lat) && Number.isFinite(lng)
+    ? { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) }
+    : null;
 }
 
 function normalizeContent(source, existing) {

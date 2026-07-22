@@ -1,0 +1,29 @@
+name: dls-osrm
+
+services:
+  osrm-car:
+    image: ${OSRM_IMAGE:-ghcr.io/project-osrm/osrm-backend:latest}
+    command: osrm-routed --algorithm ch /data/spain-car.osrm
+    restart: unless-stopped
+    volumes:
+      - ./data:/data:ro
+    ports:
+      - "127.0.0.1:5000:5000"
+
+  osrm-foot:
+    image: ${OSRM_IMAGE:-ghcr.io/project-osrm/osrm-backend:latest}
+    command: osrm-routed --algorithm ch /data/spain-foot.osrm
+    restart: unless-stopped
+    volumes:
+      - ./data:/data:ro
+    ports:
+      - "127.0.0.1:5001:5000"
+
+  osrm-bike:
+    image: ${OSRM_IMAGE:-ghcr.io/project-osrm/osrm-backend:latest}
+    command: osrm-routed --algorithm ch /data/spain-bike.osrm
+    restart: unless-stopped
+    volumes:
+      - ./data:/data:ro
+    ports:
+      - "127.0.0.1:5002:5000"

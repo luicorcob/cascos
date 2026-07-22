@@ -249,7 +249,7 @@ function accessTarget(segments, method) {
   if (area === "reputation" || area === "google") return { resource: "reputation", action };
   if (area === "intelligence" && detail === "query") return { resource: "analytics", action: "read" };
   if (area === "reports" || area === "analytics" || area === "intelligence") return { resource: "analytics", action };
-  if (["crm-config", "settings"].includes(area)) return { resource: "configuration", action };
+  if (["crm-config", "settings", "zone"].includes(area)) return { resource: "configuration", action };
   return { resource: "business", action };
 }
 
