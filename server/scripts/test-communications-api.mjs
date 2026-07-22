@@ -161,6 +161,17 @@ async function main() {
   const privateScopedInbox = await adminJson(baseUrl, `/api/businesses/${businessId}/communications/threads`);
   assert.equal(privateScopedInbox.total, 1, "Scoped admin previews must not expose private employee rooms");
   assert.equal((await adminJson(baseUrl, `/api/businesses/${businessId}/communications/members`)).total, 0);
+  const portalPreview = await adminJson(baseUrl, `/api/businesses/${businessId}/communications/threads?portalPreview=developer`);
+  assert.equal(portalPreview.total, 2, "The explicit client-portal preview must render support and team rooms");
+  assert.deepEqual(new Set(portalPreview.threads.map((thread) => thread.type)), new Set(["support", "team"]));
+  const previewMembers = await adminJson(baseUrl, `/api/businesses/${businessId}/communications/members?portalPreview=developer`);
+  assert.equal(previewMembers.total, 1);
+  assert.equal(previewMembers.readOnly, true);
+  await adminJson(baseUrl, `/api/businesses/${businessId}/communications/threads?portalPreview=developer`, {
+    method: "POST",
+    expectedStatus: 403,
+    body: { type: "team", title: "No se puede crear desde DLS" }
+  });
   await adminJson(baseUrl, `/api/enterprise/communications/threads/${supportId}/messages`, {
     method: "POST",
     expectedStatus: 201,
@@ -172,6 +183,10 @@ async function main() {
   const clientAfterRead = await jsonRequest(baseUrl, `/api/businesses/${businessId}/communications/threads?type=support`, { headers: clientHeaders });
   assert.equal(clientAfterRead.unreadTotal, 0);
   assert.equal(clientAfterRead.threads[0].messages.at(-1).senderRole, "developer");
+  const firstReadAt = JSON.parse(await readFile(dbPath, "utf8")).communicationThreads.find((item) => item.id === supportId).clientReadAt;
+  await jsonRequest(baseUrl, `/api/businesses/${businessId}/communications/threads?type=support&markRead=true`, { headers: clientHeaders });
+  const repeatedReadAt = JSON.parse(await readFile(dbPath, "utf8")).communicationThreads.find((item) => item.id === supportId).clientReadAt;
+  assert.equal(repeatedReadAt, firstReadAt, "Polling must not persist a new read timestamp when there are no unread messages");
 
   await adminJson(baseUrl, `/api/enterprise/communications/threads/${supportId}`, {
     method: "PATCH",
@@ -206,7 +221,7 @@ async function main() {
   assert.equal(persisted.associations.filter((association) => association.toId === supportId || association.fromId === supportId).length, 3);
   assert.ok(persisted.auditLog.some((entry) => entry.type === "communication.message_created"));
 
-  console.log("Communications API checks passed: CRM links, support, team rooms, unread state, attachments, tenancy and persistence.");
+  console.log("Communications API checks passed: CRM links, support, read-only team preview, unread state, attachments, tenancy and persistence.");
 }
 
 function adminJson(baseUrl, pathname, options = {}) {

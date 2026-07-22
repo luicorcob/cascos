@@ -41,7 +41,8 @@ const state = {
   pollTimer: null,
   activeTab: new URLSearchParams(window.location.search).get("projectSection") || "projects",
   loading: false,
-  queuedReload: false
+  loadingBusinessId: "",
+  queuedBusinessId: ""
 };
 
 document.addEventListener("DOMContentLoaded", init);
@@ -103,12 +104,14 @@ function init() {
 
 async function loadPortal() {
   if (!state.session?.businessId) return;
+  const requestedBusinessId = String(state.session.businessId);
   if (state.loading) {
-    state.queuedReload = true;
+    if (state.loadingBusinessId !== requestedBusinessId) state.queuedBusinessId = requestedBusinessId;
     return;
   }
   state.loading = true;
-  state.queuedReload = false;
+  state.loadingBusinessId = requestedBusinessId;
+  state.queuedBusinessId = "";
   showPortalState();
   setLoading(true);
   showNotice("Actualizando tu portal...", "info");
@@ -141,9 +144,10 @@ async function loadPortal() {
     }
   } finally {
     state.loading = false;
+    state.loadingBusinessId = "";
     setLoading(false);
-    if (state.queuedReload) {
-      state.queuedReload = false;
+    if (state.queuedBusinessId && state.queuedBusinessId === state.session?.businessId) {
+      state.queuedBusinessId = "";
       loadPortal();
     }
   }
@@ -153,12 +157,14 @@ function syncDashboardBusiness(event) {
   const businessId = String(event.detail?.businessId || "").trim();
   if (!businessId || (state.session?.token && !state.session?.adminPreview)) return;
 
+  const sameBusiness = state.session?.businessId === businessId;
+
   state.session = {
     businessId,
     businessName: String(event.detail?.businessName || "Vista de administrador"),
     adminPreview: true
   };
-  loadPortal();
+  if (!sameBusiness) loadPortal();
 }
 
 function render() {
@@ -242,10 +248,15 @@ async function loadCommunications({ markRead = false, silent = false } = {}) {
   if (!state.session?.businessId || state.communicationsLoading) return;
   state.communicationsLoading = true;
   const ref = encodeURIComponent(state.session.businessId);
+  const query = new URLSearchParams();
+  if (markRead) query.set("markRead", "true");
+  if (state.session.adminPreview) query.set("portalPreview", "developer");
+  const suffix = query.size ? `?${query}` : "";
+  const memberSuffix = state.session.adminPreview ? "?portalPreview=developer" : "";
   try {
     const [threadPayload, memberPayload] = await Promise.all([
-      getJson(`/api/businesses/${ref}/communications/threads${markRead ? "?markRead=true" : ""}`),
-      getJson(`/api/businesses/${ref}/communications/members`)
+      getJson(`/api/businesses/${ref}/communications/threads${suffix}`),
+      getJson(`/api/businesses/${ref}/communications/members${memberSuffix}`)
     ]);
     state.communicationThreads = threadPayload.threads || [];
     state.teamMembers = memberPayload.members || [];
@@ -278,6 +289,7 @@ function renderCommunications() {
 
   const profile = getTeamProfile();
   if (refs.profileForm) {
+    refs.profileForm.hidden = Boolean(state.session.adminPreview);
     const nameInput = refs.profileForm.elements.name;
     const roleInput = refs.profileForm.elements.role;
     if (nameInput && !nameInput.value) nameInput.value = profile.name || "";
@@ -292,6 +304,7 @@ function renderCommunications() {
       : `<p>Aún no hay personas registradas.</p>`;
   }
   const rooms = state.communicationThreads.filter((thread) => thread.type === "team");
+  if (refs.roomForm) refs.roomForm.hidden = Boolean(state.session.adminPreview);
   if (refs.teamRooms) {
     refs.teamRooms.innerHTML = rooms.length
       ? rooms.map((thread) => `<button type="button" class="${thread.id === state.activeTeamThreadId ? "is-active" : ""}" data-client-team-room="${escapeAttr(thread.id)}"><strong>${escapeHtml(thread.title)}</strong><small>${thread.messageCount || 0} mensajes</small></button>`).join("")
@@ -309,6 +322,7 @@ function renderCommunications() {
       : empty(activeRoom ? "Este canal está vacío." : "Crea o selecciona un canal.", activeRoom ? "Envía el primer mensaje al equipo." : "Los canales solo son visibles para tu negocio.");
   }
   if (refs.teamMessageForm) {
+    refs.teamMessageForm.hidden = Boolean(state.session.adminPreview);
     refs.teamMessageForm.querySelectorAll("textarea, input, button").forEach((control) => { control.disabled = !activeRoom; });
   }
 }
@@ -494,7 +508,9 @@ async function mutate(form, path, body, success) {
 }
 
 function setTab(tab) {
-  state.activeTab = ["projects", "billing", "documents", "support", "team"].includes(tab) ? tab : "projects";
+  const nextTab = ["projects", "billing", "documents", "support", "team"].includes(tab) ? tab : "projects";
+  const changed = state.activeTab !== nextTab;
+  state.activeTab = nextTab;
   document.querySelectorAll("[data-client-tab]").forEach((button) => {
     const active = button.dataset.clientTab === state.activeTab;
     button.classList.toggle("is-active", active);
@@ -511,7 +527,7 @@ function setTab(tab) {
   const url = new URL(window.location.href);
   url.searchParams.set("projectSection", state.activeTab);
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-  if (state.activeTab === "support") loadCommunications({ markRead: true, silent: true });
+  if (changed && state.activeTab === "support") loadCommunications({ markRead: true, silent: true });
 }
 
 function openDashboardSection(section, sourceButton) {

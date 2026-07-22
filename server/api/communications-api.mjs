@@ -34,19 +34,24 @@ export async function handleCommunicationsApi(request, response, context) {
     const actor = clientSession
       ? { role: "client", businessId: clientSession.businessId, name: clean(clientSession.businessName) || "Cliente" }
       : { role: "developer", businessId: "", name: "Equipo DLS" };
+    const developerPortalPreview = actor.role === "developer"
+      && requestUrl.searchParams.get("portalPreview") === "developer";
     const business = route.businessRef ? requireBusiness(db, route.businessRef) : null;
 
     if (clientSession && business?.id !== clientSession.businessId) throw httpError(403, "Client session cannot access this business");
     if (!business && route.resource === "members") throw httpError(400, "Members require a business scope");
 
     if (route.resource === "threads") {
-      await handleThreads({ request, response, context, requestUrl, method, route, db, business, actor });
+      await handleThreads({ request, response, context, requestUrl, method, route, db, business, actor, developerPortalPreview });
       return;
     }
     if (route.resource === "members") {
       if (actor.role === "developer") {
         if (method === "GET" && !route.resourceId) {
-          sendJson(response, 200, { members: [], total: 0 }, context);
+          const members = developerPortalPreview
+            ? db.teamMembers.filter((member) => member.businessId === business.id && member.active !== false).sort(compareNames)
+            : [];
+          sendJson(response, 200, { members, total: members.length, readOnly: developerPortalPreview }, context);
           return;
         }
         throw httpError(403, "Private team profiles are only available in the client portal");
@@ -65,14 +70,22 @@ export async function handleCommunicationsApi(request, response, context) {
 }
 
 async function handleThreads(input) {
-  const { request, response, context, requestUrl, method, route, db, business, actor } = input;
+  const { request, response, context, requestUrl, method, route, db, business, actor, developerPortalPreview } = input;
   if (!route.resourceId) {
     if (method === "GET") {
-      const threads = listThreads(db, requestUrl.searchParams, business?.id || "", actor, actor.role === "developer" ? "support" : "");
+      const threads = listThreads(
+        db,
+        requestUrl.searchParams,
+        business?.id || "",
+        actor,
+        actor.role === "developer" && !developerPortalPreview ? "support" : "",
+        developerPortalPreview ? new Set(["support", "team"]) : null
+      );
       if (parseBoolean(requestUrl.searchParams.get("markRead"))) {
         const now = new Date().toISOString();
-        threads.forEach((item) => markThreadRead(requireThread(db, item.id, item.businessId), actor, now));
-        if (threads.length) await saveBusinessStore(db, context, "communications-read");
+        const unreadThreads = threads.filter((item) => Number(item.unreadCount || 0) > 0);
+        unreadThreads.forEach((item) => markThreadRead(requireThread(db, item.id, item.businessId), actor, now));
+        if (unreadThreads.length) await saveBusinessStore(db, context, "communications-read");
       }
       sendJson(response, 200, {
         threads,
@@ -270,13 +283,14 @@ function parseRoute(pathname) {
   return { businessRef: segments[2] || "", resource: segments[4] || "", resourceId: segments[5] || "", action: segments[6] || "" };
 }
 
-function listThreads(db, searchParams, businessId, actor, forcedType = "") {
+function listThreads(db, searchParams, businessId, actor, forcedType = "", visibleTypes = null) {
   const requestedType = optionalEnum(searchParams.get("type"), THREAD_TYPES, "type");
   const type = forcedType || requestedType;
   const status = optionalEnum(searchParams.get("status"), THREAD_STATUSES, "status");
   const search = clean(searchParams.get("search")).toLowerCase();
   return db.communicationThreads
     .filter((thread) => !businessId || thread.businessId === businessId)
+    .filter((thread) => !visibleTypes || visibleTypes.has(thread.type))
     .filter((thread) => !type || thread.type === type)
     .filter((thread) => !status || thread.status === status)
     .filter((thread) => !search || threadSearchText(db, thread).includes(search))

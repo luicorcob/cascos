@@ -9,4 +9,7 @@ node_modules/
 data/google-auth-db.json
 data/radar-leads.json
 data/backups/google-auth-db.*.json
+data/.business-db*.tmp
+data/backups/business-db.*.json
+!data/backups/business-db.before-control-dls-seed.json
 data/demo-publishes/
