@@ -45,6 +45,8 @@ El repositorio ya incluye `render.yaml` para crear un servicio web Node en Rende
 - `healthCheckPath: /api/health`
 - plan `starter`, PostgreSQL gestionado e inyeccion de `DATABASE_URL`
 - `BUSINESS_STORE=postgres` para que el dashboard use PostgreSQL
+- `BUSINESS_DB_BOOTSTRAP_FILE=data/business-db.json` para importar los negocios, proyectos y accesos existentes
+- `BUSINESS_DB_BOOTSTRAP_REVISION` para completar una base ya iniciada una sola vez, sin sobrescribir cambios existentes ni resucitar datos en reinicios posteriores
 - disco persistente montado en `/data` para Google OAuth, backups auxiliares y fallback JSON
 - `DLS_DISCOVERY_PROVIDER=openstreetmap` para que el Radar use datos reales sin clave externa
 - `RADAR_LEADS_DB_FILE=/data/radar-leads.json` para guardar leads del Radar en el disco persistente

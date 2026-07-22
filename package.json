@@ -45,7 +45,7 @@
     "test:crm-growth-operations": "node server/scripts/test-growth-operations-models.mjs && node server/scripts/test-growth-operations-api.mjs && node server/scripts/test-growth-operations-browser.mjs",
     "test:crm-intelligence": "node server/scripts/test-intelligence-model.mjs && node server/scripts/test-intelligence-api.mjs && node server/scripts/test-intelligence-browser.mjs",
     "crm:migrate-money": "node server/scripts/migrate-money-normalization.mjs",
-    "test:operations": "node server/scripts/test-operations-api.mjs && node server/scripts/test-operations-browser.mjs",
+    "test:operations": "node server/scripts/test-business-store-bootstrap.mjs && node server/scripts/test-operations-api.mjs && node server/scripts/test-operations-browser.mjs",
     "test:communications": "node server/scripts/test-communications-api.mjs && node server/scripts/test-client-portal-browser.mjs",
     "test:hospitality": "node server/scripts/test-hospitality-api.mjs && node server/scripts/test-hospitality-dashboard-browser.mjs",
     "test:commerce": "node server/scripts/test-commerce-api.mjs && node server/scripts/test-commerce-dashboard-browser.mjs",

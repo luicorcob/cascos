@@ -310,6 +310,12 @@ export function getBusinessDbPath(root) {
     : path.join(root, "data", "business-db.json");
 }
 
+export function getBusinessBootstrapPath(root) {
+  return process.env.BUSINESS_DB_BOOTSTRAP_FILE
+    ? path.resolve(root, process.env.BUSINESS_DB_BOOTSTRAP_FILE)
+    : getBusinessDbPath(root);
+}
+
 export function getBackupDir(root) {
   return process.env.BUSINESS_DB_BACKUP_DIR
     ? path.resolve(root, process.env.BUSINESS_DB_BACKUP_DIR)
@@ -324,10 +330,11 @@ async function loadPostgresBusinessStore(context, initialDb) {
     await ensurePostgresSchema(client);
 
     const counts = await loadPostgresCounts(client);
+    const bootstrapRevision = getBootstrapRevision();
 
     if (isStoreEmpty(counts) && shouldBootstrapPostgres() && hasData(initialDb)) {
       const seededDb = normalizeBusinessDb(initialDb);
-      await replacePostgresBusinessStore(seededDb, "bootstrap-json", client);
+      await replacePostgresBusinessStore(seededDb, "bootstrap-json", client, { bootstrapRevision });
       return seededDb;
     }
 
@@ -342,13 +349,30 @@ async function loadPostgresBusinessStore(context, initialDb) {
       db[collection.key] = result.rows.map((row) => row.data).filter(Boolean);
     }
 
+    if (
+      bootstrapRevision
+      && meta.bootstrapRevision !== bootstrapRevision
+      && shouldBootstrapPostgres()
+      && hasData(initialDb)
+    ) {
+      const mergedDb = mergeBusinessBootstrapDefaults(db, initialDb);
+      mergedDb.updatedAt = new Date().toISOString();
+      await replacePostgresBusinessStore(
+        mergedDb,
+        `bootstrap-merge-${bootstrapRevision}`,
+        client,
+        { bootstrapRevision }
+      );
+      return mergedDb;
+    }
+
     return db;
   } finally {
     client.release();
   }
 }
 
-async function replacePostgresBusinessStore(db, backupLabel, existingClient = null) {
+async function replacePostgresBusinessStore(db, backupLabel, existingClient = null, extraMeta = {}) {
   const pool = existingClient ? null : await getPostgresPool();
   const client = existingClient || await pool.connect();
   const ownsTransaction = true;
@@ -384,7 +408,7 @@ async function replacePostgresBusinessStore(db, backupLabel, existingClient = nu
       }
     }
 
-    await writePostgresMeta(client, db, backupLabel);
+    await writePostgresMeta(client, db, backupLabel, extraMeta);
 
     await client.query("commit");
   } catch (error) {
@@ -448,12 +472,13 @@ async function readPostgresMeta(client) {
   return Object.fromEntries(result.rows.map((row) => [row.key, row.value]));
 }
 
-async function writePostgresMeta(client, db, backupLabel) {
+async function writePostgresMeta(client, db, backupLabel, extraRows = {}) {
   const rows = {
     version: Number(db.version || 1),
     updatedAt: db.updatedAt || new Date().toISOString(),
     lastBackupLabel: backupLabel || "",
-    lastStoredAt: new Date().toISOString()
+    lastStoredAt: new Date().toISOString(),
+    ...extraRows
   };
 
   for (const [key, value] of Object.entries(rows)) {
@@ -587,12 +612,18 @@ function toPostgresRow(collection, item, index) {
 
 async function loadInitialJsonDb(root, fallback) {
   const dbPath = getBusinessDbPath(root);
+  const bootstrapPath = getBusinessBootstrapPath(root);
+  const candidatePaths = [...new Set(isPostgresBusinessStore()
+    ? [bootstrapPath, dbPath]
+    : [dbPath, bootstrapPath])];
 
-  try {
-    return normalizeBusinessDb(JSON.parse(await readFile(dbPath, "utf8")));
-  } catch (error) {
-    if (error.code !== "ENOENT") {
-      throw error;
+  for (const candidatePath of candidatePaths) {
+    try {
+      return normalizeBusinessDb(JSON.parse(await readFile(candidatePath, "utf8")));
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        throw error;
+      }
     }
   }
 
@@ -759,6 +790,54 @@ function shouldBootstrapPostgres() {
   }
 
   return process.env.NODE_ENV !== "production";
+}
+
+function getBootstrapRevision() {
+  return clean(process.env.BUSINESS_DB_BOOTSTRAP_REVISION);
+}
+
+export function mergeBusinessBootstrapDefaults(currentDb, bootstrapDb) {
+  const current = normalizeBusinessDb(currentDb);
+  const bootstrap = normalizeBusinessDb(bootstrapDb);
+  const merged = cloneJson(current);
+
+  for (const collection of COLLECTIONS) {
+    const currentItems = Array.isArray(merged[collection.key]) ? merged[collection.key] : [];
+    const currentById = new Map(currentItems.map((item, index) => [clean(item?.id) || `__index_${index}`, index]));
+
+    for (const [seedIndex, seedItem] of bootstrap[collection.key].entries()) {
+      const itemId = clean(seedItem?.id) || `__seed_index_${seedIndex}`;
+      const currentIndex = currentById.get(itemId);
+
+      if (currentIndex === undefined) {
+        currentById.set(itemId, currentItems.length);
+        currentItems.push(cloneJson(seedItem));
+        continue;
+      }
+
+      currentItems[currentIndex] = mergeMissingValues(seedItem, currentItems[currentIndex]);
+    }
+
+    merged[collection.key] = currentItems;
+  }
+
+  return normalizeBusinessDb(merged);
+}
+
+function mergeMissingValues(defaults, current) {
+  if (!isPlainObject(defaults) || !isPlainObject(current)) {
+    return cloneJson(current === undefined || current === null ? defaults : current);
+  }
+
+  const merged = cloneJson(defaults);
+
+  for (const [key, value] of Object.entries(current)) {
+    merged[key] = isPlainObject(value) && isPlainObject(defaults[key])
+      ? mergeMissingValues(defaults[key], value)
+      : cloneJson(value);
+  }
+
+  return merged;
 }
 
 function parseDateOrNull(value) {

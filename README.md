@@ -236,7 +236,7 @@ Para produccion, define `LOCALLIFT_ADMIN_TOKEN` o `ADMIN_API_TOKEN` en el backen
 
 `CORS_ORIGIN` permite limitar que dominios frontend pueden llamar a la API desde navegador. Si no se define, el servidor usa `*` para desarrollo local. Hay una plantilla completa en `.env.example`.
 
-Con JSON, el guardado es atomico y crea copias en `data/backups/` antes de cambios importantes. Con PostgreSQL, el store crea tablas e indices automaticamente y guarda cada coleccion en `jsonb`. Para pruebas automatizadas se puede usar `BUSINESS_DB_FILE` y `BUSINESS_DB_BACKUPS=false`.
+Con JSON, el guardado es atomico y crea copias en `data/backups/` antes de cambios importantes. Con PostgreSQL, el store crea tablas e indices automaticamente y guarda cada coleccion en `jsonb`. `BUSINESS_DB_BOOTSTRAP_FILE` permite separar la semilla versionada del `BUSINESS_DB_FILE` persistente. La semilla se importa si PostgreSQL esta vacio; al definir una nueva `BUSINESS_DB_BOOTSTRAP_REVISION`, tambien completa una base existente una sola vez, conservando los valores y registros que ya tenga. Para pruebas automatizadas se puede usar `BUSINESS_DB_FILE` y `BUSINESS_DB_BACKUPS=false`.
 
 Para recuperar una copia con el backend detenido, usa `npm.cmd run restore:businesses -- "ruta-a-la-copia.json" --confirm`. Si `DATABASE_URL` esta activo y no pasas un target de archivo, restaura PostgreSQL y antes guarda una copia JSON del estado actual. El procedimiento completo de salud diaria y restauracion esta en `docs/operaciones/OPERATIONS_RUNBOOK.md`.
 

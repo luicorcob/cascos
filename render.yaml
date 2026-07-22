@@ -25,6 +25,10 @@ services:
         value: require
       - key: BUSINESS_DB_BOOTSTRAP_FROM_JSON
         value: "true"
+      - key: BUSINESS_DB_BOOTSTRAP_FILE
+        value: data/business-db.json
+      - key: BUSINESS_DB_BOOTSTRAP_REVISION
+        value: control-dls-2026-07-22
       - key: BUSINESS_DB_FILE
         value: /data/business-db.json
       - key: BUSINESS_DB_BACKUP_DIR
