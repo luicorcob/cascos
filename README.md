@@ -572,14 +572,14 @@ solo entonces solicita el permiso del navegador. Si no hay permiso, el usuario
 coloca y ajusta un pin manual. La coordenada vive únicamente en memoria durante
 la sesión y no se escribe en la base de datos.
 
-`POST /api/zone/route` valida entre 2 y 6 paradas, aplica nearest-neighbor y
-2-opt, consulta el perfil OSRM correspondiente y procesa geometría, tiempos y
-alternativas. La panorámica está disponible para pie y bicicleta y puede añadir
-hasta dos puntos de paso cercanos. Si OSRM no responde, devuelve una línea
-geodésica con aviso explícito; si una parada no es alcanzable, devuelve cuáles
-se pueden excluir antes de recalcular.
+`POST /api/zone/route` valida entre 2 y 6 paradas y aplica nearest-neighbor y
+2-opt para proponer un orden. La experiencia pública usa `visualOnly`: no llama
+a ningún proveedor de rutas ni presenta distancias, tiempos o calles como si
+fueran exactos. En el mapa dibuja arcos elevados, animados y de distinto color
+entre A, B, C… como recurso visual. Un aviso aclara que no son un trazado real y
+el CTA principal abre todas las paradas en Google Maps con el perfil elegido.
 
-La infraestructura autoalojada y el preprocesado separado de coche, pie y bici
-están en [`infra/osrm/README.md`](infra/osrm/README.md). Para una aceptación
-completa de producción hay que preparar el extracto de España, arrancar los tres
-contenedores y configurar las variables `OSRM_*_URL` de `.env.example`.
+El soporte OSRM se conserva en la API para una posible activación futura. Su
+infraestructura y preprocesado están documentados en
+[`infra/osrm/README.md`](infra/osrm/README.md), pero no son necesarios para el
+recorrido visual público actual.

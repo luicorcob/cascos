@@ -186,7 +186,7 @@
 .zone-card-directions { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: #3e3128; font-size: .78rem; font-weight: 850; text-decoration: none; }
 .zone-card-directions:hover { color: #9b6238; }
 .zone-map-panel { position: relative; flex: 1; min-width: 0; height: 100%; min-height: 0; overflow: hidden; background: #e7e1d6; }
-.zone-map { width: 100%; height: 100%; min-height: 420px; }
+.zone-map { position: relative; width: 100%; height: 100%; min-height: 420px; }
 .zone-map-fallback { position: absolute; inset: 50% auto auto 50%; width: min(360px, 80%); margin: 0; transform: translate(-50%, -50%); color: #6b6055; text-align: center; line-height: 1.6; }
 .zone-map-icon { background: transparent; border: 0; }
 .zone-map-marker {
@@ -307,6 +307,10 @@
 .zone-route-calculate { width: 100%; }
 .zone-route-calculate:disabled { cursor: not-allowed; filter: grayscale(.7); opacity: .52; }
 .zone-route-summary { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(48, 39, 31, .13); }
+.zone-route-visual-intro { padding: 16px; border: 1px solid rgba(48, 39, 31, .11); border-radius: 16px; background: #fffaf0; }
+.zone-route-visual-intro > span { display: block; margin-bottom: 6px; color: var(--zone-ui-accent, #5368e8); font-size: .64rem; font-weight: 880; letter-spacing: .1em; text-transform: uppercase; }
+.zone-route-visual-intro > strong { display: block; font-size: 1rem; line-height: 1.3; }
+.zone-route-visual-intro > p { margin: 8px 0 0; color: #75695c; font-size: .72rem; line-height: 1.45; }
 .zone-route-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .zone-route-totals > div { padding: 14px; border: 1px solid rgba(48, 39, 31, .11); border-radius: 12px; background: #fffaf0; }
 .zone-route-totals strong, .zone-route-totals span { display: block; }
@@ -314,7 +318,8 @@
 .zone-route-totals span { margin-top: 3px; color: #807365; font-size: .68rem; }
 .zone-route-alternative-note { margin: 13px 0 0; color: #75695c; font-size: .72rem; line-height: 1.4; }
 .zone-route-stop-list { display: grid; gap: 8px; margin: 18px 0; padding: 0; list-style: none; }
-.zone-route-stop-list li { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px solid rgba(48, 39, 31, .09); }
+.zone-route-stop-list li { position: relative; display: flex; align-items: center; gap: 11px; padding: 10px 10px 10px 13px; border-bottom: 1px solid rgba(48, 39, 31, .09); }
+.zone-route-stop-list li::before { content: ""; position: absolute; top: 12px; bottom: 12px; left: 0; width: 3px; border-radius: 99px; background: var(--route-segment-color, var(--zone-ui-accent, #5368e8)); }
 .zone-route-stop-list strong, .zone-route-stop-list span { display: block; }
 .zone-route-stop-list strong { font-size: .78rem; line-height: 1.3; }
 .zone-route-stop-list li div > span { margin-top: 3px; color: #807365; font-size: .68rem; }
@@ -327,6 +332,8 @@
 .zone-route-stop-icon svg { width: 19px; height: 19px; }
 .zone-route-export { display: grid; gap: 8px; }
 .zone-route-export a { display: grid; place-items: center; min-height: 44px; padding: 0 14px; border: 1px solid rgba(48, 39, 31, .16); border-radius: 999px; color: #45382f; font-size: .76rem; font-weight: 850; text-decoration: none; }
+.zone-route-export .zone-route-export-primary { min-height: 50px; border-color: var(--zone-ui-accent, #5368e8); background: var(--zone-ui-accent, #5368e8); color: #fff; box-shadow: 0 12px 28px rgba(55, 75, 190, .22); }
+.zone-route-export .zone-route-export-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .zone-route-error { padding: 15px; border: 1px solid rgba(164, 59, 48, .25); border-radius: 12px; background: #fff0ec; color: #742f28; font-size: .78rem; line-height: 1.5; }
 .zone-route-error ul { margin: 10px 0 0; padding-left: 18px; }
 .zone-route-error button { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 850; text-decoration: underline; cursor: pointer; }
@@ -358,12 +365,21 @@
 .zone-manual-start button { min-height: 38px; padding: 0 13px; border: 0; border-radius: 999px; background: #fffaf0; color: #29231e; font: inherit; font-size: .7rem; font-weight: 850; cursor: pointer; }
 .zone-manual-start button:disabled { opacity: .45; cursor: not-allowed; }
 .zone-map.is-placing-start, .zone-map.is-placing-start .leaflet-grab { cursor: crosshair; }
-.zone-route-line-active { animation: zoneRouteFlow 1.25s linear infinite; }
-.zone-route-line-alternative { cursor: pointer; }
-@keyframes zoneRouteFlow { to { stroke-dashoffset: -26; } }
-.zone-route-arrow { display: grid; place-items: center; width: 16px; height: 16px; color: var(--route-arrow-color, #9b6238); filter: drop-shadow(0 1px 2px rgba(255, 255, 255, .9)); transform: rotate(var(--route-arrow-angle, 0deg)); }
-.zone-route-arrow svg { width: 12px; height: 12px; }
-.zone-route-arrow path { fill: currentColor; stroke: #fffaf0; stroke-width: .8; }
+.zone-itinerary-overlay { position: absolute; z-index: 460; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.zone-itinerary-segment path { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.zone-itinerary-shadow { stroke: rgba(17, 25, 39, .2); stroke-width: 11; opacity: 0; transform: translateY(7px); filter: blur(2px); animation: zoneItineraryAppear .7s ease-out var(--segment-delay) forwards; }
+.zone-itinerary-arc { stroke: var(--segment-color); stroke-width: 5.5; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 3px 2px rgba(255, 255, 255, .9)); animation: zoneItineraryDraw .92s cubic-bezier(.22,.78,.25,1) var(--segment-delay) forwards; }
+.zone-itinerary-highlight { stroke: rgba(255, 255, 255, .72); stroke-width: 1.35; stroke-dasharray: 1; stroke-dashoffset: 1; animation: zoneItineraryDraw .92s cubic-bezier(.22,.78,.25,1) var(--segment-delay) forwards; }
+.zone-itinerary-flight { stroke: #fff; stroke-width: 4.2; stroke-dasharray: .055 .945; stroke-dashoffset: 1; opacity: .95; filter: drop-shadow(0 0 5px var(--segment-color)); animation: zoneItineraryFlight 2.25s linear var(--flight-delay) infinite; }
+.zone-itinerary-arrow { opacity: 0; filter: drop-shadow(0 4px 4px rgba(17, 25, 39, .25)); animation: zoneItineraryAppear .25s ease-out calc(var(--segment-delay) + .82s) forwards; }
+.zone-itinerary-arrow path { fill: var(--segment-color); stroke: rgba(255,255,255,.9); stroke-width: 1.5; }
+.zone-itinerary-label { opacity: 0; filter: drop-shadow(0 5px 8px rgba(17, 25, 39, .2)); animation: zoneItineraryLabel .35s ease-out calc(var(--segment-delay) + .72s) forwards; }
+.zone-itinerary-label rect { fill: var(--segment-color); stroke: rgba(255,255,255,.88); stroke-width: 1.5; }
+.zone-itinerary-label text { fill: #fff; font-family: inherit; font-size: 9px; font-weight: 900; letter-spacing: .02em; text-anchor: middle; dominant-baseline: middle; }
+@keyframes zoneItineraryDraw { to { stroke-dashoffset: 0; } }
+@keyframes zoneItineraryAppear { to { opacity: 1; } }
+@keyframes zoneItineraryFlight { to { stroke-dashoffset: 0; } }
+@keyframes zoneItineraryLabel { from { opacity: 0; } to { opacity: 1; } }
 
 @media (hover: hover) and (min-width: 761px) {
   .zone-card:hover .zone-card-long { grid-template-rows: 1fr; opacity: 1; }
@@ -417,8 +433,19 @@
   .zone-card,
   .zone-entry-cta,
   .zone-map-marker,
-  .zone-route-line-active { animation: none !important; transition-duration: .01ms !important; }
+  .zone-itinerary-shadow,
+  .zone-itinerary-arc,
+  .zone-itinerary-highlight,
+  .zone-itinerary-flight,
+  .zone-itinerary-arrow,
+  .zone-itinerary-label { animation: none !important; transition-duration: .01ms !important; }
   .zone-card { opacity: 1; transform: none; }
+  .zone-itinerary-shadow,
+  .zone-itinerary-arrow,
+  .zone-itinerary-label { opacity: 1; }
+  .zone-itinerary-arc,
+  .zone-itinerary-highlight { stroke-dashoffset: 0; }
+  .zone-itinerary-flight { display: none; }
 }
 
 /* Editorial refresh: neutral canvas, documentary imagery and numbered map waypoints. */
@@ -671,7 +698,8 @@
 .zone-route-start-row button { color: #3449c4; }
 .zone-route-export a { color: #273b9c; }
 .zone-route-notice,
-.zone-route-totals > div { border-color: #dde2e8; background: #fff; }
+.zone-route-totals > div,
+.zone-route-visual-intro { border-color: #dde2e8; background: #fff; }
 .zone-location-consent { background: rgba(10,16,24,.64); }
 .zone-location-consent-card { border-radius: 24px; background: #f8fafc; }
 .zone-manual-start { background: #141d2a; color: #f7f9fc; }

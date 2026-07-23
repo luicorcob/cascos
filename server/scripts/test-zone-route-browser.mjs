@@ -38,7 +38,7 @@ let cdp;
 try {
   if (screenshotDirectory) await mkdir(screenshotDirectory, { recursive: true });
   await waitForUrl(fixtureUrl);
-  await assertServerRouteFallback();
+  await assertServerVisualRoute();
   browser = spawn(chrome, [
     "--headless=new",
     "--no-sandbox",
@@ -82,14 +82,19 @@ try {
   assert.equal(await evaluate('document.querySelectorAll(".zone-route-stop-list li").length'), 4);
   assert.match(await evaluate('document.querySelector("[data-route-summary]").textContent'), /Google Maps/);
   assert.equal(await evaluate('window.__routeRequests'), 1);
+  assert.equal(await evaluate('window.__lastRouteRequest.visualOnly'), true);
+  await waitForExpression('document.querySelectorAll(".zone-itinerary-arc").length === 4');
+  assert.equal(await evaluate('document.querySelectorAll(".zone-itinerary-arc").length'), 4);
+  assert.equal(await evaluate('new Set([...document.querySelectorAll(".zone-itinerary-arc")].map((node) => getComputedStyle(node).stroke)).size'), 4);
+  assert.equal(await evaluate('document.querySelectorAll(".zone-route-line").length'), 0);
 
   await evaluate(`document.querySelector('[data-route-profile="bike"]').click()`);
   await waitForExpression('window.__routeRequests === 2');
   assert.equal(await evaluate(`document.querySelector('[data-route-profile="bike"]').getAttribute("aria-pressed")`), "true");
   await evaluate(`document.querySelector('[data-route-profile="car"]').click()`);
   await waitForExpression('window.__routeRequests === 3');
-  assert.equal(await evaluate(`document.querySelector('[data-route-mode="scenic"]').disabled`), true);
-  assert.equal(await evaluate(`document.querySelector('[data-route-mode="scenic"]').title`), "No disponible en coche");
+  assert.match(await evaluate('document.querySelector(".zone-route-export-primary").href'), /travelmode=driving/);
+  await delay(2300);
   await captureScreenshot("desktop");
 
   await setViewport(390, 844, true);
@@ -100,7 +105,7 @@ try {
   await captureScreenshot("mobile");
 
   assert.deepEqual(await evaluate('window.__zoneErrors'), []);
-  console.log("Modo Ruta browser checks passed: contextual consent, four selections, manual pin, recalculation, car/scenic rule, desktop and mobile summary.");
+  console.log("Modo Ruta browser checks passed: contextual consent, provider-free visual request, four colored arcs, Google Maps handoff, desktop and mobile summary.");
 } finally {
   try { await cdp?.send("Browser.close"); } catch { browser?.kill(); }
   cdp?.close();
@@ -147,7 +152,7 @@ async function waitForUrl(url, timeoutMs = 10000) {
   throw new Error(`Server did not answer at ${url}`);
 }
 
-async function assertServerRouteFallback() {
+async function assertServerVisualRoute() {
   const response = await fetch(`http://127.0.0.1:${port}/api/zone/route`, {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json" },
@@ -155,6 +160,7 @@ async function assertServerRouteFallback() {
       start: { lat: 43.462586, lng: -3.809988 },
       profile: "foot",
       mode: "fastest",
+      visualOnly: true,
       stops: [
         { id: "catedral", name: "Catedral", category: "monumento", lat: 43.460491, lng: -3.807933 },
         { id: "jardines", name: "Jardines", category: "naturaleza", lat: 43.464671, lng: -3.803913 },
@@ -167,8 +173,9 @@ async function assertServerRouteFallback() {
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.route.approximate, true);
+  assert.equal(payload.route.visualOnly, true);
   assert.equal(payload.route.stops.length, 4);
-  assert.match(payload.route.warning, /Ruta aproximada/);
+  assert.match(payload.route.warning, /arcos indican el orden/);
 }
 
 async function waitForPage(portNumber, timeoutMs = 10000) {
@@ -261,13 +268,13 @@ function fixtureHtml() {
     <main class="generated-site"><div data-zone-discovery-slot></div></main>
     <script id="locallift-export-data" type="application/json">{"business":{"id":"fixture","slug":"fixture"}}</script>
     <script>
-      window.__zoneErrors=[]; window.__routeRequests=0; window.__geolocationRequests=0;
+      window.__zoneErrors=[]; window.__routeRequests=0; window.__geolocationRequests=0; window.__lastRouteRequest=null;
       addEventListener("error",event=>window.__zoneErrors.push(String(event.message||event.error)));
       addEventListener("unhandledrejection",event=>window.__zoneErrors.push(String(event.reason)));
       navigator.geolocation.getCurrentPosition=()=>{window.__geolocationRequests+=1};
       const layer=point=>({point,events:{},dragging:{enable(){},disable(){}},addTo(){return this},bindTooltip(){return this},bindTooltip(){return this},openTooltip(){},setLatLng(next){this.point=Array.isArray(next)?{lat:next[0],lng:next[1]}:next;return this},getLatLng(){return this.point?.lat!==undefined?this.point:{lat:this.point[0],lng:this.point[1]}},setRadius(){return this},on(name,fn){this.events[name]=fn;return this},off(name){if(name)delete this.events[name];else this.events={};return this},remove(){},getElement(){return null}});
       window.L={
-        map(){const map={events:{},setView(){return this},invalidateSize(){return this},fitBounds(){return this},flyTo(){return this},on(name,fn){this.events[name]=fn;return this},off(name){delete this.events[name];return this},fire(name,event){this.events[name]?.(event)}};window.__leafletMap=map;return map},
+        map(){const map={events:{},setView(){return this},invalidateSize(){return this},fitBounds(){return this},flyTo(){return this},getSize(){return {x:800,y:600}},latLngToContainerPoint(value){const lat=Number(value.lat??value[0]);const lng=Number(value.lng??value[1]);return {x:(lng+3.82)*40000,y:(43.47-lat)*40000}},on(name,fn){this.events[name]=fn;return this},off(name){delete this.events[name];return this},fire(name,event){this.events[name]?.(event)}};window.__leafletMap=map;return map},
         tileLayer(){return {addTo(){return this}}},marker(point){return layer({lat:Number(point[0]),lng:Number(point[1])})},circle(point){return layer({lat:Number(point[0]),lng:Number(point[1])})},polyline(){return layer({lat:0,lng:0})},divIcon(value){return value},
         latLngBounds(){return {pad(){return this}}}
       };
@@ -278,10 +285,10 @@ function fixtureHtml() {
         if(target.includes("/api/public/fixture/zone/events"))return new Response("{}",{status:201,headers:{"content-type":"application/json"}});
         if(target.includes("/api/public/fixture/zone"))return new Response(JSON.stringify({zone}),{status:200,headers:{"content-type":"application/json"}});
         if(target.includes("/api/zone/route")){
-          window.__routeRequests+=1; const request=JSON.parse(options.body); let elapsed=0;
+          window.__routeRequests+=1; const request=JSON.parse(options.body); window.__lastRouteRequest=request; let elapsed=0;
           const stops=request.stops.map((stop,index)=>{elapsed+=(index+1)*240;return {...stop,durationFromStartSeconds:elapsed}});
           const coordinates=[[request.start.lng,request.start.lat],...stops.map(stop=>[stop.lng,stop.lat])];
-          return new Response(JSON.stringify({route:{id:"route-0",profile:request.profile,mode:request.mode,approximate:false,warning:"",distanceMeters:2750,durationSeconds:elapsed,geometry:{type:"LineString",coordinates},stops,scenicStops:[],alternatives:[]}}),{status:200,headers:{"content-type":"application/json"}})
+          return new Response(JSON.stringify({route:{id:"itinerary-visual",profile:request.profile,mode:request.mode,approximate:true,visualOnly:true,warning:"Vista orientativa: los arcos indican el orden, no el trazado por calles. Abre Google Maps para navegar.",distanceMeters:2750,durationSeconds:elapsed,geometry:{type:"LineString",coordinates},stops,scenicStops:[],alternatives:[]}}),{status:200,headers:{"content-type":"application/json"}})
         }
         return originalFetch(url,options)
       };

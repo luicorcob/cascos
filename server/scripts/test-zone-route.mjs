@@ -107,6 +107,26 @@ assert.equal(approximate.approximate, true);
 assert.match(approximate.warning, /Ruta aproximada/);
 assert.equal(approximate.geometry.coordinates.length, 5);
 
+let visualRouteNetworkCalls = 0;
+const visualRoute = await buildZoneRoute({
+  start,
+  stops: mixedStops,
+  profile: "foot",
+  mode: "fastest",
+  visualOnly: true
+}, {
+  endpointByProfile: { foot: "http://osrm-must-not-run.test" },
+  fetchImpl: async () => {
+    visualRouteNetworkCalls += 1;
+    throw new Error("Visual itineraries must not call a routing provider");
+  }
+});
+assert.equal(visualRouteNetworkCalls, 0);
+assert.equal(visualRoute.visualOnly, true);
+assert.equal(visualRoute.id, "itinerary-visual");
+assert.equal(visualRoute.stops.length, 4);
+assert.match(visualRoute.warning, /arcos indican el orden/);
+
 await assert.rejects(
   () => buildZoneRoute({ start, stops: mixedStops, profile: "foot", mode: "fastest" }, {
     endpointByProfile: { foot: "http://osrm-noroute.test" },
@@ -133,10 +153,12 @@ assert.match(publicUi, /data-route-toggle/);
 assert.match(publicUi, /navigator\.geolocation\.getCurrentPosition/);
 assert.match(publicUi, /Toca el mapa para marcar tu punto de partida/);
 assert.match(publicUi, /routeProfileButton\("foot", "A pie"\)/);
-assert.match(publicUi, /data-route-mode="scenic"/);
-assert.match(publicUi, /Abrir en Google Maps/);
-assert.match(publicUi, /route\.approximate/);
-assert.match(publicCss, /zoneRouteFlow/);
+assert.doesNotMatch(publicUi, /data-route-mode="scenic"/);
+assert.match(publicUi, /recorrido real en Google Maps/);
+assert.match(publicUi, /visualOnly: true/);
+assert.match(publicUi, /zone-itinerary-overlay/);
+assert.doesNotMatch(publicUi, /addRouteLine|zone-route-line-active/);
+assert.match(publicCss, /zoneItineraryFlight/);
 assert.match(publicCss, /#e07a3f/i);
 assert.match(publicCss, /#a87c3d/i);
 assert.match(publicCss, /#4a7a5e/i);
@@ -147,7 +169,7 @@ assert.match(compose, /spain-foot\.osrm/);
 assert.match(compose, /spain-bike\.osrm/);
 assert.match(compose, /spain-car\.osrm/);
 
-console.log("Modo Ruta checks passed: four mixed stops, nearest-neighbor + 2-opt, scenic pass, alternatives, OSRM fallback, unreachable stops, public UI and isolated profiles.");
+console.log("Modo Ruta checks passed: visual itinerary without provider calls, four mixed stops, nearest-neighbor + 2-opt, legacy OSRM compatibility and animated public UI.");
 
 function fakeOsrm(calls, options = {}) {
   return async (input) => {

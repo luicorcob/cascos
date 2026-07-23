@@ -1,6 +1,7 @@
 (function (global) {
   const mounted = new WeakMap();
   const ROUTE_PROFILES = new Set(["foot", "bike", "car"]);
+  const ITINERARY_COLORS = ["#5368e8", "#ef7d52", "#1c9d86", "#8d5bd1", "#d09a32", "#e0527e"];
   let activeModal = null;
   let previousOverflow = "";
 
@@ -108,18 +109,11 @@
                   ${routeProfileButton("car", "Coche")}
                 </div>
               </fieldset>
-              <fieldset class="zone-route-fieldset">
-                <legend>Qué ruta prefieres</legend>
-                <div class="zone-route-chips" data-route-modes>
-                  <button type="button" class="zone-route-chip is-active" data-route-mode="fastest" aria-pressed="true">Más rápida</button>
-                  <button type="button" class="zone-route-chip" data-route-mode="scenic" aria-pressed="false" title="Prioriza monumentos, miradores y naturaleza">Panorámica</button>
-                </div>
-              </fieldset>
               <div class="zone-route-start-row">
                 <span data-route-start-label>Punto de partida pendiente</span>
                 <button type="button" data-route-adjust-start>Ajustar en mapa</button>
               </div>
-              <button type="button" class="zone-route-calculate" data-route-calculate disabled>Calcular ruta</button>
+              <button type="button" class="zone-route-calculate" data-route-calculate disabled>Crear recorrido visual</button>
               <div class="zone-route-summary" data-route-summary hidden></div>
             </div>
             <div class="zone-card-list" data-zone-card-list>
@@ -127,7 +121,7 @@
             </div>
             <div class="zone-route-launch" data-route-launch-bar hidden>
               <span><strong data-route-count>0</strong> de 6 paradas</span>
-              <button type="button" data-route-launch>Planear ruta</button>
+              <button type="button" data-route-launch>Crear recorrido</button>
             </div>
           </section>
           <section class="zone-map-panel" aria-label="Mapa interactivo de ${escapeAttr(zone.zone)}">
@@ -151,7 +145,7 @@
             <span class="zone-location-icon" aria-hidden="true">${categorySvg("start")}</span>
             <p class="zone-location-eyebrow">Tu ubicación, solo durante esta sesión</p>
             <h3>¿Desde dónde empezamos?</h3>
-            <p>La usamos para ordenar las paradas y dibujar el itinerario. No se guarda en DLS ni en Supabase.</p>
+            <p>La usamos para ordenar las paradas y crear una vista orientativa. No se guarda en DLS ni en Supabase.</p>
             <button type="button" class="zone-location-primary" data-route-use-location>Usar mi ubicación</button>
             <button type="button" class="zone-location-secondary" data-route-use-manual>Elegir punto en el mapa</button>
             <button type="button" class="zone-location-cancel" data-route-cancel>Ahora no</button>
@@ -209,7 +203,6 @@
       start: null,
       manualDraft: null,
       profile: "foot",
-      mode: "fastest",
       result: null,
       activeRouteId: "",
       requestSerial: 0
@@ -289,7 +282,6 @@
     modal.querySelector("[data-route-back]")?.addEventListener("click", leaveRouteMode);
     modal.querySelector("[data-route-calculate]")?.addEventListener("click", calculateRoute);
     modal.querySelectorAll("[data-route-profile]").forEach((button) => button.addEventListener("click", () => setProfile(button.dataset.routeProfile)));
-    modal.querySelectorAll("[data-route-mode]").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.routeMode)));
 
     function toggleRouteStop(card, item) {
       if (!item) return;
@@ -415,51 +407,31 @@
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", String(active));
       });
-      const scenic = modal.querySelector('[data-route-mode="scenic"]');
-      scenic.disabled = profile === "car";
-      scenic.title = profile === "car" ? "No disponible en coche" : "Prioriza monumentos, miradores y naturaleza";
-      if (profile === "car" && routeState.mode === "scenic") setMode("fastest", false);
-      if (recalculate && routeState.result) calculateRoute();
-    }
-
-    function setMode(mode, recalculate = true) {
-      if (!["fastest", "scenic"].includes(mode) || (mode === "scenic" && routeState.profile === "car")) return;
-      routeState.mode = mode;
-      modal.querySelectorAll("[data-route-mode]").forEach((button) => {
-        const active = button.dataset.routeMode === mode;
-        button.classList.toggle("is-active", active);
-        button.setAttribute("aria-pressed", String(active));
-      });
       if (recalculate && routeState.result) calculateRoute();
     }
 
     async function calculateRoute() {
       if (!routeState.start || routeState.selectedIds.size < 2) return;
       const selected = selectedStops(zone, routeState.selectedIds);
-      const scenicCandidates = zone.recommendations
-        .filter((item) => !routeState.selectedIds.has(item.id))
-        .map(routeStopPayload);
       const requestSerial = ++routeState.requestSerial;
       const calculate = modal.querySelector("[data-route-calculate]");
       calculate.disabled = true;
-      calculate.textContent = "Calculando…";
-      setRouteNotice("Optimizando el orden y trazando la ruta real…", "info");
+      calculate.textContent = "Preparando…";
+      setRouteNotice("Ordenando las paradas y dando vida al recorrido…", "info");
       try {
         const payload = await postJson("/api/zone/route", {
           start: routeState.start,
           stops: selected.map(routeStopPayload),
-          scenicCandidates,
           profile: routeState.profile,
-          mode: routeState.mode
+          mode: "fastest",
+          visualOnly: true
         });
         if (requestSerial !== routeState.requestSerial) return;
         routeState.result = payload.route;
         routeState.activeRouteId = payload.route.id;
         renderRouteSummary(payload.route);
-        mapState?.drawRoute?.(payload.route, routeState.activeRouteId, safeColor(zone.host?.accent), promoteAlternative);
-        if (payload.route.approximate || payload.route.warning) setRouteNotice(payload.route.warning, "warning");
-        else if (payload.route.scenicStops?.length) setRouteNotice(`Ruta panorámica con ${payload.route.scenicStops.length} punto${payload.route.scenicStops.length === 1 ? "" : "s"} de interés de paso.`, "success");
-        else clearRouteNotice();
+        mapState?.drawRoute?.(payload.route, routeState.start, safeColor(zone.host?.accent));
+        setRouteNotice(payload.route.warning || "Vista orientativa creada. Abre Google Maps para seguir el recorrido real.", "info");
       } catch (error) {
         if (requestSerial !== routeState.requestSerial) return;
         routeState.result = null;
@@ -468,39 +440,32 @@
       } finally {
         if (requestSerial === routeState.requestSerial) {
           calculate.disabled = !routeState.start || routeState.selectedIds.size < 2;
-          calculate.textContent = "Recalcular ruta";
+          calculate.textContent = "Volver a animar";
         }
       }
     }
 
-    function promoteAlternative(routeId) {
-      if (!routeState.result) return;
-      routeState.activeRouteId = routeId;
-      const active = activeRoute(routeState.result, routeId);
-      renderRouteSummary(routeState.result, active);
-      mapState?.drawRoute?.(routeState.result, routeId, safeColor(zone.host?.accent), promoteAlternative);
-    }
-
-    function renderRouteSummary(result, selectedRoute = result) {
+    function renderRouteSummary(result) {
       const summary = modal.querySelector("[data-route-summary]");
-      const route = selectedRoute || result;
+      const route = result;
       const googleUrl = googleMapsRouteUrl(routeState.start, route.stops, routeState.profile);
       const appleUrl = appleMapsRouteUrl(routeState.start, route.stops.at(-1), routeState.profile);
       summary.hidden = false;
       summary.innerHTML = `
-        <div class="zone-route-totals">
-          <div><strong>${formatDistance(route.distanceMeters)}</strong><span>distancia</span></div>
-          <div><strong>${formatDuration(route.durationSeconds)}</strong><span>tiempo estimado</span></div>
+        <div class="zone-route-visual-intro">
+          <span>Vista orientativa · ${escapeHtml(profileLabel(routeState.profile))}</span>
+          <strong>${route.stops.length} paradas, un plan de un vistazo</strong>
+          <p>Los arcos de colores muestran el orden, no las calles. Consulta el recorrido real antes de salir.</p>
         </div>
-        ${result.alternatives?.length ? `<p class="zone-route-alternative-note">Toca una línea gris del mapa para elegir una alternativa.</p>` : ""}
         <ol class="zone-route-stop-list">
           ${route.stops.map((stop, index) => {
             const iconCategory = categoryGroup(stop.type === "business" ? "business" : stop.category);
-            return `<li><span class="zone-route-stop-icon zone-route-stop-icon-${iconCategory}" aria-hidden="true">${categorySvg(iconCategory)}</span><div><strong>${index + 1}. ${escapeHtml(stop.name)}</strong><span>${formatDuration(stop.durationFromStartSeconds)} hasta aquí</span></div></li>`;
+            const color = itineraryColor(index, safeColor(zone.host?.accent));
+            return `<li style="--route-segment-color:${color}"><span class="zone-route-stop-icon zone-route-stop-icon-${iconCategory}" aria-hidden="true">${categorySvg(iconCategory)}</span><div><strong>${escapeHtml(stop.name)}</strong><span>Tramo ${waypointLetter(index)} → ${waypointLetter(index + 1)}</span></div></li>`;
           }).join("")}
         </ol>
         <div class="zone-route-export">
-          <a href="${escapeAttr(googleUrl)}" target="_blank" rel="noreferrer">Abrir en Google Maps ↗</a>
+          <a class="zone-route-export-primary" href="${escapeAttr(googleUrl)}" target="_blank" rel="noreferrer">Ver recorrido real en Google Maps ↗</a>
           <a href="${escapeAttr(appleUrl)}" target="_blank" rel="noreferrer">Abrir destino en Apple Maps ↗</a>
         </div>`;
     }
@@ -599,7 +564,9 @@
     let accuracyCircle = null;
     let manualHandler = null;
     let manualCallback = null;
-    let routeLayers = [];
+    let itineraryOverlay = null;
+    let itineraryPoints = [];
+    let itineraryAccent = safeColor(zone.host?.accent);
 
     global.L.circle(hostPoint, {
       radius: Math.min(2200, Math.max(350, Number(zone.settings?.radiusMeters || 1500))),
@@ -704,53 +671,48 @@
     }
 
     function clearRoute() {
-      routeLayers.forEach((layer) => layer.remove?.());
-      routeLayers = [];
+      itineraryPoints = [];
+      if (itineraryOverlay) itineraryOverlay.replaceChildren();
     }
 
-    function drawRoute(result, activeId, accent, onAlternative) {
+    function drawRoute(result, start, accent) {
       clearRoute();
-      const routes = [result, ...(Array.isArray(result.alternatives) ? result.alternatives : [])];
-      routes
-        .filter((route) => route.id !== activeId)
-        .forEach((route) => addRouteLine(route, false, accent, onAlternative));
-      const active = routes.find((route) => route.id === activeId) || result;
-      addRouteLine(active, true, accent, onAlternative);
-      addDirectionArrows(active.geometry, accent);
-      const routePoints = geometryLatLngs(active.geometry);
-      if (startMarker) routePoints.push(startMarker.getLatLng());
-      if (routePoints.length) map.fitBounds(global.L.latLngBounds(routePoints).pad(0.12), { maxZoom: 17, animate: false });
+      itineraryAccent = safeColor(accent);
+      itineraryPoints = [start, ...(Array.isArray(result?.stops) ? result.stops : [])]
+        .map((point) => ({ lat: Number(point?.lat), lng: Number(point?.lng) }))
+        .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+      if (itineraryPoints.length < 2) return;
+      map.fitBounds(global.L.latLngBounds(itineraryPoints.map((point) => [point.lat, point.lng])).pad(0.18), { maxZoom: 16, animate: false });
+      requestAnimationFrame(syncItineraryOverlay);
     }
 
-    function addRouteLine(route, active, accent, onAlternative) {
-      const latLngs = geometryLatLngs(route.geometry);
-      if (latLngs.length < 2) return;
-      const line = global.L.polyline(latLngs, {
-        color: active ? accent : "#b0b0b0",
-        weight: active ? 5 : 3,
-        opacity: active ? 0.96 : 0.85,
-        dashArray: active ? "14 12" : null,
-        className: active ? "zone-route-line zone-route-line-active" : "zone-route-line zone-route-line-alternative",
-        interactive: !active
-      }).addTo(map);
-      if (!active) {
-        line.on("click", () => onAlternative?.(route.id));
-        line.bindTooltip(`${formatDistance(route.distanceMeters)} · ${formatDuration(route.durationSeconds)} — elegir alternativa`, { sticky: true });
-      }
-      routeLayers.push(line);
+    function ensureItineraryOverlay() {
+      if (itineraryOverlay) return itineraryOverlay;
+      itineraryOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      itineraryOverlay.classList.add("zone-itinerary-overlay");
+      itineraryOverlay.setAttribute("aria-hidden", "true");
+      mapNode.append(itineraryOverlay);
+      return itineraryOverlay;
     }
 
-    function addDirectionArrows(geometry, color) {
-      sampleRouteArrows(geometry, 150).forEach((arrow) => {
-        const icon = global.L.divIcon({
-          className: "zone-route-arrow-icon",
-          html: `<span class="zone-route-arrow" style="--route-arrow-angle:${arrow.bearing}deg;--route-arrow-color:${escapeAttr(color)}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 10 6 1l5 9-5-2Z"/></svg></span>`,
-          iconSize: [16, 16],
-          iconAnchor: [8, 8]
-        });
-        routeLayers.push(global.L.marker([arrow.lat, arrow.lng], { icon, interactive: false, keyboard: false }).addTo(map));
-      });
+    function syncItineraryOverlay() {
+      if (itineraryPoints.length < 2 || typeof map.latLngToContainerPoint !== "function") return;
+      const overlay = ensureItineraryOverlay();
+      const size = typeof map.getSize === "function" ? map.getSize() : { x: mapNode.clientWidth, y: mapNode.clientHeight };
+      const width = Math.max(1, Number(size?.x || mapNode.clientWidth || 1));
+      const height = Math.max(1, Number(size?.y || mapNode.clientHeight || 1));
+      overlay.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      overlay.setAttribute("width", String(width));
+      overlay.setAttribute("height", String(height));
+      const segments = itineraryPoints.slice(1).map((point, index) => {
+        const from = map.latLngToContainerPoint(itineraryPoints[index]);
+        const to = map.latLngToContainerPoint(point);
+        return itineraryArcMarkup(from, to, index, itineraryAccent);
+      }).join("");
+      overlay.innerHTML = `<g class="zone-itinerary-arcs">${segments}</g>`;
     }
+
+    ["move", "zoom", "resize"].forEach((eventName) => map.on(eventName, syncItineraryOverlay));
 
     function clearHighlight() {
       modal.querySelectorAll(".zone-map-marker").forEach((node) => node.classList.remove("is-highlighted"));
@@ -841,40 +803,47 @@
     };
   }
 
-  function activeRoute(result, routeId) {
-    return [result, ...(result.alternatives || [])].find((route) => route.id === routeId) || result;
+  function itineraryArcMarkup(from, to, index, accent) {
+    const start = { x: Number(from?.x), y: Number(from?.y) };
+    const end = { x: Number(to?.x), y: Number(to?.y) };
+    if (![start.x, start.y, end.x, end.y].every(Number.isFinite)) return "";
+    const distance = Math.hypot(end.x - start.x, end.y - start.y);
+    const lift = Math.min(138, Math.max(52, 34 + distance * 0.2));
+    const control = {
+      x: (start.x + end.x) / 2,
+      y: Math.min(start.y, end.y) - lift
+    };
+    const label = {
+      x: (start.x + 2 * control.x + end.x) / 4,
+      y: (start.y + 2 * control.y + end.y) / 4 - 8
+    };
+    const color = itineraryColor(index, accent);
+    const path = `M ${fixed(start.x)} ${fixed(start.y)} Q ${fixed(control.x)} ${fixed(control.y)} ${fixed(end.x)} ${fixed(end.y)}`;
+    const arrowAngle = Math.atan2(end.y - control.y, end.x - control.x) * 180 / Math.PI;
+    const delay = (index * 0.42).toFixed(2);
+    const flightDelay = (index * 0.42 + 0.7).toFixed(2);
+    return `<g class="zone-itinerary-segment" style="--segment-color:${color};--segment-delay:${delay}s;--flight-delay:${flightDelay}s">
+      <path class="zone-itinerary-shadow" d="${path}" pathLength="1"/>
+      <path class="zone-itinerary-arc" d="${path}" pathLength="1"/>
+      <path class="zone-itinerary-highlight" d="${path}" pathLength="1"/>
+      <path class="zone-itinerary-flight" d="${path}" pathLength="1"/>
+      <g class="zone-itinerary-arrow" transform="translate(${fixed(end.x)} ${fixed(end.y)}) rotate(${fixed(arrowAngle)})"><path d="M -15 -7 L 0 0 L -15 7 L -10 0 z"/></g>
+      <g class="zone-itinerary-label" transform="translate(${fixed(label.x)} ${fixed(label.y)})">
+        <rect x="-21" y="-10" width="42" height="20" rx="10"/>
+        <text x="0" y=".5">${waypointLetter(index)}→${waypointLetter(index + 1)}</text>
+      </g>
+    </g>`;
   }
 
-  function geometryLatLngs(geometry) {
-    return (Array.isArray(geometry?.coordinates) ? geometry.coordinates : [])
-      .map((coordinate) => [Number(coordinate[1]), Number(coordinate[0])])
-      .filter((coordinate) => coordinate.every(Number.isFinite));
+  function itineraryColor(index, accent) {
+    const first = safeColor(accent);
+    if (index === 0) return first;
+    const remaining = ITINERARY_COLORS.filter((color) => color.toLowerCase() !== first.toLowerCase());
+    return remaining[(index - 1) % remaining.length];
   }
 
-  function sampleRouteArrows(geometry, intervalMeters) {
-    const points = geometryLatLngs(geometry);
-    if (points.length < 2) return [];
-    const samples = [];
-    let remaining = intervalMeters;
-    for (let index = 1; index < points.length && samples.length < 80; index += 1) {
-      const from = { lat: points[index - 1][0], lng: points[index - 1][1] };
-      const to = { lat: points[index][0], lng: points[index][1] };
-      const segment = distanceMeters(from, to);
-      if (!segment) continue;
-      while (segment >= remaining && samples.length < 80) {
-        const ratio = remaining / segment;
-        samples.push({
-          lat: from.lat + (to.lat - from.lat) * ratio,
-          lng: from.lng + (to.lng - from.lng) * ratio,
-          bearing: bearingDegrees(from, to)
-        });
-        remaining += intervalMeters;
-      }
-      remaining -= segment;
-      if (remaining <= 0) remaining = intervalMeters;
-    }
-    return samples;
-  }
+  function waypointLetter(index) { return String.fromCharCode(65 + Math.max(0, Math.min(25, Number(index) || 0))); }
+  function fixed(value) { return Number(value).toFixed(1); }
 
   function googleMapsRouteUrl(start, stops, profile) {
     const ordered = Array.isArray(stops) ? stops : [];
@@ -1086,28 +1055,6 @@
     const deltaLng = toRadians(Number(right.lng) - Number(left.lng));
     const a = Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
     return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
-  }
-
-  function bearingDegrees(from, to) {
-    const lat1 = toRadians(from.lat);
-    const lat2 = toRadians(to.lat);
-    const deltaLng = toRadians(to.lng - from.lng);
-    const y = Math.sin(deltaLng) * Math.cos(lat2);
-    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
-    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-  }
-
-  function formatDistance(meters) {
-    const value = Number(meters || 0);
-    return value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1).replace(".", ",")} km` : `${Math.round(value)} m`;
-  }
-
-  function formatDuration(seconds) {
-    const minutes = Math.max(1, Math.round(Number(seconds || 0) / 60));
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    const remainder = minutes % 60;
-    return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
   }
 
   function profileLabel(profile) { return ({ foot: "A pie", bike: "En bicicleta", car: "En coche" })[profile] || ""; }

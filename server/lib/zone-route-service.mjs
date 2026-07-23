@@ -14,6 +14,7 @@ export async function buildZoneRoute(input = {}, options = {}) {
   const endpoint = clean(options.endpointByProfile?.[request.profile]) || osrmEndpoint(request.profile);
   const timeoutMs = clampNumber(options.timeoutMs ?? process.env.OSRM_ROUTE_TIMEOUT_MS, 500, 30000, 5500);
   const orderedStops = optimizeStopOrder(request.start, request.stops);
+  if (request.visualOnly) return approximateRouteResponse(request, orderedStops, { visualOnly: true });
   let routedWaypoints = orderedStops.map((stop) => ({ ...stop, ghost: false }));
   let scenicStops = [];
   let scenicBaseline = null;
@@ -107,7 +108,7 @@ export function normalizeRouteRequest(input = {}) {
     .map((stop, index) => normalizeStop(stop, index, true))
     .filter((stop) => SCENIC_CATEGORIES.has(normalizeCategory(stop.category)))
     .filter((stop) => !selectedIds.has(stop.id));
-  return { start, stops, scenicCandidates, profile, mode };
+  return { start, stops, scenicCandidates, profile, mode, visualOnly: input.visualOnly === true };
 }
 
 export function optimizeStopOrder(start, stops = []) {
@@ -307,7 +308,7 @@ function processOsrmRoute(route, waypoints, id) {
   };
 }
 
-function approximateRouteResponse(request, orderedStops) {
+function approximateRouteResponse(request, orderedStops, options = {}) {
   const points = [request.start, ...orderedStops];
   const speed = PROFILE_SPEED_METERS_SECOND[request.profile];
   let distanceMeters = 0;
@@ -322,8 +323,11 @@ function approximateRouteResponse(request, orderedStops) {
     profile: request.profile,
     mode: request.mode,
     approximate: true,
-    warning: "Ruta aproximada, no se pudo calcular el trazado real",
-    id: "route-approximate",
+    visualOnly: options.visualOnly === true,
+    warning: options.visualOnly
+      ? "Vista orientativa: los arcos indican el orden, no el trazado por calles. Abre Google Maps para navegar."
+      : "Ruta aproximada, no se pudo calcular el trazado real",
+    id: options.visualOnly ? "itinerary-visual" : "route-approximate",
     distanceMeters: Math.round(distanceMeters),
     durationSeconds: Math.round(durationSeconds),
     geometry: {
