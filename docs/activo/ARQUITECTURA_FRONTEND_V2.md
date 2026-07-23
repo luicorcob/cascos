@@ -1,5 +1,10 @@
 # Arquitectura frontend v2
 
+> **Antecedente histórico.** Esta fase sigue siendo válida, pero sus métricas y
+> su mapa de responsabilidades han sido sustituidos por
+> [`ARQUITECTURA_MODULAR_V3.md`](ARQUITECTURA_MODULAR_V3.md), verificada el
+> 23 de julio de 2026.
+
 Estado: **completada el 12 de junio de 2026**.
 
 Objetivo: reducir el riesgo de cambios en el Studio y mejorar la experiencia

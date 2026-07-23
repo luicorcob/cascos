@@ -73,6 +73,7 @@ Documentos utiles que no marcan prioridades actuales:
 | --- | --- | --- |
 | Mando | [`AHORA.md`](AHORA.md) | Objetivo, fase y siguientes acciones. |
 | Activo | [`CRM_2_EJECUCION.md`](activo/CRM_2_EJECUCION.md) | Ejecucion canonica del CRM 2.0. |
+| Activo | [`ARQUITECTURA_MODULAR_V3.md`](activo/ARQUITECTURA_MODULAR_V3.md) | Fronteras vigentes del Studio y router HTTP. |
 | Activo | [`PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md`](activo/PLAN_DEFINITIVO_PRIMEROS_CLIENTES.md) | Alcance y reglas vinculantes. |
 | Activo | [`FASE_0_EJECUCION.md`](activo/FASE_0_EJECUCION.md) | Estado y evidencia de la fase actual. |
 | Activo | [`CIERRE_FASE_0.md`](activo/CIERRE_FASE_0.md) | Gate binario y handoff de cierre. |

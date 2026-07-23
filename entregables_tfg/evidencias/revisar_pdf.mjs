@@ -12,6 +12,8 @@ const pdf = await readFile(pdfPath);
 const counts = [...pdf.toString("latin1").matchAll(/\/Count\s+(\d+)/g)].map((match) => Number(match[1]));
 const pageCount = Math.max(...counts.filter(Number.isFinite));
 if (!pageCount) throw new Error("No se pudo determinar el número de páginas.");
+const requestedLimit = Number(process.env.PDF_REVIEW_LIMIT || 0);
+const renderCount = requestedLimit > 0 ? Math.min(pageCount, requestedLimit) : pageCount;
 
 await mkdir(reviewDir, { recursive: true });
 const chrome = await findChrome();
@@ -67,9 +69,33 @@ try {
     console.log(JSON.stringify(diagnostic.result?.value || [], null, 2));
   } else {
 
-  for (let number = 1; number <= pageCount; number += 1) {
-    await cdp.send("Page.navigate", { url: `${fileUrl}#page=${number}&zoom=page-fit` });
-    await delay(number === 1 ? 1800 : 700);
+  await delay(5000);
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: 760,
+    y: 600,
+    button: "left",
+    clickCount: 1
+  });
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: 760,
+    y: 600,
+    button: "left",
+    clickCount: 1
+  });
+
+  for (let number = 1; number <= renderCount; number += 1) {
+    if (number > 1) {
+      await cdp.send("Input.dispatchMouseEvent", {
+        type: "mouseWheel",
+        x: 760,
+        y: 600,
+        deltaX: 0,
+        deltaY: 1080
+      });
+      await delay(700);
+    }
     const screenshot = await cdp.send("Page.captureScreenshot", {
       format: "png",
       fromSurface: true,
@@ -77,7 +103,7 @@ try {
     });
     const filename = `pagina-${String(number).padStart(3, "0")}.png`;
     await writeFile(path.join(reviewDir, filename), Buffer.from(screenshot.data, "base64"));
-    if (number % 10 === 0 || number === pageCount) console.log(`Revisión renderizada: ${number}/${pageCount}`);
+    if (number % 10 === 0 || number === renderCount) console.log(`Revisión renderizada: ${number}/${renderCount}`);
   }
 
   await writeFile(path.join(reviewDir, "revision-metadata.json"), `${JSON.stringify({

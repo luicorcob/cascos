@@ -1,5 +1,7 @@
 # Auditoría técnica del estado real de DLS · Digital Local Sites
 
+> **Documento histórico.** Esta auditoría conserva el corte del 16 de julio de 2026 para trazabilidad. No describe por completo el estado del 23 de julio: desde entonces se incorporaron CRM 2, roles, paneles separados, comercio/canales en el backend principal, Descubre tu zona y una refactorización modular. La referencia vigente es `memoria_tfg.md`; las contradicciones resueltas se enumeran en `anexos/contradicciones_documentacion.md`.
+
 **Corte analizado:** commit `8b123783eb2d8750aafdfa4a1e58d340ed82f6a3`, fechado el 16/07/2026.  
 **Método:** inspección del repositorio completo, trazado de referencias, contraste con configuración, ejecución aislada, pruebas automatizadas y revisión visual.  
 **Regla de verdad:** código y comportamiento actual; la documentación previa se trata como contexto histórico.  

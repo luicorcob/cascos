@@ -1,8 +1,10 @@
 {
-  "generatedAt": "2026-07-16",
+  "generatedAt": "2026-07-23T15:51:21.850Z",
   "source": "memoria_tfg.pdf",
-  "pageCount": 42,
-  "renderer": "Windows.Data.Pdf.PdfDocument",
-  "pageImages": "pagina-001.png … pagina-042.png",
-  "review": "Revisión visual página por página completada; sin cortes, solapamientos ni páginas en blanco."
+  "pageCount": 44,
+  "viewport": {
+    "width": 1080,
+    "height": 1240
+  },
+  "note": "Imágenes de revisión del PDF; no son figuras de la memoria."
 }

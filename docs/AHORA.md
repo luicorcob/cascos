@@ -1,10 +1,10 @@
 # Ahora
 
-Ultima actualizacion: 18 de julio de 2026.
+Ultima actualizacion: 23 de julio de 2026.
 
-Este es el panel de mando canonico de DLS. El objetivo anterior de arquitectura
-frontend del Studio esta completado y documentado en
-[`activo/ARQUITECTURA_FRONTEND_V2.md`](activo/ARQUITECTURA_FRONTEND_V2.md).
+Este es el panel de mando canonico de DLS. La arquitectura vigente del Studio
+y del servidor esta documentada en
+[`activo/ARQUITECTURA_MODULAR_V3.md`](activo/ARQUITECTURA_MODULAR_V3.md).
 
 ## Objetivo completado
 
@@ -75,7 +75,8 @@ npm.cmd run test:backend-security
 
 Tambien se ejecuta la suite especifica del modulo modificado. Los cambios de
 Google conservan `npm.cmd run test:google`; los del Studio conservan
-`npm.cmd run test:studio`.
+`npm.cmd run test:studio`. Los cambios en composicion o rutas conservan
+`npm.cmd run test:architecture`.
 
 ## Reglas de ejecucion
 

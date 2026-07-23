@@ -150,7 +150,7 @@ try {
     assert.match(result.stdout, /data-crm-field-form/);
     assert.match(result.stdout, /data-crm-view-form/);
     assert.match(result.stdout, /data-crm-pipeline-rule-form/);
-    assert.doesNotMatch(result.stdout, /No se pudo cargar/);
+    assert.doesNotMatch(result.stdout, /foundation-module is-unavailable/);
     await rm(profile, { recursive: true, force: true }).catch(() => {});
   }
   console.log("Foundation browser checks passed: responsive security, audit, normalized money, payment controls, typed fields, compound views and pipeline rules.");

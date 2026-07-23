@@ -3,9 +3,9 @@
 ## Alcance
 
 - Documento: `memoria_tfg.pdf`.
-- Versión auditada del proyecto: commit `8b123783eb2d8750aafdfa4a1e58d340ed82f6a3`.
-- Extensión: 42 páginas.
-- Páginas revisadas: 1–42 mediante el render `pagina-001.png` a `pagina-042.png`.
+- Versión auditada: base `9eba88695ae39af83ab40a147f38ee88dc15a77a` más refactorización modular del 23/07/2026.
+- Extensión: 44 páginas.
+- Páginas revisadas: 1–44 mediante el render `pagina-001.png` a `pagina-044.png`.
 
 ## Comprobaciones realizadas
 
@@ -15,9 +15,10 @@
 - Tablas, bloques monoespaciados y enlaces sin desbordamientos visibles.
 - Ausencia de texto cortado, elementos solapados y páginas completamente en blanco.
 - Glifos y acentos renderizados correctamente con la fuente final.
+- Portada y pie actualizados al corte del 23/07/2026.
 
 Los espacios libres al final de algunos capítulos son deliberados: la maquetación fuerza que cada capítulo principal comience en una página nueva.
 
 ## Resultado
 
-El PDF queda apto para la revisión académica final. Antes de entregarlo oficialmente deben sustituirse los marcadores de portada —autor, tutor, titulación y centro— por los datos facilitados por el estudiante.
+El PDF queda apto para revisión académica. Antes de entregarlo oficialmente deben sustituirse los marcadores de portada —autor, tutor, titulación y centro— y, si se desea mostrar visualmente todo el alcance reciente, renovar las capturas históricas de interfaz.

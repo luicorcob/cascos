@@ -182,7 +182,7 @@ function renderPage({ body, toc }, pagination) {
       <div><dt>Autor</dt><dd>[pendiente de confirmar]</dd></div>
       <div><dt>Tutor/a</dt><dd>[pendiente de confirmar]</dd></div>
       <div><dt>Titulación y centro</dt><dd>[pendiente de confirmar]</dd></div>
-      <div><dt>Corte técnico</dt><dd>16 de julio de 2026 · commit 8b12378</dd></div>
+      <div><dt>Corte técnico</dt><dd>23 de julio de 2026 · base 9eba886 + refactor modular</dd></div>
     </dl>
     <p class="cover-note">Documento construido a partir del código, pruebas y ejecución del repositorio.</p>
   </section>
@@ -356,7 +356,7 @@ async function printPdf(inputPath, outputPath) {
       marginLeft: 0.63,
       marginRight: 0.63,
       headerTemplate: '<div style="width:100%;font:7px Segoe UI,Arial;color:#7a8495;padding:0 16mm"><span>DLS · Digital Local Sites — Memoria técnica</span></div>',
-      footerTemplate: '<div style="width:100%;font:7px Segoe UI,Arial;color:#7a8495;padding:0 16mm;display:flex;justify-content:space-between"><span>TFG · corte 16/07/2026</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>'
+      footerTemplate: '<div style="width:100%;font:7px Segoe UI,Arial;color:#7a8495;padding:0 16mm;display:flex;justify-content:space-between"><span>TFG · corte 23/07/2026</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>'
     });
     await writeFile(outputPath, Buffer.from(result.data, "base64"));
   } finally {

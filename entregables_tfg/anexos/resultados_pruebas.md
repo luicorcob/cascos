@@ -1,27 +1,32 @@
 # Resultados de pruebas y ejecución controlada
 
-Fecha de comprobación: 16 de julio de 2026. Entorno: Windows, Node.js `v24.13.1`, npm `11.8.0`, Chrome instalado localmente. La exigencia declarada por el proyecto es Node.js `>=22.19` (`package.json:7-9`).
+Fecha de comprobación final: 23 de julio de 2026. Entorno: Windows, Node.js `v24.13.1`, npm `11.8.0`. El runtime declarado es Node.js `>=22.19`.
 
 ## Resumen
 
 | Comprobación | Resultado | Evidencia |
 |---|---:|---|
-| Sintaxis completa (`npm run check`) | PASA | Todos los `node --check` del script finalizaron sin error. |
-| Smoke funcional (`npm run smoke:pilot`) | PASA | Health, autenticación admin, consentimiento de leads/reservas, CRM, agenda, eventos, reportes y preparación Google. |
-| Suite Studio hasta guard de arquitectura | PARCIAL | Pasan core, estado, layouts, medios, imágenes, proveedor, publicación de demos, worker, datos, validación y renderer. |
-| Guard de arquitectura | FALLA | `src/app.js` mide 253.766 bytes y el umbral es 180.000 (`server/scripts/test-studio-architecture.mjs:34`). |
-| QA visual profunda | PASA | `npm run test:qa-visual`: “QA visual profundo: test superado”. |
-| E2E de navegador Studio | FALLA | Chrome y un segundo intento seleccionando Edge terminan con `Runtime.evaluate: Target crashed` al esperar `data-studio-ready`. |
-| Captura CDP controlada | PASA | 16 vistas cargadas y capturadas; `capturas/originales/capturas-ejecucion.json`. |
-| Seguridad backend | PASA | `test:backend-security`, ejecutado durante la auditoría. |
-| Integración Google simulada | PASA | `test:google`, sin usar credenciales reales. |
-| CRM: timeline y propuestas | PASA | CRUD, separación por negocio, expiración, conversión, merge y exportación HTML/PDF. |
-| CRM: plantillas, forecast, automatización, inbox, SLA, dashboard, atribución y calidad | PASA | Pruebas específicas del repositorio ejecutadas individualmente. |
-| Imágenes de sitio y traspaso Radar → Studio | PASA | Pruebas específicas ejecutadas individualmente. |
+| Sintaxis dinámica (`npm run check`) | PASA | 260 módulos `.js`/`.mjs` descubiertos y comprobados. |
+| Arquitectura (`npm run test:architecture`) | PASA | Studio: 163.228 bytes. Servidor: 6.472 bytes y 39 familias API. |
+| Suite Studio (`npm run test:studio`) | PASA | Core, módulos extraídos, estado, layouts, medios, imágenes, publicación, datos, renderer, guard y QA. |
+| Smoke (`npm run smoke:pilot`) | PASA | Health, auth admin, consentimiento, CRM, agenda, eventos, informes y preparación Google. |
+| CRM 2 fundamento (`test:crm-foundation`) | PASA | Seis roles, RBAC, aislamiento, dinero, campos, vistas y reglas; modelo, API y navegador. |
+| Comunicaciones (`test:communications`) | PASA | API, portal privado, soporte, adjuntos, no leídos y tenancy. |
+| Comercio (`test:commerce`) | PASA | Catálogo, cupones, quote, checkout, pedidos, portal y dashboard. |
+| Inteligencia (`test:crm-intelligence`) | PASA | Embudos, cohortes, atribución, objetivos, predicción y copiloto revisable. |
+| Zona y rutas (`test:zone-discovery`) | PASA | Afinidad, fuentes, privacidad, UI, itinerario, perfiles y fallback. |
+| QA visual | PASA | Incluida en la suite Studio y ejecutable de forma aislada. |
+| E2E largo (`npm run test:studio-browser`) | FALLA | `Runtime.evaluate: Target crashed` mientras espera `data-studio-ready`. |
+| Capturas históricas | PASA EN SU CORTE | Dieciséis vistas del 16 de julio; no representan todo el alcance del 23 de julio. |
+| Proveedores productivos | NO VERIFICADO | Google, canales, pagos, IA y publicación remota requieren credenciales externas. |
+
+## Cambios verificados por los guards
+
+La refactorización no eleva el umbral del Studio. Extrae modelos/controladores de comercio, negocio, runtime público, chatbot, tienda, imágenes, introducción, entrega y ZIP. El guard comprueba sus scripts y mantiene `src/app.js` por debajo de 180.000 bytes.
+
+El servidor ya no importa cada manejador API. `server/http/api-router.mjs` registra 39 familias públicas/protegidas; el guard valida que el manifiesto sea único y que `server/server.mjs` permanezca como composition root por debajo de 12.000 bytes.
 
 ## Smoke funcional
-
-Comando: `npm.cmd run smoke:pilot`.
 
 Salida final observada:
 
@@ -32,38 +37,23 @@ Verified: admin auth, lead consent, booking consent, status changes,
 monthly reports and Google readiness.
 ```
 
-El script crea una copia temporal de `data/business-db.example.json`, levanta un servidor de prueba en un puerto libre y elimina el directorio temporal al finalizar (`server/scripts/smoke-test-pilot.mjs:17-45`). No opera sobre el almacén de producción.
+El script usa una copia temporal de los datos de ejemplo, levanta un servidor en un puerto libre y elimina el entorno temporal. No opera sobre el store productivo.
 
-## Fallo del guard de arquitectura
+## E2E pendiente
 
-Comando: `npm.cmd run test:studio-architecture`.
-
-Resultado reproducido:
+El fallo del navegador no invalida las pruebas unitarias/contractuales ni el smoke, pero impide afirmar que la secuencia interactiva larga de edición, historial, entrega y descargas haya pasado en este equipo:
 
 ```text
-AssertionError: src/app.js must remain below 180 KB;
-current size is 253766
-```
-
-No es un fallo funcional de una ruta concreta, sino una deuda de modularidad que detiene la suite compuesta `test:studio` antes de alcanzar su última comprobación. La QA visual se ejecutó por separado y pasó.
-
-## Fallo E2E de navegador
-
-Comando: `npm.cmd run test:studio-browser`, con persistencia JSON local y conexiones de base de datos remotas anuladas. Se repitió indicando como candidato Edge; el ejecutable no estaba disponible y el script usó el navegador instalado según su lógica de descubrimiento.
-
-Resultado:
-
-```text
-Error: Runtime.evaluate: Target crashed
+Runtime.evaluate: Target crashed
 Expression: document.documentElement.dataset.studioReady === "true"
 ```
 
-Clasificación: **incidencia reproducible de la prueba E2E en este entorno**. No invalida por sí sola el arranque del Studio: un recorrido CDP distinto cargó `data-studio-ready`, permitió cambiar el viewport y produjo las figuras 1 a 4. Sí impide afirmar que toda la secuencia interactiva larga de `test-studio-browser.mjs` haya sido superada.
-
-## Alcance de “pasa”
-
-Las pruebas de proveedores externos usan dobles, fixtures o configuración incompleta. Un test de Google, Stripe, imágenes o Cloudflare no acredita que exista una cuenta productiva, una autorización OAuth vigente o un despliegue externo operativo. Esas afirmaciones permanecen en **[NO VERIFICABLE]**.
+Debe tratarse como deuda reproducible hasta estabilizar perfil, flags y consumo de recursos del navegador.
 
 ## Cobertura estructural
 
-`package.json` expone 34 scripts de comprobación, prueba u operación. En los scripts del servidor se localizaron aproximadamente 1.012 usos de `assert`. Este recuento describe volumen de aserciones, no porcentaje de cobertura; el repositorio no contiene un informe de cobertura de líneas o ramas.
+`package.json` expone 87 scripts. Se localizaron 91 archivos `test-*.mjs` y unas 2.754 apariciones de `assert`. Es una medida de amplitud, no un porcentaje de cobertura; no existe informe de líneas o ramas.
+
+## Alcance de “pasa”
+
+Las pruebas de proveedores usan dobles, fixtures o modos de desarrollo. No acreditan una cuenta productiva, autorización OAuth vigente, cobro liquidado, mensaje real ni despliegue externo.

@@ -1,24 +1,25 @@
 # Registro de contradicciones entre código y documentación
 
-El registro no implica que los documentos fueran incorrectos en su fecha: indica que no deben usarse como descripción primaria del corte actual.
+Actualizado el 23 de julio de 2026. El registro no implica que los documentos fueran incorrectos en su fecha: indica qué afirmaciones han quedado resueltas o deben conservarse solo como historia.
 
-| ID | Afirmación documental | Evidencia actual | Evaluación |
+| ID | Afirmación anterior | Evidencia actual | Evaluación |
 |---|---|---|---|
-| C-01 | `docs/AHORA.md:65`: `src/app.js` fue reducido de ~239 KB a 156 KB. | Archivo actual: 253.766 bytes. El guard de `server/scripts/test-studio-architecture.mjs:34` falla. | Histórica y ya no vigente. |
-| C-02 | `docs/AHORA.md:15`: arquitectura frontend modular “protegida por pruebas”. | Hay modularización, pero el orquestador supera en 73.766 bytes su umbral. | Parcial; la protección detecta una regresión real. |
-| C-03 | `docs/AHORA.md:19`: flujo principal verificado en navegador real. | `test:studio-browser` reproduce `Target crashed` en este entorno. Un recorrido CDP corto sí funciona. | No repetible como suite completa en el corte auditado. |
-| C-04 | `docs/AHORA.md:98`: migración PostgreSQL pospuesta. | Driver PostgreSQL, migrador y Render Blueprint presentes (`business-store.mjs`, `render.yaml`). | Histórica. |
-| C-05 | Memoria anterior `:22,60-64`: arquitectura MVP con persistencia JSON y base relacional futura. | Runtime dual JSON/PostgreSQL. | Histórica; JSON sigue vigente como modo local. |
-| C-06 | Memoria anterior `:153,1300`: base relacional/SQLite como trabajo futuro. | PostgreSQL directo ya implementado. | Histórica. |
-| C-07 | Memoria anterior `:156,1321`: OAuth Google por negocio como futuro. | OAuth, refresh, cifrado y endpoints Google conectados. | Histórica respecto al código; uso productivo no verificable. |
-| C-08 | Memoria anterior `:1306`: añadir pruebas automatizadas. | 34 scripts y aproximadamente 1.012 aserciones; múltiples suites ejecutadas. | Histórica. |
-| C-09 | Memoria anterior `:1106`: autenticación completa queda futura. | Hay token admin y login por negocio con scrypt/HMAC. No hay IAM general con roles internos. | Cambio parcial; la afirmación requiere matiz. |
-| C-10 | `docs/CIBERSEGURIDAD.md:3`: stack Supabase DB/Auth. | No hay SDK/runtime Supabase; el propio documento lo admite en `:75-76`. | Solo documentación/plan. |
-| C-11 | Checklists hablan de RLS y backups Supabase como fase de seguridad. | `SUPABASE_RLS_FASE_2.md:7-25` reconoce que es SQL/runbook no aplicado. | No implementado en el runtime. |
-| C-12 | Memoria anterior agrupa Stripe/OpenAI/Google como “backends de ejemplo”. | Google pasó al backend principal; Stripe y OpenAI siguen en ejemplos/configuración. | Evolución desigual; no agruparlos bajo la misma madurez. |
-| C-13 | Documentos de aceptación sugieren verificación de navegador dentro del cierre Studio. | `package.json` define `test:studio` sin `test:studio-browser`; además se detiene en arquitectura. | Contradicción entre procedimiento descrito y script real. |
-| C-14 | Configuración Render/Cloudflare puede leerse como prueba de despliegue. | Solo demuestra intención y posibilidad técnica; no prueba que un servicio externo exista. | Debe etiquetarse [CONFIGURACIÓN], no [EJECUCIÓN]. |
+| C-01 | `src/app.js` había regresado a más de 253 KB y superaba el guard. | Tras la extracción mide 163.228 bytes; `test:studio-architecture` pasa. | Resuelta por refactorización. |
+| C-02 | La arquitectura modular estaba protegida solo en frontend. | Existe además `test:server-architecture`; `server.mjs` mide 6.472 bytes. | Ampliada y resuelta. |
+| C-03 | El flujo Studio completo estaba verificado en navegador. | `test:studio-browser` sigue reproduciendo `Target crashed`; las pruebas cortas y QA sí pasan. | Sigue abierta con alcance parcial. |
+| C-04 | PostgreSQL era trabajo futuro. | Driver, migrador y Render Blueprint presentes. | Histórica; JSON continúa como modo local. |
+| C-05 | La raíz `index.html` abría el Studio. | `index.html` es landing y `workspace.html` abre el Studio. | Histórica; las figuras 1–2 muestran la entrada anterior. |
+| C-06 | Había un único portal operativo. | Control DLS (`admin-dashboard`) y portal cliente (`client-dashboard`) están separados. | Histórica. |
+| C-07 | No existía IAM interno con roles. | Usuarios de negocio, seis roles, sesiones, revocación y matriz backend por recurso/acción. | Resuelta en CRM 2. |
+| C-08 | Contacto y pipeline representaban todo el ciclo comercial. | Existen cuentas, oportunidades, tareas, asociaciones, consentimiento y Cliente 360. | Histórica. |
+| C-09 | Mensajería solo preparaba `wa.me`/`mailto`. | Conversaciones, canales, automatizaciones y campañas están en el servidor principal. | Histórica; envío live no verificado. |
+| C-10 | Comercio y Stripe vivían únicamente en un ejemplo separado. | `commerce-api.mjs` y la capa de pagos están montados en el servidor principal; el ejemplo permanece como referencia. | Histórica; cobros live no verificados. |
+| C-11 | Agenda solo modelaba servicio, horario, bloqueo y reserva. | Recursos, capacidad, waitlist, depósitos, checkout y políticas tienen modelo/API/pruebas. | Histórica. |
+| C-12 | Google era solo ejemplo futuro. | OAuth, cifrado y rutas operativas están conectados al backend principal. | Histórica respecto al código; cuenta live no verificable. |
+| C-13 | Supabase DB/Auth era el runtime. | El runtime principal usa JSON/PostgreSQL directo; SQL de Supabase es preparatorio/opcional. | Solo documentación/plan. |
+| C-14 | Configuración Render/Cloudflare demostraba despliegue. | Demuestra preparación, no existencia de un servicio externo correspondiente al corte. | Debe etiquetarse como configuración. |
+| C-15 | Las dieciséis capturas inventariaban el producto actual. | Son del 16 de julio; no incluyen landing, CRM 2, paneles separados o zona. | Válidas como evidencia histórica, incompletas como inventario actual. |
 
-## Criterio aplicado en la memoria
+## Criterio aplicado
 
-Los documentos históricos se citan solo para explicar evolución. Cuando una afirmación cambió, la memoria presenta primero el estado actual y después el contraste. No se han sobrescrito ni eliminado documentos anteriores.
+La memoria presenta primero el estado medido del 23 de julio y conserva el corte anterior solo cuando explica evolución. La jerarquía es: ejecución/pruebas → código conectado → configuración → inferencia → documentación histórica.
